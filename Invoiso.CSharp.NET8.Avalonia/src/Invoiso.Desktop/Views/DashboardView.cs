@@ -17,8 +17,18 @@ public partial class MainWindow
             var b = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(title, 13, true, Brush.Parse(foreground)), Ui.Text(subtitle, 12, color: Brush.Parse(foreground))), Ui.Wrap(Ui.Button("Got it", () => { dismissedBanners.Add(title); page.Content = Dashboard(); }), Ui.Button("×", () => { dismissedBanners.Add(title); page.Content = Dashboard(); }))), 12);
             b.Background = Brush.Parse(background); b.Margin = new Thickness(0, 0, 0, 20); b.IsVisible = !dismissedBanners.Contains(title); return b;
         }
-        var layout = new ComboBox { ItemsSource = new[] { "Default", "Classic", "Simple Feed", "Bento" }, SelectedItem = dashboardLayout };
-        layout.SelectionChanged += (_, _) => { if (layout.SelectedItem is string selected && selected != dashboardLayout) { dashboardLayout = selected; page.Content = Dashboard(); } };
+        var layout = Ui.Button("");
+        layout.Content = Ui.Icon("dashboard", 20, Brushes.White);
+        layout.Classes.Add("text");
+        ToolTip.SetTip(layout, "Dashboard layout");
+        var layoutMenu = new MenuFlyout();
+        foreach (var name in new[] { "Default", "Classic", "Bento", "Simple Feed" })
+        {
+            var item = new MenuItem { Header = name };
+            item.Click += (_, _) => { dashboardLayout = name; dismissedBanners.Add("New: Multiple dashboard layouts"); page.Content = Dashboard(); };
+            layoutMenu.Items.Add(item);
+        }
+        layout.Flyout = layoutMenu;
         var refresh = Ui.Button("↻", () => page.Content = Dashboard()); refresh.Content = Ui.Icon("refresh", 22, Brushes.White); refresh.Classes.Add("text");
         var top = Ui.AppBar("", layout, refresh);
         var appbar = new Grid(); appbar.Children.Add(top); var heading = Ui.Text("Dashboard Overview", 20, color: Brushes.White); heading.HorizontalAlignment = HorizontalAlignment.Center; appbar.Children.Add(heading);

@@ -32,7 +32,7 @@ public partial class MainWindow
             button.Content = Ui.Stack(4, Ui.Icon(icons[i], 24), Ui.Text(tab, 11));
             foreach (var child in ((StackPanel)button.Content).Children) child.HorizontalAlignment = HorizontalAlignment.Center;
             button.Tag = tab; button.Classes.Clear(); button.Classes.Add("nav"); button.HorizontalContentAlignment = HorizontalAlignment.Center;
-            button.Margin = new Thickness(4, 0); button.Padding = new Thickness(8); button.MinHeight = 72; buttons.Add(button); rail.Children.Add(button);
+            button.Margin = new Thickness(4, 0); button.Padding = new Thickness(8); button.MinHeight = 64; buttons.Add(button); rail.Children.Add(button);
         }
         Select(settingsTab);
         return Ui.Columns("110,*", new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Scroll(rail, 0) }, content);

@@ -67,7 +67,7 @@ public partial class MainWindow
             if (selectedTemplate.Value is "Compact" or "Grid Classic" or "Thermal") { controls.Children.Add(Ui.Text("DISPLAY OPTIONS", 12, true, Ui.Muted)); controls.Children.Add(Ui.Fields(sections[2].Fields)); }
             controls.Children.Add(Ui.Text("THEME COLOR", 12, true, Ui.Muted));
             var swatches = Ui.Wrap();
-            foreach (var hex in new[] { "#002E78", "#1565C0", "#2E7D32", "#6A1B9A", "#C62828", "#E65100", "#263238" })
+            foreach (var hex in new[] { "#002E78", "#2563EB", "#047857", "#7C2D12", "#6D28D9" })
             { var b = Ui.Button("", () => { color.Value = hex; Display(); }); b.Background = Brush.Parse(hex); b.Width = 30; b.Height = 30; b.MinHeight = 30; b.CornerRadius = new CornerRadius(15); swatches.Children.Add(b); }
             controls.Children.Add(Ui.Card(Ui.Stack(12, swatches, Ui.Field(color), Ui.Button("Template default", () => { color.Value = "#002E78"; Display(); })), 12));
             controls.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text("Need a custom template?", 14, true), Ui.Text("Make your invoice look exactly the way you want.", 12, color: Ui.Muted), Ui.Button("Explore Customization", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 14));
@@ -96,14 +96,17 @@ public partial class MainWindow
                 Grid.SetColumn(templates, 0); Grid.SetColumn(settings, 2); Grid.SetColumn(previewCard, 4); layout.Children.Add(templates); layout.Children.Add(settings); layout.Children.Add(previewCard); host.Content = layout;
             }
         };
-        pageSize.PropertyChanged += (_, e) =>
+        System.ComponentModel.PropertyChangedEventHandler pageSizeChanged = (_, e) =>
         {
             if (e.PropertyName != nameof(FormField.Value)) return;
             selectedTemplate.Value = pageSize.Value switch { "A5" => "Grid Classic", "A6" => "Compact", "Thermal 80mm" or "Thermal 58mm" => "Thermal", _ => "Classic" }; Display();
         };
         Display();
         var header = new Border { Background = Brush.Parse("#FAFAFA"), Padding = new Thickness(16, 12), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Child = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; Display(); }), Ui.Button("Save Settings", () => Model.Status = "PDF settings saved for this session.", true)) };
-        return Ui.Rows("Auto,*", header, host);
+        var view = Ui.Rows("Auto,*", header, host);
+        view.AttachedToVisualTree += (_, _) => pageSize.PropertyChanged += pageSizeChanged;
+        view.DetachedFromVisualTree += (_, _) => pageSize.PropertyChanged -= pageSizeChanged;
+        return view;
     }
     private static string TemplateDescription(string template) => template switch
     {
