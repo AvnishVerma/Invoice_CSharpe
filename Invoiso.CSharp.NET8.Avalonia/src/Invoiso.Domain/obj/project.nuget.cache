@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "VQJKCYlCGzU=",
+  "success": true,
+  "projectFilePath": "/Users/apple/Avnish/Invoice_CSharpe/Invoiso.CSharp.NET8.Avalonia/src/Invoiso.Domain/Invoiso.Domain.csproj",
+  "expectedPackageFiles": [
+    "/Users/apple/.nuget/packages/microsoft.netcore.app.ref/8.0.15/microsoft.netcore.app.ref.8.0.15.nupkg.sha512",
+    "/Users/apple/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.15/microsoft.aspnetcore.app.ref.8.0.15.nupkg.sha512"
+  ],
+  "logs": []
+}

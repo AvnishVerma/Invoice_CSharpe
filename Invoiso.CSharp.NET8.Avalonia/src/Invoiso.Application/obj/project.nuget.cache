@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "nH+VrU56z5M=",
+  "success": true,
+  "projectFilePath": "/Users/apple/Avnish/Invoice_CSharpe/Invoiso.CSharp.NET8.Avalonia/src/Invoiso.Application/Invoiso.Application.csproj",
+  "expectedPackageFiles": [
+    "/Users/apple/.nuget/packages/communitytoolkit.mvvm/8.4.0/communitytoolkit.mvvm.8.4.0.nupkg.sha512",
+    "/Users/apple/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.2/microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
+    "/Users/apple/.nuget/packages/microsoft.netcore.app.ref/8.0.15/microsoft.netcore.app.ref.8.0.15.nupkg.sha512",
+    "/Users/apple/.nuget/packages/microsoft.aspnetcore.app.ref/8.0.15/microsoft.aspnetcore.app.ref.8.0.15.nupkg.sha512"
+  ],
+  "logs": []
+}
