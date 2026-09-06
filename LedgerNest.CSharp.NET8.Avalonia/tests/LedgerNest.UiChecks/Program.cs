@@ -127,6 +127,7 @@ internal static class Program
         var product = FormCatalog.Product();
         product[1].Value = "Persisted Product";
         product[5].Value = "42.50";
+        product[6].Value = "42.50";
         product[8].Value = "18";
         product[10].Value = "4";
         Check(model.SaveRecord("Product", product), "Product must save to SQLite");
@@ -139,7 +140,7 @@ internal static class Program
         Check(model.ImportCsv("Customer", "name,phone,business_name,email,gstin,address\n\"Comma, Customer\",4445556666,Comma Co,comma@example.com,GST-C,\"Street 1, City\"\n") == 1, "Customer CSV import must add quoted records");
         Check(model.ImportCsv("Product", "name,price,stock,tax_rate,hsncode,description\nImported Widget,12.75,9,5,HSN-55,CSV item\n") == 1, "Product CSV import must add products");
         model.InvoiceCustomer[0].Value = "Persisted Customer";
-        model.Lines.Add(new InvoiceLineViewModel { Name = "Persisted Product", Price = 42.50m, Quantity = 2, TaxRate = 18 });
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Persisted Product", Price = 42.50m, Quantity = 2, TaxRate = 18, Discount = 1.25m, DiscountPerUnit = true });
         Check(model.SaveInvoice(), "Invoice must save to SQLite");
         var payment = FormCatalog.Payment();
         payment[0].Value = "40";
@@ -147,15 +148,15 @@ internal static class Program
         payment[4].Value = "txn-123";
         Check(model.ApplyPayment(model.Invoices.Single(), payment), "Payment must save to SQLite");
         Check(model.Invoices.Single()["Status"] == "Partial", "Partial payment must update invoice status");
-        Check(model.Invoices.Single()["Outstanding"] == "60.30", "Partial payment must update outstanding balance");
+        Check(model.Invoices.Single()["Outstanding"] == "57.35", "Partial payment must update outstanding balance");
 
         var reloaded = new MainWindowViewModel(factory);
         Check(reloaded.Customers.Any(c => c.Name == "Persisted Customer"), "Customers must reload from SQLite");
         Check(reloaded.Customers.Any(c => c.Name == "Comma, Customer" && c["Address"] == "Street 1, City"), "Imported customers must reload from SQLite");
         Check(reloaded.Products.Any(p => p.Name == "Persisted Product" && p["Sale Price"] == "42.5"), "Products must reload from SQLite");
         Check(reloaded.Products.Any(p => p.Name == "Imported Widget" && p["Sale Price"] == "12.75" && p["HSN/SAC"] == "HSN-55"), "Imported products must reload from SQLite");
-        Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "100.30" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
-        Check(reloaded.BuildReport("Products").Rows.Any(r => r[0] == "Persisted Product" && r[1] == "2" && r[2] == "₹ 85.00"), "Product report must reload historical invoice items from SQLite");
+        Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "97.35" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
+        Check(reloaded.BuildReport("Products").Rows.Any(r => r[0] == "Persisted Product" && r[1] == "2" && r[2] == "₹ 85.00" && r[4] == "₹ -2.50" && r[5] == "-2.9%"), "Product report must reload historical invoice item cost and discount data from SQLite");
         Check(reloaded.Payments.Any(p => p.Name == "INV-0001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
 
         var companySections = model.Settings["Company Info"];
@@ -190,7 +191,7 @@ internal static class Program
         Check(model.RestoreJsonBackup(backupJson), "JSON backup must restore successfully");
         Check(model.Customers.Any(c => c.Name == "Persisted Customer") && !model.Customers.Any(c => c.Name == "Temporary After Backup"), "Restore must replace current customer data with backup data");
         Check(model.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Status"] == "Partial"), "Restore must bring invoices and payment status back");
-        Check(model.BuildReport("Receivables").Outstanding == 60.30m, "Receivables report must use restored outstanding balance");
+        Check(model.BuildReport("Receivables").Outstanding == 57.35m, "Receivables report must use restored outstanding balance");
         Check(model.ExportReportCsv("Customers").Contains("Persisted Customer"), "Customer report CSV must include restored customer totals");
 
         reloaded = new MainWindowViewModel(factory);

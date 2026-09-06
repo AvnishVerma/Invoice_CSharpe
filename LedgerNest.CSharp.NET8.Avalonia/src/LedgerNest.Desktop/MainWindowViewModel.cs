@@ -151,21 +151,21 @@ public partial class MainWindowViewModel : ObservableObject
             lines = db.InvoiceItems.AsNoTracking()
                 .Join(db.Invoices.AsNoTracking(), item => item.InvoiceId, invoice => invoice.Id, (item, invoice) => new { item, invoice })
                 .Where(x => x.invoice.Status != "Draft")
-                .Select(x => new ProductReportLine(x.item.Description, x.item.Quantity, x.item.UnitPrice, x.item.Discount))
+                .Select(x => new ProductReportLine(x.item.Description, x.item.Quantity, x.item.UnitPrice, x.item.DiscountPerUnit ? x.item.Discount * x.item.Quantity : x.item.Discount, x.item.PurchasePrice))
                 .ToArray();
         }
         else
         {
-            lines = Lines.Select(line => new ProductReportLine(line.Name, line.Quantity, line.Price, line.DiscountPerUnit ? line.Discount * line.Quantity : line.Discount)).ToArray();
+            lines = Lines.Select(line => new ProductReportLine(line.Name, line.Quantity, line.Price, line.DiscountPerUnit ? line.Discount * line.Quantity : line.Discount, 0)).ToArray();
         }
 
         return lines.GroupBy(l => l.Name)
-            .Select(g => new[] { g.Key, g.Sum(l => l.Quantity).ToString("0.###"), Money(g.Sum(l => l.UnitPrice * l.Quantity)), Money(g.Sum(l => l.Discount)) })
-            .Prepend(["Product / Service", "Units Sold", "Sales", "Discount Given"])
+            .Select(g => { var sales = g.Sum(l => l.UnitPrice * l.Quantity); var cogs = g.Sum(l => l.PurchasePrice * l.Quantity); var profit = sales - g.Sum(l => l.Discount) - cogs; var margin = sales == 0 ? 0 : profit * 100 / sales; return new[] { g.Key, g.Sum(l => l.Quantity).ToString("0.###"), Money(sales), Money(g.Sum(l => l.Discount)), Money(profit), margin.ToString("0.0") + "%" }; })
+            .Prepend(["Product / Service", "Units Sold", "Sales", "Discount Given", "Profit", "Margin"])
             .ToArray();
     }
 
-    private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount);
+    private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount, decimal PurchasePrice);
 
     public string ExportReportCsv(string name)
     {
@@ -505,13 +505,23 @@ public partial class MainWindowViewModel : ObservableObject
             TaxTotal = Totals.Tax,
             DiscountTotal = Totals.ItemDiscount + Totals.InvoiceDiscount,
             GrandTotal = Totals.Total,
-            Items = Lines.Select(line => new InvoiceItem
+            Items = Lines.Select(line =>
             {
-                Description = line.Name,
-                Quantity = line.Quantity,
-                UnitPrice = line.Price,
-                TaxRate = line.TaxRate,
-                Discount = line.DiscountPerUnit ? line.Discount * line.Quantity : line.Discount
+                var product = Products.FirstOrDefault(p => p.Name.Equals(line.Name, StringComparison.OrdinalIgnoreCase));
+                return new InvoiceItem
+                {
+                    Description = line.Name,
+                    ProductDescription = product?["Description"] ?? line.Name,
+                    Quantity = line.Quantity,
+                    UnitPrice = line.Price,
+                    ProductPrice = line.Price,
+                    PurchasePrice = product == null ? 0m : ParseDecimal(product["Purchase Price"]),
+                    TaxRate = line.TaxRate,
+                    Discount = line.Discount,
+                    ExtraCost = line.ExtraCost,
+                    DiscountPerUnit = line.DiscountPerUnit,
+                    PriceIncludesTax = line.PriceIncludesTax
+                };
             }).ToList()
         };
         db.Invoices.Add(invoice);

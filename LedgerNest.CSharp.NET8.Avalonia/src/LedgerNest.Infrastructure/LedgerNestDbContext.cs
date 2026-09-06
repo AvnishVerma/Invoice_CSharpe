@@ -44,5 +44,11 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<Product>().Property(x => x.PurchasePrice).HasPrecision(18, 2);
         modelBuilder.Entity<Product>().Property(x => x.TaxRate).HasPrecision(8, 2);
         modelBuilder.Entity<Product>().Property(x => x.StockQuantity).HasPrecision(18, 3);
+        modelBuilder.Entity<InvoiceItem>().Property(x => x.UnitPrice).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceItem>().Property(x => x.ProductPrice).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceItem>().Property(x => x.PurchasePrice).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceItem>().Property(x => x.TaxRate).HasPrecision(8, 2);
+        modelBuilder.Entity<InvoiceItem>().Property(x => x.Discount).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceItem>().Property(x => x.ExtraCost).HasPrecision(18, 2);
     }
 }

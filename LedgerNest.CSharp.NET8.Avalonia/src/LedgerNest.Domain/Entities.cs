@@ -45,11 +45,17 @@ public sealed class InvoiceItem
     public int InvoiceId { get; set; }
     public int? ProductId { get; set; }
     public string Description { get; set; } = "";
+    public string ProductDescription { get; set; } = "";
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public decimal ProductPrice { get; set; }
+    public decimal PurchasePrice { get; set; }
     public decimal TaxRate { get; set; }
     public decimal Discount { get; set; }
-    public decimal LineTotal => Math.Max(0, Quantity * UnitPrice - Discount);
+    public decimal ExtraCost { get; set; }
+    public bool DiscountPerUnit { get; set; }
+    public bool PriceIncludesTax { get; set; }
+    public decimal LineTotal => Math.Max(0, Quantity * UnitPrice - (DiscountPerUnit ? Discount * Quantity : Discount) + ExtraCost);
 }
 
 public sealed class Payment
