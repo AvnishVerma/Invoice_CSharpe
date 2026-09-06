@@ -33,6 +33,7 @@ public sealed record FormSection(string Title, FormField[] Fields);
 public sealed class UiRecord
 {
     public Guid Id { get; } = Guid.NewGuid();
+    public int SourceId { get; init; }
     public Dictionary<string, string> Values { get; init; } = [];
     public string this[string name] => Values.GetValueOrDefault(name, "");
     public string Name => Values.GetValueOrDefault("Name", this["Username"]);

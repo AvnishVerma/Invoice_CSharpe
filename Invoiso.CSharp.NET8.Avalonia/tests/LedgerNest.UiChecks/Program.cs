@@ -6,6 +6,8 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using LedgerNest.Application;
 using LedgerNest.Desktop;
+using LedgerNest.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using SkiaSharp;
 using System.Text.Json;
 
@@ -20,6 +22,7 @@ internal static class Program
         var output = args.FirstOrDefault() ?? "/tmp/invoiso-ui-captures";
         Directory.CreateDirectory(output);
         CheckTotals();
+        CheckPersistence();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
         var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
@@ -106,5 +109,38 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckPersistence()
+    {
+        var dbPath = Path.Combine(Path.GetTempPath(), "ledgernest-ui-checks", Guid.NewGuid().ToString("N"), "ledgernest.db");
+        Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+        var options = new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={dbPath}").Options;
+        var factory = new TestDbContextFactory(options);
+
+        var model = new MainWindowViewModel(factory);
+        var customer = FormCatalog.Customer();
+        customer[0].Value = "Persisted Customer";
+        customer[2].Value = "5551234567";
+        Check(model.SaveRecord("Customer", customer), "Customer must save to SQLite");
+        var product = FormCatalog.Product();
+        product[1].Value = "Persisted Product";
+        product[5].Value = "42.50";
+        product[8].Value = "18";
+        product[10].Value = "4";
+        Check(model.SaveRecord("Product", product), "Product must save to SQLite");
+        model.InvoiceCustomer[0].Value = "Persisted Customer";
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Persisted Product", Price = 42.50m, Quantity = 2, TaxRate = 18 });
+        Check(model.SaveInvoice(), "Invoice must save to SQLite");
+
+        var reloaded = new MainWindowViewModel(factory);
+        Check(reloaded.Customers.Any(c => c.Name == "Persisted Customer"), "Customers must reload from SQLite");
+        Check(reloaded.Products.Any(p => p.Name == "Persisted Product" && p["Sale Price"] == "42.5"), "Products must reload from SQLite");
+        Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "100.30"), "Invoices must reload from SQLite");
+    }
+
+    private sealed class TestDbContextFactory(DbContextOptions<LedgerNestDbContext> options) : IDbContextFactory<LedgerNestDbContext>
+    {
+        public LedgerNestDbContext CreateDbContext() => new(options);
     }
 }

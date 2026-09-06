@@ -8,5 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/LedgerNest.Desktop/LedgerNest.Desktop.csproj" />
     <PackageReference Include="Avalonia.Headless" Version="11.3.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.18" />
   </ItemGroup>
 </Project>
