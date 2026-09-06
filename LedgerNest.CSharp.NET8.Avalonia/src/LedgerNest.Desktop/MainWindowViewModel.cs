@@ -204,6 +204,26 @@ public partial class MainWindowViewModel : ObservableObject
         return db.InvoiceItems.AsNoTracking().Where(i => i.InvoiceId == document.SourceId).OrderBy(i => i.Id).ToArray();
     }
 
+
+    public byte[] ExportReportPdf(string name)
+    {
+        var report = BuildReport(name);
+        var lines = new List<string>
+        {
+            Branding.Name,
+            $"{name} Report",
+            $"Invoices: {report.InvoiceCount}",
+            $"Billed: {Money(report.Billed)}",
+            $"Collected: {Money(report.Collected)}",
+            $"Outstanding: {Money(report.Outstanding)}",
+            ""
+        };
+
+        foreach (var row in report.Rows) lines.Add(string.Join("  |  ", row));
+        Status = $"Exported {name} report PDF.";
+        return SimplePdf.Create(lines);
+    }
+
     public string ExportReportCsv(string name)
     {
         var rows = BuildReport(name).Rows;

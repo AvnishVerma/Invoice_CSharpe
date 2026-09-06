@@ -36,7 +36,7 @@ public partial class MainWindow
     private Control ReportContent(string name)
     {
         var report = Model.BuildReport(name);
-        var body = Ui.Stack(20, Ui.Header(name, "", Ui.Button("Export CSV", async () => await ExportReportCsv(name)), Ui.Button("Export PDF")));
+        var body = Ui.Stack(20, Ui.Header(name, "", Ui.Button("Export CSV", async () => await ExportReportCsv(name)), Ui.Button("Export PDF", async () => await ExportReportPdf(name))));
         body.Children.Add(Ui.Stats(
             ("Total Billed", Money(report.Billed), "", "#002E78"),
             ("Total Collected", Money(report.Collected), "", "#2E7D32"),
@@ -80,6 +80,22 @@ public partial class MainWindow
         await using var stream = await file.OpenWriteAsync();
         await using var writer = new StreamWriter(stream, Encoding.UTF8);
         await writer.WriteAsync(Model.ExportReportCsv(name));
+        ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+    }
+
+
+    private async Task ExportReportPdf(string name)
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new()
+        {
+            Title = $"Export {name} PDF",
+            SuggestedFileName = $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report.pdf",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
+        });
+        if (file == null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await stream.WriteAsync(Model.ExportReportPdf(name));
         ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
 

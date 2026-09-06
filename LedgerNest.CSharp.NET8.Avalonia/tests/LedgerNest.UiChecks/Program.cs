@@ -195,6 +195,8 @@ internal static class Program
         Check(model.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Status"] == "Partial"), "Restore must bring invoices and payment status back");
         Check(model.BuildReport("Receivables").Outstanding == 57.35m, "Receivables report must use restored outstanding balance");
         Check(model.ExportReportCsv("Customers").Contains("Persisted Customer"), "Customer report CSV must include restored customer totals");
+        var reportPdf = model.ExportReportPdf("Customers");
+        Check(reportPdf.Length > 500 && System.Text.Encoding.ASCII.GetString(reportPdf.Take(8).ToArray()).StartsWith("%PDF-1."), "Report PDF export must create a valid PDF document");
 
         reloaded = new MainWindowViewModel(factory);
         var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);
