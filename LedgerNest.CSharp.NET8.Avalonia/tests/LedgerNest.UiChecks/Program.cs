@@ -155,6 +155,7 @@ internal static class Program
         Check(reloaded.Products.Any(p => p.Name == "Persisted Product" && p["Sale Price"] == "42.5"), "Products must reload from SQLite");
         Check(reloaded.Products.Any(p => p.Name == "Imported Widget" && p["Sale Price"] == "12.75" && p["HSN/SAC"] == "HSN-55"), "Imported products must reload from SQLite");
         Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "100.30" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
+        Check(reloaded.BuildReport("Products").Rows.Any(r => r[0] == "Persisted Product" && r[1] == "2" && r[2] == "₹ 85.00"), "Product report must reload historical invoice items from SQLite");
         Check(reloaded.Payments.Any(p => p.Name == "INV-0001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
 
         var companySections = model.Settings["Company Info"];

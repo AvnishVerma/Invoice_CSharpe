@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 169 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings persistence, CSV import/export, JSON backup/restore, report summaries and CSV export, payment status updates, responsive invoice panes, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 170 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings persistence, CSV import/export, JSON backup/restore, report summaries, historical product reporting and CSV export, payment status updates, responsive invoice panes, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 

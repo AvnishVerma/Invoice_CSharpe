@@ -130,7 +130,7 @@ public partial class MainWindowViewModel : ObservableObject
             "Receivables" => invoices.Where(i => ParseDecimal(i["Outstanding"]) > 0).Select(i => new[] { i["Customer"], i.Name, i["Date"], Money(ParseDecimal(i["Outstanding"])) }).Prepend(["Customer", "Invoice ID", "Date", "Outstanding"]).ToArray(),
             "Tax" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, Money(g.Sum(i => ParseDecimal(i["Total"]) - ParseDecimal(i["Total"]) / 1.18m)) }).Prepend(["Date", "Estimated Tax"]).ToArray(),
             "Customers" => invoices.GroupBy(i => i["Customer"]).Select(g => new[] { string.IsNullOrWhiteSpace(g.Key) ? "Unknown" : g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => ParseDecimal(r[2].Replace("₹", ""))).Prepend(["Customer", "Invoices", "Billed", "Collected", "Outstanding"]).ToArray(),
-            "Products" => Lines.GroupBy(l => l.Name).Select(g => new[] { g.Key, g.Sum(l => l.Quantity).ToString("0.###"), Money(g.Sum(l => l.Price * l.Quantity)), Money(g.Sum(l => l.DiscountPerUnit ? l.Discount * l.Quantity : l.Discount)) }).Prepend(["Product / Service", "Units Sold", "Sales", "Discount Given"]).ToArray(),
+            "Products" => ProductReportRows(),
             "Quotations" => new string[][] { ["Metric", "Value"], ["Quotations Issued", Invoices.Count(i => i["Type"] == "Quotation").ToString()], ["Invoices in Period", invoices.Length.ToString()] },
             "Invoice Status" => invoices.Select(i => new[] { i.Name, i["Customer"], i["Date"], Money(ParseDecimal(i["Total"])), i["Status"], Money(ParseDecimal(i["Outstanding"])) }).Prepend(["Invoice", "Customer", "Date", "Total", "Status", "Outstanding"]).ToArray(),
             "Daily Report" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => r[0]).Prepend(["Date", "Invoices", "Sales", "Collected", "Outstanding"]).ToArray(),
@@ -139,6 +139,33 @@ public partial class MainWindowViewModel : ObservableObject
 
         return new ReportSnapshot(name, invoices.Length, billed, paid, outstanding, rows);
     }
+
+
+    private string[][] ProductReportRows()
+    {
+        IEnumerable<ProductReportLine> lines;
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.Database.EnsureCreated();
+            lines = db.InvoiceItems.AsNoTracking()
+                .Join(db.Invoices.AsNoTracking(), item => item.InvoiceId, invoice => invoice.Id, (item, invoice) => new { item, invoice })
+                .Where(x => x.invoice.Status != "Draft")
+                .Select(x => new ProductReportLine(x.item.Description, x.item.Quantity, x.item.UnitPrice, x.item.Discount))
+                .ToArray();
+        }
+        else
+        {
+            lines = Lines.Select(line => new ProductReportLine(line.Name, line.Quantity, line.Price, line.DiscountPerUnit ? line.Discount * line.Quantity : line.Discount)).ToArray();
+        }
+
+        return lines.GroupBy(l => l.Name)
+            .Select(g => new[] { g.Key, g.Sum(l => l.Quantity).ToString("0.###"), Money(g.Sum(l => l.UnitPrice * l.Quantity)), Money(g.Sum(l => l.Discount)) })
+            .Prepend(["Product / Service", "Units Sold", "Sales", "Discount Given"])
+            .ToArray();
+    }
+
+    private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount);
 
     public string ExportReportCsv(string name)
     {
