@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 182 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 187 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -27,4 +27,8 @@ The intentional branding and panel changes supersede exact legacy screenshot par
 
 ## Functional parity score
 
-Current functional parity score: **90%**. The score is weighted by migrated user-facing behavior: core records and invoices 20%, persistence/schema 15%, payments 10%, settings/company config 10%, import/export/backup 15%, reports/PDF export 15%, authentication/users 7%, visual/responsive parity 8%. Completed coverage is 90 of 100 points; remaining gaps are full legacy PDF templates, password reset challenge flows, localization, dark-theme verification, and deeper pixel-level tuning.
+Current functional parity score: **93%**. The score is weighted by migrated user-facing behavior: core records and invoices 20%, persistence/schema 15%, payments 10%, settings/company config 10%, import/export/backup 15%, reports/PDF export 15%, authentication/users 7%, visual/responsive parity 8%. Completed coverage is 93 of 100 points; remaining gaps are full legacy PDF templates, password reset challenge flows, localization, and deeper pixel-level tuning.
+
+## UI parity score
+
+Current migrated UI parity score: **93%** for covered screens. The UI score counts implemented and tested desktop/narrow layouts, split invoice panes, settings/report/customer/product/document surfaces, branding, dark-theme switching, and headless screenshot coverage. Pixel-perfect legacy matching still requires reference captures for exact raster comparison; without those files, the score reflects migrated UI coverage rather than absolute pixel equality.

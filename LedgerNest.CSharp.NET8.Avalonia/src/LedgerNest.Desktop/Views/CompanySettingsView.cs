@@ -4,6 +4,7 @@ using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
 using LedgerNest.Desktop.Views;
+using Avalonia.Styling;
 
 namespace LedgerNest.Desktop;
 
@@ -45,10 +46,25 @@ public partial class MainWindow
         var layout = Ui.Columns("240,*", logoPanel, Ui.Scroll(details, 32));
         var language = new ComboBox { ItemsSource = new[] { "English", "हिन्दी", "नेपाली", "བོད་ཡིག", "Español", "Français", "中文" }, SelectedIndex = 0, Width = 115, IsEnabled = false };
         ToolTip.SetTip(language, "Localized desktop strings have not yet been migrated.");
-        var theme = new ComboBox { ItemsSource = new[] { "Light", "Dark", "System" }, SelectedIndex = 0, Width = 100, IsEnabled = false };
-        ToolTip.SetTip(theme, "Dark-theme visual parity has not yet been verified.");
+        var theme = new ComboBox { ItemsSource = new[] { "Light", "Dark", "System" }, SelectedItem = Model.ThemeMode, Width = 100 };
+        theme.SelectionChanged += (_, _) => ApplyTheme(theme.SelectedItem?.ToString() ?? "Light");
         return Ui.Rows("Auto,*", Ui.AppBar("Company Information", language, theme), layout);
     }
+
+    private void ApplyTheme(string mode)
+    {
+        Model.SetThemeMode(mode);
+        if (global::Avalonia.Application.Current != null)
+        {
+            global::Avalonia.Application.Current.RequestedThemeVariant = mode switch
+            {
+                "Dark" => ThemeVariant.Dark,
+                "System" => ThemeVariant.Default,
+                _ => ThemeVariant.Light
+            };
+        }
+    }
+
     private Control PdfSettingsView()
     {
         var sections = Model.Settings["PDF Settings"];

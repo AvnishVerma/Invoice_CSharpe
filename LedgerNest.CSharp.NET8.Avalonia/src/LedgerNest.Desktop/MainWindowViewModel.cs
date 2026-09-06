@@ -22,6 +22,7 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private string title = "Dashboard";
     [ObservableProperty] private bool sidebarExpanded = true;
     [ObservableProperty] private string status = "";
+    [ObservableProperty] private string themeMode = "Light";
     public HashSet<Guid> DeletedRecords { get; } = [];
     public ObservableCollection<UiRecord> Customers { get; } = [];
     public ObservableCollection<UiRecord> Products { get; } = [];
@@ -60,6 +61,7 @@ public partial class MainWindowViewModel : ObservableObject
         };
         LoadPersistedRecords();
         LoadPersistedSettings();
+        LoadThemeMode();
     }
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();
     [RelayCommand] private void Navigate(string route) { if (Routes.Contains(route)) { Title = route; Status = ""; } }
@@ -90,6 +92,29 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+
+
+    public void SetThemeMode(string mode)
+    {
+        ThemeMode = mode is "Dark" or "System" ? mode : "Light";
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.Database.EnsureCreated();
+            SetSetting(db, "appearance.theme_mode", ThemeMode);
+            db.SaveChanges();
+        }
+        Status = $"Theme set to {ThemeMode}.";
+    }
+
+    private void LoadThemeMode()
+    {
+        if (dbFactory == null) return;
+        using var db = dbFactory.CreateDbContext();
+        db.Database.EnsureCreated();
+        var setting = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == "appearance.theme_mode")?.Value;
+        ThemeMode = setting is "Dark" or "System" ? setting : "Light";
+    }
 
     public bool VerifyUser(string username, string password)
     {
@@ -520,6 +545,7 @@ public partial class MainWindowViewModel : ObservableObject
         Customers.Clear(); Products.Clear(); Users.Clear(); Invoices.Clear(); Payments.Clear();
         LoadPersistedRecords();
         LoadPersistedSettings();
+        LoadThemeMode();
     }
 
     private void LoadPersistedRecords()

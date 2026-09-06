@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Avalonia.Styling;
 using LedgerNest.Application;
 using LedgerNest.Desktop;
 using LedgerNest.Infrastructure;
@@ -75,6 +76,12 @@ internal static class Program
         window.Width = 1440; Settle();
         Check(window.GetVisualDescendants().OfType<GridSplitter>().Count() == 1, "Wide layout must restore its divider after resizing");
         Capture("invoice-split-panels");
+        model.SetThemeMode("Dark");
+        global::Avalonia.Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+        model.NavigateCommand.Execute("Dashboard");
+        Capture("dashboard-dark");
+        model.NavigateCommand.Execute("Settings");
+        Capture("settings-dark");
         window.Close();
         if (args.Length > 1) CompareScreenshots(output, args[1]);
         Console.WriteLine($"Passed {assertions} checks. Screenshots: {output}");
@@ -224,6 +231,9 @@ internal static class Program
         Check(reportPdf.Length > 500 && System.Text.Encoding.ASCII.GetString(reportPdf.Take(8).ToArray()).StartsWith("%PDF-1."), "Report PDF export must create a valid PDF document");
 
         reloaded = new MainWindowViewModel(factory, dbPath);
+        model.SetThemeMode("Dark");
+        reloaded = new MainWindowViewModel(factory, dbPath);
+        Check(reloaded.ThemeMode == "Dark", "Theme mode must persist and reload from SQLite");
         var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);
         Check(reloadedCompanyFields["Company Name"].Value == "LedgerNest Labs" && reloadedCompanyFields["GSTIN"].Value == "GST-123", "Company info must reload from SQLite");
         var reloadedInvoiceGeneral = reloaded.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
