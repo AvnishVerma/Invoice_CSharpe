@@ -25,6 +25,7 @@ internal static class Program
         Directory.CreateDirectory(output);
         CheckTotals();
         CheckPersistence();
+        CheckDocumentTypes();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
         var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
@@ -117,6 +118,34 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckDocumentTypes()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-types-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Type test", Price = 10, Quantity = 1 });
+        foreach (var type in new[] { "Invoice", "Quotation", "Receipt" })
+        {
+            model.InvoiceDetails[0].Value = type;
+            Check(model.SaveInvoice(), $"{type} must save");
+        }
+        void Verify(MainWindowViewModel loaded)
+        {
+            foreach (var type in new[] { "Invoice", "Quotation", "Receipt" })
+                Check(loaded.Invoices.Count(i => i["Type"] == type) == 1, $"{type} must retain its type");
+            Check(loaded.BuildReport("Products").Rows.Any(r => r[0] == "Type test" && r[1] == "1"), "Product sales must exclude quotations and receipts");
+        }
+        Verify(new MainWindowViewModel(factory, path));
+        var backup = model.CreateJsonBackup();
+        Check(model.RestoreJsonBackup(backup), "Document backup must restore");
+        Verify(new MainWindowViewModel(factory, path));
+        using (var db = factory.CreateDbContext())
+            db.Database.ExecuteSqlRaw("ALTER TABLE invoices DROP COLUMN Type");
+        var upgraded = new MainWindowViewModel(factory, path);
+        Check(upgraded.Invoices.Count == 3 && upgraded.Invoices.All(i => i["Type"] == "Invoice"), "Pre-type C# databases must upgrade without losing invoices");
+        Check(new MainWindowViewModel(factory, path).Invoices.Count == 3, "Schema upgrade must be repeatable");
     }
 
     private static void CheckPersistence()

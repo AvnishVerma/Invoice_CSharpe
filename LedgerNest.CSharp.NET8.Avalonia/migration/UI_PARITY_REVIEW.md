@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 188 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 202 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -25,10 +25,16 @@ The window now delegates its shell, overlays, and record forms to `ShellView.cs`
 
 The intentional branding and panel changes supersede exact legacy screenshot parity on these surfaces. Reference comparisons remain useful for unrelated forms and behavior.
 
-## Functional parity score
+## Parity measurement status
 
-Current functional parity score: **95%**. The score is weighted by migrated user-facing behavior: core records and invoices 20%, persistence/schema 15%, payments 10%, settings/company config 10%, import/export/backup 15%, reports/PDF export 15%, authentication/users 7%, visual/responsive parity 8%. Completed coverage is 95 of 100 points; remaining gaps are full legacy PDF templates, password reset challenge flows, full translated desktop strings, and deeper pixel-level tuning.
+The requested target is 95% functionality and UI parity. The previously reported 95% values were coverage estimates without a complete feature checklist or measured screenshot comparison; they do not establish that the target has been reached.
 
-## UI parity score
+Functional parity remains unverified until legacy behaviors are inventoried and each has a reproducible pass/fail result. Known gaps include full PDF templates, password reset challenges, translated desktop strings and invoice editing/settings behavior.
 
-Current migrated UI parity score: **95%** for covered screens. The UI score counts implemented and tested desktop/narrow layouts, split invoice panes, settings/report/customer/product/document surfaces, branding, dark-theme switching, persisted language preference, and headless screenshot coverage. Pixel-perfect legacy matching still requires reference captures for exact raster comparison; without those files, the score reflects migrated UI coverage rather than absolute pixel equality.
+Pixel similarity remains unmeasured: matching legacy reference captures are unavailable in this environment, and Flutter is not installed to produce them. Headless Avalonia captures verify rendering only. Intentional LedgerNest branding and split-pane changes need to be excluded from any agreed legacy visual comparison.
+
+## Document type persistence review
+
+Legacy invoices store a type (see `invoiso-main/lib/database/database_helper.dart` and `lib/models/invoice.dart`). C# now preserves Invoice, Quotation and Receipt types on save, reload and JSON backup/restore, and product sales exclude non-invoice documents. Existing C# databases gain a Type column defaulting to Invoice; the upgrade does not claim Flutter database compatibility or recover document types already lost by prior versions.
+
+Focused regression checks cover all three document types, JSON round trips, report exclusion, and repeatable upgrades of a pre-type C# database.

@@ -103,7 +103,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (dbFactory != null)
         {
             using var db = dbFactory.CreateDbContext();
-            db.Database.EnsureCreated();
+            db.EnsureCurrentSchema();
             SetSetting(db, "appearance.language", Language);
             db.SaveChanges();
         }
@@ -114,7 +114,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (dbFactory == null) return;
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         Language = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == "appearance.language")?.Value ?? "English";
     }
 
@@ -124,7 +124,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (dbFactory != null)
         {
             using var db = dbFactory.CreateDbContext();
-            db.Database.EnsureCreated();
+            db.EnsureCurrentSchema();
             SetSetting(db, "appearance.theme_mode", ThemeMode);
             db.SaveChanges();
         }
@@ -135,7 +135,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (dbFactory == null) return;
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         var setting = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == "appearance.theme_mode")?.Value;
         ThemeMode = setting is "Dark" or "System" ? setting : "Light";
     }
@@ -149,7 +149,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         var user = db.Users.AsNoTracking().FirstOrDefault(u => u.Username == username.Trim());
         if (user == null || user.PasswordHash != HashPassword(password, user.Salt))
         {
@@ -181,7 +181,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         var user = db.Users.FirstOrDefault(u => u.Username == username.Trim());
         if (user == null || user.PasswordHash != HashPassword(fields[0].Value, user.Salt))
         {
@@ -206,7 +206,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (dbFactory != null)
         {
             using var db = dbFactory.CreateDbContext();
-            db.Database.EnsureCreated();
+            db.EnsureCurrentSchema();
             foreach (var section in sections)
             {
                 foreach (var field in section.Fields)
@@ -259,10 +259,10 @@ public partial class MainWindowViewModel : ObservableObject
         if (dbFactory != null)
         {
             using var db = dbFactory.CreateDbContext();
-            db.Database.EnsureCreated();
+            db.EnsureCurrentSchema();
             lines = db.InvoiceItems.AsNoTracking()
                 .Join(db.Invoices.AsNoTracking(), item => item.InvoiceId, invoice => invoice.Id, (item, invoice) => new { item, invoice })
-                .Where(x => x.invoice.Status != "Draft")
+                .Where(x => x.invoice.Status != "Draft" && x.invoice.Type == "Invoice")
                 .Select(x => new ProductReportLine(x.item.Description, x.item.Quantity, x.item.UnitPrice, x.item.DiscountPerUnit ? x.item.Discount * x.item.Quantity : x.item.Discount, x.item.PurchasePrice))
                 .ToArray();
         }
@@ -312,7 +312,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (dbFactory == null || document.SourceId <= 0) return [];
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         return db.InvoiceItems.AsNoTracking().Where(i => i.InvoiceId == document.SourceId).OrderBy(i => i.Id).ToArray();
     }
 
@@ -405,7 +405,7 @@ public partial class MainWindowViewModel : ObservableObject
             if (dbFactory != null)
             {
                 using var db = dbFactory.CreateDbContext();
-                db.Database.EnsureCreated();
+                db.EnsureCurrentSchema();
             }
 
             using var source = new SqliteConnection($"Data Source={databasePath}");
@@ -466,14 +466,14 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         var backup = new JsonObject
         {
             ["customers"] = JsonSerializer.SerializeToNode(db.Customers.AsNoTracking().OrderBy(c => c.Id).ToArray()),
             ["products"] = JsonSerializer.SerializeToNode(db.Products.AsNoTracking().OrderBy(p => p.Id).ToArray()),
             ["company_info"] = JsonSerializer.SerializeToNode(db.CompanyInfos.AsNoTracking().OrderBy(c => c.Id).ToArray()),
             ["settings"] = JsonSerializer.SerializeToNode(db.Settings.AsNoTracking().OrderBy(s => s.Key).ToArray()),
-            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount)).ToArray()),
+            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount, i.Type)).ToArray()),
             ["invoice_items"] = JsonSerializer.SerializeToNode(db.InvoiceItems.AsNoTracking().OrderBy(i => i.Id).ToArray()),
             ["invoice_payments"] = JsonSerializer.SerializeToNode(db.Payments.AsNoTracking().OrderBy(p => p.Id).ToArray()),
             ["_metadata"] = new JsonObject
@@ -515,7 +515,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         using var tx = db.Database.BeginTransaction();
         try
         {
@@ -538,6 +538,7 @@ public partial class MainWindowViewModel : ObservableObject
                 {
                     Id = row.Id,
                     InvoiceNumber = row.InvoiceNumber,
+                    Type = row.Type ?? "Invoice",
                     InvoiceDate = row.InvoiceDate,
                     CustomerId = row.CustomerId,
                     Status = row.Status,
@@ -577,7 +578,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (dbFactory == null) return;
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
 
         foreach (var customer in db.Customers.AsNoTracking().OrderBy(c => c.Name))
         {
@@ -640,7 +641,7 @@ public partial class MainWindowViewModel : ObservableObject
                 {
                     ["Name"] = invoice.InvoiceNumber,
                     ["Customer"] = Customers.FirstOrDefault(c => c.SourceId == invoice.CustomerId)?.Name ?? "",
-                    ["Type"] = "Invoice",
+                    ["Type"] = invoice.Type,
                     ["Date"] = invoice.InvoiceDate.ToString("yyyy-MM-dd"),
                     ["Items"] = invoice.Items.Count.ToString(),
                     ["Total"] = invoice.GrandTotal.ToString("0.00"),
@@ -675,7 +676,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (dbFactory == null) return;
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
 
         var settings = db.Settings.AsNoTracking().ToDictionary(s => s.Key, s => s.Value);
         foreach (var (name, sections) in Settings)
@@ -707,7 +708,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (dbFactory == null) return sourceId;
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
 
         if (kind == "Customer")
         {
@@ -763,12 +764,13 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (dbFactory == null) return 0;
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         var customerName = InvoiceCustomer[0].Value.Trim();
         var customerId = db.Customers.AsNoTracking().FirstOrDefault(c => c.Name == customerName)?.Id;
         var invoice = new Invoice
         {
             InvoiceNumber = values["Name"],
+            Type = values["Type"],
             InvoiceDate = DateTime.TryParse(InvoiceDetails[1].Value, out var date) ? date : DateTime.Today,
             CustomerId = customerId,
             Status = "Unpaid",
@@ -816,7 +818,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         using var db = dbFactory.CreateDbContext();
-        db.Database.EnsureCreated();
+        db.EnsureCurrentSchema();
         var invoice = db.Invoices.Include(i => i.Items).FirstOrDefault(i => i.Id == invoiceRecord.SourceId);
         if (invoice == null)
         {
@@ -926,7 +928,7 @@ public partial class MainWindowViewModel : ObservableObject
         return rows.Deserialize<T[]>() ?? [];
     }
 
-    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount);
+    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice");
 
     private IEnumerable<UiRecord> RecordsForKind(string kind) => kind switch
     {

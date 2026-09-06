@@ -1,5 +1,6 @@
 using LedgerNest.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace LedgerNest.Infrastructure;
 
@@ -13,6 +14,32 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
     public DbSet<CompanyInfo> CompanyInfos => Set<CompanyInfo>();
     public DbSet<AppSetting> Settings => Set<AppSetting>();
     public DbSet<AppUser> Users => Set<AppUser>();
+
+    // Upgrade only the C# schema; the Flutter database has different column names.
+    public void EnsureCurrentSchema()
+    {
+        Database.EnsureCreated();
+        Database.OpenConnection();
+        try
+        {
+            using var transaction = Database.BeginTransaction();
+            using var command = Database.GetDbConnection().CreateCommand();
+            command.Transaction = transaction.GetDbTransaction();
+            command.CommandText = "PRAGMA table_info(invoices)";
+            var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var reader = command.ExecuteReader())
+                while (reader.Read()) columns.Add(reader.GetString(1));
+            if (!columns.Contains("InvoiceNumber"))
+                throw new InvalidOperationException("This database is not a LedgerNest C# database.");
+            if (!columns.Contains("Type"))
+                Database.ExecuteSqlRaw("ALTER TABLE invoices ADD COLUMN Type TEXT NOT NULL DEFAULT 'Invoice'");
+            transaction.Commit();
+        }
+        finally
+        {
+            Database.CloseConnection();
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
