@@ -44,8 +44,9 @@ public partial class MainWindow
             details.Children.Add(Ui.Button("＋ Add Account", () => accounts.Children.Add(Ui.Card(Ui.Fields(section.Fields.Select(f => new FormField(f.Label, kind: f.Kind)).ToArray(), 2)))));
         }
         var layout = Ui.Columns("240,*", logoPanel, Ui.Scroll(details, 32));
-        var language = new ComboBox { ItemsSource = new[] { "English", "हिन्दी", "नेपाली", "བོད་ཡིག", "Español", "Français", "中文" }, SelectedIndex = 0, Width = 115, IsEnabled = false };
-        ToolTip.SetTip(language, "Localized desktop strings have not yet been migrated.");
+        var language = new ComboBox { ItemsSource = new[] { "English", "हिन्दी", "नेपाली", "བོད་ཡིག", "Español", "Français", "中文" }, SelectedItem = Model.Language, Width = 115 };
+        language.SelectionChanged += (_, _) => Model.SetLanguage(language.SelectedItem?.ToString() ?? "English");
+        ToolTip.SetTip(language, "Stores the preferred language; full translated desktop strings are still being migrated.");
         var theme = new ComboBox { ItemsSource = new[] { "Light", "Dark", "System" }, SelectedItem = Model.ThemeMode, Width = 100 };
         theme.SelectionChanged += (_, _) => ApplyTheme(theme.SelectedItem?.ToString() ?? "Light");
         return Ui.Rows("Auto,*", Ui.AppBar("Company Information", language, theme), layout);

@@ -23,6 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private bool sidebarExpanded = true;
     [ObservableProperty] private string status = "";
     [ObservableProperty] private string themeMode = "Light";
+    [ObservableProperty] private string language = "English";
     public HashSet<Guid> DeletedRecords { get; } = [];
     public ObservableCollection<UiRecord> Customers { get; } = [];
     public ObservableCollection<UiRecord> Products { get; } = [];
@@ -62,6 +63,7 @@ public partial class MainWindowViewModel : ObservableObject
         LoadPersistedRecords();
         LoadPersistedSettings();
         LoadThemeMode();
+        LoadLanguage();
     }
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();
     [RelayCommand] private void Navigate(string route) { if (Routes.Contains(route)) { Title = route; Status = ""; } }
@@ -93,6 +95,28 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
 
+
+
+    public void SetLanguage(string value)
+    {
+        Language = string.IsNullOrWhiteSpace(value) ? "English" : value;
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.Database.EnsureCreated();
+            SetSetting(db, "appearance.language", Language);
+            db.SaveChanges();
+        }
+        Status = $"Language set to {Language}.";
+    }
+
+    private void LoadLanguage()
+    {
+        if (dbFactory == null) return;
+        using var db = dbFactory.CreateDbContext();
+        db.Database.EnsureCreated();
+        Language = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == "appearance.language")?.Value ?? "English";
+    }
 
     public void SetThemeMode(string mode)
     {
@@ -546,6 +570,7 @@ public partial class MainWindowViewModel : ObservableObject
         LoadPersistedRecords();
         LoadPersistedSettings();
         LoadThemeMode();
+        LoadLanguage();
     }
 
     private void LoadPersistedRecords()

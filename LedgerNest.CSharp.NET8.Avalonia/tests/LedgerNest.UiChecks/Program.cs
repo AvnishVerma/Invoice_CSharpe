@@ -232,8 +232,10 @@ internal static class Program
 
         reloaded = new MainWindowViewModel(factory, dbPath);
         model.SetThemeMode("Dark");
+        model.SetLanguage("हिन्दी");
         reloaded = new MainWindowViewModel(factory, dbPath);
         Check(reloaded.ThemeMode == "Dark", "Theme mode must persist and reload from SQLite");
+        Check(reloaded.Language == "हिन्दी", "Language preference must persist and reload from SQLite");
         var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);
         Check(reloadedCompanyFields["Company Name"].Value == "LedgerNest Labs" && reloadedCompanyFields["GSTIN"].Value == "GST-123", "Company info must reload from SQLite");
         var reloadedInvoiceGeneral = reloaded.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
