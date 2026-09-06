@@ -31,7 +31,7 @@ internal sealed class ManagementView : ContentControl
         search.Watermark = Documents ? "Search by Invoice ID or Customer Name…" : kind == "Customer" ? "Search customers by name, phone, email, GST…" : kind == "Product" ? "Search products by name, alias, HSN/SAC, SKU…" : "Search users…";
         search.TextChanged += (_, _) => { page = 0; Refresh(); };
         var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.NavigateCommand.Execute("New Invoice"); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
-        var more = Ui.Button("⋯ More", () => window.ShowOverlay("More Actions", Ui.Stack(8, Ui.Button("Export PDF", Export), Ui.Button("Delete selected", DeleteSelected), Ui.Button($"Delete All {kind}s", () => window.Confirm("Confirm Delete", $"Delete all {kind.ToLower()}s?", () => { foreach (var record in Records.ToArray()) deleted.Add(record.Id); Refresh(); })))));
+        var more = Ui.Button("⋯ More", () => window.ShowOverlay("More Actions", Ui.Stack(8, Ui.Button("Export PDF", async () => await ExportDocumentsPdf()), Ui.Button("Delete selected", DeleteSelected), Ui.Button($"Delete All {kind}s", () => window.Confirm("Confirm Delete", $"Delete all {kind.ToLower()}s?", () => { foreach (var record in Records.ToArray()) deleted.Add(record.Id); Refresh(); })))));
         var header = Ui.Header($"{kind} Management", kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : "Manage users and access permissions", Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add);
         var filterButton = Ui.Button("Filter ▾", () =>
         {
@@ -105,7 +105,7 @@ internal sealed class ManagementView : ContentControl
         results.Content = Ui.Card(new ScrollViewer { Content = new Border { MinWidth = Documents ? 850 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
     private void View(UiRecord record) => window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
-    private void Actions(UiRecord record) => window.ShowOverlay("Actions", Ui.Stack(8, Ui.Button("View", () => View(record)), Ui.Button("Edit", Documents ? null : () => window.EditRecord(kind, Refresh, record)), Ui.Button(Documents ? "Move to Trash" : "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { deleted.Add(record.Id); Refresh(); })), Ui.Button("Export PDF")));
+    private void Actions(UiRecord record) => window.ShowOverlay("Actions", Ui.Stack(8, Ui.Button("View", () => View(record)), Ui.Button("Edit", Documents ? null : () => window.EditRecord(kind, Refresh, record)), Ui.Button(Documents ? "Move to Trash" : "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { deleted.Add(record.Id); Refresh(); })), Ui.Button("Export PDF", Documents ? async () => await ExportDocumentPdf(record) : null)));
     private void DeleteSelected() => window.Confirm("Delete Selected", $"Delete {selected.Count} selected records?", () => { deleted.UnionWith(selected); selected.Clear(); Refresh(); });
     private void Import()
     {
@@ -117,7 +117,30 @@ internal sealed class ManagementView : ContentControl
     {
         var currentPage = new RadioButton { Content = "Current Page", IsChecked = true, GroupName = "export" };
         var allRecords = new RadioButton { Content = "All Records", GroupName = "export" };
-        window.ShowOverlay("Export", Ui.Stack(12, Ui.Text("Export records"), currentPage, allRecords, Ui.Button("Export CSV", async () => await ExportCsv(currentPage.IsChecked == true)), Ui.Button("Export PDF")));
+        window.ShowOverlay("Export", Ui.Stack(12, Ui.Text("Export records"), currentPage, allRecords, Ui.Button("Export CSV", async () => await ExportCsv(currentPage.IsChecked == true)), Ui.Button("Export PDF", Documents ? async () => await ExportDocumentsPdf() : null)));
+    }
+
+
+    private async Task ExportDocumentPdf(UiRecord record)
+    {
+        var file = await window.StorageProvider.SaveFilePickerAsync(new()
+        {
+            Title = $"Export {record.Name} PDF",
+            SuggestedFileName = $"{record.Name.ToLowerInvariant()}.pdf",
+            DefaultExtension = "pdf",
+            FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
+        });
+        if (file == null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await stream.WriteAsync(model.ExportDocumentPdf(record));
+        window.ShowOverlay("PDF Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", window.CloseOverlay, true));
+    }
+
+    private async Task ExportDocumentsPdf()
+    {
+        var first = Filtered().FirstOrDefault();
+        if (first == null) { window.ShowOverlay("Export PDF", Ui.Text($"No {kind.ToLowerInvariant()}s to export."), Ui.Button("Close", window.CloseOverlay, true)); return; }
+        await ExportDocumentPdf(first);
     }
 
     private async Task DownloadSampleCsv()

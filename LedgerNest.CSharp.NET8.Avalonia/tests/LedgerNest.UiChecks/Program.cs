@@ -158,6 +158,8 @@ internal static class Program
         Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "97.35" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
         Check(reloaded.BuildReport("Products").Rows.Any(r => r[0] == "Persisted Product" && r[1] == "2" && r[2] == "₹ 85.00" && r[4] == "₹ -2.50" && r[5] == "-2.9%"), "Product report must reload historical invoice item cost and discount data from SQLite");
         Check(reloaded.Payments.Any(p => p.Name == "INV-0001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
+        var pdfBytes = reloaded.ExportDocumentPdf(reloaded.Invoices.Single(i => i.Name == "INV-0001"));
+        Check(pdfBytes.Length > 500 && System.Text.Encoding.ASCII.GetString(pdfBytes.Take(8).ToArray()).StartsWith("%PDF-1."), "Invoice PDF export must create a valid PDF document");
 
         var companySections = model.Settings["Company Info"];
         var companyFields = companySections[1].Fields.ToDictionary(f => f.Label);

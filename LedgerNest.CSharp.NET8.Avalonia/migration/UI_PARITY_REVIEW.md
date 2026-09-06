@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 170 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings persistence, CSV import/export, JSON backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, payment status updates, responsive invoice panes, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 171 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings persistence, CSV import/export, JSON backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document PDF export, payment status updates, responsive invoice panes, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -15,7 +15,7 @@ The optional second argument compares matching reference PNGs and writes compari
 
 Pixel parity remains incomplete. Remaining review includes dashboard variants, settings spacing, template previews, dialog details, icons and responsive layouts. Native Flutter and Avalonia text/control rasterization also differs.
 
-Customer, product, invoice, payment, company information, invoice settings, and PDF settings now persist through SQLite and reload on a new ViewModel instance. Authentication, database-file backup, PDF export and advanced report services are not fully migrated; some controls are intentionally disabled. Dark theme, localization and alternate legacy layouts require additional work. The original Flutter source and unrelated legacy archive are preserved.
+Customer, product, invoice, payment, company information, invoice settings, and PDF settings now persist through SQLite and reload on a new ViewModel instance. Authentication, database-file backup, full legacy PDF templates and advanced report services are not fully migrated; some controls are intentionally disabled. Dark theme, localization and alternate legacy layouts require additional work. The original Flutter source and unrelated legacy archive are preserved.
 
 ## LedgerNest branding and component split
 
