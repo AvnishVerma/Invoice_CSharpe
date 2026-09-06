@@ -10,6 +10,7 @@ using LedgerNest.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using SkiaSharp;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 internal static class Program
 {
@@ -174,6 +175,20 @@ internal static class Program
         pdfSections[1].Fields[0].Value = "Grid Classic";
         pdfSections[3].Fields[0].Value = "#0F766E";
         Check(model.SaveSettings("PDF Settings"), "PDF settings must save to SQLite");
+
+        var backupJson = model.CreateJsonBackup();
+        var backup = JsonNode.Parse(backupJson)!.AsObject();
+        Check(backup["_metadata"]?["app_name"]?.GetValue<string>() == Branding.Name, "Backup metadata must use current branding");
+        Check(backup["customers"]?.AsArray().Count >= 2 && backup["invoice_payments"]?.AsArray().Count == 1, "Backup must include migrated data tables");
+        Check(!backup.ContainsKey("users"), "Backup JSON must exclude users like the legacy app");
+        var extraCustomer = FormCatalog.Customer();
+        extraCustomer[0].Value = "Temporary After Backup";
+        extraCustomer[2].Value = "7777777777";
+        Check(model.SaveRecord("Customer", extraCustomer), "Temporary customer must save before restore");
+        Check(model.Customers.Any(c => c.Name == "Temporary After Backup"), "Temporary customer must appear before restore");
+        Check(model.RestoreJsonBackup(backupJson), "JSON backup must restore successfully");
+        Check(model.Customers.Any(c => c.Name == "Persisted Customer") && !model.Customers.Any(c => c.Name == "Temporary After Backup"), "Restore must replace current customer data with backup data");
+        Check(model.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Status"] == "Partial"), "Restore must bring invoices and payment status back");
 
         reloaded = new MainWindowViewModel(factory);
         var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);

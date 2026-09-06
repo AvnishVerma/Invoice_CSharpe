@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using LedgerNest.Desktop.Views;
+using Avalonia.Platform.Storage;
+using System.Text;
 
 namespace LedgerNest.Desktop;
 
@@ -85,7 +87,41 @@ public partial class MainWindow
         };
         Select(0); return Ui.Rows("Auto,*", Ui.AppBar("Invoice Settings"), layout);
     }
-    private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create Backup"), Ui.Button("↑ Restore from File")), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
+    private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create Backup", async () => await CreateBackupFile()), Ui.Button("↑ Restore from File", async () => await RestoreBackupFile())), Ui.Card(Ui.Stack(8, Ui.Text("JSON backup", 18, true), Ui.Text("Exports customers, products, company info, settings, invoices, invoice items and payments. User credentials are excluded, matching the legacy backup manager."))), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
+
+    private async Task CreateBackupFile()
+    {
+        var backup = Model.CreateJsonBackup();
+        if (backup.Length == 0) { ShowOverlay("Backup", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true)); return; }
+        var file = await StorageProvider.SaveFilePickerAsync(new()
+        {
+            Title = "Create JSON Backup",
+            SuggestedFileName = $"ledgernest_backup_{DateTime.Now:yyyyMMdd_HHmmss}.json",
+            DefaultExtension = "json",
+            FileTypeChoices = [new FilePickerFileType("JSON backup") { Patterns = ["*.json"], MimeTypes = ["application/json", "text/json"] }]
+        });
+        if (file == null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await using var writer = new StreamWriter(stream, Encoding.UTF8);
+        await writer.WriteAsync(backup);
+        ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+    }
+
+    private async Task RestoreBackupFile()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new()
+        {
+            Title = "Restore JSON Backup",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("JSON backup") { Patterns = ["*.json"], MimeTypes = ["application/json", "text/json"] }]
+        });
+        if (files.Count == 0) return;
+        await using var stream = await files[0].OpenReadAsync();
+        using var reader = new StreamReader(stream, Encoding.UTF8, true);
+        var restored = Model.RestoreJsonBackup(await reader.ReadToEndAsync());
+        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
+        page.Content = SettingsView();
+    }
     private Control CustomizationView()
     {
         var cards = Ui.Stack(20, Ui.Text("MADE FOR YOUR BUSINESS", 12, true, Ui.Primary), Ui.Text($"Customize {Branding.Name}", 28, true));

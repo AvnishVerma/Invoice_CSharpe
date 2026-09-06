@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Application;
@@ -154,6 +156,121 @@ public partial class MainWindowViewModel : ObservableObject
 
         Status = imported == 0 ? $"No {kind.ToLowerInvariant()}s were imported." : $"Imported {imported} {kind.ToLowerInvariant()} record{(imported == 1 ? "" : "s")}.";
         return imported;
+    }
+
+
+    public string CreateJsonBackup()
+    {
+        if (dbFactory == null)
+        {
+            Status = "Backup storage is not available.";
+            return "";
+        }
+
+        using var db = dbFactory.CreateDbContext();
+        db.Database.EnsureCreated();
+        var backup = new JsonObject
+        {
+            ["customers"] = JsonSerializer.SerializeToNode(db.Customers.AsNoTracking().OrderBy(c => c.Id).ToArray()),
+            ["products"] = JsonSerializer.SerializeToNode(db.Products.AsNoTracking().OrderBy(p => p.Id).ToArray()),
+            ["company_info"] = JsonSerializer.SerializeToNode(db.CompanyInfos.AsNoTracking().OrderBy(c => c.Id).ToArray()),
+            ["settings"] = JsonSerializer.SerializeToNode(db.Settings.AsNoTracking().OrderBy(s => s.Key).ToArray()),
+            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount)).ToArray()),
+            ["invoice_items"] = JsonSerializer.SerializeToNode(db.InvoiceItems.AsNoTracking().OrderBy(i => i.Id).ToArray()),
+            ["invoice_payments"] = JsonSerializer.SerializeToNode(db.Payments.AsNoTracking().OrderBy(p => p.Id).ToArray()),
+            ["_metadata"] = new JsonObject
+            {
+                ["created_at"] = DateTime.UtcNow.ToString("O"),
+                ["version"] = "1.0",
+                ["app_name"] = Branding.Name,
+                ["backup_type"] = "json_export",
+                ["record_count"] = 7
+            }
+        };
+        Status = "Backup created successfully.";
+        return backup.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    public bool RestoreJsonBackup(string json)
+    {
+        if (dbFactory == null)
+        {
+            Status = "Backup storage is not available.";
+            return false;
+        }
+
+        JsonObject backup;
+        try
+        {
+            backup = JsonNode.Parse(json)?.AsObject() ?? throw new JsonException("Backup is empty.");
+            var version = backup["_metadata"]?["version"]?.GetValue<string>();
+            if (!string.IsNullOrWhiteSpace(version) && version != "1.0")
+            {
+                Status = $"Incompatible backup version: {version}.";
+                return false;
+            }
+        }
+        catch (JsonException ex)
+        {
+            Status = $"Backup file is corrupted or invalid: {ex.Message}";
+            return false;
+        }
+
+        using var db = dbFactory.CreateDbContext();
+        db.Database.EnsureCreated();
+        using var tx = db.Database.BeginTransaction();
+        try
+        {
+            db.Payments.RemoveRange(db.Payments);
+            db.InvoiceItems.RemoveRange(db.InvoiceItems);
+            db.Invoices.RemoveRange(db.Invoices);
+            db.Settings.RemoveRange(db.Settings);
+            db.CompanyInfos.RemoveRange(db.CompanyInfos);
+            db.Products.RemoveRange(db.Products);
+            db.Customers.RemoveRange(db.Customers);
+            db.SaveChanges();
+
+            AddRange(db.Customers, backup, "customers");
+            AddRange(db.Products, backup, "products");
+            AddRange(db.CompanyInfos, backup, "company_info");
+            AddRange(db.Settings, backup, "settings");
+            foreach (var row in ReadRows<InvoiceBackupRow>(backup, "invoices"))
+            {
+                db.Invoices.Add(new Invoice
+                {
+                    Id = row.Id,
+                    InvoiceNumber = row.InvoiceNumber,
+                    InvoiceDate = row.InvoiceDate,
+                    CustomerId = row.CustomerId,
+                    Status = row.Status,
+                    SubTotal = row.SubTotal,
+                    TaxTotal = row.TaxTotal,
+                    DiscountTotal = row.DiscountTotal,
+                    GrandTotal = row.GrandTotal,
+                    PaidAmount = row.PaidAmount
+                });
+            }
+            AddRange(db.InvoiceItems, backup, "invoice_items");
+            AddRange(db.Payments, backup, "invoice_payments");
+            db.SaveChanges();
+            tx.Commit();
+        }
+        catch (Exception ex)
+        {
+            Status = $"Restore failed: {ex.Message}";
+            return false;
+        }
+
+        ReloadFromDatabase();
+        Status = "Backup restored successfully.";
+        return true;
+    }
+
+    private void ReloadFromDatabase()
+    {
+        Customers.Clear(); Products.Clear(); Users.Clear(); Invoices.Clear(); Payments.Clear();
+        LoadPersistedRecords();
+        LoadPersistedSettings();
     }
 
     private void LoadPersistedRecords()
@@ -427,6 +544,20 @@ public partial class MainWindowViewModel : ObservableObject
         return $"{invoiceNumber}-R{maxSuffix + 1}";
     }
 
+
+
+    private static void AddRange<T>(DbSet<T> set, JsonObject backup, string table) where T : class
+    {
+        foreach (var row in ReadRows<T>(backup, table)) set.Add(row);
+    }
+
+    private static T[] ReadRows<T>(JsonObject backup, string table)
+    {
+        if (backup[table] is not { } rows) return [];
+        return rows.Deserialize<T[]>() ?? [];
+    }
+
+    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount);
 
     private IEnumerable<UiRecord> RecordsForKind(string kind) => kind switch
     {
