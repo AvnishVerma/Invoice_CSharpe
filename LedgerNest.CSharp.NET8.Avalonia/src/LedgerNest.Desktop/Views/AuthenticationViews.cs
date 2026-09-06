@@ -12,7 +12,7 @@ public partial class MainWindow
     {
         var username = new FormField("Username") { Icon = "person" }; var password = new FormField("Password", kind: "password") { Icon = "lock" };
         var logo = Ui.Logo();
-        var login = Ui.Button("Login"); login.HorizontalAlignment = HorizontalAlignment.Stretch; login.Height = 50; login.CornerRadius = new CornerRadius(25);
+        var login = Ui.Button("Login", () => { if (Model.VerifyUser(username.Value, password.Value)) CloseOverlay(); }); login.HorizontalAlignment = HorizontalAlignment.Stretch; login.Height = 50; login.CornerRadius = new CornerRadius(25);
         var forgot = Ui.Button("Forgot password?", ShowForgotPassword); forgot.Classes.Add("text"); forgot.HorizontalAlignment = HorizontalAlignment.Right;
         var content = Ui.Stack(16, logo, Ui.Card(Ui.Text("First time here? Log in with username admin and password admin, then set your own password when prompted.", 13, color: Ui.Muted), 12), Ui.Field(username), Ui.Field(password), new Border { Height = 0 }, login, forgot, new TextBlock { Text = Branding.Tagline, FontSize = 12, Foreground = Ui.Muted, HorizontalAlignment = HorizontalAlignment.Center });
         overlay.Margin = new Thickness(0); overlay.Children.Clear(); overlay.IsVisible = true;
@@ -30,7 +30,7 @@ public partial class MainWindow
     private void ShowChangePassword()
     {
         FormField[] fields = [new("Current Password", kind: "password", required: true), new("New Password (min 8 characters)", kind: "password", required: true), new("Confirm New Password", kind: "password", required: true)];
-        ShowOverlay("Change Password", Ui.Stack(20, Ui.Text("Choose a strong password to secure your account.", 13, color: Ui.Muted), Ui.Fields(fields)), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Change Password")), width: 520);
+        ShowOverlay("Change Password", Ui.Stack(20, Ui.Text("Choose a strong password to secure your account.", 13, color: Ui.Muted), Ui.Fields(fields)), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Change Password", () => { var username = Model.Users.FirstOrDefault()?.Name ?? "admin"; if (Model.ChangePassword(username, fields)) CloseOverlay(); }, true)), width: 520);
     }
     private void ShowOnboarding()
     {

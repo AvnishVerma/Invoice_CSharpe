@@ -90,6 +90,64 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+
+    public bool VerifyUser(string username, string password)
+    {
+        if (dbFactory == null)
+        {
+            Status = "User storage is not available.";
+            return false;
+        }
+
+        using var db = dbFactory.CreateDbContext();
+        db.Database.EnsureCreated();
+        var user = db.Users.AsNoTracking().FirstOrDefault(u => u.Username == username.Trim());
+        if (user == null || user.PasswordHash != HashPassword(password, user.Salt))
+        {
+            Status = "Invalid username or password.";
+            return false;
+        }
+
+        Status = $"Logged in as {user.Username}.";
+        return true;
+    }
+
+    public bool ChangePassword(string username, FormField[] fields)
+    {
+        if (dbFactory == null)
+        {
+            Status = "User storage is not available.";
+            return false;
+        }
+        if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
+        if (fields[1].Value.Length < 8)
+        {
+            fields[1].Error = "Password must be at least 8 characters.";
+            return false;
+        }
+        if (fields[1].Value != fields[2].Value)
+        {
+            fields[2].Error = "Passwords do not match.";
+            return false;
+        }
+
+        using var db = dbFactory.CreateDbContext();
+        db.Database.EnsureCreated();
+        var user = db.Users.FirstOrDefault(u => u.Username == username.Trim());
+        if (user == null || user.PasswordHash != HashPassword(fields[0].Value, user.Salt))
+        {
+            fields[0].Error = "Current password is incorrect.";
+            return false;
+        }
+
+        user.Salt = Guid.NewGuid().ToString("N");
+        user.PasswordHash = HashPassword(fields[1].Value, user.Salt);
+        user.PasswordChanged = true;
+        db.SaveChanges();
+        Status = "Password changed.";
+        return true;
+    }
+
     public bool SaveSettings(string name)
     {
         if (!Settings.TryGetValue(name, out var sections)) return false;
@@ -507,6 +565,8 @@ public partial class MainWindowViewModel : ObservableObject
             });
         }
 
+        EnsureDefaultAdmin(db);
+
         foreach (var user in db.Users.AsNoTracking().OrderBy(u => u.Username))
         {
             Users.Add(new UiRecord
@@ -779,6 +839,22 @@ public partial class MainWindowViewModel : ObservableObject
 
 
 
+
+
+    private static void EnsureDefaultAdmin(LedgerNestDbContext db)
+    {
+        if (db.Users.Any()) return;
+        var salt = Guid.NewGuid().ToString("N");
+        db.Users.Add(new AppUser
+        {
+            Username = "admin",
+            Role = "Admin",
+            Salt = salt,
+            PasswordHash = HashPassword("admin", salt),
+            PasswordChanged = false
+        });
+        db.SaveChanges();
+    }
 
     private static string HashPassword(string password, string salt)
     {

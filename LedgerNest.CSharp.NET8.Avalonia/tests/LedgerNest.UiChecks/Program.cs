@@ -164,7 +164,11 @@ internal static class Program
         persistedUser[2].Value = "Admin";
         Check(model.SaveRecord("User", persistedUser), "User must save to SQLite");
         reloaded = new MainWindowViewModel(factory, dbPath);
+        Check(reloaded.Users.Any(u => u.Name == "admin" && u["Role"] == "Admin") && reloaded.VerifyUser("admin", "admin"), "Default admin must be available for first login");
         Check(reloaded.Users.Any(u => u.Name == "persisted-admin" && u["Role"] == "Admin" && !u.Values.ContainsKey("Password")), "Users must reload from SQLite without exposing passwords");
+        Check(reloaded.VerifyUser("persisted-admin", "temporary-secret") && !reloaded.VerifyUser("persisted-admin", "wrong-secret"), "Persisted users must authenticate with their salted password hash");
+        var passwordChange = new[] { new FormField("Current Password", "temporary-secret", "password", required: true), new FormField("New Password", "changed-secret", "password", required: true), new FormField("Confirm New Password", "changed-secret", "password", required: true) };
+        Check(reloaded.ChangePassword("persisted-admin", passwordChange) && reloaded.VerifyUser("persisted-admin", "changed-secret"), "Users must be able to change passwords");
         using (var userDb = factory.CreateDbContext())
         {
             var savedUser = userDb.Users.Single(u => u.Username == "persisted-admin");
