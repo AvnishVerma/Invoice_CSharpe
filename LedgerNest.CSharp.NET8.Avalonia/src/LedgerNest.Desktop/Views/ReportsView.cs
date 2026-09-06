@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using LedgerNest.Desktop.Views;
+using Avalonia.Platform.Storage;
+using System.Text;
 
 namespace LedgerNest.Desktop;
 
@@ -33,30 +35,76 @@ public partial class MainWindow
     }
     private Control ReportContent(string name)
     {
-        var body = Ui.Stack(20, Ui.Header(name, "", Ui.Button("Export CSV"), Ui.Button("Export PDF")));
-        switch (name)
+        var report = Model.BuildReport(name);
+        var body = Ui.Stack(20, Ui.Header(name, "", Ui.Button("Export CSV", async () => await ExportReportCsv(name)), Ui.Button("Export PDF")));
+        body.Children.Add(Ui.Stats(
+            ("Total Billed", Money(report.Billed), "", "#002E78"),
+            ("Total Collected", Money(report.Collected), "", "#2E7D32"),
+            ("Outstanding", Money(report.Outstanding), "", "#C62828"),
+            ("Invoices", report.InvoiceCount.ToString(), "", "#673AB7")));
+
+        if (name == "Customers")
         {
-            case "Revenue":
-                body.Children.Add(Ui.Stats(("Total Billed", "₹ 0.00", "", "#002E78"), ("Total Collected", "₹ 0.00", "", "#2E7D32"), ("Outstanding", "₹ 0.00", "", "#C62828"), ("Avg Invoice Value", "₹ 0.00", "", "#673AB7"), ("Total Profit", "₹ 0.00", "", "#059669")));
-                body.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text("Monthly Revenue Trend", 18, true), Ui.Text("0 invoices in period · INR", 12, color: Ui.Muted), EmptyChart(), Ui.Wrap(Ui.Text("● Billed", 12, color: Ui.Primary), Ui.Text("● Collected", 12, color: Brushes.Green), Ui.Text("● Profit", 12, color: Brushes.Purple))))); break;
-            case "Receivables":
-                body.Children.Add(Ui.Stats(("Outstanding", "₹ 0.00", "", "#C62828"), ("Total Invoices", "0", "", "#002E78")));
-                body.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text("Payment Status Breakdown", 18, true), Ui.Empty("No invoices in this period"))));
-                body.Children.Add(ReportTable("Aged Receivables (0)", "Customer", "Invoice ID", "Days Overdue", "Bucket", "Outstanding")); break;
-            case "Tax":
-                body.Children.Add(Ui.Stats(("Total Tax Collected", "₹ 0.00", "", "#002E78"), ("Tax Rate Buckets", "0", "", "#673AB7")));
-                body.Children.Add(ReportTable("Tax Collected by Rate", "Tax Rate (%)", "Tax Collected", "Share")); break;
-            case "Customers":
-                var statement = new ContentControl { Content = ReportTable("Top Customers", "Customer", "Invoices", "Billed", "Collected", "Outstanding") };
-                body.Children.Add(Ui.Wrap(Ui.Button("Overview", () => statement.Content = ReportTable("Top Customers", "Customer", "Invoices", "Billed", "Collected", "Outstanding")), Ui.Button("Statements", () => statement.Content = Ui.Stack(16, Ui.Field(new("Customer", "Select customer", "choice", new[] { "Select customer" }.Concat(Model.Customers.Select(c => c.Name)).ToArray())), Ui.Stats(("Opening", "₹ 0.00", "", "#002E78"), ("Invoiced", "₹ 0.00", "", "#673AB7"), ("Closing", "₹ 0.00", "", "#2E7D32")), ReportTable("Customer Statement", "Date", "Type", "Reference", "Debit", "Credit", "Balance"))))); body.Children.Add(statement); break;
-            case "Products": body.Children.Add(ReportTable("Top Products", "Product / Service", "Units Sold", "Sales", "Discount Given", "Profit", "Margin")); break;
-            case "Quotations": body.Children.Add(Ui.Stats(("Quotations Issued", "0", "", "#002E78"), ("Invoices in Period", "0", "", "#2E7D32"), ("Conversion Rate", "0%", "", "#673AB7"))); body.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text("About Conversion Rate", 18, true), Ui.Text("Compare quotations and invoices issued in the selected period.")))); break;
-            case "Invoice Status": body.Children.Add(Ui.Wrap(new RadioButton { Content = "All", GroupName = "status", IsChecked = true }, new RadioButton { Content = "Paid", GroupName = "status" }, new RadioButton { Content = "Partial", GroupName = "status" }, new RadioButton { Content = "Unpaid", GroupName = "status" })); body.Children.Add(ReportTable("Invoice Status", "Invoice / Customer", "Date", "Total", "Status", "Outstanding")); break;
-            case "Daily Report": body.Children.Add(Ui.Fields([new("Period", "Today", "choice", ["Today", "Month & Year", "Custom Range"]), new("Date", DateTime.Today.ToString("yyyy-MM-dd"), "date")], 2)); body.Children.Add(ReportTable("Daily Sales & Profit", "Date", "Invoices", "Sales", "COGS", "Tax", "Profit")); break;
+            var statement = new ContentControl { Content = ReportTable("Top Customers", report.Rows) };
+            body.Children.Add(Ui.Wrap(Ui.Button("Overview", () => statement.Content = ReportTable("Top Customers", Model.BuildReport("Customers").Rows)), Ui.Button("Statements", () => statement.Content = Ui.Stack(16, Ui.Field(new("Customer", "Select customer", "choice", new[] { "Select customer" }.Concat(Model.Customers.Select(c => c.Name)).ToArray())), ReportTable("Customer Statement", Model.BuildReport("Invoice Status").Rows)))));
+            body.Children.Add(statement);
         }
+        else
+        {
+            body.Children.Add(ReportTable(name switch
+            {
+                "Revenue" => "Revenue Summary",
+                "Receivables" => "Aged Receivables",
+                "Tax" => "Tax Collected by Date",
+                "Products" => "Top Products",
+                "Quotations" => "Quotation Conversion",
+                "Invoice Status" => "Invoice Status",
+                "Daily Report" => "Daily Sales",
+                _ => name
+            }, report.Rows));
+        }
+
         return Ui.Scroll(body, 24);
     }
-    private static Control ReportTable(string title, params string[] columns) => Ui.Card(Ui.Stack(18, Ui.Text(title, 18, true), new Border { Background = Brush.Parse("#F5F5F5"), Padding = new Thickness(12), Child = Ui.Columns(string.Join(",", columns.Select(_ => "*")), columns.Select(c => (Control)Ui.Text(c, 12, true)).ToArray()) }, Ui.Empty("No data for this period")));
+
+    private async Task ExportReportCsv(string name)
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new()
+        {
+            Title = $"Export {name} CSV",
+            SuggestedFileName = $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report.csv",
+            DefaultExtension = "csv",
+            FileTypeChoices = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
+        });
+        if (file == null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await using var writer = new StreamWriter(stream, Encoding.UTF8);
+        await writer.WriteAsync(Model.ExportReportCsv(name));
+        ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+    }
+
+    private static string Money(decimal value) => $"₹ {value:0.00}";
+
+    private static Control ReportTable(string title, string[][] rows)
+    {
+        var table = Ui.Stack(0);
+        if (rows.Length == 0) return Ui.Card(Ui.Stack(18, Ui.Text(title, 18, true), Ui.Empty("No data for this period")));
+        for (var index = 0; index < rows.Length; index++)
+        {
+            var row = rows[index];
+            table.Children.Add(new Border
+            {
+                Background = index == 0 ? Brush.Parse("#F5F5F5") : Ui.CardSurface,
+                BorderBrush = Ui.Outline,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(12),
+                Child = Ui.Columns(string.Join(",", row.Select(_ => "*")), row.Select(c => (Control)Ui.Text(c, 12, index == 0, index == 0 ? Ui.Muted : null)).ToArray())
+            });
+        }
+
+        if (rows.Length == 1) table.Children.Add(Ui.Empty("No data for this period"));
+        return Ui.Card(Ui.Stack(18, Ui.Text(title, 18, true), new ScrollViewer { Content = table, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }), 16);
+    }
     private static Control EmptyChart()
     {
         var rows = Ui.Stack(0);

@@ -112,6 +112,41 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
 
+
+    public ReportSnapshot BuildReport(string name)
+    {
+        var invoices = Invoices.Where(i => i["Type"] == "Invoice").ToArray();
+        var billed = invoices.Sum(i => ParseDecimal(i["Total"]));
+        var paid = invoices.Sum(i => ParseDecimal(i["Paid"]));
+        var outstanding = invoices.Sum(i => ParseDecimal(i["Outstanding"]));
+        var rows = name switch
+        {
+            "Revenue" => new[] {
+                new[] { "Metric", "Value" },
+                new[] { "Total Billed", Money(billed) },
+                new[] { "Total Collected", Money(paid) },
+                new[] { "Outstanding", Money(outstanding) },
+                new[] { "Average Invoice Value", Money(invoices.Length == 0 ? 0 : billed / invoices.Length) } },
+            "Receivables" => invoices.Where(i => ParseDecimal(i["Outstanding"]) > 0).Select(i => new[] { i["Customer"], i.Name, i["Date"], Money(ParseDecimal(i["Outstanding"])) }).Prepend(["Customer", "Invoice ID", "Date", "Outstanding"]).ToArray(),
+            "Tax" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, Money(g.Sum(i => ParseDecimal(i["Total"]) - ParseDecimal(i["Total"]) / 1.18m)) }).Prepend(["Date", "Estimated Tax"]).ToArray(),
+            "Customers" => invoices.GroupBy(i => i["Customer"]).Select(g => new[] { string.IsNullOrWhiteSpace(g.Key) ? "Unknown" : g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => ParseDecimal(r[2].Replace("₹", ""))).Prepend(["Customer", "Invoices", "Billed", "Collected", "Outstanding"]).ToArray(),
+            "Products" => Lines.GroupBy(l => l.Name).Select(g => new[] { g.Key, g.Sum(l => l.Quantity).ToString("0.###"), Money(g.Sum(l => l.Price * l.Quantity)), Money(g.Sum(l => l.DiscountPerUnit ? l.Discount * l.Quantity : l.Discount)) }).Prepend(["Product / Service", "Units Sold", "Sales", "Discount Given"]).ToArray(),
+            "Quotations" => new string[][] { ["Metric", "Value"], ["Quotations Issued", Invoices.Count(i => i["Type"] == "Quotation").ToString()], ["Invoices in Period", invoices.Length.ToString()] },
+            "Invoice Status" => invoices.Select(i => new[] { i.Name, i["Customer"], i["Date"], Money(ParseDecimal(i["Total"])), i["Status"], Money(ParseDecimal(i["Outstanding"])) }).Prepend(["Invoice", "Customer", "Date", "Total", "Status", "Outstanding"]).ToArray(),
+            "Daily Report" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => r[0]).Prepend(["Date", "Invoices", "Sales", "Collected", "Outstanding"]).ToArray(),
+            _ => new string[][] { ["Metric", "Value"] }
+        };
+
+        return new ReportSnapshot(name, invoices.Length, billed, paid, outstanding, rows);
+    }
+
+    public string ExportReportCsv(string name)
+    {
+        var rows = BuildReport(name).Rows;
+        Status = $"Exported {name} report.";
+        return string.Join(Environment.NewLine, rows.Select(row => string.Join(",", row.Select(EscapeCsv)))) + Environment.NewLine;
+    }
+
     public string ExportCsv(string kind, IEnumerable<UiRecord>? records = null)
     {
         var headers = CsvHeaders(kind);
@@ -546,6 +581,9 @@ public partial class MainWindowViewModel : ObservableObject
 
 
 
+
+    private static string Money(decimal value) => $"₹ {value:0.00}";
+
     private static void AddRange<T>(DbSet<T> set, JsonObject backup, string table) where T : class
     {
         foreach (var row in ReadRows<T>(backup, table)) set.Add(row);
@@ -698,3 +736,5 @@ public partial class MainWindowViewModel : ObservableObject
         field.IsChecked = bool.TryParse(field.Value, out var checkedValue) && checkedValue;
     }
 }
+
+public sealed record ReportSnapshot(string Name, int InvoiceCount, decimal Billed, decimal Collected, decimal Outstanding, string[][] Rows);

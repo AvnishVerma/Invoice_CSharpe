@@ -189,6 +189,8 @@ internal static class Program
         Check(model.RestoreJsonBackup(backupJson), "JSON backup must restore successfully");
         Check(model.Customers.Any(c => c.Name == "Persisted Customer") && !model.Customers.Any(c => c.Name == "Temporary After Backup"), "Restore must replace current customer data with backup data");
         Check(model.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Status"] == "Partial"), "Restore must bring invoices and payment status back");
+        Check(model.BuildReport("Receivables").Outstanding == 60.30m, "Receivables report must use restored outstanding balance");
+        Check(model.ExportReportCsv("Customers").Contains("Persisted Customer"), "Customer report CSV must include restored customer totals");
 
         reloaded = new MainWindowViewModel(factory);
         var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);
