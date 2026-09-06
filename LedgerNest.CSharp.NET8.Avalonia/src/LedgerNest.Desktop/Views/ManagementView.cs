@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
+using System.Text;
 
 namespace LedgerNest.Desktop.Views;
 
@@ -105,6 +107,62 @@ internal sealed class ManagementView : ContentControl
     private void View(UiRecord record) => window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
     private void Actions(UiRecord record) => window.ShowOverlay("Actions", Ui.Stack(8, Ui.Button("View", () => View(record)), Ui.Button("Edit", Documents ? null : () => window.EditRecord(kind, Refresh, record)), Ui.Button(Documents ? "Move to Trash" : "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { deleted.Add(record.Id); Refresh(); })), Ui.Button("Export PDF")));
     private void DeleteSelected() => window.Confirm("Delete Selected", $"Delete {selected.Count} selected records?", () => { deleted.UnionWith(selected); selected.Clear(); Refresh(); });
-    private void Import() => window.ShowOverlay($"Import {kind}s from CSV", Ui.Stack(16, Ui.Text("CSV columns", 16, true), Ui.Text(kind == "Customer" ? "name (required), phone (required), business_name, email, gstin, address" : "name (required), price (required), stock, tax_rate, hsncode, description"), Ui.Button("Download Sample CSV"), Ui.Button("Choose File")));
-    private void Export() => window.ShowOverlay("Export", Ui.Stack(12, Ui.Text("Export records"), new RadioButton { Content = "Current Page", IsChecked = true, GroupName = "export" }, new RadioButton { Content = "All Records", GroupName = "export" }, Ui.Button("Export CSV"), Ui.Button("Export PDF")));
+    private void Import()
+    {
+        var columns = kind == "Customer" ? "name (required), phone (required), business_name, email, gstin, address" : "name (required), price (required), stock, tax_rate, hsncode, description";
+        window.ShowOverlay($"Import {kind}s from CSV", Ui.Stack(16, Ui.Text("CSV columns", 16, true), Ui.Text(columns), Ui.Button("Download Sample CSV", async () => await DownloadSampleCsv()), Ui.Button("Choose File", async () => await ChooseCsvFile())));
+    }
+
+    private void Export()
+    {
+        var currentPage = new RadioButton { Content = "Current Page", IsChecked = true, GroupName = "export" };
+        var allRecords = new RadioButton { Content = "All Records", GroupName = "export" };
+        window.ShowOverlay("Export", Ui.Stack(12, Ui.Text("Export records"), currentPage, allRecords, Ui.Button("Export CSV", async () => await ExportCsv(currentPage.IsChecked == true)), Ui.Button("Export PDF")));
+    }
+
+    private async Task DownloadSampleCsv()
+    {
+        var sample = kind == "Customer"
+            ? "name,phone,business_name,email,gstin,address\nSample Customer,9876543210,Sample Trading Co,sample@example.com,29ABCDE1234F1Z5,Main Road\n"
+            : "name,price,stock,tax_rate,hsncode,description\nSample Product,199.00,25,18,9983,Sample item\n";
+        await SaveTextFile($"ledgernest-{kind.ToLowerInvariant()}-sample.csv", sample);
+    }
+
+    private async Task ChooseCsvFile()
+    {
+        var files = await window.StorageProvider.OpenFilePickerAsync(new()
+        {
+            Title = $"Import {kind}s from CSV",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
+        });
+        if (files.Count == 0) return;
+        await using var stream = await files[0].OpenReadAsync();
+        using var reader = new StreamReader(stream, Encoding.UTF8, true);
+        var imported = model.ImportCsv(kind, await reader.ReadToEndAsync());
+        Refresh();
+        window.ShowOverlay("Import Complete", Ui.Stack(8, Ui.Text(imported == 0 ? model.Status : $"{model.Status} The table has been refreshed.")), Ui.Button("Close", window.CloseOverlay, true));
+    }
+
+    private async Task ExportCsv(bool currentPageOnly)
+    {
+        var records = currentPageOnly ? Filtered().Skip(page * pageSize).Take(pageSize) : Records;
+        await SaveTextFile($"ledgernest-{kind.ToLowerInvariant()}s.csv", model.ExportCsv(kind, records));
+    }
+
+    private async Task SaveTextFile(string suggestedName, string content)
+    {
+        var file = await window.StorageProvider.SaveFilePickerAsync(new()
+        {
+            Title = suggestedName,
+            SuggestedFileName = suggestedName,
+            DefaultExtension = "csv",
+            FileTypeChoices = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
+        });
+        if (file == null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await using var writer = new StreamWriter(stream, Encoding.UTF8);
+        await writer.WriteAsync(content);
+        window.ShowOverlay("Export Complete", Ui.Stack(8, Ui.Text($"Saved {suggestedName}.")), Ui.Button("Close", window.CloseOverlay, true));
+    }
 }

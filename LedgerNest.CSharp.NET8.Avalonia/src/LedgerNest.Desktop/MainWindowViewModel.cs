@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Application;
@@ -107,6 +109,53 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+
+    public string ExportCsv(string kind, IEnumerable<UiRecord>? records = null)
+    {
+        var headers = CsvHeaders(kind);
+        var source = (records ?? RecordsForKind(kind)).ToArray();
+        var builder = new StringBuilder();
+        builder.AppendLine(string.Join(",", headers.Select(EscapeCsv)));
+        foreach (var record in source) builder.AppendLine(string.Join(",", headers.Select(header => EscapeCsv(CsvValue(kind, record, header)))));
+        Status = $"Exported {source.Length} {kind.ToLowerInvariant()} record{(source.Length == 1 ? "" : "s")}.";
+        return builder.ToString();
+    }
+
+    public int ImportCsv(string kind, string csvText)
+    {
+        if (kind is not ("Customer" or "Product"))
+        {
+            Status = $"CSV import is not available for {kind.ToLowerInvariant()}s yet.";
+            return 0;
+        }
+
+        var rows = ParseCsv(csvText).Where(row => row.Any(cell => !string.IsNullOrWhiteSpace(cell))).ToArray();
+        if (rows.Length == 0)
+        {
+            Status = "The CSV file is empty.";
+            return 0;
+        }
+
+        var header = rows[0].Select(NormalizeCsvHeader).ToArray();
+        var imported = 0;
+        foreach (var row in rows.Skip(1))
+        {
+            var fields = kind == "Customer" ? FormCatalog.Customer() : FormCatalog.Product();
+            foreach (var field in fields)
+            {
+                var value = CsvFieldValue(kind, field.Label, header, row);
+                if (value == null) continue;
+                field.Value = value;
+                field.IsChecked = bool.TryParse(value, out var checkedValue) && checkedValue;
+            }
+
+            if (SaveRecord(kind, fields)) imported++;
+        }
+
+        Status = imported == 0 ? $"No {kind.ToLowerInvariant()}s were imported." : $"Imported {imported} {kind.ToLowerInvariant()} record{(imported == 1 ? "" : "s")}.";
+        return imported;
+    }
+
     private void LoadPersistedRecords()
     {
         if (dbFactory == null) return;
@@ -140,6 +189,8 @@ public partial class MainWindowViewModel : ObservableObject
                     ["Type"] = "Product",
                     ["Name"] = product.Name,
                     ["SKU Code"] = product.Code ?? "",
+                    ["HSN/SAC"] = product.HsnCode ?? "",
+                    ["Description"] = product.Description ?? "",
                     ["Sale Price"] = product.SalePrice.ToString("0.##"),
                     ["Purchase Price"] = product.PurchasePrice.ToString("0.##"),
                     ["Tax (%)"] = product.TaxRate.ToString("0.##"),
@@ -244,6 +295,8 @@ public partial class MainWindowViewModel : ObservableObject
             var product = sourceId > 0 ? db.Products.Find(sourceId) ?? new Product() : new Product();
             product.Name = values.GetValueOrDefault("Name", "");
             product.Code = values.GetValueOrDefault("SKU Code");
+            product.HsnCode = values.GetValueOrDefault("HSN/SAC");
+            product.Description = values.GetValueOrDefault("Description");
             product.SalePrice = ParseDecimal(values.GetValueOrDefault("Sale Price"));
             product.PurchasePrice = ParseDecimal(values.GetValueOrDefault("Purchase Price"));
             product.TaxRate = ParseDecimal(values.GetValueOrDefault("Tax (%)"));
@@ -374,7 +427,116 @@ public partial class MainWindowViewModel : ObservableObject
         return $"{invoiceNumber}-R{maxSuffix + 1}";
     }
 
-    private static decimal ParseDecimal(string? value) => decimal.TryParse(value, out var number) ? number : 0m;
+
+    private IEnumerable<UiRecord> RecordsForKind(string kind) => kind switch
+    {
+        "Customer" => Customers,
+        "Product" => Products,
+        "User" => Users,
+        "Invoice" or "Quotation" or "Receipt" => Invoices.Where(r => r["Type"] == kind),
+        _ => []
+    };
+
+    private static string[] CsvHeaders(string kind) => kind switch
+    {
+        "Customer" => ["name", "phone", "business_name", "email", "gstin", "address"],
+        "Product" => ["name", "price", "stock", "tax_rate", "hsncode", "description"],
+        "User" => ["username", "role"],
+        _ => ["name", "customer", "date", "items", "total", "status"]
+    };
+
+    private static string CsvValue(string kind, UiRecord record, string header) => (kind, header) switch
+    {
+        ("Customer", "name") => record.Name,
+        ("Customer", "phone") => record["Phone"],
+        ("Customer", "business_name") => record["Business Name"],
+        ("Customer", "email") => record["Email"],
+        ("Customer", "gstin") => record["GST / VAT Number"],
+        ("Customer", "address") => record["Address"],
+        ("Product", "name") => record.Name,
+        ("Product", "price") => record["Sale Price"],
+        ("Product", "stock") => record["Stock"],
+        ("Product", "tax_rate") => record["Tax (%)"],
+        ("Product", "hsncode") => record["HSN/SAC"].Length > 0 ? record["HSN/SAC"] : record["SKU Code"],
+        ("Product", "description") => record["Description"],
+        ("User", "username") => record.Name,
+        ("User", "role") => record["Role"],
+        (_, "name") => record.Name,
+        (_, "customer") => record["Customer"],
+        (_, "date") => record["Date"],
+        (_, "items") => record["Items"],
+        (_, "total") => record["Total"],
+        (_, "status") => record["Status"],
+        _ => ""
+    };
+
+    private static string? CsvFieldValue(string kind, string label, string[] header, string[] row)
+    {
+        string[] candidates = kind == "Customer" ? label switch
+        {
+            "Name" => ["name", "customer_name"],
+            "Phone" => ["phone", "phone_number", "mobile"],
+            "Business Name" => ["business_name", "company", "company_name"],
+            "Email" => ["email"],
+            "GST / VAT Number" => ["gstin", "gst", "gst_vat_number", "tax_number"],
+            "Address" => ["address"],
+            _ => []
+        } : label switch
+        {
+            "Name" => ["name", "product_name"],
+            "Sale Price" => ["price", "sale_price", "selling_price"],
+            "Stock" => ["stock", "quantity", "stock_quantity"],
+            "Tax (%)" => ["tax_rate", "tax", "gst", "tax_percent"],
+            "HSN/SAC" => ["hsncode", "hsn", "hsn_sac", "sku"],
+            "SKU Code" => ["sku", "code"],
+            "Description" => ["description"],
+            _ => []
+        };
+
+        foreach (var candidate in candidates)
+        {
+            var index = Array.IndexOf(header, candidate);
+            if (index >= 0 && index < row.Length) return row[index].Trim();
+        }
+
+        return null;
+    }
+
+    private static string NormalizeCsvHeader(string value) => value.Trim().ToLowerInvariant().Replace(" ", "_").Replace("/", "_").Replace(".", "");
+
+    private static string EscapeCsv(string value)
+    {
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r')) return value;
+        return "\"" + value.Replace("\"", "\"\"") + "\"";
+    }
+
+    private static IReadOnlyList<string[]> ParseCsv(string text)
+    {
+        var rows = new List<string[]>();
+        var row = new List<string>();
+        var cell = new StringBuilder();
+        var quoted = false;
+        for (var i = 0; i < text.Length; i++)
+        {
+            var ch = text[i];
+            if (quoted)
+            {
+                if (ch == '"' && i + 1 < text.Length && text[i + 1] == '"') { cell.Append('"'); i++; }
+                else if (ch == '"') quoted = false;
+                else cell.Append(ch);
+            }
+            else if (ch == '"') quoted = true;
+            else if (ch == ',') { row.Add(cell.ToString()); cell.Clear(); }
+            else if (ch == '\r') { }
+            else if (ch == '\n') { row.Add(cell.ToString()); rows.Add(row.ToArray()); row.Clear(); cell.Clear(); }
+            else cell.Append(ch);
+        }
+
+        if (cell.Length > 0 || row.Count > 0) { row.Add(cell.ToString()); rows.Add(row.ToArray()); }
+        return rows;
+    }
+
+    private static decimal ParseDecimal(string? value) => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number) ? number : 0m;
 
     private static string SettingKey(string page, string section, string label) =>
         string.Join(".", page, section, label).ToLowerInvariant().Replace(" ", "_").Replace("/", "_").Replace("%", "percent");

@@ -129,6 +129,14 @@ internal static class Program
         product[8].Value = "18";
         product[10].Value = "4";
         Check(model.SaveRecord("Product", product), "Product must save to SQLite");
+        var customerCsv = model.ExportCsv("Customer");
+        Check(customerCsv.Contains("name,phone,business_name,email,gstin,address"), "Customer export must include legacy CSV headers");
+        Check(customerCsv.Contains("Persisted Customer"), "Customer export must include saved customers");
+        var productCsv = model.ExportCsv("Product");
+        Check(productCsv.Contains("name,price,stock,tax_rate,hsncode,description"), "Product export must include legacy CSV headers");
+        Check(productCsv.Contains("Persisted Product") && productCsv.Contains("42.50"), "Product export must include saved products");
+        Check(model.ImportCsv("Customer", "name,phone,business_name,email,gstin,address\n\"Comma, Customer\",4445556666,Comma Co,comma@example.com,GST-C,\"Street 1, City\"\n") == 1, "Customer CSV import must add quoted records");
+        Check(model.ImportCsv("Product", "name,price,stock,tax_rate,hsncode,description\nImported Widget,12.75,9,5,HSN-55,CSV item\n") == 1, "Product CSV import must add products");
         model.InvoiceCustomer[0].Value = "Persisted Customer";
         model.Lines.Add(new InvoiceLineViewModel { Name = "Persisted Product", Price = 42.50m, Quantity = 2, TaxRate = 18 });
         Check(model.SaveInvoice(), "Invoice must save to SQLite");
@@ -142,7 +150,9 @@ internal static class Program
 
         var reloaded = new MainWindowViewModel(factory);
         Check(reloaded.Customers.Any(c => c.Name == "Persisted Customer"), "Customers must reload from SQLite");
+        Check(reloaded.Customers.Any(c => c.Name == "Comma, Customer" && c["Address"] == "Street 1, City"), "Imported customers must reload from SQLite");
         Check(reloaded.Products.Any(p => p.Name == "Persisted Product" && p["Sale Price"] == "42.5"), "Products must reload from SQLite");
+        Check(reloaded.Products.Any(p => p.Name == "Imported Widget" && p["Sale Price"] == "12.75" && p["HSN/SAC"] == "HSN-55"), "Imported products must reload from SQLite");
         Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "100.30" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
         Check(reloaded.Payments.Any(p => p.Name == "INV-0001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
 
