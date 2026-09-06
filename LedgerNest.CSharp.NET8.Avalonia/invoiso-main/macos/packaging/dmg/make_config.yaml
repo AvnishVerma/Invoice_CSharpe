@@ -1,0 +1,19 @@
+title: "LedgerNest"
+icon: AppIcon.icns
+icon-size: 80
+window:
+  position:
+    x: 200
+    y: 120
+  size:
+    width: 600
+    height: 400
+contents:
+  - x: 170
+    y: 200
+    type: file
+    path: "invoiso.app"
+  - x: 430
+    y: 200
+    type: link
+    path: /Applications
