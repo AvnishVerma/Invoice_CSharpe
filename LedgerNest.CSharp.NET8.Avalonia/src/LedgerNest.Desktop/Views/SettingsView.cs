@@ -44,7 +44,7 @@ public partial class MainWindow
         var stack = Ui.Stack(16);
         foreach (var section in sections) stack.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text(section.Title, 18, true), Ui.Fields(section.Fields)), 24));
         if (name == "Accessibility") stack.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text("Keyboard Shortcuts", 20, true), Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print PDF"))));
-        stack.Children.Add(Ui.Button("Save Settings", () => Model.Status = "Settings saved for this session.", true));
+        stack.Children.Add(Ui.Button("Save Settings", () => Model.SaveSettings(name), true));
         stack.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar(name), Ui.Scroll(stack, 28));
     }
     private Control InvoiceSettingsView()
@@ -73,7 +73,7 @@ public partial class MainWindow
             var index = i; var button = Ui.Button(labels[i], () => Select(index)); button.Tag = index; button.Classes.Clear(); button.Classes.Add("nav"); buttons.Add(button); nav.Children.Add(button);
         }
         var promo = Ui.Card(Ui.Stack(12, Ui.Text("Need more fields on your invoices?", 14, true, Ui.Primary), Ui.Text("Add PO number, project code, department, or any custom field.", 12, color: Ui.Muted), Ui.Button("See Options", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 14);
-        var save = Ui.Button("Save", () => { if (sections.SelectMany(s => s.Fields).Select(f => f.Validate()).ToArray().All(v => v)) Model.Status = "Invoice settings saved for this session."; }, true); save.HorizontalAlignment = HorizontalAlignment.Stretch;
+        var save = Ui.Button("Save", () => Model.SaveSettings("Invoice Settings"), true); save.HorizontalAlignment = HorizontalAlignment.Stretch;
         var rail = new Border { Background = Brush.Parse("#FAFAFA"), Child = Ui.Rows("*,Auto,Auto", Ui.Scroll(nav, 12), new Border { Padding = new Thickness(16), Child = promo }, new Border { Padding = new Thickness(16, 0, 16, 16), Child = save }) };
         var layout = Ui.Columns("240,*", rail, content);
         layout.SizeChanged += (_, e) =>

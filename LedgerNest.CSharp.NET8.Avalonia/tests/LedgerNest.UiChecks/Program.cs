@@ -145,6 +145,32 @@ internal static class Program
         Check(reloaded.Products.Any(p => p.Name == "Persisted Product" && p["Sale Price"] == "42.5"), "Products must reload from SQLite");
         Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "100.30" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
         Check(reloaded.Payments.Any(p => p.Name == "INV-0001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
+
+        var companySections = model.Settings["Company Info"];
+        var companyFields = companySections[1].Fields.ToDictionary(f => f.Label);
+        companyFields["Company Name"].Value = "LedgerNest Labs";
+        companyFields["Phone"].Value = "9998887777";
+        companyFields["Email"].Value = "hello@ledgernest.test";
+        companyFields["GSTIN"].Value = "GST-123";
+        Check(model.SaveSettings("Company Info"), "Company settings must save to SQLite");
+
+        var invoiceGeneral = model.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
+        invoiceGeneral["Invoice Prefix"].Value = "LN-";
+        invoiceGeneral["Starting Number"].Value = "27";
+        Check(model.SaveSettings("Invoice Settings"), "Invoice settings must save to SQLite");
+
+        var pdfSections = model.Settings["PDF Settings"];
+        pdfSections[0].Fields[0].Value = "A5";
+        pdfSections[1].Fields[0].Value = "Grid Classic";
+        pdfSections[3].Fields[0].Value = "#0F766E";
+        Check(model.SaveSettings("PDF Settings"), "PDF settings must save to SQLite");
+
+        reloaded = new MainWindowViewModel(factory);
+        var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);
+        Check(reloadedCompanyFields["Company Name"].Value == "LedgerNest Labs" && reloadedCompanyFields["GSTIN"].Value == "GST-123", "Company info must reload from SQLite");
+        var reloadedInvoiceGeneral = reloaded.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
+        Check(reloadedInvoiceGeneral["Invoice Prefix"].Value == "LN-" && reloadedInvoiceGeneral["Starting Number"].Value == "27", "Invoice settings must reload from SQLite");
+        Check(reloaded.Settings["PDF Settings"][1].Fields[0].Value == "Grid Classic" && reloaded.Settings["PDF Settings"][3].Fields[0].Value == "#0F766E", "PDF settings must reload from SQLite");
     }
 
     private sealed class TestDbContextFactory(DbContextOptions<LedgerNestDbContext> options) : IDbContextFactory<LedgerNestDbContext>

@@ -32,7 +32,7 @@ public partial class MainWindow
             }
             catch (Exception ex) when (ex is IOException or ArgumentException) { Model.Status = "The selected image could not be opened."; }
         };
-        var save = Ui.Button("Save", () => { if (fields.Select(f => f.Validate()).ToArray().All(v => v)) Model.Status = "Company information saved for this session."; }, true); save.HorizontalAlignment = HorizontalAlignment.Stretch;
+        var save = Ui.Button("Save", () => Model.SaveSettings("Company Info"), true); save.HorizontalAlignment = HorizontalAlignment.Stretch;
         var logoPanel = new Border { Background = Brush.Parse("#FAFAFA"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Rows("*,Auto", Ui.Scroll(Ui.Stack(16, Ui.Text("COMPANY LOGO", 12, true, Ui.Muted), logo, Ui.Field(sections[0].Fields[1]), previewName, Ui.Text("Max 1080×1080 px · 2 MB\nPNG or JPG only", 12, color: Ui.Muted)), 24), new Border { Padding = new Thickness(16), Child = save }) };
         var details = Ui.Stack(16, Ui.Text("COMPANY DETAILS", 12, true, Ui.Muted), Ui.Fields([F("Company Name"), F("GSTIN")], 2), Ui.Fields([F("PAN"), F("FSSAI Code")], 2), Ui.Fields([F("Country"), F("Phone"), F("Email")], 3), Ui.Field(F("Website")), Ui.Field(F("Address")), new Border { Height = 8 }, Ui.Text("BUSINESS TYPE", 12, true, Ui.Muted), Ui.Card(Ui.Stack(8, Ui.Text("Business Type", 16), Ui.Text("Controls item type options in the product list and invoices", 12, color: Ui.Muted), Ui.Field(sections[2].Fields[0])), 16), new Border { Height = 8 }, Ui.Text("PAYMENT SETTINGS", 12, true, Ui.Muted));
         foreach (var field in sections[3].Fields) details.Children.Add(Ui.Card(Ui.Field(field)));
@@ -102,7 +102,7 @@ public partial class MainWindow
             selectedTemplate.Value = pageSize.Value switch { "A5" => "Grid Classic", "A6" => "Compact", "Thermal 80mm" or "Thermal 58mm" => "Thermal", _ => "Classic" }; Display();
         };
         Display();
-        var header = new Border { Background = Brush.Parse("#FAFAFA"), Padding = new Thickness(16, 12), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Child = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; Display(); }), Ui.Button("Save Settings", () => Model.Status = "PDF settings saved for this session.", true)) };
+        var header = new Border { Background = Brush.Parse("#FAFAFA"), Padding = new Thickness(16, 12), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Child = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true)) };
         var view = Ui.Rows("Auto,*", header, host);
         view.AttachedToVisualTree += (_, _) => pageSize.PropertyChanged += pageSizeChanged;
         view.DetachedFromVisualTree += (_, _) => pageSize.PropertyChanged -= pageSizeChanged;

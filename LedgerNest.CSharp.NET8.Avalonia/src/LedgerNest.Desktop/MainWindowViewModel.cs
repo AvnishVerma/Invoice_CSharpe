@@ -51,6 +51,7 @@ public partial class MainWindowViewModel : ObservableObject
             InvoiceChanged?.Invoke();
         };
         LoadPersistedRecords();
+        LoadPersistedSettings();
     }
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();
     [RelayCommand] private void Navigate(string route) { if (Routes.Contains(route)) { Title = route; Status = ""; } }
@@ -77,6 +78,32 @@ public partial class MainWindowViewModel : ObservableObject
         };
         Invoices.Add(new UiRecord { SourceId = SaveInvoiceToDatabase(values), Values = values });
         Status = $"{InvoiceDetails[0].Value} saved.";
+        return true;
+    }
+
+    public bool SaveSettings(string name)
+    {
+        if (!Settings.TryGetValue(name, out var sections)) return false;
+        var fields = sections.SelectMany(s => s.Fields).ToArray();
+        if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
+
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.Database.EnsureCreated();
+            foreach (var section in sections)
+            {
+                foreach (var field in section.Fields)
+                {
+                    SetSetting(db, SettingKey(name, section.Title, field.Label), field.Kind == "toggle" ? field.IsChecked.ToString() : field.Value.Trim());
+                }
+            }
+
+            if (name == "Company Info") SaveCompanyInfo(db, sections);
+            db.SaveChanges();
+        }
+
+        Status = $"{name} saved.";
         return true;
     }
 
@@ -158,6 +185,38 @@ public partial class MainWindowViewModel : ObservableObject
                     ["Reference"] = payment.Reference ?? ""
                 }
             });
+        }
+    }
+
+    private void LoadPersistedSettings()
+    {
+        if (dbFactory == null) return;
+        using var db = dbFactory.CreateDbContext();
+        db.Database.EnsureCreated();
+
+        var settings = db.Settings.AsNoTracking().ToDictionary(s => s.Key, s => s.Value);
+        foreach (var (name, sections) in Settings)
+        {
+            foreach (var section in sections)
+            {
+                foreach (var field in section.Fields)
+                {
+                    if (!settings.TryGetValue(SettingKey(name, section.Title, field.Label), out var value)) continue;
+                    field.Value = value;
+                    field.IsChecked = bool.TryParse(value, out var checkedValue) && checkedValue;
+                }
+            }
+        }
+
+        var company = db.CompanyInfos.AsNoTracking().OrderBy(c => c.Id).FirstOrDefault();
+        if (company != null && Settings.TryGetValue("Company Info", out var companySections))
+        {
+            var companyFields = companySections[1].Fields.ToDictionary(f => f.Label);
+            SetField(companyFields, "Company Name", company.Name);
+            SetField(companyFields, "Phone", company.Phone);
+            SetField(companyFields, "Email", company.Email);
+            SetField(companyFields, "GSTIN", company.GstNumber);
+            SetField(companyFields, "Address", company.Address);
         }
     }
 
@@ -316,4 +375,33 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     private static decimal ParseDecimal(string? value) => decimal.TryParse(value, out var number) ? number : 0m;
+
+    private static string SettingKey(string page, string section, string label) =>
+        string.Join(".", page, section, label).ToLowerInvariant().Replace(" ", "_").Replace("/", "_").Replace("%", "percent");
+
+    private static void SetSetting(LedgerNestDbContext db, string key, string value)
+    {
+        var setting = db.Settings.Find(key);
+        if (setting == null) db.Settings.Add(new AppSetting { Key = key, Value = value });
+        else setting.Value = value;
+    }
+
+    private static void SaveCompanyInfo(LedgerNestDbContext db, FormSection[] sections)
+    {
+        var fields = sections[1].Fields.ToDictionary(f => f.Label);
+        var company = db.CompanyInfos.OrderBy(c => c.Id).FirstOrDefault() ?? new CompanyInfo();
+        company.Name = fields.GetValueOrDefault("Company Name")?.Value.Trim() ?? "";
+        company.Phone = fields.GetValueOrDefault("Phone")?.Value.Trim();
+        company.Email = fields.GetValueOrDefault("Email")?.Value.Trim();
+        company.GstNumber = fields.GetValueOrDefault("GSTIN")?.Value.Trim();
+        company.Address = fields.GetValueOrDefault("Address")?.Value.Trim();
+        if (company.Id == 0) db.CompanyInfos.Add(company);
+    }
+
+    private static void SetField(Dictionary<string, FormField> fields, string label, string? value)
+    {
+        if (!fields.TryGetValue(label, out var field)) return;
+        field.Value = value ?? "";
+        field.IsChecked = bool.TryParse(field.Value, out var checkedValue) && checkedValue;
+    }
 }

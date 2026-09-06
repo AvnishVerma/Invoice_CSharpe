@@ -69,3 +69,9 @@ public sealed class CompanyInfo
     public string? Email { get; set; }
     public string? GstNumber { get; set; }
 }
+
+public sealed class AppSetting
+{
+    public string Key { get; set; } = "";
+    public string Value { get; set; } = "";
+}

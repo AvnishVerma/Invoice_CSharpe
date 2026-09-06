@@ -23,7 +23,7 @@ public sealed partial class FormField : ObservableObject
         Error = Required && string.IsNullOrWhiteSpace(Value) ? $"{Label} is required." : "";
         if (Kind == "number" && Value.Length > 0 && (!decimal.TryParse(Value, NumberStyles.Number, CultureInfo.CurrentCulture, out var n) || n < 0))
             Error = "Enter a valid, non-negative number.";
-        if (Label.Contains("Email") && Value.Length > 0 && !System.Net.Mail.MailAddress.TryCreate(Value, out _)) Error = "Enter a valid email address.";
+        if (Kind is "text" or "multiline" && Label.Contains("Email") && Value.Length > 0 && !System.Net.Mail.MailAddress.TryCreate(Value, out _)) Error = "Enter a valid email address.";
         return Error.Length == 0;
     }
     public decimal Number => decimal.TryParse(Value, out var n) ? n : 0;
