@@ -20,6 +20,7 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<UiRecord> Products { get; } = [];
     public ObservableCollection<UiRecord> Users { get; } = [];
     public ObservableCollection<UiRecord> Invoices { get; } = [];
+    public ObservableCollection<UiRecord> Payments { get; } = [];
     public ObservableCollection<InvoiceLineViewModel> Lines { get; } = [];
     public Dictionary<string, FormSection[]> Settings { get; } = FormCatalog.Settings();
     public FormField[] InvoiceCustomer { get; } = FormCatalog.Customer();
@@ -133,7 +134,28 @@ public partial class MainWindowViewModel : ObservableObject
                     ["Date"] = invoice.InvoiceDate.ToString("yyyy-MM-dd"),
                     ["Items"] = invoice.Items.Count.ToString(),
                     ["Total"] = invoice.GrandTotal.ToString("0.00"),
+                    ["Paid"] = invoice.PaidAmount.ToString("0.00"),
+                    ["Outstanding"] = invoice.BalanceAmount.ToString("0.00"),
                     ["Status"] = invoice.Status
+                }
+            });
+        }
+
+        foreach (var payment in db.Payments.AsNoTracking().OrderBy(p => p.PaymentDate).ThenBy(p => p.Id))
+        {
+            var invoice = Invoices.FirstOrDefault(i => i.SourceId == payment.InvoiceId);
+            Payments.Add(new UiRecord
+            {
+                SourceId = payment.Id,
+                Values = new()
+                {
+                    ["Name"] = NextReceiptNumber(invoice?.Name ?? payment.InvoiceId.ToString(), Payments.Where(p => p["InvoiceId"] == payment.InvoiceId.ToString()).Select(p => p.Name).ToArray()),
+                    ["InvoiceId"] = payment.InvoiceId.ToString(),
+                    ["Invoice"] = invoice?.Name ?? payment.InvoiceId.ToString(),
+                    ["Date"] = payment.PaymentDate.ToString("yyyy-MM-dd"),
+                    ["Amount"] = payment.Amount.ToString("0.00"),
+                    ["Method"] = payment.Method,
+                    ["Reference"] = payment.Reference ?? ""
                 }
             });
         }
@@ -204,6 +226,93 @@ public partial class MainWindowViewModel : ObservableObject
         db.Invoices.Add(invoice);
         db.SaveChanges();
         return invoice.Id;
+    }
+
+    public bool ApplyPayment(UiRecord invoiceRecord, FormField[] fields)
+    {
+        if (dbFactory == null)
+        {
+            Status = "Payment storage is not available.";
+            return false;
+        }
+        if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
+        var amount = fields[0].Number;
+        if (amount <= 0)
+        {
+            fields[0].Error = "Amount must be greater than zero.";
+            return false;
+        }
+
+        using var db = dbFactory.CreateDbContext();
+        db.Database.EnsureCreated();
+        var invoice = db.Invoices.Include(i => i.Items).FirstOrDefault(i => i.Id == invoiceRecord.SourceId);
+        if (invoice == null)
+        {
+            Status = "Invoice was not found in the database.";
+            return false;
+        }
+
+        var previousPaid = db.Payments
+            .Where(p => p.InvoiceId == invoice.Id)
+            .Select(p => p.Amount)
+            .AsEnumerable()
+            .Sum();
+        var outstanding = Math.Max(0m, invoice.GrandTotal - previousPaid);
+        if (amount > outstanding) amount = outstanding;
+        if (amount <= 0)
+        {
+            fields[0].Error = "Invoice is already paid.";
+            return false;
+        }
+
+        var payment = new Payment
+        {
+            InvoiceId = invoice.Id,
+            PaymentDate = DateTime.TryParse(fields[1].Value, out var date) ? date : DateTime.Today,
+            Amount = amount,
+            Method = fields[2].Value,
+            Reference = fields[4].Value
+        };
+        db.Payments.Add(payment);
+        invoice.PaidAmount = previousPaid + amount;
+        invoice.Status = invoice.PaidAmount >= invoice.GrandTotal ? "Paid" : invoice.PaidAmount > 0 ? "Partial" : "Unpaid";
+        db.SaveChanges();
+
+        var receiptNumber = NextReceiptNumber(invoice.InvoiceNumber, Payments.Where(p => p["InvoiceId"] == invoice.Id.ToString()).Select(p => p.Name).ToArray());
+        Payments.Add(new UiRecord
+        {
+            SourceId = payment.Id,
+            Values = new()
+            {
+                ["Name"] = receiptNumber,
+                ["InvoiceId"] = invoice.Id.ToString(),
+                ["Invoice"] = invoice.InvoiceNumber,
+                ["Date"] = payment.PaymentDate.ToString("yyyy-MM-dd"),
+                ["Amount"] = payment.Amount.ToString("0.00"),
+                ["Method"] = payment.Method,
+                ["Reference"] = payment.Reference ?? ""
+            }
+        });
+
+        invoiceRecord.Values["Paid"] = invoice.PaidAmount.ToString("0.00");
+        invoiceRecord.Values["Outstanding"] = invoice.BalanceAmount.ToString("0.00");
+        invoiceRecord.Values["Status"] = invoice.Status;
+        Status = $"Payment saved: {receiptNumber}.";
+        return true;
+    }
+
+    public IEnumerable<UiRecord> PaymentsFor(UiRecord invoice) => Payments.Where(p => p["InvoiceId"] == invoice.SourceId.ToString());
+
+    private static string NextReceiptNumber(string invoiceNumber, IEnumerable<string?> existingReceiptNumbers)
+    {
+        var maxSuffix = 0;
+        foreach (var receiptNumber in existingReceiptNumbers)
+        {
+            var marker = receiptNumber?.LastIndexOf("-R", StringComparison.Ordinal);
+            if (marker is null or < 0) continue;
+            if (int.TryParse(receiptNumber![(marker.Value + 2)..], out var suffix) && suffix > maxSuffix) maxSuffix = suffix;
+        }
+        return $"{invoiceNumber}-R{maxSuffix + 1}";
     }
 
     private static decimal ParseDecimal(string? value) => decimal.TryParse(value, out var number) ? number : 0m;

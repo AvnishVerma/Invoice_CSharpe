@@ -32,7 +32,14 @@ public partial class MainWindow
     internal void ShowPayment(UiRecord invoice)
     {
         var fields = FormCatalog.Payment();
-        ShowOverlay("Apply Payment", Ui.Stack(18, Ui.Text($"Invoice: {invoice.Name} · {invoice["Customer"]}"), Ui.Stats(("Invoice Total", invoice["Total"], "", "#002E78"), ("Amount Paid", "0.00", "", "#2E7D32"), ("Outstanding", invoice["Total"], "", "#C62828")), Ui.Text("Payment History", 16, true), Ui.Empty("No payments yet", "", ""), Ui.Text("New Payment", 16, true), Ui.Fields(fields, 2)), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Save Payment")), width: 760);
+        fields[0].Value = invoice["Outstanding"].Length > 0 ? invoice["Outstanding"] : invoice["Total"];
+        Control History()
+        {
+            var payments = Model.PaymentsFor(invoice).ToArray();
+            if (payments.Length == 0) return Ui.Empty("No payments yet", "", "");
+            return Ui.Stack(8, payments.Select(payment => Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(payment.Name, 13, true), Ui.Text($"{payment["Date"]} · {payment["Method"]}", 12, color: Ui.Muted)), Ui.Text("Rs." + payment["Amount"], 16, true)), 8)).ToArray());
+        }
+        ShowOverlay("Apply Payment", Ui.Stack(18, Ui.Text($"Invoice: {invoice.Name} · {invoice["Customer"]}"), Ui.Stats(("Invoice Total", invoice["Total"], "", "#002E78"), ("Amount Paid", invoice["Paid"].Length > 0 ? invoice["Paid"] : "0.00", "", "#2E7D32"), ("Outstanding", invoice["Outstanding"].Length > 0 ? invoice["Outstanding"] : invoice["Total"], "", "#C62828")), Ui.Text("Payment History", 16, true), History(), Ui.Text("New Payment", 16, true), Ui.Fields(fields, 2)), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Save Payment", () => { if (Model.ApplyPayment(invoice, fields)) ShowPayment(invoice); }, true)), width: 760);
     }
     private void ShowCustomItem()
     {

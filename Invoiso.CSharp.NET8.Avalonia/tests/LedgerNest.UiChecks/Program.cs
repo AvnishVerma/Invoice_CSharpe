@@ -132,11 +132,19 @@ internal static class Program
         model.InvoiceCustomer[0].Value = "Persisted Customer";
         model.Lines.Add(new InvoiceLineViewModel { Name = "Persisted Product", Price = 42.50m, Quantity = 2, TaxRate = 18 });
         Check(model.SaveInvoice(), "Invoice must save to SQLite");
+        var payment = FormCatalog.Payment();
+        payment[0].Value = "40";
+        payment[2].Value = "UPI";
+        payment[4].Value = "txn-123";
+        Check(model.ApplyPayment(model.Invoices.Single(), payment), "Payment must save to SQLite");
+        Check(model.Invoices.Single()["Status"] == "Partial", "Partial payment must update invoice status");
+        Check(model.Invoices.Single()["Outstanding"] == "60.30", "Partial payment must update outstanding balance");
 
         var reloaded = new MainWindowViewModel(factory);
         Check(reloaded.Customers.Any(c => c.Name == "Persisted Customer"), "Customers must reload from SQLite");
         Check(reloaded.Products.Any(p => p.Name == "Persisted Product" && p["Sale Price"] == "42.5"), "Products must reload from SQLite");
-        Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "100.30"), "Invoices must reload from SQLite");
+        Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "100.30" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
+        Check(reloaded.Payments.Any(p => p.Name == "INV-0001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
     }
 
     private sealed class TestDbContextFactory(DbContextOptions<LedgerNestDbContext> options) : IDbContextFactory<LedgerNestDbContext>
