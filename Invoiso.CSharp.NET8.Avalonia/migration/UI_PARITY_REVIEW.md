@@ -2,13 +2,13 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 129 checks, including navigation, form validation, invoice calculations, session state, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 135 checks, including navigation, form validation, invoice calculations, session state, responsive invoice panes, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
 ```sh
-dotnet build Invoiso.CSharp.NET8.Avalonia/tests/Invoiso.UiChecks/Invoiso.UiChecks.csproj
-dotnet run --project Invoiso.CSharp.NET8.Avalonia/tests/Invoiso.UiChecks -- /tmp/invoiso-ui-captures /tmp/invoiso-legacy-captures
+dotnet build Invoiso.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks/LedgerNest.UiChecks.csproj
+dotnet run --project Invoiso.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks -- /tmp/ledgernest-ui-captures /tmp/invoiso-legacy-captures
 ```
 
 The optional second argument compares matching reference PNGs and writes comparison.json. Legacy captures use the Flutter application with its light theme, Roboto fonts, seeded SQLite database and a 1440×900 viewport. Screenshot comparison reports differences; it does not assert parity.
@@ -19,7 +19,7 @@ Data edits currently last for the session. Authentication, payments, backup, imp
 
 ## LedgerNest branding and component split
 
-The requested redesign introduces LedgerNest, the tagline “Invoices, organized.”, a vector receipt mark, and teal/navy brand colors. Brand identity is defined in `src/Invoiso.Desktop/Branding.cs`; application button colors are styled in `App.axaml`. Legacy namespaces and database locations remain compatible with existing installations.
+The requested redesign introduces LedgerNest, the tagline “Invoices, organized.”, a vector receipt mark, and teal/navy brand colors. Brand identity is defined in `src/LedgerNest.Desktop/Branding.cs`; application button colors are styled in `App.axaml`. Namespaces, project files, assemblies, and the local application data folder now use the LedgerNest name.
 
 The window now delegates its shell, overlays, and record forms to `ShellView.cs`, `OverlayView.cs`, and `RecordDialogs.cs`. `BrandLogo` is a reusable visual component. `InvoiceWorkspace` owns the responsive invoice panels: the left pane contains customer information and items; the right pane contains invoice details, options, and totals. The divider supports dragging and keyboard arrows. Below 1000 pixels of available workspace width, panels stack vertically.
 
