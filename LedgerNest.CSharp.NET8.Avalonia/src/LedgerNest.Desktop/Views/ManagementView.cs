@@ -30,7 +30,7 @@ internal sealed class ManagementView : ContentControl
         this.model = model; this.kind = kind; this.window = window;
         search.Watermark = Documents ? "Search by Invoice ID or Customer Name…" : kind == "Customer" ? "Search customers by name, phone, email, GST…" : kind == "Product" ? "Search products by name, alias, HSN/SAC, SKU…" : "Search users…";
         search.TextChanged += (_, _) => { page = 0; Refresh(); };
-        var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.NavigateCommand.Execute("New Invoice"); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
+        var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.StartDocument(kind); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
         var more = Ui.Button("⋯ More", () => window.ShowOverlay("More Actions", Ui.Stack(8, Ui.Button("Export PDF", async () => await ExportDocumentsPdf()), Ui.Button("Delete selected", DeleteSelected), Ui.Button($"Delete All {kind}s", () => window.Confirm("Confirm Delete", $"Delete all {kind.ToLower()}s?", () => { foreach (var record in Records.ToArray()) deleted.Add(record.Id); Refresh(); })))));
         var header = Ui.Header($"{kind} Management", kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : "Manage users and access permissions", Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add);
         var filterButton = Ui.Button("Filter ▾", () =>
@@ -47,7 +47,7 @@ internal sealed class ManagementView : ContentControl
         }
         if (Documents) foreach (var control in new Control[] { search, filterButton, sortButton, results }) if (control.Parent is Panel parent) parent.Children.Remove(control);
         Content = Documents
-            ? Ui.Rows("Auto,*", Ui.AppBar($"{kind} Management", Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), Ui.Button("⋯", more.Command == null ? null : () => more.Command.Execute(null)), Ui.Button("↻", Refresh)), new Border { Background = Brush.Parse("#FAFAFA"), Child = Ui.Rows("Auto,*", new Border { Padding = new Thickness(20), Child = Ui.Columns("360,12,Auto,*", search, new Border(), Ui.Wrap(Ui.Button("Customer", () => window.ShowOverlay("Select Customer", Ui.Stack(8, model.Customers.Select(c => Ui.Button(c.Name, () => { search.Text = c.Name; window.CloseOverlay(); })).ToArray()))), filterButton, sortButton), new Border()) }, results) })
+            ? Ui.Rows("Auto,*", Ui.AppBar($"{kind} Management", Ui.Button($"＋ New {kind}", () => model.StartDocument(kind), true), Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), Ui.Button("⋯", more.Command == null ? null : () => more.Command.Execute(null)), Ui.Button("↻", Refresh)), new Border { Background = Brush.Parse("#FAFAFA"), Child = Ui.Rows("Auto,*", new Border { Padding = new Thickness(20), Child = Ui.Columns("360,12,Auto,*", search, new Border(), Ui.Wrap(Ui.Button("Customer", () => window.ShowOverlay("Select Customer", Ui.Stack(8, model.Customers.Select(c => Ui.Button(c.Name, () => { search.Text = c.Name; window.CloseOverlay(); })).ToArray()))), filterButton, sortButton), new Border()) }, results) })
             : Ui.Scroll(stack);
         Refresh();
     }

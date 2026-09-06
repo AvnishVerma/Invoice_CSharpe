@@ -26,11 +26,14 @@ public partial class MainWindow
         suggestions.SelectionChanged += (_, _) =>
         {
             var product = Model.Products.FirstOrDefault(p => p.Name == suggestions.SelectedItem?.ToString()); if (product == null) return;
-            Model.Lines.Add(new InvoiceLineViewModel { Name = product.Name, Price = decimal.TryParse(product["Sale Price"], out var price) ? price : 0, TaxRate = decimal.TryParse(product["Tax (%)"], out var tax) ? tax : 0, PriceIncludesTax = bool.TryParse(product["Price includes tax"], out var inclusive) && inclusive });
+            Model.AddProductLine(product);
             productSearch.Text = ""; suggestions.IsVisible = false;
         };
         var lineHost = new ContentControl(); var totals = new ContentControl(); var count = Ui.Text("0 items", 11, true, Ui.Muted);
-        var create = Ui.Button("Create Invoice (Ctrl+S)", () => { if (Model.SaveInvoice()) ShowInvoiceSuccess(); }, true);
+        var create = Ui.Button($"Create {Model.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (Model.SaveInvoice()) ShowInvoiceSuccess(); }, true);
+        System.ComponentModel.PropertyChangedEventHandler typeChanged = (_, _) => create.Content = $"Create {Model.InvoiceDetails[0].Value} (Ctrl+S)";
+        Model.InvoiceDetails[0].PropertyChanged += typeChanged;
+        create.DetachedFromVisualTree += (_, _) => Model.InvoiceDetails[0].PropertyChanged -= typeChanged;
         void UpdateTotals()
         {
             var t = Model.Totals; var rows = Ui.Stack(8, TotalRow("Subtotal:", t.Subtotal), TotalRow("Tax:", t.Tax));

@@ -26,6 +26,7 @@ internal static class Program
         CheckTotals();
         CheckPersistence();
         CheckDocumentTypes();
+        CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
         var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
@@ -44,6 +45,15 @@ internal static class Program
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
         model.NavigateCommand.Execute("Reports");
         foreach (var report in new[] { "Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report" }) { Click(report); Capture("reports-" + report.Replace(" ", "-").ToLowerInvariant()); }
+        foreach (var type in new[] { "Invoice", "Quotation", "Receipt" })
+        {
+            model.NavigateCommand.Execute(type == "Invoice" ? "Invoices" : type + "s");
+            Click($"＋ New {type}");
+            Check(model.InvoiceDetails[0].Value == type, $"New {type} action must select its document type");
+            Check(FindButton($"Create {type} (Ctrl+S)") != null, $"Create action must label {type}");
+            Capture($"create-{type.ToLowerInvariant()}");
+        }
+        model.StartDocument("Invoice");
         model.NavigateCommand.Execute("Customers"); Click("＋ New Customer"); Capture("customer-form");
         Click("Save Customer"); Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Name is required."), "Customer form must display required-field errors");
         var name = window.GetVisualDescendants().OfType<TextBox>().First(t => t.Watermark == "Name"); name.Text = "Test Customer";
@@ -118,6 +128,78 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckFormRoundTrips()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-forms-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        var customer = FormCatalog.Customer();
+        customer[0].Value = "Business owner";
+        customer[1].Value = "Roundtrip business";
+        customer[2].Value = "1234567890";
+        Check(model.SaveRecord("Customer", customer), "Business customer must save");
+        var product = FormCatalog.Product();
+        foreach (var field in product)
+            field.Value = field.Kind switch
+            {
+                "toggle" => "true",
+                "number" => "12.5",
+                "date" => "2027-06-15",
+                "choice" => field.Label == "Type" ? "Service" : "Custom…",
+                _ => "Saved " + field.Label
+            };
+        foreach (var field in product.Where(f => f.Kind == "toggle")) field.IsChecked = true;
+        Check(model.SaveRecord("Product", product), "Full product form must save");
+        void Verify(MainWindowViewModel loaded)
+        {
+            Check(loaded.Customers.Single()["Business Name"] == "Roundtrip business", "Business name must survive persistence");
+            var record = loaded.Products.Single();
+            foreach (var field in product)
+                Check(field.Kind == "toggle"
+                    ? bool.Parse(record[field.Label]) == field.IsChecked
+                    : record[field.Label] == field.Value,
+                    $"Product field {field.Label} must round trip");
+        }
+        Verify(new MainWindowViewModel(factory, path));
+        var backup = model.CreateJsonBackup();
+        Check(model.RestoreJsonBackup(backup), "Full forms must restore from JSON");
+        Verify(new MainWindowViewModel(factory, path));
+        var edited = new MainWindowViewModel(factory, path);
+        edited.AddProductLine(edited.Products.Single());
+        var addedLine = edited.Lines.Single();
+        addedLine.Quantity = 3;
+        Check(addedLine.DiscountPerUnit && addedLine.PriceIncludesTax && addedLine.Discount == 12.5m && addedLine.Total == 0, "Product selection must apply the legacy per-unit default discount and tax-inclusive flag");
+        product.Single(f => f.Label == "Type").Value = "Product";
+        product.Single(f => f.Label == "Alias Name (for invoice PDF)").Value = "Edited alias";
+        Check(edited.SaveRecord("Product", product, edited.Products.Single()), "Full product edit must save");
+        Verify(new MainWindowViewModel(factory, path));
+        using (var db = factory.CreateDbContext())
+        {
+            db.Database.ExecuteSqlRaw("ALTER TABLE customers DROP COLUMN BusinessName");
+            db.Database.ExecuteSqlRaw("ALTER TABLE products DROP COLUMN AliasName");
+            db.Database.ExecuteSqlRaw("ALTER TABLE products DROP COLUMN PriceIncludesTax");
+        }
+        var upgraded = new MainWindowViewModel(factory, path);
+        Check(upgraded.Customers.Count == 1 && upgraded.Customers.Single()["Business Name"] == "", "Existing customer schema must upgrade preserving records");
+        Check(upgraded.Products.Single()["Alias Name (for invoice PDF)"] == "" && !bool.Parse(upgraded.Products.Single()["Price includes tax"]), "Existing product schema must upgrade with safe defaults");
+        var user = FormCatalog.User();
+        user[0].Value = "second-user"; user[1].Value = "initial-password";
+        Check(model.SaveRecord("User", user), "Second user must save");
+        Check(model.SignIn("second-user", "initial-password") && model.CurrentUsername == "second-user", "Login must select the actual user");
+        FormField[] passwords = [new("Current Password", "initial-password"), new("New Password", "replacement-password"), new("Confirm", "replacement-password")];
+        Check(model.ChangeCurrentPassword(passwords), "Password change must target signed-in user");
+        Check(model.VerifyUser("second-user", "replacement-password") && model.VerifyUser("admin", "admin"), "Password change must leave other users unchanged");
+        Check(!model.SignIn("second-user", "wrong") && model.CurrentUsername == null, "Failed login must clear session");
+        Check(!model.ChangeCurrentPassword(passwords), "Password change must require a signed-in user");
+        Check(model.SignIn("admin", "admin") && model.RequiresPasswordChange, "Default admin login must request password change");
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Stale draft", Price = 1 });
+        model.InvoiceCustomer[0].Value = "Stale customer";
+        model.StartDocument("Quotation");
+        Check(model.Title == "New Invoice" && model.InvoiceDetails[0].Value == "Quotation" && model.Lines.Count == 0 && model.InvoiceCustomer[0].Value == "", "New quotation must open a fresh quotation editor");
+        model.StartDocument("Receipt");
+        Check(model.InvoiceDetails[0].Value == "Receipt", "New receipt must select receipt type");
     }
 
     private static void CheckDocumentTypes()

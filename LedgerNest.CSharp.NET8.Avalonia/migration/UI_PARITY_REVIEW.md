@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 202 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 302 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -27,7 +27,7 @@ The intentional branding and panel changes supersede exact legacy screenshot par
 
 ## Parity measurement status
 
-The requested target is 95% functionality and UI parity. The previously reported 95% values were coverage estimates without a complete feature checklist or measured screenshot comparison; they do not establish that the target has been reached.
+The requested target is now 100% functionality and UI parity. The previously reported 95% values were coverage estimates without a complete feature checklist or measured screenshot comparison; they do not establish that the target has been reached.
 
 Functional parity remains unverified until legacy behaviors are inventoried and each has a reproducible pass/fail result. Known gaps include full PDF templates, password reset challenges, translated desktop strings and invoice editing/settings behavior.
 
@@ -38,3 +38,27 @@ Pixel similarity remains unmeasured: matching legacy reference captures are unav
 Legacy invoices store a type (see `invoiso-main/lib/database/database_helper.dart` and `lib/models/invoice.dart`). C# now preserves Invoice, Quotation and Receipt types on save, reload and JSON backup/restore, and product sales exclude non-invoice documents. Existing C# databases gain a Type column defaulting to Invoice; the upgrade does not claim Flutter database compatibility or recover document types already lost by prior versions.
 
 Focused regression checks cover all three document types, JSON round trips, report exclusion, and repeatable upgrades of a pre-type C# database.
+
+
+## Full form and workflow review
+
+Verified customer business-name and all exposed product fields across saves, edits, reloads and JSON backups. Existing C# databases receive missing columns with safe defaults. Product selection now uses the legacy per-unit default discount and tax-inclusive flag. New Invoice/Quotation/Receipt list buttons open a fresh editor of the selected type, with matching create-button labels. Password changes use the signed-in account and default-admin login prompts for a password change.
+
+The 302-check runner includes these behavior checks and clicks each new document action. Screenshot inspection caught invisible toolbar actions (teal on teal); header action labels/icons now use white. Captures: `/tmp/ledgernest-full-form-captures`.
+
+### Remaining observed gaps (not an exhaustive inventory)
+
+| Area | Evidence in current implementation | Status |
+| --- | --- | --- |
+| Document editing | Management document Edit action has no handler | Missing |
+| Trash/delete | Management uses an in-memory GUID set | Not persistent |
+| Document numbering | SaveInvoice uses record count and INV prefix | Legacy per-type sequence/settings unmatched |
+| Invoice details | Domain Invoice does not persist due date, notes, tax mode, additional costs or customer snapshots | Incomplete |
+| PDF output | SimplePdf provides one basic page; bulk export selects the first document | Templates/pagination/bulk behavior incomplete |
+| Recovery | Generate Challenge and Reset Password lack handlers | Missing |
+| Onboarding | Wizard fields are local and completion only closes it | Not persistent |
+| Authentication | Signed-in password workflow corrected; full session/role enforcement and mandatory first-login change remain unaudited | Incomplete |
+| Localization | Language preference persists; desktop strings remain English | Missing translations |
+| Visual comparison | No matching legacy PNG baseline; Flutter unavailable here | Unmeasured |
+
+No 100% claim is supported by this review. Legacy Flutter tests were not run; legacy source was not modified.

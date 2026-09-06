@@ -4,6 +4,7 @@ public sealed class Customer
 {
     public int Id { get; set; }
     public string Name { get; set; } = "";
+    public string BusinessName { get; set; } = "";
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? Address { get; set; }
@@ -21,6 +22,20 @@ public sealed class Product
     public decimal PurchasePrice { get; set; }
     public decimal TaxRate { get; set; }
     public decimal StockQuantity { get; set; }
+    public string Type { get; set; } = "Product";
+    public string AliasName { get; set; } = "";
+    public decimal DefaultDiscount { get; set; } = 0;
+    public bool PriceIncludesTax { get; set; } = false;
+    public bool UnlimitedStock { get; set; } = false;
+    public string Unit { get; set; } = "None";
+    public string CustomUnit { get; set; } = "";
+    public string StorageLocation { get; set; } = "";
+    public string ContainerNumber { get; set; } = "";
+    public string BatchNumber { get; set; } = "";
+    public string ExpiryDate { get; set; } = "";
+    public string ManufactureDate { get; set; } = "";
+    public string SupplierName { get; set; } = "";
+    public string Notes { get; set; } = "";
 }
 
 public sealed class Invoice

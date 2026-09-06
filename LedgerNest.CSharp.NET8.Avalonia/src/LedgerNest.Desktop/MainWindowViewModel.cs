@@ -140,6 +140,63 @@ public partial class MainWindowViewModel : ObservableObject
         ThemeMode = setting is "Dark" or "System" ? setting : "Light";
     }
 
+    public string? CurrentUsername { get; private set; }
+    public bool RequiresPasswordChange { get; private set; }
+
+    public bool SignIn(string username, string password)
+    {
+        CurrentUsername = null;
+        RequiresPasswordChange = false;
+        if (!VerifyUser(username, password)) return false;
+        using var db = dbFactory!.CreateDbContext();
+        var user = db.Users.AsNoTracking().Single(u => u.Username == username.Trim());
+        CurrentUsername = user.Username;
+        RequiresPasswordChange = !user.PasswordChanged;
+        return true;
+    }
+
+    public bool ChangeCurrentPassword(FormField[] fields)
+    {
+        if (CurrentUsername == null)
+        {
+            Status = "Log in before changing your password.";
+            return false;
+        }
+        if (!ChangePassword(CurrentUsername, fields)) return false;
+        RequiresPasswordChange = false;
+        return true;
+    }
+
+    public void AddProductLine(UiRecord product)
+    {
+        Lines.Add(new InvoiceLineViewModel
+        {
+            Name = product.Name,
+            Price = ParseDecimal(product["Sale Price"]),
+            TaxRate = ParseDecimal(product["Tax (%)"]),
+            Discount = ParseDecimal(product["Default Discount"]),
+            DiscountPerUnit = true,
+            PriceIncludesTax = bool.TryParse(product["Price includes tax"], out var inclusive) && inclusive
+        });
+    }
+
+    public void StartDocument(string type)
+    {
+        if (type is not ("Invoice" or "Quotation" or "Receipt"))
+            throw new ArgumentException("Unknown document type.", nameof(type));
+        Lines.Clear();
+        AdditionalCosts.Clear();
+        foreach (var field in InvoiceCustomer) field.Value = "";
+        InvoiceDetails[0].Value = type;
+        InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
+        InvoiceDetails[2].Value = "";
+        InvoiceDetails[4].Value = "";
+        InvoiceOptions[0].Value = "None";
+        InvoiceOptions[1].Value = "0";
+        InvoiceOptions[2].Value = "";
+        NavigateCommand.Execute("New Invoice");
+    }
+
     public bool VerifyUser(string username, string password)
     {
         if (dbFactory == null)
@@ -588,7 +645,7 @@ public partial class MainWindowViewModel : ObservableObject
                 Values = new()
                 {
                     ["Name"] = customer.Name,
-                    ["Business Name"] = "",
+                    ["Business Name"] = customer.BusinessName,
                     ["Phone"] = customer.Phone ?? "",
                     ["Email"] = customer.Email ?? "",
                     ["GST / VAT Number"] = customer.GstNumber ?? "",
@@ -604,7 +661,20 @@ public partial class MainWindowViewModel : ObservableObject
                 SourceId = product.Id,
                 Values = new()
                 {
-                    ["Type"] = "Product",
+                    ["Type"] = product.Type,
+                    ["Alias Name (for invoice PDF)"] = product.AliasName,
+                    ["Default Discount"] = product.DefaultDiscount.ToString(),
+                    ["Price includes tax"] = product.PriceIncludesTax.ToString(),
+                    ["Unlimited stock"] = product.UnlimitedStock.ToString(),
+                    ["Unit"] = product.Unit,
+                    ["Custom unit"] = product.CustomUnit,
+                    ["Storage Location"] = product.StorageLocation,
+                    ["Container Number"] = product.ContainerNumber,
+                    ["Batch Number"] = product.BatchNumber,
+                    ["Expiry Date"] = product.ExpiryDate,
+                    ["Manufacture Date"] = product.ManufactureDate,
+                    ["Supplier Name"] = product.SupplierName,
+                    ["Notes"] = product.Notes,
                     ["Name"] = product.Name,
                     ["SKU Code"] = product.Code ?? "",
                     ["HSN/SAC"] = product.HsnCode ?? "",
@@ -714,6 +784,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             var customer = sourceId > 0 ? db.Customers.Find(sourceId) ?? new Customer() : new Customer();
             customer.Name = values.GetValueOrDefault("Name", "");
+            customer.BusinessName = values.GetValueOrDefault("Business Name", "");
             customer.Phone = values.GetValueOrDefault("Phone");
             customer.Email = values.GetValueOrDefault("Email");
             customer.GstNumber = values.GetValueOrDefault("GST / VAT Number");
@@ -734,6 +805,20 @@ public partial class MainWindowViewModel : ObservableObject
             product.PurchasePrice = ParseDecimal(values.GetValueOrDefault("Purchase Price"));
             product.TaxRate = ParseDecimal(values.GetValueOrDefault("Tax (%)"));
             product.StockQuantity = ParseDecimal(values.GetValueOrDefault("Stock"));
+            product.Type = values.GetValueOrDefault("Type", "Product");
+            product.AliasName = values.GetValueOrDefault("Alias Name (for invoice PDF)", "");
+            product.DefaultDiscount = ParseDecimal(values.GetValueOrDefault("Default Discount"));
+            product.PriceIncludesTax = bool.TryParse(values.GetValueOrDefault("Price includes tax"), out var priceIncludesTax) && priceIncludesTax;
+            product.UnlimitedStock = bool.TryParse(values.GetValueOrDefault("Unlimited stock"), out var unlimitedStock) && unlimitedStock;
+            product.Unit = values.GetValueOrDefault("Unit", "None");
+            product.CustomUnit = values.GetValueOrDefault("Custom unit", "");
+            product.StorageLocation = values.GetValueOrDefault("Storage Location", "");
+            product.ContainerNumber = values.GetValueOrDefault("Container Number", "");
+            product.BatchNumber = values.GetValueOrDefault("Batch Number", "");
+            product.ExpiryDate = values.GetValueOrDefault("Expiry Date", "");
+            product.ManufactureDate = values.GetValueOrDefault("Manufacture Date", "");
+            product.SupplierName = values.GetValueOrDefault("Supplier Name", "");
+            product.Notes = values.GetValueOrDefault("Notes", "");
             if (product.Id == 0) db.Products.Add(product);
             db.SaveChanges();
             return product.Id;

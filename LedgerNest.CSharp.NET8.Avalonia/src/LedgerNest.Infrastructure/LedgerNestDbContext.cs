@@ -33,6 +33,36 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 throw new InvalidOperationException("This database is not a LedgerNest C# database.");
             if (!columns.Contains("Type"))
                 Database.ExecuteSqlRaw("ALTER TABLE invoices ADD COLUMN Type TEXT NOT NULL DEFAULT 'Invoice'");
+            EnsureColumns("customers", [("BusinessName", "TEXT NOT NULL DEFAULT ''")]);
+            EnsureColumns("products", [
+                ("Type", "TEXT NOT NULL DEFAULT 'Product'"),
+                ("AliasName", "TEXT NOT NULL DEFAULT ''"),
+                ("DefaultDiscount", "TEXT NOT NULL DEFAULT '0'"),
+                ("PriceIncludesTax", "INTEGER NOT NULL DEFAULT 0"),
+                ("UnlimitedStock", "INTEGER NOT NULL DEFAULT 0"),
+                ("Unit", "TEXT NOT NULL DEFAULT 'None'"),
+                ("CustomUnit", "TEXT NOT NULL DEFAULT ''"),
+                ("StorageLocation", "TEXT NOT NULL DEFAULT ''"),
+                ("ContainerNumber", "TEXT NOT NULL DEFAULT ''"),
+                ("BatchNumber", "TEXT NOT NULL DEFAULT ''"),
+                ("ExpiryDate", "TEXT NOT NULL DEFAULT ''"),
+                ("ManufactureDate", "TEXT NOT NULL DEFAULT ''"),
+                ("SupplierName", "TEXT NOT NULL DEFAULT ''"),
+                ("Notes", "TEXT NOT NULL DEFAULT ''")]);
+            void EnsureColumns(string table, (string Name, string Definition)[] additions)
+            {
+                // Identifiers and definitions come exclusively from the schema constants above.
+                command.CommandText = $"PRAGMA table_info({table})";
+                var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                using (var reader = command.ExecuteReader())
+                    while (reader.Read()) existing.Add(reader.GetString(1));
+                foreach (var column in additions)
+                    if (!existing.Contains(column.Name))
+                    {
+                        command.CommandText = $"ALTER TABLE {table} ADD COLUMN {column.Name} {column.Definition}";
+                        command.ExecuteNonQuery();
+                    }
+            }
             transaction.Commit();
         }
         finally

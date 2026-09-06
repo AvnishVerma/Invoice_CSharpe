@@ -202,7 +202,19 @@ internal static class Ui
     public static Control AppBar(string title, params Control[] actions)
     {
         var a = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
-        foreach (var action in actions) a.Children.Add(action);
+        foreach (var action in actions)
+        {
+            if (action is Button button)
+            {
+                button.Foreground = Brushes.White;
+                button.Background = Primary;
+                button.BorderThickness = new Thickness(0);
+                if (button.Content is Panel content)
+                    foreach (var label in content.Children.OfType<TextBlock>())
+                        label.Foreground = Brushes.White;
+            }
+            a.Children.Add(action);
+        }
         var heading = Text(title, 20, color: Brushes.White); heading.TextWrapping = TextWrapping.NoWrap; heading.TextTrimming = TextTrimming.CharacterEllipsis;
         return new Border { Background = Primary, Padding = new Thickness(20, 0), Height = 56, Child = Columns("*,Auto", heading, a) };
     }
