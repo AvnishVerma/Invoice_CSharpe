@@ -2,6 +2,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="Invoiso.Desktop.MainWindow"
         Width="1440" Height="900" MinWidth="640" MinHeight="480"
-        Title="Invoiso" Background="White">
+        Title="LedgerNest" Background="White">
   <Grid x:Name="Root" />
 </Window>

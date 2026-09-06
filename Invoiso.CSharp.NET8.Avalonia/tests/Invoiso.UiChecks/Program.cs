@@ -24,6 +24,7 @@ internal static class Program
         var model = new MainWindowViewModel();
         var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
         window.Show();
+        Check(window.Title == Branding.Name, "Window must use the application brand");
         void Settle() { Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); }
         void Capture(string name)
         {
@@ -57,6 +58,19 @@ internal static class Program
             window.Width = width; window.Height = 768;
             foreach (var route in new[] { "Dashboard", "New Invoice", "Customers", "Settings", "Reports" }) { model.NavigateCommand.Execute(route); Capture($"{route.Replace(" ", "-").ToLowerInvariant()}-{width}"); }
         }
+        model.NavigateCommand.Execute("New Invoice");
+        window.Width = 1440; window.Height = 900; Settle();
+        var splitter = window.GetVisualDescendants().OfType<GridSplitter>().Single();
+        var paneGrid = (Grid)splitter.Parent!;
+        var previousWidth = paneGrid.ColumnDefinitions[2].ActualWidth;
+        splitter.Focus();
+        window.KeyPressQwerty(Avalonia.Input.PhysicalKey.ArrowLeft, Avalonia.Input.RawInputModifiers.None); window.KeyReleaseQwerty(Avalonia.Input.PhysicalKey.ArrowLeft, Avalonia.Input.RawInputModifiers.None); Settle();
+        Check(paneGrid.ColumnDefinitions[2].ActualWidth > previousWidth, "Divider must resize invoice panes with the keyboard");
+        window.Width = 640; Settle();
+        Check(!window.GetVisualDescendants().OfType<GridSplitter>().Any(), "Narrow invoice layout must stack panels");
+        window.Width = 1440; Settle();
+        Check(window.GetVisualDescendants().OfType<GridSplitter>().Count() == 1, "Wide layout must restore its divider after resizing");
+        Capture("invoice-split-panels");
         window.Close();
         if (args.Length > 1) CompareScreenshots(output, args[1]);
         Console.WriteLine($"Passed {assertions} checks. Screenshots: {output}");

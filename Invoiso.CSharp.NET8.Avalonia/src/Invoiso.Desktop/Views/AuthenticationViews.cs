@@ -11,10 +11,10 @@ public partial class MainWindow
     private void ShowLogin()
     {
         var username = new FormField("Username") { Icon = "person" }; var password = new FormField("Password", kind: "password") { Icon = "lock" };
-        var logo = Ui.Asset("logo.png", 230, 100);
+        var logo = Ui.Logo();
         var login = Ui.Button("Login"); login.HorizontalAlignment = HorizontalAlignment.Stretch; login.Height = 50; login.CornerRadius = new CornerRadius(25);
         var forgot = Ui.Button("Forgot password?", ShowForgotPassword); forgot.Classes.Add("text"); forgot.HorizontalAlignment = HorizontalAlignment.Right;
-        var content = Ui.Stack(16, logo, Ui.Card(Ui.Text("First time here? Log in with username admin and password admin, then set your own password when prompted.", 13, color: Ui.Muted), 12), Ui.Field(username), Ui.Field(password), new Border { Height = 0 }, login, forgot, new TextBlock { Text = "https://invoiso.co.in/", FontSize = 12, Foreground = Ui.Muted, HorizontalAlignment = HorizontalAlignment.Center });
+        var content = Ui.Stack(16, logo, Ui.Card(Ui.Text("First time here? Log in with username admin and password admin, then set your own password when prompted.", 13, color: Ui.Muted), 12), Ui.Field(username), Ui.Field(password), new Border { Height = 0 }, login, forgot, new TextBlock { Text = Branding.Tagline, FontSize = 12, Foreground = Ui.Muted, HorizontalAlignment = HorizontalAlignment.Center });
         overlay.Margin = new Thickness(0); overlay.Children.Clear(); overlay.IsVisible = true;
         var card = Ui.Card(content, 32); card.Width = 420; card.MaxWidth = Math.Max(280, Bounds.Width - 48); card.Background = Brush.Parse("#FAFAFA"); card.HorizontalAlignment = HorizontalAlignment.Center; card.VerticalAlignment = VerticalAlignment.Center; card.BoxShadow = BoxShadows.Parse("0 6 16 0 #33000000");
         overlay.Children.Add(new Border { Background = Brush.Parse("#E3F2FD"), Child = Ui.Scroll(card, 24) });
@@ -44,7 +44,7 @@ public partial class MainWindow
             var content = Ui.Stack(24, Ui.Logo(), Ui.Wrap(Ui.Text("1  Company", 13, step == 0), Ui.Text("2  Invoice", 13, step == 1), Ui.Text("3  Appearance", 13, step == 2)), Ui.Text(names[step], 24, true));
             if (step < 3) content.Children.Add(Ui.Fields(step == 0 ? company : step == 1 ? invoice : appearance));
             else content.Children.Add(Ui.Empty("You're all set!", "Start creating invoices for your business.", "✓"));
-            ShowOverlay("Welcome to Invoiso", content, Ui.Wrap(Ui.Button(step == 0 ? "Cancel" : "Back", () => { if (step == 0) CloseOverlay(); else { step--; Render(); } }), Ui.Button(step == 3 ? "Get Started" : "Continue", () =>
+            ShowOverlay($"Welcome to {Branding.Name}", content, Ui.Wrap(Ui.Button(step == 0 ? "Cancel" : "Back", () => { if (step == 0) CloseOverlay(); else { step--; Render(); } }), Ui.Button(step == 3 ? "Get Started" : "Continue", () =>
             {
                 if (step == 3) { CloseOverlay(); return; }
                 if (!(step == 0 ? company : step == 1 ? invoice : appearance).Select(f => f.Validate()).ToArray().All(v => v)) return;

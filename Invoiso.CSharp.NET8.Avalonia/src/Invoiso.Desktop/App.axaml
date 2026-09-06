@@ -17,22 +17,22 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="#D0D0D0" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Foreground" Value="#002E78" />
+      <Setter Property="Foreground" Value="#0F766E" />
     </Style>
     <Style Selector="Button.primary">
-      <Setter Property="Background" Value="#002E78" />
+      <Setter Property="Background" Value="#0F766E" />
       <Setter Property="Foreground" Value="White" />
       <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="Button.material">
-      <Setter Property="Background" Value="#6750A4" />
+      <Setter Property="Background" Value="#0F766E" />
       <Setter Property="Foreground" Value="White" />
       <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="Button.text">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="#6750A4" />
+      <Setter Property="Foreground" Value="#0F766E" />
       <Setter Property="Padding" Value="8,6" />
     </Style>
     <Style Selector="Button.nav">
@@ -46,8 +46,8 @@
       <Setter Property="MinHeight" Value="42" />
     </Style>
     <Style Selector="Button.nav.selected">
-      <Setter Property="Background" Value="#E5EAF1" />
-      <Setter Property="Foreground" Value="#002E78" />
+      <Setter Property="Background" Value="#E0F2F1" />
+      <Setter Property="Foreground" Value="#0F766E" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="TextBox">

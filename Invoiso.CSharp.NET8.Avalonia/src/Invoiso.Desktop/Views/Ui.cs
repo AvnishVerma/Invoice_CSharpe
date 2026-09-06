@@ -64,9 +64,9 @@ internal static class Ui
         ["picture_as_pdf"] = "\ue415",
         ["dark_mode"] = "\ue51c",
     };
-    public static IBrush Primary => Brush.Parse("#002E78");
-    public static IBrush CardSurface => Brush.Parse("#FFF7FF");
-    public static IBrush MaterialPrimary => Brush.Parse("#6750A4");
+    public static IBrush Primary => Brush.Parse(Branding.PrimaryColor);
+    public static IBrush CardSurface => Brush.Parse("#F7FAFC");
+    public static IBrush MaterialPrimary => Primary;
     public static IBrush Muted => Brush.Parse("#666666");
     public static IBrush Outline => Brush.Parse("#E0E0E0");
     public static TextBlock Text(string text, double size = 14, bool bold = false, IBrush? color = null) => new() { Text = text, FontSize = size, FontWeight = bold ? FontWeight.Bold : FontWeight.Normal, Foreground = color ?? Brushes.Black, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
@@ -192,7 +192,7 @@ internal static class Ui
         }
         return g;
     }
-    public static Image Logo(bool compact = false) => Asset(compact ? "logo_v.png" : "logo.png", compact ? 38 : 154, 36);
+    public static Control Logo(bool compact = false) => new BrandLogo(compact);
     public static Image Asset(string name, double width, double height)
     { using var stream = AssetLoader.Open(new Uri($"avares://Invoiso.Desktop/Assets/{name}")); return new Image { Source = new Bitmap(stream), Width = width, Height = height, Stretch = Stretch.Uniform }; }
     public static Control Empty(string title, string subtitle = "", string icon = "▤")

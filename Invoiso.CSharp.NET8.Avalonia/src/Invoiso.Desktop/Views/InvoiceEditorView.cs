@@ -57,7 +57,7 @@ public partial class MainWindow
             }
             UpdateTotals(); create.IsEnabled = Model.Lines.Count > 0;
         }
-        var quickAdd = Ui.Card(Ui.Stack(4, suggestions, Ui.Columns("*,12,Auto", productSearch, new Border(), Ui.Button("＋ Custom Item", ShowCustomItem))), 8); quickAdd.Background = Brush.Parse("#EDEAF8"); quickAdd.BorderBrush = Brush.Parse("#9FA8DA");
+        var quickAdd = Ui.Card(Ui.Stack(4, suggestions, Ui.Columns("*,12,Auto", productSearch, new Border(), Ui.Button("＋ Custom Item", ShowCustomItem))), 8); quickAdd.Background = Brush.Parse("#E0F2F1"); quickAdd.BorderBrush = Brush.Parse("#80CBC4");
         var items = Ui.Card(Ui.Rows("Auto,*,Auto", Ui.Wrap(Ui.Text("ITEMS", 12, true), count), lineHost, quickAdd), 12);
         var detailFields = Ui.Stack(8, Ui.Fields(Model.InvoiceDetails.Take(4)), Ui.Field(Model.HideInvoiceNumber));
         var detailHeading = Ui.Columns("*,Auto", Ui.Text("INVOICE DETAILS", 12, true), Ui.Button("⌃", () => detailFields.IsVisible = !detailFields.IsVisible));
@@ -71,25 +71,7 @@ public partial class MainWindow
         var options = Ui.Stack(12, costs, discount, Ui.Text("NOTES", 11, true, Ui.Muted), Ui.Field(Model.InvoiceOptions[2]), Ui.Text("TAX SETTINGS", 11, true, Ui.Muted), tax, Ui.Field(Model.InterState));
         var optionsCard = Ui.Card(Ui.Rows("*,Auto", Ui.Scroll(options, 12), new Border { Padding = new Thickness(16), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Child = totals }), 0);
         var left = Ui.Rows("Auto,8,*", customer, new Border(), items); var right = Ui.Rows("Auto,8,*", details, new Border(), optionsCard);
-        var workspace = Ui.Columns("*,8,360", left, new Border(), right);
-        var viewport = new ContentControl { Content = workspace, Margin = new Thickness(10) };
-        bool? wasNarrow = null;
-        viewport.SizeChanged += (_, e) =>
-        {
-            var narrow = e.NewSize.Width < 1000; if (wasNarrow == narrow) return; wasNarrow = narrow;
-            viewport.Content = null; workspace.Children.Clear();
-            if (narrow)
-            {
-                items.MinHeight = 360; optionsCard.MinHeight = 540;
-                viewport.Content = Ui.Scroll(Ui.Stack(8, left, right), 0);
-            }
-            else
-            {
-                if (left.Parent is Panel lp) lp.Children.Remove(left); if (right.Parent is Panel rp) rp.Children.Remove(right);
-                items.MinHeight = 0; optionsCard.MinHeight = 0;
-                Grid.SetColumn(left, 0); Grid.SetColumn(right, 2); workspace.Children.Add(left); workspace.Children.Add(right); viewport.Content = workspace;
-            }
-        };
+        var viewport = new InvoiceWorkspace(left, right, items, optionsCard);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         foreach (var (label, icon) in new[] { ("View", "visibility"), ("Preview", "picture_as_pdf"), ("Download", "download"), ("Print", "print") })
         {
