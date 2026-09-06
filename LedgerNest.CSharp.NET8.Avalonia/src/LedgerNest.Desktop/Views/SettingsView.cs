@@ -87,7 +87,7 @@ public partial class MainWindow
         };
         Select(0); return Ui.Rows("Auto,*", Ui.AppBar("Invoice Settings"), layout);
     }
-    private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create Backup", async () => await CreateBackupFile()), Ui.Button("↑ Restore from File", async () => await RestoreBackupFile())), Ui.Card(Ui.Stack(8, Ui.Text("JSON backup", 18, true), Ui.Text("Exports customers, products, company info, settings, invoices, invoice items and payments. User credentials are excluded, matching the legacy backup manager."))), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
+    private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create JSON Backup", async () => await CreateBackupFile()), Ui.Button("＋ Create DB Backup", async () => await CreateDatabaseBackupFile()), Ui.Button("↑ Restore JSON", async () => await RestoreBackupFile()), Ui.Button("↑ Restore DB", async () => await RestoreDatabaseBackupFile())), Ui.Card(Ui.Stack(8, Ui.Text("Backup modes", 18, true), Ui.Text("JSON backups export business data and exclude user credentials. DB backups copy the full SQLite database file for local restore, matching the legacy backup manager modes."))), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
 
     private async Task CreateBackupFile()
     {
@@ -105,6 +105,41 @@ public partial class MainWindow
         await using var writer = new StreamWriter(stream, Encoding.UTF8);
         await writer.WriteAsync(backup);
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+    }
+
+
+    private async Task CreateDatabaseBackupFile()
+    {
+        var backup = Model.CreateDatabaseBackup();
+        if (backup.Length == 0) { ShowOverlay("Backup", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true)); return; }
+        var file = await StorageProvider.SaveFilePickerAsync(new()
+        {
+            Title = "Create Database Backup",
+            SuggestedFileName = $"ledgernest_backup_{DateTime.Now:yyyyMMdd_HHmmss}.invoicedb",
+            DefaultExtension = "invoicedb",
+            FileTypeChoices = [new FilePickerFileType("Database backup") { Patterns = ["*.invoicedb"], MimeTypes = ["application/octet-stream"] }]
+        });
+        if (file == null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await stream.WriteAsync(backup);
+        ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+    }
+
+    private async Task RestoreDatabaseBackupFile()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new()
+        {
+            Title = "Restore Database Backup",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("Database backup") { Patterns = ["*.invoicedb"], MimeTypes = ["application/octet-stream"] }]
+        });
+        if (files.Count == 0) return;
+        await using var stream = await files[0].OpenReadAsync();
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        var restored = Model.RestoreDatabaseBackup(memory.ToArray());
+        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
+        page.Content = SettingsView();
     }
 
     private async Task RestoreBackupFile()

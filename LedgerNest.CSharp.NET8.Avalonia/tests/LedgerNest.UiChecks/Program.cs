@@ -119,7 +119,7 @@ internal static class Program
         var options = new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={dbPath}").Options;
         var factory = new TestDbContextFactory(options);
 
-        var model = new MainWindowViewModel(factory);
+        var model = new MainWindowViewModel(factory, dbPath);
         var customer = FormCatalog.Customer();
         customer[0].Value = "Persisted Customer";
         customer[2].Value = "5551234567";
@@ -150,7 +150,7 @@ internal static class Program
         Check(model.Invoices.Single()["Status"] == "Partial", "Partial payment must update invoice status");
         Check(model.Invoices.Single()["Outstanding"] == "57.35", "Partial payment must update outstanding balance");
 
-        var reloaded = new MainWindowViewModel(factory);
+        var reloaded = new MainWindowViewModel(factory, dbPath);
         Check(reloaded.Customers.Any(c => c.Name == "Persisted Customer"), "Customers must reload from SQLite");
         Check(reloaded.Customers.Any(c => c.Name == "Comma, Customer" && c["Address"] == "Street 1, City"), "Imported customers must reload from SQLite");
         Check(reloaded.Products.Any(p => p.Name == "Persisted Product" && p["Sale Price"] == "42.5"), "Products must reload from SQLite");
@@ -163,7 +163,7 @@ internal static class Program
         persistedUser[1].Value = "temporary-secret";
         persistedUser[2].Value = "Admin";
         Check(model.SaveRecord("User", persistedUser), "User must save to SQLite");
-        reloaded = new MainWindowViewModel(factory);
+        reloaded = new MainWindowViewModel(factory, dbPath);
         Check(reloaded.Users.Any(u => u.Name == "persisted-admin" && u["Role"] == "Admin" && !u.Values.ContainsKey("Password")), "Users must reload from SQLite without exposing passwords");
         using (var userDb = factory.CreateDbContext())
         {
@@ -192,6 +192,15 @@ internal static class Program
         pdfSections[3].Fields[0].Value = "#0F766E";
         Check(model.SaveSettings("PDF Settings"), "PDF settings must save to SQLite");
 
+        var dbBackup = model.CreateDatabaseBackup();
+        Check(dbBackup.Length > 1024, "Database-file backup must include SQLite bytes");
+        var afterDbBackupCustomer = FormCatalog.Customer();
+        afterDbBackupCustomer[0].Value = "After DB Backup";
+        afterDbBackupCustomer[2].Value = "6666666666";
+        Check(model.SaveRecord("Customer", afterDbBackupCustomer), "Customer after DB backup must save");
+        Check(model.RestoreDatabaseBackup(dbBackup), "Database-file backup must restore successfully");
+        Check(model.Customers.Any(c => c.Name == "Persisted Customer") && !model.Customers.Any(c => c.Name == "After DB Backup"), "Database-file restore must replace current data");
+
         var backupJson = model.CreateJsonBackup();
         var backup = JsonNode.Parse(backupJson)!.AsObject();
         Check(backup["_metadata"]?["app_name"]?.GetValue<string>() == Branding.Name, "Backup metadata must use current branding");
@@ -210,7 +219,7 @@ internal static class Program
         var reportPdf = model.ExportReportPdf("Customers");
         Check(reportPdf.Length > 500 && System.Text.Encoding.ASCII.GetString(reportPdf.Take(8).ToArray()).StartsWith("%PDF-1."), "Report PDF export must create a valid PDF document");
 
-        reloaded = new MainWindowViewModel(factory);
+        reloaded = new MainWindowViewModel(factory, dbPath);
         var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);
         Check(reloadedCompanyFields["Company Name"].Value == "LedgerNest Labs" && reloadedCompanyFields["GSTIN"].Value == "GST-123", "Company info must reload from SQLite");
         var reloadedInvoiceGeneral = reloaded.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);

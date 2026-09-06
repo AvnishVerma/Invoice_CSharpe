@@ -27,7 +27,7 @@ public partial class App : Avalonia.Application
 
             desktop.MainWindow = new MainWindow
             {
-                DataContext = new MainWindowViewModel(services.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>())
+                DataContext = new MainWindowViewModel(services.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(), databasePath)
             };
         }
 

@@ -10,12 +10,14 @@ using LedgerNest.Application;
 using LedgerNest.Domain;
 using LedgerNest.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 
 namespace LedgerNest.Desktop;
 
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly IDbContextFactory<LedgerNestDbContext>? dbFactory;
+    private readonly string? databasePath;
     public static readonly string[] Routes = ["Dashboard", "New Invoice", "Invoices", "Quotations", "Receipts", "Customers", "Products", "Reports", "Settings"];
     [ObservableProperty] private string title = "Dashboard";
     [ObservableProperty] private bool sidebarExpanded = true;
@@ -40,9 +42,10 @@ public partial class MainWindowViewModel : ObservableObject
         InvoiceOptions[4].Number, AdditionalCosts.Sum(c => c[1].Number),
         InvoiceOptions[0].Value switch { "Amount" => InvoiceDiscountKind.Amount, "Percentage" => InvoiceDiscountKind.Percent, _ => InvoiceDiscountKind.None }, InvoiceOptions[1].Number);
     public event Action? InvoiceChanged;
-    public MainWindowViewModel(IDbContextFactory<LedgerNestDbContext>? dbFactory = null)
+    public MainWindowViewModel(IDbContextFactory<LedgerNestDbContext>? dbFactory = null, string? databasePath = null)
     {
         this.dbFactory = dbFactory;
+        this.databasePath = databasePath;
         foreach (var option in InvoiceOptions) option.PropertyChanged += (_, _) => InvoiceChanged?.Invoke();
         AdditionalCosts.CollectionChanged += (_, e) =>
         {
@@ -279,6 +282,73 @@ public partial class MainWindowViewModel : ObservableObject
         return imported;
     }
 
+
+
+    public byte[] CreateDatabaseBackup()
+    {
+        if (string.IsNullOrWhiteSpace(databasePath) || !File.Exists(databasePath))
+        {
+            Status = "Database file backup is not available.";
+            return [];
+        }
+
+        var backupPath = Path.Combine(Path.GetTempPath(), $"ledgernest-backup-{Guid.NewGuid():N}.invoicedb");
+        try
+        {
+            if (dbFactory != null)
+            {
+                using var db = dbFactory.CreateDbContext();
+                db.Database.EnsureCreated();
+            }
+
+            using var source = new SqliteConnection($"Data Source={databasePath}");
+            using var destination = new SqliteConnection($"Data Source={backupPath}");
+            source.Open();
+            destination.Open();
+            source.BackupDatabase(destination);
+            Status = "Database backup created successfully.";
+            return File.ReadAllBytes(backupPath);
+        }
+        finally
+        {
+            if (File.Exists(backupPath)) File.Delete(backupPath);
+        }
+    }
+
+    public bool RestoreDatabaseBackup(byte[] bytes)
+    {
+        if (string.IsNullOrWhiteSpace(databasePath) || bytes.Length == 0)
+        {
+            Status = "Database backup is empty or unsupported.";
+            return false;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+            if (dbFactory != null)
+            {
+                using var db = dbFactory.CreateDbContext();
+                db.Database.CloseConnection();
+                db.Database.EnsureDeleted();
+            }
+            File.WriteAllBytes(databasePath, bytes);
+            if (dbFactory != null)
+            {
+                using var restored = dbFactory.CreateDbContext();
+                restored.Database.OpenConnection();
+                restored.Database.CloseConnection();
+            }
+            ReloadFromDatabase();
+            Status = "Database backup restored successfully.";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Status = $"Database restore failed: {ex.Message}";
+            return false;
+        }
+    }
 
     public string CreateJsonBackup()
     {
