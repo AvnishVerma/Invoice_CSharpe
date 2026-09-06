@@ -78,6 +78,17 @@ public sealed class CompanyInfo
     public string? GstNumber { get; set; }
 }
 
+
+public sealed class AppUser
+{
+    public int Id { get; set; }
+    public string Username { get; set; } = "";
+    public string PasswordHash { get; set; } = "";
+    public string Salt { get; set; } = "";
+    public string Role { get; set; } = "User";
+    public bool PasswordChanged { get; set; } = true;
+}
+
 public sealed class AppSetting
 {
     public string Key { get; set; } = "";

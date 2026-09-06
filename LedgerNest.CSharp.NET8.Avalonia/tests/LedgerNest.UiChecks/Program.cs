@@ -158,6 +158,18 @@ internal static class Program
         Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "97.35" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
         Check(reloaded.BuildReport("Products").Rows.Any(r => r[0] == "Persisted Product" && r[1] == "2" && r[2] == "₹ 85.00" && r[4] == "₹ -2.50" && r[5] == "-2.9%"), "Product report must reload historical invoice item cost and discount data from SQLite");
         Check(reloaded.Payments.Any(p => p.Name == "INV-0001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
+        var persistedUser = FormCatalog.User();
+        persistedUser[0].Value = "persisted-admin";
+        persistedUser[1].Value = "temporary-secret";
+        persistedUser[2].Value = "Admin";
+        Check(model.SaveRecord("User", persistedUser), "User must save to SQLite");
+        reloaded = new MainWindowViewModel(factory);
+        Check(reloaded.Users.Any(u => u.Name == "persisted-admin" && u["Role"] == "Admin" && !u.Values.ContainsKey("Password")), "Users must reload from SQLite without exposing passwords");
+        using (var userDb = factory.CreateDbContext())
+        {
+            var savedUser = userDb.Users.Single(u => u.Username == "persisted-admin");
+            Check(savedUser.Salt.Length > 0 && savedUser.PasswordHash.Length == 64 && savedUser.PasswordHash != "temporary-secret", "User password must be persisted only as a salted hash");
+        }
         var pdfBytes = reloaded.ExportDocumentPdf(reloaded.Invoices.Single(i => i.Name == "INV-0001"));
         Check(pdfBytes.Length > 500 && System.Text.Encoding.ASCII.GetString(pdfBytes.Take(8).ToArray()).StartsWith("%PDF-1."), "Invoice PDF export must create a valid PDF document");
 

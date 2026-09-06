@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -64,8 +65,9 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
         var records = kind == "Customer" ? Customers : kind == "Product" ? Products : Users;
+        var databaseValues = fields.ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Value.Trim());
         var values = fields.Where(f => f.Kind != "password").ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Value.Trim());
-        var record = new UiRecord { SourceId = SaveRecordToDatabase(kind, values, original?.SourceId ?? 0), Values = values };
+        var record = new UiRecord { SourceId = SaveRecordToDatabase(kind, databaseValues, original?.SourceId ?? 0), Values = values };
         if (original != null) records[records.IndexOf(original)] = record; else records.Add(record);
         Status = $"{kind} saved.";
         return true;
@@ -435,6 +437,19 @@ public partial class MainWindowViewModel : ObservableObject
             });
         }
 
+        foreach (var user in db.Users.AsNoTracking().OrderBy(u => u.Username))
+        {
+            Users.Add(new UiRecord
+            {
+                SourceId = user.Id,
+                Values = new()
+                {
+                    ["Username"] = user.Username,
+                    ["Role"] = user.Role
+                }
+            });
+        }
+
         foreach (var invoice in db.Invoices.AsNoTracking().Include(i => i.Items).OrderByDescending(i => i.InvoiceDate))
         {
             Invoices.Add(new UiRecord
@@ -509,7 +524,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private int SaveRecordToDatabase(string kind, Dictionary<string, string> values, int sourceId)
     {
-        if (dbFactory == null || kind == "User") return sourceId;
+        if (dbFactory == null) return sourceId;
         using var db = dbFactory.CreateDbContext();
         db.Database.EnsureCreated();
 
@@ -540,6 +555,24 @@ public partial class MainWindowViewModel : ObservableObject
             if (product.Id == 0) db.Products.Add(product);
             db.SaveChanges();
             return product.Id;
+        }
+
+
+        if (kind == "User")
+        {
+            var user = sourceId > 0 ? db.Users.Find(sourceId) ?? new AppUser() : new AppUser();
+            user.Username = values.GetValueOrDefault("Username", "");
+            user.Role = values.GetValueOrDefault("Role", "User");
+            var password = values.GetValueOrDefault("Password", "");
+            if (user.Id == 0 || !string.IsNullOrWhiteSpace(password))
+            {
+                user.Salt = Guid.NewGuid().ToString("N");
+                user.PasswordHash = HashPassword(password, user.Salt);
+                user.PasswordChanged = true;
+            }
+            if (user.Id == 0) db.Users.Add(user);
+            db.SaveChanges();
+            return user.Id;
         }
 
         return sourceId;
@@ -675,6 +708,13 @@ public partial class MainWindowViewModel : ObservableObject
 
 
 
+
+
+    private static string HashPassword(string password, string salt)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(salt + password));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
 
     private static string Money(decimal value) => $"₹ {value:0.00}";
 

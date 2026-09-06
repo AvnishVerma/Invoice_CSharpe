@@ -12,6 +12,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<CompanyInfo> CompanyInfos => Set<CompanyInfo>();
     public DbSet<AppSetting> Settings => Set<AppSetting>();
+    public DbSet<AppUser> Users => Set<AppUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,6 +23,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<Payment>().ToTable("invoice_payments");
         modelBuilder.Entity<CompanyInfo>().ToTable("company_info");
         modelBuilder.Entity<AppSetting>().ToTable("settings").HasKey(x => x.Key);
+        modelBuilder.Entity<AppUser>().ToTable("users").HasIndex(x => x.Username).IsUnique();
 
         modelBuilder.Entity<Invoice>()
             .HasMany(x => x.Items)
