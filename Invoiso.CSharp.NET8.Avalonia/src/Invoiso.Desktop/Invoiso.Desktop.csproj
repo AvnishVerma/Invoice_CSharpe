@@ -7,6 +7,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
   <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
     <ProjectReference Include="..\Invoiso.Application\Invoiso.Application.csproj" />
     <ProjectReference Include="..\Invoiso.Infrastructure\Invoiso.Infrastructure.csproj" />
     <PackageReference Include="Avalonia" Version="11.3.2" />

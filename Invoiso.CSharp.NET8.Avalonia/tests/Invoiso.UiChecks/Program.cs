@@ -1,0 +1,96 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Invoiso.Application;
+using Invoiso.Desktop;
+using SkiaSharp;
+using System.Text.Json;
+
+internal static class Program
+{
+    private static int assertions;
+    private static void Check(bool condition, string message)
+    { assertions++; if (!condition) throw new InvalidOperationException(message); }
+    [STAThread]
+    private static void Main(string[] args)
+    {
+        var output = args.FirstOrDefault() ?? "/tmp/invoiso-ui-captures";
+        Directory.CreateDirectory(output);
+        CheckTotals();
+        AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
+        var model = new MainWindowViewModel();
+        var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
+        window.Show();
+        void Settle() { Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); }
+        void Capture(string name)
+        {
+            Settle(); using var frame = window.CaptureRenderedFrame();
+            Check(frame != null, $"No rendered frame for {name}"); frame!.Save(Path.Combine(output, name + ".png"));
+            Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && !string.IsNullOrWhiteSpace(t.Text)), $"Blank screen: {name}");
+        }
+        Button FindButton(string text) => window.GetVisualDescendants().OfType<Button>().Last(b => b.IsVisible && (b.Content?.ToString() == text || b.Tag?.ToString() == text));
+        void Click(string text) { Settle(); var button = FindButton(text); Check(button.IsEnabled, $"Disabled button: {text}"); button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); button.Command?.Execute(button.CommandParameter); Settle(); }
+        foreach (var route in MainWindowViewModel.Routes) { model.NavigateCommand.Execute(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
+        foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
+        model.NavigateCommand.Execute("Reports");
+        foreach (var report in new[] { "Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report" }) { Click(report); Capture("reports-" + report.Replace(" ", "-").ToLowerInvariant()); }
+        model.NavigateCommand.Execute("Customers"); Click("＋ New Customer"); Capture("customer-form");
+        Click("Save Customer"); Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Name is required."), "Customer form must display required-field errors");
+        var name = window.GetVisualDescendants().OfType<TextBox>().First(t => t.Watermark == "Name"); name.Text = "Test Customer";
+        var phone = window.GetVisualDescendants().OfType<TextBox>().First(t => t.Watermark == "Phone"); phone.Text = "1234567890";
+        Click("Save Customer"); Check(model.Customers.Count == 1, "Save customer must update the list");
+        var user = FormCatalog.User(); user[0].Value = "review-user"; user[1].Value = "temporary-secret";
+        Check(model.SaveRecord("User", user), "User form must validate");
+        Check(!model.Users.Single().Values.ContainsKey("Password"), "User table must not retain or expose password text"); Capture("customers-populated");
+        model.NavigateCommand.Execute("Products"); Click("＋ New Product"); Capture("product-form"); Click("Cancel");
+        model.NavigateCommand.Execute("New Invoice"); Click("＋ Custom Item"); Capture("custom-item-form"); Click("Cancel");
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Test product", Price = 100, Quantity = 2, TaxRate = 18 }); Capture("invoice-populated");
+        model.InvoiceOptions[0].Value = "Percentage"; model.InvoiceOptions[1].Value = "10";
+        Check(model.Totals.Total == 212.4m, "Invoice discount must affect totals");
+        model.NavigateCommand.Execute("Dashboard"); model.NavigateCommand.Execute("New Invoice"); Check(model.Lines.Count == 1 && model.InvoiceOptions[1].Value == "10", "Navigation must preserve the invoice draft");
+        Check(model.SaveInvoice(), "Invoice must save"); Check(model.Invoices.Single()["Total"] == "212.40", "Saved total must match displayed total");
+        foreach (var width in new[] { 1024, 768, 640 })
+        {
+            window.Width = width; window.Height = 768;
+            foreach (var route in new[] { "Dashboard", "New Invoice", "Customers", "Settings", "Reports" }) { model.NavigateCommand.Execute(route); Capture($"{route.Replace(" ", "-").ToLowerInvariant()}-{width}"); }
+        }
+        window.Close();
+        if (args.Length > 1) CompareScreenshots(output, args[1]);
+        Console.WriteLine($"Passed {assertions} checks. Screenshots: {output}");
+    }
+    private static void CompareScreenshots(string output, string reference)
+    {
+        var comparisons = new List<object>();
+        foreach (var path in Directory.EnumerateFiles(reference, "*.png"))
+        {
+            var actualPath = Path.Combine(output, Path.GetFileName(path)); if (!File.Exists(actualPath)) continue;
+            using var expected = SKBitmap.Decode(path); using var actual = SKBitmap.Decode(actualPath);
+            if (expected.Width != actual.Width || expected.Height != actual.Height) continue;
+            var expectedPixels = expected.Pixels; var actualPixels = actual.Pixels; long changed = 0; double error = 0;
+            for (var i = 0; i < expectedPixels.Length; i++)
+            {
+                var a = expectedPixels[i]; var b = actualPixels[i];
+                var delta = Math.Abs(a.Red - b.Red) + Math.Abs(a.Green - b.Green) + Math.Abs(a.Blue - b.Blue);
+                if (delta != 0) changed++; error += delta / 3d;
+            }
+            comparisons.Add(new { Screen = Path.GetFileNameWithoutExtension(path), Width = actual.Width, Height = actual.Height, ChangedPixelPercent = Math.Round(changed * 100d / expectedPixels.Length, 2), MeanChannelError = Math.Round(error / expectedPixels.Length, 2), ExactMatch = changed == 0 });
+        }
+        File.WriteAllText(Path.Combine(output, "comparison.json"), JsonSerializer.Serialize(comparisons, new JsonSerializerOptions { WriteIndented = true }));
+    }
+    private static void CheckTotals()
+    {
+        var exclusive = InvoiceTotalsCalculator.Calculate([new(100, 2, TaxRatePercent: 18)]);
+        Check(exclusive.Total == 236m, "Exclusive item tax");
+        var inclusive = InvoiceTotalsCalculator.Calculate([new(118, 2, TaxRatePercent: 18, PriceIncludesTax: true)]);
+        Check(inclusive.Subtotal == 200m && inclusive.Tax == 36m && inclusive.Total == 236m, "Inclusive item tax must not be charged twice");
+        var global = InvoiceTotalsCalculator.Calculate([new(110, 2, TaxRatePercent: 18, PriceIncludesTax: true)], InvoiceTaxMode.Global, 10);
+        Check(global.Subtotal == 200m && global.Total == 220m, "Global mode must back out the global rate");
+        var discount = InvoiceTotalsCalculator.Calculate([new(100, 2, 10, true, 5, 10)], additionalCosts: 20, discountKind: InvoiceDiscountKind.Percent, discountValue: 10);
+        Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
+        var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
+        Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+}
