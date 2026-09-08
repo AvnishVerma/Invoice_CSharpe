@@ -217,6 +217,7 @@ public partial class MainWindowViewModel : ObservableObject
         var values = new Dictionary<string, string> {
             ["Name"] = PeekNextDocumentNumber(InvoiceDetails[0].Value), ["Customer"] = InvoiceCustomer[0].Value,
             ["Type"] = InvoiceDetails[0].Value, ["Date"] = InvoiceDetails[1].Value,
+            ["Tax"] = Totals.Tax.ToString(CultureInfo.InvariantCulture),
             ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = "Unpaid"
         };
         Invoices.Add(new UiRecord { SourceId = SaveInvoiceToDatabase(values), Values = values });
@@ -485,7 +486,7 @@ public partial class MainWindowViewModel : ObservableObject
                 new[] { "Outstanding", Money(outstanding) },
                 new[] { "Average Invoice Value", Money(invoices.Length == 0 ? 0 : billed / invoices.Length) } },
             "Receivables" => invoices.Where(i => ParseDecimal(i["Outstanding"]) > 0).Select(i => new[] { i["Customer"], i.Name, i["Date"], Money(ParseDecimal(i["Outstanding"])) }).Prepend(["Customer", "Invoice ID", "Date", "Outstanding"]).ToArray(),
-            "Tax" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, Money(g.Sum(i => ParseDecimal(i["Total"]) - ParseDecimal(i["Total"]) / 1.18m)) }).Prepend(["Date", "Estimated Tax"]).ToArray(),
+            "Tax" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, Money(g.Sum(i => ParseDecimal(i["Tax"]))) }).OrderBy(r => r[0]).Prepend(["Date", "Tax"]).ToArray(),
             "Customers" => invoices.GroupBy(i => i["Customer"]).Select(g => new[] { string.IsNullOrWhiteSpace(g.Key) ? "Unknown" : g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => ParseDecimal(r[2].Replace("₹", ""))).Prepend(["Customer", "Invoices", "Billed", "Collected", "Outstanding"]).ToArray(),
             "Products" => ProductReportRows(),
             "Quotations" => new string[][] { ["Metric", "Value"], ["Quotations Issued", Invoices.Count(i => i["Type"] == "Quotation" && !DeletedRecords.Contains(i.Id)).ToString()], ["Invoices in Period", invoices.Length.ToString()] },
@@ -905,6 +906,7 @@ public partial class MainWindowViewModel : ObservableObject
                     ["Date"] = invoice.InvoiceDate.ToString("yyyy-MM-dd"),
                     ["Items"] = invoice.Items.Count.ToString(),
                     ["Total"] = invoice.GrandTotal.ToString("0.00"),
+                    ["Tax"] = invoice.TaxTotal.ToString(CultureInfo.InvariantCulture),
                     ["Paid"] = invoice.PaidAmount.ToString("0.00"),
                     ["Outstanding"] = invoice.BalanceAmount.ToString("0.00"),
                     ["Status"] = invoice.Status

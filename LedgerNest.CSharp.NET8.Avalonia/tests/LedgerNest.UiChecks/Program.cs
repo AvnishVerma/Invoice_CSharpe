@@ -29,6 +29,7 @@ internal static class Program
         CheckDocumentNumbering();
         CheckDocumentTrash();
         CheckRecordDeletion();
+        CheckTaxReport();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
@@ -229,6 +230,47 @@ internal static class Program
         Check(model.Title == "New Invoice" && model.InvoiceDetails[0].Value == "Quotation" && model.Lines.Count == 0 && model.InvoiceCustomer[0].Value == "", "New quotation must open a fresh quotation editor");
         model.StartDocument("Receipt");
         Check(model.InvoiceDetails[0].Value == "Receipt", "New receipt must select receipt type");
+    }
+
+    private static void CheckTaxReport()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-tax-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.InvoiceDetails[1].Value = "2026-01-15";
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Five percent", Price = 100, TaxRate = 5 });
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Eighteen percent", Price = 100, TaxRate = 18 });
+        model.InvoiceOptions[0].Value = "Amount";
+        model.InvoiceOptions[1].Value = "20";
+        Check(model.SaveInvoice(), "Mixed-rate discounted invoice must save");
+        var mixed = model.Invoices.Last();
+        model.Lines.Clear();
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Inclusive", Price = 118, TaxRate = 18, PriceIncludesTax = true });
+        model.InvoiceOptions[0].Value = "None";
+        Check(model.SaveInvoice(), "Tax-inclusive invoice must save");
+        model.Lines.Clear();
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Global", Price = 100, TaxRate = 18 });
+        model.InvoiceOptions[3].Value = "Global";
+        model.InvoiceOptions[4].Value = "7";
+        Check(model.SaveInvoice(), "Global-rate invoice must save");
+        model.InvoiceOptions[3].Value = "No Tax";
+        Check(model.SaveInvoice(), "Tax-free invoice must save");
+        model.InvoiceOptions[3].Value = "Per Item";
+        model.InvoiceDetails[0].Value = "Quotation";
+        Check(model.SaveInvoice(), "Quotation must save without entering invoice tax report");
+        void Verify(MainWindowViewModel loaded, string amount)
+        {
+            var report = loaded.BuildReport("Tax");
+            Check(report.Rows.Length == 2 && report.Rows[0][1] == "Tax" && report.Rows[1][1] == amount, "Tax report must sum actual invoice tax rather than infer an 18 percent rate");
+            Check(loaded.ExportReportCsv("Tax").Contains(amount), "Tax CSV must use the same actual tax totals");
+        }
+        Verify(model, "₹ 48.00");
+        Verify(new MainWindowViewModel(factory, path), "₹ 48.00");
+        var backup = model.CreateJsonBackup();
+        Check(model.RestoreJsonBackup(backup), "Tax report backup must restore");
+        Verify(model, "₹ 48.00");
+        Check(model.SetDocumentTrash(model.Invoices.Single(i => i.SourceId == mixed.SourceId), true), "Tax test invoice must move to trash");
+        Verify(new MainWindowViewModel(factory, path), "₹ 25.00");
     }
 
     private static void CheckRecordDeletion()

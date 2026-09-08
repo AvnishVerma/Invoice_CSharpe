@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 361 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 376 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -76,3 +76,8 @@ Validation: build passed with zero warnings/errors; 346 checks passed, including
 Customer, product and user deletion now removes database records after the existing UI confirmation. Customer deletion preserves invoice customer names and detaches catalog references; product deletion retains historical invoice items and cost snapshots. New invoices store the customer name independently of the customer record, and JSON backup preserves it. Deleting the signed-in user clears the session. Default-user initialization is recorded so an emptied user table does not recreate default credentials on restart.
 
 Validation: build passed with zero warnings/errors; 361 checks passed. Added checks cover deletion across restart, historical customer/product reports, detached references, JSON round trips and deleted-user authentication. Captures: `/tmp/ledgernest-record-delete-captures`. Full parity remains incomplete.
+
+
+Tax reporting now sums saved invoice tax amounts rather than estimating 18% embedded tax from grand totals. The screen, report CSV and report PDF share the corrected report data. Tax totals are retained in the UI records on creation and reload without rounding before aggregation. Quotations and trashed invoices remain excluded.
+
+Validation: build passed with zero warnings/errors; 376 checks passed. Added cases cover mixed rates, inclusive prices, global tax, no tax, invoice discounts, reload, JSON restore, CSV output and trash exclusion. Captures: `/tmp/ledgernest-tax-captures`. This fixes tax totals; full legacy tax-report detail and date filtering still require migration.
