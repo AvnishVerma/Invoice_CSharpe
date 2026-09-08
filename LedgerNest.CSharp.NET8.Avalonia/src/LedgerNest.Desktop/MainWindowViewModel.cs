@@ -218,6 +218,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["Name"] = PeekNextDocumentNumber(InvoiceDetails[0].Value), ["Customer"] = InvoiceCustomer[0].Value,
             ["Type"] = InvoiceDetails[0].Value, ["Date"] = InvoiceDetails[1].Value,
             ["Tax"] = Totals.Tax.ToString(CultureInfo.InvariantCulture),
+            ["Paid"] = "0.00", ["Outstanding"] = Totals.Total.ToString("0.00"),
             ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = "Unpaid"
         };
         Invoices.Add(new UiRecord { SourceId = SaveInvoiceToDatabase(values), Values = values });

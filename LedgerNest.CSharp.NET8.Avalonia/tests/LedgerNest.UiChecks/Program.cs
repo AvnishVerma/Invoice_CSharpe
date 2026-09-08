@@ -30,6 +30,7 @@ internal static class Program
         CheckDocumentTrash();
         CheckRecordDeletion();
         CheckTaxReport();
+        CheckReceivablesLifecycle();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
@@ -230,6 +231,36 @@ internal static class Program
         Check(model.Title == "New Invoice" && model.InvoiceDetails[0].Value == "Quotation" && model.Lines.Count == 0 && model.InvoiceCustomer[0].Value == "", "New quotation must open a fresh quotation editor");
         model.StartDocument("Receipt");
         Check(model.InvoiceDetails[0].Value == "Receipt", "New receipt must select receipt type");
+    }
+
+    private static void CheckReceivablesLifecycle()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-receivables-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.InvoiceCustomer[0].Value = "Receivable customer";
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Service", Price = 100, Quantity = 2, TaxRate = 5 });
+        model.InvoiceOptions[0].Value = "Amount";
+        model.InvoiceOptions[1].Value = "10";
+        Check(model.SaveInvoice(), "Receivables invoice must save");
+        void Verify(MainWindowViewModel loaded, string paid, string outstanding, string status, decimal balance)
+        {
+            var invoice = loaded.Invoices.Single();
+            Check(invoice["Paid"] == paid && invoice["Outstanding"] == outstanding && invoice["Status"] == status, "Invoice balance fields must match payment state");
+            Check(loaded.BuildReport("Revenue").Outstanding == balance, "Revenue summary must reflect outstanding immediately");
+            var report = loaded.BuildReport("Receivables");
+            Check(balance > 0 ? report.Rows.Length == 2 && report.Rows[1][3] == $"₹ {balance:0.00}" : report.Rows.Length == 1, "Receivables must include only unpaid balances");
+        }
+        Verify(model, "0.00", "200.00", "Unpaid", 200);
+        Verify(new MainWindowViewModel(factory, path), "0.00", "200.00", "Unpaid", 200);
+        var payment = FormCatalog.Payment(); payment[0].Value = "50";
+        Check(model.ApplyPayment(model.Invoices.Single(), payment), "Partial payment must apply");
+        Verify(model, "50.00", "150.00", "Partial", 150);
+        Verify(new MainWindowViewModel(factory, path), "50.00", "150.00", "Partial", 150);
+        payment[0].Value = "150";
+        Check(model.ApplyPayment(model.Invoices.Single(), payment), "Final payment must apply");
+        Verify(model, "200.00", "0.00", "Paid", 0);
+        Verify(new MainWindowViewModel(factory, path), "200.00", "0.00", "Paid", 0);
     }
 
     private static void CheckTaxReport()

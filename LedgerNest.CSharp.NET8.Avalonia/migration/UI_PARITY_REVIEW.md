@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 376 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 397 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -81,3 +81,8 @@ Validation: build passed with zero warnings/errors; 361 checks passed. Added che
 Tax reporting now sums saved invoice tax amounts rather than estimating 18% embedded tax from grand totals. The screen, report CSV and report PDF share the corrected report data. Tax totals are retained in the UI records on creation and reload without rounding before aggregation. Quotations and trashed invoices remain excluded.
 
 Validation: build passed with zero warnings/errors; 376 checks passed. Added cases cover mixed rates, inclusive prices, global tax, no tax, invoice discounts, reload, JSON restore, CSV output and trash exclusion. Captures: `/tmp/ledgernest-tax-captures`. This fixes tax totals; full legacy tax-report detail and date filtering still require migration.
+
+
+Newly saved invoices now initialize paid and outstanding values immediately. Previously those fields appeared only after reload or payment, causing the receivables report and revenue outstanding summary to omit new debt. Regression checks follow a discounted, taxed invoice through creation, partial payment and settlement, checking record fields and reports both immediately and after reload.
+
+Validation: build passed with zero warnings/errors; 397 checks passed. Captures: `/tmp/ledgernest-receivables-captures`. Full functional and visual parity remain incomplete.
