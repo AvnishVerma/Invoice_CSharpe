@@ -209,6 +209,59 @@ public partial class MainWindowViewModel : ObservableObject
         return next.ToString("D8", CultureInfo.InvariantCulture);
     }
 
+    private UiRecord? editingDocument;
+    private string? editingFingerprint;
+    private InvoiceSnapshot? editingSnapshot;
+    private readonly Dictionary<InvoiceLineViewModel, InvoiceItem> historicalLines = [];
+    public bool IsEditingDocument => editingDocument != null;
+    public string EditorDocumentNumber => editingDocument?.Name ?? PeekNextDocumentNumber(InvoiceDetails[0].Value);
+    public UiRecord? LastSavedDocument { get; private set; }
+
+    private static string Fingerprint(Invoice invoice) =>
+        JsonSerializer.Serialize(new { Invoice = invoice, Items = invoice.Items.OrderBy(i => i.Id).ToArray() });
+
+    public bool LoadDocumentForEditing(UiRecord record)
+    {
+        if (dbFactory == null) { Status = "Editing requires saved document storage."; return false; }
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var invoice = db.Invoices.Include(i => i.Items).SingleOrDefault(i => i.Id == record.SourceId);
+        if (invoice == null || invoice.DeletedAt != null) { Status = "Document is unavailable or in trash."; return false; }
+        if (invoice.PaidAmount != 0 || db.Payments.Any(p => p.InvoiceId == invoice.Id))
+        { Status = "Documents with payments cannot be edited yet."; return false; }
+        if (invoice.Snapshot is not { Version: 1 } snapshot)
+        { Status = "This document lacks a supported historical snapshot and cannot be safely edited."; return false; }
+        editingDocument = record;
+        editingSnapshot = snapshot;
+        editingFingerprint = Fingerprint(invoice);
+        historicalLines.Clear();
+        Lines.Clear(); AdditionalCosts.Clear();
+        string[] customer = [snapshot.Customer.Name, snapshot.Customer.BusinessName, snapshot.Customer.Phone, snapshot.Customer.Email, snapshot.Customer.GstNumber, snapshot.Customer.Address];
+        for (var i = 0; i < customer.Length; i++) InvoiceCustomer[i].Value = customer[i];
+        InvoiceDetails[0].Value = invoice.Type;
+        InvoiceDetails[1].Value = invoice.InvoiceDate.ToString("yyyy-MM-dd");
+        InvoiceDetails[2].Value = snapshot.DueDate?.ToString("yyyy-MM-dd") ?? "";
+        InvoiceDetails[3].Value = snapshot.DocumentTitle;
+        InvoiceDetails[4].Value = snapshot.CustomInvoiceNumber;
+        HideInvoiceNumber.IsChecked = snapshot.HideInvoiceNumber;
+        InterState.IsChecked = snapshot.IsInterState;
+        InvoiceOptions[0].Value = snapshot.DiscountKind;
+        InvoiceOptions[1].Value = snapshot.DiscountValue.ToString(CultureInfo.CurrentCulture);
+        InvoiceOptions[2].Value = snapshot.Notes;
+        InvoiceOptions[3].Value = snapshot.TaxMode;
+        InvoiceOptions[4].Value = snapshot.TaxRate.ToString(CultureInfo.CurrentCulture);
+        foreach (var cost in snapshot.AdditionalCosts)
+            AdditionalCosts.Add([new("Description", cost.Description), new("Amount", cost.Amount.ToString(CultureInfo.CurrentCulture), "number")]);
+        foreach (var item in invoice.Items)
+        {
+            var line = new InvoiceLineViewModel { Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
+            historicalLines.Add(line, item);
+            Lines.Add(line);
+        }
+        NavigateCommand.Execute("New Invoice");
+        return true;
+    }
+
     public bool SaveInvoice()
     {
         if (Lines.Count == 0) { Status = "Add at least one item before creating an invoice."; return false; }
@@ -221,7 +274,17 @@ public partial class MainWindowViewModel : ObservableObject
             ["Paid"] = "0.00", ["Outstanding"] = Totals.Total.ToString("0.00"),
             ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = "Unpaid"
         };
-        Invoices.Add(new UiRecord { SourceId = SaveInvoiceToDatabase(values), Values = values });
+        var sourceId = SaveInvoiceToDatabase(values);
+        if (sourceId < 0) return false;
+        var saved = new UiRecord { SourceId = sourceId, Values = values };
+        if (editingDocument == null) Invoices.Add(saved);
+        else
+        {
+            var index = Invoices.IndexOf(editingDocument);
+            if (index >= 0) Invoices[index] = saved; else Invoices.Add(saved);
+            editingDocument = saved;
+        }
+        LastSavedDocument = saved;
         InvoiceChanged?.Invoke();
         Status = $"{InvoiceDetails[0].Value} saved.";
         return true;
@@ -317,6 +380,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (type is not ("Invoice" or "Quotation" or "Receipt"))
             throw new ArgumentException("Unknown document type.", nameof(type));
+        editingDocument = null; editingSnapshot = null; editingFingerprint = null; historicalLines.Clear();
         Lines.Clear();
         AdditionalCosts.Clear();
         foreach (var field in InvoiceCustomer) field.Value = "";
@@ -1052,7 +1116,7 @@ public partial class MainWindowViewModel : ObservableObject
                 InvoiceCustomer[4].Value.Trim(), InvoiceCustomer[5].Value.Trim()),
             DateTime.TryParse(InvoiceDetails[2].Value, out var due) ? due.Date : null,
             InvoiceDetails[3].Value, InvoiceDetails[4].Value.Trim(), HideInvoiceNumber.IsChecked,
-            InterState.IsChecked, Setting("Currency"), Setting("Quantity Column"),
+            InterState.IsChecked, editingSnapshot?.Currency ?? Setting("Currency"), editingSnapshot?.QuantityLabel ?? Setting("Quantity Column"),
             InvoiceOptions[3].Value, InvoiceOptions[4].Number, InvoiceOptions[0].Value,
             InvoiceOptions[1].Number, InvoiceOptions[2].Value,
             AdditionalCosts.Select(c => new InvoiceAdditionalCost(c[0].Value, c[1].Number)).ToArray());
@@ -1064,7 +1128,18 @@ public partial class MainWindowViewModel : ObservableObject
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
         using var transaction = db.Database.BeginTransaction();
-        values["Name"] = NextDocumentNumber(db, values["Type"]);
+        Invoice? existing = null;
+        if (editingDocument != null)
+        {
+            existing = db.Invoices.Include(i => i.Items).SingleOrDefault(i => i.Id == editingDocument.SourceId);
+            if (existing == null || existing.DeletedAt != null || Fingerprint(existing) != editingFingerprint)
+            { Status = "Document changed since it was opened. Reopen it before saving."; return -1; }
+            if (existing.PaidAmount != 0 || db.Payments.Any(p => p.InvoiceId == existing.Id))
+            { Status = "Documents with payments cannot be edited yet."; return -1; }
+            if (values["Type"] != existing.Type)
+            { Status = "Changing document type during editing is not supported."; return -1; }
+        }
+        values["Name"] = existing?.InvoiceNumber ?? NextDocumentNumber(db, values["Type"]);
         var customerName = InvoiceCustomer[0].Value.Trim();
         var customerId = db.Customers.AsNoTracking().FirstOrDefault(c => c.Name == customerName)?.Id;
         var invoice = new Invoice
@@ -1086,11 +1161,11 @@ public partial class MainWindowViewModel : ObservableObject
                 return new InvoiceItem
                 {
                     Description = line.Name,
-                    ProductDescription = product?["Description"] ?? line.Name,
+                    ProductDescription = historicalLines.TryGetValue(line, out var original) ? original.ProductDescription : product?["Description"] ?? line.Name,
                     Quantity = line.Quantity,
                     UnitPrice = line.Price,
                     ProductPrice = line.Price,
-                    PurchasePrice = product == null ? 0m : ParseDecimal(product["Purchase Price"]),
+                    PurchasePrice = historicalLines.TryGetValue(line, out var historical) ? historical.PurchasePrice : product == null ? 0m : ParseDecimal(product["Purchase Price"]),
                     TaxRate = line.TaxRate,
                     Discount = line.Discount,
                     ExtraCost = line.ExtraCost,
@@ -1099,8 +1174,23 @@ public partial class MainWindowViewModel : ObservableObject
                 };
             }).ToList()
         };
-        db.Invoices.Add(invoice);
+        if (existing == null) db.Invoices.Add(invoice);
+        else
+        {
+            db.InvoiceItems.RemoveRange(existing.Items);
+            existing.Items = invoice.Items;
+            existing.CustomerId = invoice.CustomerId;
+            existing.CustomerName = invoice.CustomerName;
+            existing.InvoiceDate = invoice.InvoiceDate;
+            existing.Snapshot = invoice.Snapshot;
+            existing.SubTotal = invoice.SubTotal;
+            existing.TaxTotal = invoice.TaxTotal;
+            existing.DiscountTotal = invoice.DiscountTotal;
+            existing.GrandTotal = invoice.GrandTotal;
+            invoice = existing;
+        }
         db.SaveChanges();
+        if (editingDocument != null) editingFingerprint = Fingerprint(db.Invoices.AsNoTracking().Include(i => i.Items).Single(i => i.Id == invoice.Id));
         transaction.Commit();
         return invoice.Id;
     }

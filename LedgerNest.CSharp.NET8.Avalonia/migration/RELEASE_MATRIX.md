@@ -10,7 +10,7 @@ Statuses describe the listed scenario only. P0 means release-blocking; P1 still 
 | CALC-02 | P0 | lib/domain/invoice_totals_calculator.dart | Global/per-item/no tax and invoice discounts match reference amounts | Partial coverage: CheckTotals; exhaustive matrix pending |
 | DOC-01 | P0 | lib/database/invoice_service.dart | Invoice, quotation and receipt types survive restart and backups | Covered: CheckDocumentTypes |
 | DOC-02 | P0 | lib/database/invoice_service.dart | Independent sequence previews, persisted starting number and stale editors | Covered: CheckDocumentNumbering; concurrent processes and retry injection pending |
-| DOC-03 | P0 | lib/models/invoice.dart; lib/screens/create_invoice_screen_v2.dart | Load/edit/save complete historical invoice without losing dates, notes, currency, tax configuration or charges | In progress: versioned customer/editor snapshots added; document Edit action, complete item metadata and financial edit policy remain open |
+| DOC-03 | P0 | lib/models/invoice.dart; lib/screens/create_invoice_screen_v2.dart | Load/edit/save complete historical invoice without losing dates, notes, currency, tax configuration or charges | In progress: snapshot-based unpaid editing implemented with stale/payment guards; paid corrections, stock reconciliation, complete item metadata and audit policy remain open |
 | PAY-01 | P0 | lib/domain/invoice_calculator.dart; lib/models/invoice.dart | Creation, partial payment and settlement reconcile immediately and after restart | Covered: CheckReceivablesLifecycle; refunds, concurrent payments and corrections pending |
 | CAT-01 | P0 | lib/database/customer_service.dart; lib/database/product_service.dart | Exposed catalog fields survive create/edit/reload/JSON restore | Covered: CheckFormRoundTrips; locale and malformed-import cases pending |
 | DEL-01 | P0 | lib/database/invoice_service.dart | Trash/restore and permanent deletion preserve or remove linked records correctly | Covered: CheckDocumentTrash |
@@ -63,3 +63,14 @@ New invoices capture customer contact/business/address details, due date, title/
 CheckInvoiceSnapshots verifies field preservation, independence from subsequent editor changes, recalculation of stored totals, both backup formats and upgrade without invented historical values. This is a snapshot format version, not the planned replacement of ad hoc schema upgrades with versioned migrations. Invoice editing, complete item metadata, company/payment-account snapshots, PDF consumption and unknown-format handling remain open.
 
 Snapshot batch validation: build passed with zero warnings/errors; 434 local checks passed. Hosted CI has not run for this batch.
+
+
+## Unpaid editing batch
+
+The document Edit action now loads version-1 snapshots and line inputs. Save updates the original invoice and items in a transaction, preserving its number and historical cost/description data for existing editor lines. Snapshot currency and quantity labels are preserved independently of current settings. Repeated saves remain updates; the success screen targets the actual saved record.
+
+Editing rejects missing/unsupported snapshots, trash, changed records and documents with payments (including payments posted after loading). Changing document type during editing is not yet supported. Paid-document corrections and audit history require the planned policy and implementation. Legacy updateInvoice also reconciles stock; that behavior is not implemented by this batch, so DOC-03 is not complete.
+
+Regression checks cover reload, repeated saves, retained identity, line replacement, stale editors and payments arriving during editing, plus UI Edit/Save/New actions. Review also found an existing shell error on replacing a live window's DataContext and low-contrast dark-themed fields. Tests use a fresh window and explicit light theme; these UI findings remain open, not fixed by the fixture change.
+
+Unpaid-edit batch validation: build passed with zero warnings/errors; all 460 checks passed. Reviewed light-theme edit capture at `/tmp/ledgernest-edit-captures/invoice-edit.png`. Hosted CI and complete legacy/production readiness remain unverified.

@@ -26,6 +26,7 @@ internal static class Program
         CheckTotals();
         CheckServiceTotals();
         CheckInvoiceSnapshots();
+        CheckInvoiceEditing();
         CheckPersistence();
         CheckDocumentTypes();
         CheckDocumentNumbering();
@@ -107,6 +108,22 @@ internal static class Program
         Capture("dashboard-dark");
         model.NavigateCommand.Execute("Settings");
         Capture("settings-dark");
+        var editPath = Path.Combine(Path.GetTempPath(), $"ledgernest-edit-ui-{Guid.NewGuid():N}.db");
+        var editFactory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={editPath}").Options);
+        var editModel = new MainWindowViewModel(editFactory, editPath);
+        editModel.Lines.Add(new InvoiceLineViewModel { Name = "Editable service", Price = 100, Quantity = 1 });
+        Check(editModel.SaveInvoice(), "UI edit fixture must save");
+        window.Close();
+        Avalonia.Application.Current!.RequestedThemeVariant = ThemeVariant.Light;
+        window = new MainWindow { DataContext = editModel, Width = 1440, Height = 900 };
+        window.Show();
+        editModel.NavigateCommand.Execute("Invoices");
+        Click("⋯"); Click("Edit"); Capture("invoice-edit");
+        Check(editModel.IsEditingDocument && editModel.Lines.Single().Name == "Editable service", "Edit action must load the saved document");
+        Click("Save Invoice (Ctrl+S)");
+        Check(editModel.Invoices.Count == 1 && editModel.LastSavedDocument?.Name == "00000001", "UI save must update the existing document");
+        Click("Create New Invoice");
+        Check(!editModel.IsEditingDocument && editModel.Lines.Count == 0, "Success screen must start a fresh invoice");
         window.Close();
         if (args.Length > 1) CompareScreenshots(output, args[1]);
         Console.WriteLine($"Passed {assertions} checks. Screenshots: {output}");
@@ -142,6 +159,46 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckInvoiceEditing()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-edit-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.InvoiceCustomer[0].Value = "Original";
+        model.InvoiceDetails[2].Value = "2026-12-31";
+        model.InvoiceOptions[2].Value = "Original note";
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Original item", Price = 100, Quantity = 2, TaxRate = 5 });
+        Check(model.SaveInvoice(), "Editable invoice must save");
+        var id = model.Invoices.Single().SourceId;
+        var stale = new MainWindowViewModel(factory, path);
+        Check(stale.LoadDocumentForEditing(stale.Invoices.Single()), "Second editor must load the original snapshot");
+        var editor = new MainWindowViewModel(factory, path);
+        Check(editor.LoadDocumentForEditing(editor.Invoices.Single()), "Persisted document must load for editing");
+        Check(editor.InvoiceDetails[2].Value == "2026-12-31" && editor.InvoiceOptions[2].Value == "Original note" && editor.Totals.Total == 210, "Editor must restore saved inputs and totals");
+        editor.Lines[0].Quantity = 3;
+        editor.InvoiceOptions[2].Value = "Updated note";
+        Check(editor.SaveInvoice(), "Edited document must save");
+        Check(editor.Invoices.Count == 1 && editor.Invoices.Single().SourceId == id && editor.Invoices.Single().Name == "00000001", "Edit must preserve identity and number without adding a document");
+        Check(editor.PeekNextDocumentNumber("Invoice") == "00000002", "Editing must not consume another number");
+        editor.InvoiceCustomer[0].Value = "Updated customer";
+        Check(editor.SaveInvoice(), "Repeated editing saves must remain updates");
+        using (var db = factory.CreateDbContext())
+            Check(db.Invoices.Single().GrandTotal == 315 && db.Invoices.Single().Snapshot!.Notes == "Updated note" && db.InvoiceItems.Count() == 1, "Edits must replace line data and snapshot atomically");
+        stale.Lines[0].Price = 1;
+        Check(!stale.SaveInvoice() && stale.Status.Contains("changed"), "Stale editor must not overwrite a newer saved version");
+        var fresh = new MainWindowViewModel(factory, path);
+        Check(fresh.LoadDocumentForEditing(fresh.Invoices.Single()), "Latest snapshot must reopen");
+        var payment = FormCatalog.Payment(); payment[0].Value = "10";
+        Check(model.ApplyPayment(model.Invoices.Single(), payment), "Payment during editing must apply");
+        Check(!fresh.SaveInvoice(), "Payment arriving after editor load must prevent overwrite");
+        var paid = new MainWindowViewModel(factory, path);
+        Check(!paid.LoadDocumentForEditing(paid.Invoices.Single()), "Paid documents must not open in this edit workflow");
+        using (var db = factory.CreateDbContext())
+            Check(db.Invoices.Single().PaidAmount == 10 && db.Invoices.Single().GrandTotal == 315, "Rejected edit must preserve payment and invoice totals");
+        editor.StartDocument("Quotation");
+        Check(!editor.IsEditingDocument && editor.Lines.Count == 0, "Starting a new document must clear edit state");
     }
 
     private static void CheckInvoiceSnapshots()

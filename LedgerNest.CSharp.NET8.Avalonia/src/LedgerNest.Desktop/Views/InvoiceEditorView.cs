@@ -30,8 +30,8 @@ public partial class MainWindow
             productSearch.Text = ""; suggestions.IsVisible = false;
         };
         var lineHost = new ContentControl(); var totals = new ContentControl(); var count = Ui.Text("0 items", 11, true, Ui.Muted);
-        var create = Ui.Button($"Create {Model.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (Model.SaveInvoice()) ShowInvoiceSuccess(); }, true);
-        System.ComponentModel.PropertyChangedEventHandler typeChanged = (_, _) => create.Content = $"Create {Model.InvoiceDetails[0].Value} (Ctrl+S)";
+        var create = Ui.Button($"{(Model.IsEditingDocument ? "Save" : "Create")} {Model.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (Model.SaveInvoice()) ShowInvoiceSuccess(); }, true);
+        System.ComponentModel.PropertyChangedEventHandler typeChanged = (_, _) => create.Content = $"{(Model.IsEditingDocument ? "Save" : "Create")} {Model.InvoiceDetails[0].Value} (Ctrl+S)";
         Model.InvoiceDetails[0].PropertyChanged += typeChanged;
         create.DetachedFromVisualTree += (_, _) => Model.InvoiceDetails[0].PropertyChanged -= typeChanged;
         void UpdateTotals()
@@ -83,7 +83,7 @@ public partial class MainWindow
         }
         var footer = new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(64, 10), Child = Ui.Columns("*,Auto,*", actions, create, new Border()) };
         var header = new ContentControl();
-        void UpdateHeader() => header.Content = Ui.AppBar($"Create New {Model.InvoiceDetails[0].Value}", Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White), Ui.Text($"{Model.InvoiceDetails[0].Value} Number : #[{Model.PeekNextDocumentNumber(Model.InvoiceDetails[0].Value)}]", 16, color: Brushes.White));
+        void UpdateHeader() => header.Content = Ui.AppBar($"{(Model.IsEditingDocument ? "Edit" : "Create New")} {Model.InvoiceDetails[0].Value}", Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White), Ui.Text($"{Model.InvoiceDetails[0].Value} Number : #[{Model.EditorDocumentNumber}]", 16, color: Brushes.White));
         System.ComponentModel.PropertyChangedEventHandler headerChanged = (_, _) => UpdateHeader();
         Model.InvoiceDetails[0].PropertyChanged += headerChanged;
         System.Collections.Specialized.NotifyCollectionChangedEventHandler documentsChanged = (_, _) => UpdateHeader();
@@ -108,6 +108,6 @@ public partial class MainWindow
     }
     private void ShowInvoiceSuccess()
     {
-        page.Content = Ui.Scroll(Ui.Stack(24, Ui.Empty($"{Model.InvoiceDetails[0].Value} created successfully", Model.Invoices.Last().Name, "✓"), Ui.Card(Ui.Stack(16, Ui.Text("Payment Summary", 18, true), TotalRow("Total", Model.Totals.Total), Ui.Button("Apply Payment", () => ShowPayment(Model.Invoices.Last())))), Ui.Wrap(Ui.Button("View", () => ShowPayment(Model.Invoices.Last())), Ui.Button("Preview"), Ui.Button("Download"), Ui.Button("Print"), Ui.Button("Create New Invoice", () => { Model.Lines.Clear(); foreach (var f in Model.InvoiceCustomer) f.Value = ""; page.Content = InvoiceEditor(); }, true))));
+        page.Content = Ui.Scroll(Ui.Stack(24, Ui.Empty($"{Model.InvoiceDetails[0].Value} saved successfully", Model.LastSavedDocument!.Name, "✓"), Ui.Card(Ui.Stack(16, Ui.Text("Payment Summary", 18, true), TotalRow("Total", Model.Totals.Total), Ui.Button("Apply Payment", () => ShowPayment(Model.LastSavedDocument!)))), Ui.Wrap(Ui.Button("View", () => ShowPayment(Model.LastSavedDocument!)), Ui.Button("Preview"), Ui.Button("Download"), Ui.Button("Print"), Ui.Button("Create New Invoice", () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); }, true))));
     }
 }
