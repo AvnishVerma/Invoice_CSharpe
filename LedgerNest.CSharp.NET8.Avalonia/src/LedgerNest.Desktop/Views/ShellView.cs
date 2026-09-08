@@ -9,18 +9,30 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
+    private MainWindowViewModel? shellModel;
+    private System.ComponentModel.PropertyChangedEventHandler? shellChanged;
+
     private void InitializeShell(MainWindowViewModel vm)
     {
+        if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
+        page.Content = null;
+        sidebar.Content = null;
+        CloseOverlay();
+        foreach (var control in new Control[] { sidebar, page, status })
+            if (control.Parent is Panel parent) parent.Children.Remove(control);
         Root.Children.Clear();
+        shellModel = vm;
+        status.Text = vm.Status;
         var body = Ui.Columns("Auto,*", sidebar, page);
-        var statusBar = new Border { Background = Brush.Parse("#E8F5E9"), Padding = new Thickness(16, 8), Child = Ui.Columns("*,Auto", status, Ui.Button("×", () => vm.Status = "")), IsVisible = false };
+        var statusBar = new Border { Background = Ui.Palette("#E8F5E9", "#183A2D"), Padding = new Thickness(16, 8), Child = Ui.Columns("*,Auto", status, Ui.Button("×", () => vm.Status = "")), IsVisible = vm.Status.Length > 0 };
         Root.Children.Add(Ui.Rows("*,Auto", body, statusBar)); Root.Children.Add(overlay);
-        vm.PropertyChanged += (_, e) =>
+        shellChanged = (_, e) =>
         {
             if (e.PropertyName == nameof(vm.Title)) { ShowPage(); BuildSidebar(); }
             if (e.PropertyName == nameof(vm.SidebarExpanded)) BuildSidebar();
             if (e.PropertyName == nameof(vm.Status)) { status.Text = vm.Status; statusBar.IsVisible = vm.Status.Length > 0; }
         };
+        vm.PropertyChanged += shellChanged;
         BuildSidebar(); ShowPage();
     }
     private void BuildSidebar()
@@ -43,7 +55,7 @@ public partial class MainWindow
         var avatar = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(15), Background = Brush.Parse("#DDE3ED"), Child = Ui.Text("A", 12, true, Ui.Primary) }; ((TextBlock)avatar.Child!).HorizontalAlignment = HorizontalAlignment.Center;
         var logout = Ui.Button("⇥", ShowLogin); logout.Classes.Add("text"); logout.Padding = new Thickness(4); logout.MinHeight = 30;
         var footer = expanded ? Ui.Stack(8, Ui.Columns("30,10,*,Auto", avatar, new Border(), Ui.Stack(2, Ui.Text("admin", 13), Ui.Text("Admin", 11, color: Ui.Muted)), logout), new TextBlock { Text = "v4.4.0", FontSize = 12, Foreground = Ui.Outline, HorizontalAlignment = HorizontalAlignment.Center }) : Ui.Stack(8, avatar, logout);
-        sidebar.Content = new Border { Width = expanded ? 210 : 64, Background = Brush.Parse("#FAFAFA"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Rows("76,*,Auto", new Border { Padding = new Thickness(expanded ? 12 : 0, 0), Child = logo }, new Border { Padding = new Thickness(0, 8, 0, 0), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Child = Ui.Scroll(nav, 0) }, new Border { BorderThickness = new Thickness(0, 1, 0, 0), BorderBrush = Ui.Outline, Padding = new Thickness(14, 12), Child = footer }) };
+        sidebar.Content = new Border { Width = expanded ? 210 : 64, Background = Ui.Surface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Rows("76,*,Auto", new Border { Padding = new Thickness(expanded ? 12 : 0, 0), Child = logo }, new Border { Padding = new Thickness(0, 8, 0, 0), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Child = Ui.Scroll(nav, 0) }, new Border { BorderThickness = new Thickness(0, 1, 0, 0), BorderBrush = Ui.Outline, Padding = new Thickness(14, 12), Child = footer }) };
     }
     private void ShowPage()
     {

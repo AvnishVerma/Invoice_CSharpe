@@ -11,32 +11,33 @@ public partial class MainWindow
 {
     private Control InvoiceEditor()
     {
-        var saveCustomer = Ui.Button("Save customer", () => Model.SaveRecord("Customer", Model.InvoiceCustomer)); saveCustomer.Classes.Add("text");
+        var editorModel = Model;
+        var saveCustomer = Ui.Button("Save customer", () => editorModel.SaveRecord("Customer", editorModel.InvoiceCustomer)); saveCustomer.Classes.Add("text");
         var customerFields = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*"), RowDefinitions = new RowDefinitions("Auto,12,Auto") };
         int[] order = [0, 1, 2, 4, 3, 5]; string[] labels = ["Customer Name *", "Business name", "Phone", "GSTIN / VAT", "Email", "Address"];
         for (var i = 0; i < order.Length; i++)
         {
-            var f = Ui.Field(Model.InvoiceCustomer[order[i]], labels[i], true); Grid.SetColumn(f, i % 3 * 2); Grid.SetRow(f, i / 3 * 2); customerFields.Children.Add(f);
+            var f = Ui.Field(editorModel.InvoiceCustomer[order[i]], labels[i], true); Grid.SetColumn(f, i % 3 * 2); Grid.SetRow(f, i / 3 * 2); customerFields.Children.Add(f);
         }
         var customerHeader = Ui.Columns("Auto,8,*,Auto", Ui.Icon("person", 16), new Border(), Ui.Text("CUSTOMER DETAILS", 12, true), Ui.Wrap(saveCustomer, Ui.Button("Select from existing", SelectCustomer), Ui.Button("⌃", () => customerFields.IsVisible = !customerFields.IsVisible)));
         var customer = Ui.Card(Ui.Stack(6, customerHeader, customerFields), 12);
-        var productSearch = new TextBox { Watermark = "Search & add a product or service (Ctrl+F)", MinWidth = 120, Background = Brushes.White };
+        var productSearch = new TextBox { Watermark = "Search & add a product or service (Ctrl+F)", MinWidth = 120, Background = Ui.Canvas };
         var suggestions = new ListBox { IsVisible = false, MaxHeight = 180 };
-        productSearch.TextChanged += (_, _) => { suggestions.ItemsSource = Model.Products.Where(p => p.Name.Contains(productSearch.Text ?? "", StringComparison.OrdinalIgnoreCase)).Select(p => p.Name).ToArray(); suggestions.IsVisible = !string.IsNullOrWhiteSpace(productSearch.Text); };
+        productSearch.TextChanged += (_, _) => { suggestions.ItemsSource = editorModel.Products.Where(p => p.Name.Contains(productSearch.Text ?? "", StringComparison.OrdinalIgnoreCase)).Select(p => p.Name).ToArray(); suggestions.IsVisible = !string.IsNullOrWhiteSpace(productSearch.Text); };
         suggestions.SelectionChanged += (_, _) =>
         {
-            var product = Model.Products.FirstOrDefault(p => p.Name == suggestions.SelectedItem?.ToString()); if (product == null) return;
-            Model.AddProductLine(product);
+            var product = editorModel.Products.FirstOrDefault(p => p.Name == suggestions.SelectedItem?.ToString()); if (product == null) return;
+            editorModel.AddProductLine(product);
             productSearch.Text = ""; suggestions.IsVisible = false;
         };
         var lineHost = new ContentControl(); var totals = new ContentControl(); var count = Ui.Text("0 items", 11, true, Ui.Muted);
-        var create = Ui.Button($"{(Model.IsEditingDocument ? "Save" : "Create")} {Model.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (Model.SaveInvoice()) ShowInvoiceSuccess(); }, true);
-        System.ComponentModel.PropertyChangedEventHandler typeChanged = (_, _) => create.Content = $"{(Model.IsEditingDocument ? "Save" : "Create")} {Model.InvoiceDetails[0].Value} (Ctrl+S)";
-        Model.InvoiceDetails[0].PropertyChanged += typeChanged;
-        create.DetachedFromVisualTree += (_, _) => Model.InvoiceDetails[0].PropertyChanged -= typeChanged;
+        var create = Ui.Button($"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (editorModel.SaveInvoice()) ShowInvoiceSuccess(); }, true);
+        System.ComponentModel.PropertyChangedEventHandler typeChanged = (_, _) => create.Content = $"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)";
+        editorModel.InvoiceDetails[0].PropertyChanged += typeChanged;
+        create.DetachedFromVisualTree += (_, _) => editorModel.InvoiceDetails[0].PropertyChanged -= typeChanged;
         void UpdateTotals()
         {
-            var t = Model.Totals; var rows = Ui.Stack(8, TotalRow("Subtotal:", t.Subtotal), TotalRow("Tax:", t.Tax));
+            var t = editorModel.Totals; var rows = Ui.Stack(8, TotalRow("Subtotal:", t.Subtotal), TotalRow("Tax:", t.Tax));
             if (t.ItemDiscount != 0) rows.Children.Add(TotalRow("Item Discount:", t.ItemDiscount));
             if (t.AdditionalCosts != 0) rows.Children.Add(TotalRow("Additional Costs:", t.AdditionalCosts));
             if (t.InvoiceDiscount != 0) rows.Children.Add(TotalRow("Invoice Discount:", t.InvoiceDiscount));
@@ -44,34 +45,34 @@ public partial class MainWindow
         }
         void RefreshLines()
         {
-            count.Text = $"{Model.Lines.Count} items";
-            if (Model.Lines.Count == 0) lineHost.Content = Ui.Empty("No items added yet", "Search below or press Ctrl+F", "cart");
+            count.Text = $"{editorModel.Lines.Count} items";
+            if (editorModel.Lines.Count == 0) lineHost.Content = Ui.Empty("No items added yet", "Search below or press Ctrl+F", "cart");
             else
             {
                 var rows = Ui.Stack(0, new Border { Padding = new Thickness(8), Child = Ui.Columns("*,70,85,60,80,90,40", Ui.Text("ITEM", 11, true), Ui.Text("QTY", 11, true), Ui.Text("PRICE", 11, true), Ui.Text("TAX %", 11, true), Ui.Text("DISCOUNT", 11, true), Ui.Text("TOTAL", 11, true), Ui.Text("")) });
-                foreach (var line in Model.Lines)
+                foreach (var line in editorModel.Lines)
                 {
                     NumericUpDown Number(string property, decimal min = 0)
                     { var n = new NumericUpDown { Minimum = min, Maximum = 1000000000, Increment = 1, FormatString = "0.##", ShowButtonSpinner = false, Margin = new Thickness(2), MinWidth = 0 }; n.Bind(NumericUpDown.ValueProperty, new Binding(property) { Source = line, Mode = BindingMode.TwoWay }); return n; }
                     var total = Ui.Text(line.Total.ToString("0.00"), 12, true); total.Bind(TextBlock.TextProperty, new Binding(nameof(line.Total)) { Source = line, StringFormat = "{0:0.00}" });
-                    rows.Children.Add(new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(8), Child = Ui.Columns("*,70,85,60,80,90,40", Ui.Text(line.Name, 13, true), Number(nameof(line.Quantity), .001m), Number(nameof(line.Price)), Number(nameof(line.TaxRate)), Number(nameof(line.Discount)), total, Ui.Button("×", () => Model.Lines.Remove(line))) });
+                    rows.Children.Add(new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(8), Child = Ui.Columns("*,70,85,60,80,90,40", Ui.Text(line.Name, 13, true), Number(nameof(line.Quantity), .001m), Number(nameof(line.Price)), Number(nameof(line.TaxRate)), Number(nameof(line.Discount)), total, Ui.Button("×", () => editorModel.Lines.Remove(line))) });
                 }
                 lineHost.Content = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, Content = new Border { MinWidth = 650, Child = rows } };
             }
-            UpdateTotals(); create.IsEnabled = Model.Lines.Count > 0;
+            UpdateTotals(); create.IsEnabled = editorModel.Lines.Count > 0;
         }
-        var quickAdd = Ui.Card(Ui.Stack(4, suggestions, Ui.Columns("*,12,Auto", productSearch, new Border(), Ui.Button("＋ Custom Item", ShowCustomItem))), 8); quickAdd.Background = Brush.Parse("#E0F2F1"); quickAdd.BorderBrush = Brush.Parse("#80CBC4");
+        var quickAdd = Ui.Card(Ui.Stack(4, suggestions, Ui.Columns("*,12,Auto", productSearch, new Border(), Ui.Button("＋ Custom Item", ShowCustomItem))), 8); quickAdd.Background = Ui.Palette("#E0F2F1", "#163B38"); quickAdd.BorderBrush = Brush.Parse("#80CBC4");
         var items = Ui.Card(Ui.Rows("Auto,*,Auto", Ui.Wrap(Ui.Text("ITEMS", 12, true), count), lineHost, quickAdd), 12);
-        var detailFields = Ui.Stack(8, Ui.Fields(Model.InvoiceDetails.Take(4)), Ui.Field(Model.HideInvoiceNumber));
+        var detailFields = Ui.Stack(8, Ui.Fields(editorModel.InvoiceDetails.Take(4)), Ui.Field(editorModel.HideInvoiceNumber));
         var detailHeading = Ui.Columns("*,Auto", Ui.Text("INVOICE DETAILS", 12, true), Ui.Button("⌃", () => detailFields.IsVisible = !detailFields.IsVisible));
         var details = Ui.Card(Ui.Stack(0, detailHeading, detailFields), 12);
         var additional = Ui.Stack(8);
-        void AddCost(FormField[] fields) => additional.Children.Add(Ui.Columns("*,Auto", Ui.Fields(fields, 2), Ui.Button("×", () => { Model.AdditionalCosts.Remove(fields); additional.Children.Clear(); foreach (var cost in Model.AdditionalCosts) AddCost(cost); })));
-        foreach (var cost in Model.AdditionalCosts) AddCost(cost);
-        var costs = new Expander { Header = "⊞  Additional Costs", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(8, additional, Ui.Button("＋ Add Cost", () => { FormField[] fields = [new("Description"), new("Amount", "0", "number")]; Model.AdditionalCosts.Add(fields); AddCost(fields); })) };
-        var discount = Ui.Card(Ui.Fields(Model.InvoiceOptions.Take(2), 2), 8); discount.Background = Brush.Parse("#FFF4F4"); discount.BorderBrush = Brush.Parse("#FFD6A5");
-        var tax = Ui.Fields(Model.InvoiceOptions.Skip(3));
-        var options = Ui.Stack(12, costs, discount, Ui.Text("NOTES", 11, true, Ui.Muted), Ui.Field(Model.InvoiceOptions[2]), Ui.Text("TAX SETTINGS", 11, true, Ui.Muted), tax, Ui.Field(Model.InterState));
+        void AddCost(FormField[] fields) => additional.Children.Add(Ui.Columns("*,Auto", Ui.Fields(fields, 2), Ui.Button("×", () => { editorModel.AdditionalCosts.Remove(fields); additional.Children.Clear(); foreach (var cost in editorModel.AdditionalCosts) AddCost(cost); })));
+        foreach (var cost in editorModel.AdditionalCosts) AddCost(cost);
+        var costs = new Expander { Header = "⊞  Additional Costs", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(8, additional, Ui.Button("＋ Add Cost", () => { FormField[] fields = [new("Description"), new("Amount", "0", "number")]; editorModel.AdditionalCosts.Add(fields); AddCost(fields); })) };
+        var discount = Ui.Card(Ui.Fields(editorModel.InvoiceOptions.Take(2), 2), 8); discount.Background = Ui.Palette("#FFF4F4", "#392A30"); discount.BorderBrush = Brush.Parse("#FFD6A5");
+        var tax = Ui.Fields(editorModel.InvoiceOptions.Skip(3));
+        var options = Ui.Stack(12, costs, discount, Ui.Text("NOTES", 11, true, Ui.Muted), Ui.Field(editorModel.InvoiceOptions[2]), Ui.Text("TAX SETTINGS", 11, true, Ui.Muted), tax, Ui.Field(editorModel.InterState));
         var optionsCard = Ui.Card(Ui.Rows("*,Auto", Ui.Scroll(options, 12), new Border { Padding = new Thickness(16), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Child = totals }), 0);
         var left = Ui.Rows("Auto,8,*", customer, new Border(), items); var right = Ui.Rows("Auto,8,*", details, new Border(), optionsCard);
         var viewport = new InvoiceWorkspace(left, right, items, optionsCard);
@@ -83,17 +84,17 @@ public partial class MainWindow
         }
         var footer = new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(64, 10), Child = Ui.Columns("*,Auto,*", actions, create, new Border()) };
         var header = new ContentControl();
-        void UpdateHeader() => header.Content = Ui.AppBar($"{(Model.IsEditingDocument ? "Edit" : "Create New")} {Model.InvoiceDetails[0].Value}", Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White), Ui.Text($"{Model.InvoiceDetails[0].Value} Number : #[{Model.EditorDocumentNumber}]", 16, color: Brushes.White));
+        void UpdateHeader() => header.Content = Ui.AppBar($"{(editorModel.IsEditingDocument ? "Edit" : "Create New")} {editorModel.InvoiceDetails[0].Value}", Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White), Ui.Text($"{editorModel.InvoiceDetails[0].Value} Number : #[{editorModel.EditorDocumentNumber}]", 16, color: Brushes.White));
         System.ComponentModel.PropertyChangedEventHandler headerChanged = (_, _) => UpdateHeader();
-        Model.InvoiceDetails[0].PropertyChanged += headerChanged;
+        editorModel.InvoiceDetails[0].PropertyChanged += headerChanged;
         System.Collections.Specialized.NotifyCollectionChangedEventHandler documentsChanged = (_, _) => UpdateHeader();
-        Model.Invoices.CollectionChanged += documentsChanged;
+        editorModel.Invoices.CollectionChanged += documentsChanged;
         UpdateHeader();
         var body = Ui.Rows("Auto,*,Auto", header, viewport, footer);
-        body.DetachedFromVisualTree += (_, _) => { Model.InvoiceDetails[0].PropertyChanged -= headerChanged; Model.Invoices.CollectionChanged -= documentsChanged; };
-        Model.InvoiceChanged += UpdateTotals;
-        System.Collections.Specialized.NotifyCollectionChangedEventHandler collectionChanged = (_, _) => RefreshLines(); Model.Lines.CollectionChanged += collectionChanged;
-        body.DetachedFromVisualTree += (_, _) => { Model.InvoiceChanged -= UpdateTotals; Model.Lines.CollectionChanged -= collectionChanged; };
+        body.DetachedFromVisualTree += (_, _) => { editorModel.InvoiceDetails[0].PropertyChanged -= headerChanged; editorModel.Invoices.CollectionChanged -= documentsChanged; };
+        editorModel.InvoiceChanged += UpdateTotals;
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler collectionChanged = (_, _) => RefreshLines(); editorModel.Lines.CollectionChanged += collectionChanged;
+        body.DetachedFromVisualTree += (_, _) => { editorModel.InvoiceChanged -= UpdateTotals; editorModel.Lines.CollectionChanged -= collectionChanged; };
         body.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.F && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control)) { productSearch.Focus(); e.Handled = true; } };
         body.SizeChanged += (_, e) => footer.Padding = new Thickness(e.NewSize.Width < 700 ? 8 : 64, 10);
         RefreshLines(); return body;

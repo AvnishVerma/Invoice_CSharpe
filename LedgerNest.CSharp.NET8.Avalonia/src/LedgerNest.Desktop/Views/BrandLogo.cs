@@ -17,7 +17,7 @@ public sealed class BrandLogo : StackPanel
         foreach (var width in new[] { 16, 16, 10 })
             strokes.Children.Add(new Border { Width = width, Height = 2, Background = Brushes.White, HorizontalAlignment = HorizontalAlignment.Left });
         Children.Add(new Border { Width = 32, Height = 36, CornerRadius = new CornerRadius(5, 5, 10, 5), Background = Ui.Primary, Padding = new Thickness(8, 10), Child = strokes });
-        if (!compact) Children.Add(Ui.Text(Branding.Name, 18, true, Brush.Parse(Branding.InkColor)));
+        if (!compact) Children.Add(Ui.Text(Branding.Name, 18, true, Ui.Palette(Branding.InkColor, "#DCEBFA")));
         Avalonia.Automation.AutomationProperties.SetName(this, Branding.Name);
     }
 }

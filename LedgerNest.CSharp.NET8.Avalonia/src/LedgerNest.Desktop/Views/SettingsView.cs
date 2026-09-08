@@ -67,7 +67,7 @@ public partial class MainWindow
             }
             else fields = Ui.Fields(section.Fields);
             var card = Ui.Card(Ui.Stack(32, Ui.Columns("4,12,*", new Border { Height = 24, Background = Ui.Primary, CornerRadius = new CornerRadius(2) }, new Border(), Ui.Text(labels[index], 20, true)), fields), 32);
-            card.Background = Brush.Parse("#FAFAFA"); card.MaxWidth = 900; card.CornerRadius = new CornerRadius(16); card.BoxShadow = BoxShadows.Parse("0 3 8 0 #18000000");
+            card.Background = Ui.Surface; card.MaxWidth = 900; card.CornerRadius = new CornerRadius(16); card.BoxShadow = BoxShadows.Parse("0 3 8 0 #18000000");
             content.Content = Ui.Scroll(card, 28);
         }
         for (var i = 0; i < order.Length; i++)
@@ -76,7 +76,7 @@ public partial class MainWindow
         }
         var promo = Ui.Card(Ui.Stack(12, Ui.Text("Need more fields on your invoices?", 14, true, Ui.Primary), Ui.Text("Add PO number, project code, department, or any custom field.", 12, color: Ui.Muted), Ui.Button("See Options", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 14);
         var save = Ui.Button("Save", () => Model.SaveSettings("Invoice Settings"), true); save.HorizontalAlignment = HorizontalAlignment.Stretch;
-        var rail = new Border { Background = Brush.Parse("#FAFAFA"), Child = Ui.Rows("*,Auto,Auto", Ui.Scroll(nav, 12), new Border { Padding = new Thickness(16), Child = promo }, new Border { Padding = new Thickness(16, 0, 16, 16), Child = save }) };
+        var rail = new Border { Background = Ui.Surface, Child = Ui.Rows("*,Auto,Auto", Ui.Scroll(nav, 12), new Border { Padding = new Thickness(16), Child = promo }, new Border { Padding = new Thickness(16, 0, 16, 16), Child = save }) };
         var layout = Ui.Columns("240,*", rail, content);
         layout.SizeChanged += (_, e) =>
         {

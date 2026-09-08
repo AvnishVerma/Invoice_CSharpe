@@ -22,7 +22,7 @@ public sealed class InvoiceWorkspace : ContentControl
             VerticalAlignment = VerticalAlignment.Stretch,
             ResizeDirection = GridResizeDirection.Columns,
             ResizeBehavior = GridResizeBehavior.PreviousAndNext,
-            Background = Brush.Parse("#E0F2F1")
+            Background = Ui.Palette("#E0F2F1", "#163B38")
         };
         ToolTip.SetTip(splitter, "Drag to resize invoice panels");
         Avalonia.Automation.AutomationProperties.SetName(splitter, "Resize invoice panels");

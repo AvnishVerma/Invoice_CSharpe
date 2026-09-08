@@ -74,3 +74,10 @@ Editing rejects missing/unsupported snapshots, trash, changed records and docume
 Regression checks cover reload, repeated saves, retained identity, line replacement, stale editors and payments arriving during editing, plus UI Edit/Save/New actions. Review also found an existing shell error on replacing a live window's DataContext and low-contrast dark-themed fields. Tests use a fresh window and explicit light theme; these UI findings remain open, not fixed by the fixture change.
 
 Unpaid-edit batch validation: build passed with zero warnings/errors; all 460 checks passed. Reviewed light-theme edit capture at `/tmp/ledgernest-edit-captures/invoice-edit.png`. Hosted CI and complete legacy/production readiness remain unverified.
+
+
+## Theme and shell lifecycle follow-up
+
+Resolved the live-window DataContext reparenting failure and removed the old shell model listener. Invoice editor event cleanup now captures the editor's original model. Shared mutable palette brushes update field surfaces and text in place when the application theme changes, preserving active controls and unsaved input. Wordmark and outlined-action contrast were also corrected.
+
+Validation: build passed with zero warnings/errors; 470 checks passed. The test now replaces the existing window's model and verifies old-model event isolation, then switches the same edited draft through dark/light themes. Both captures were visually reviewed under `/tmp/ledgernest-theme-lifecycle-captures`. Broader accessibility, native OS theme transitions, window lifecycle cases and complete visual parity remain unverified.

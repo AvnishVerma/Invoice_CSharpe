@@ -39,7 +39,7 @@ public partial class MainWindow
         {
             var (label, value, icon, hex) = values[i];
             var badge = new Border { Width = 37, Height = 37, CornerRadius = new CornerRadius(10), Background = new SolidColorBrush(Color.Parse(hex), .1), Child = Ui.Icon(icon, 19, Brush.Parse(hex)) };
-            var card = new Border { Padding = new Thickness(18), CornerRadius = new CornerRadius(14), Background = Brush.Parse("#FAFAFA"), BoxShadow = BoxShadows.Parse("0 3 12 0 #0F000000"), Child = Ui.Columns("37,12,*", badge, new Border(), Ui.Stack(4, Ui.Text(label, 11, color: Ui.Muted), Ui.Text(value, 16, true))) };
+            var card = new Border { Padding = new Thickness(18), CornerRadius = new CornerRadius(14), Background = Ui.Surface, BoxShadow = BoxShadows.Parse("0 3 12 0 #0F000000"), Child = Ui.Columns("37,12,*", badge, new Border(), Ui.Stack(4, Ui.Text(label, 11, color: Ui.Muted), Ui.Text(value, 16, true))) };
             Grid.SetColumn(card, i * 2); stats.Children.Add(card);
         }
         var recent = Ui.Stack(20, Ui.Columns("*,Auto", Ui.Columns("4,12,*", new Border { Height = 24, Background = Ui.Primary, CornerRadius = new CornerRadius(2) }, new Border(), Ui.Text("Recent Invoices", 22, true)), Ui.Text("Last 5 invoices", 13, color: Ui.Muted)));
@@ -53,7 +53,7 @@ public partial class MainWindow
         if (dashboardLayout == "Bento") body.Children.Add(Ui.Columns("*,*", Ui.Card(Ui.Stack(12, Ui.Text("Revenue", 18, true), Ui.Empty("No revenue data yet"))), Ui.Card(Ui.Stack(12, Ui.Text("Quick Actions", 18, true), Ui.Button("＋ New Invoice", () => Model.NavigateCommand.Execute("New Invoice")), Ui.Button("Customers", () => Model.NavigateCommand.Execute("Customers")), Ui.Button("Products", () => Model.NavigateCommand.Execute("Products"))))));
         if (dashboardLayout == "Simple Feed") { stats.IsVisible = false; greeting.IsVisible = false; }
         if (dashboardLayout == "Classic") greeting.IsVisible = false;
-        body.MaxWidth = 1600; return Ui.Rows("Auto,*", appbar, new Border { Background = Brush.Parse("#FAFAFA"), Child = Ui.Scroll(body, 28) });
+        body.MaxWidth = 1600; return Ui.Rows("Auto,*", appbar, new Border { Background = Ui.Surface, Child = Ui.Scroll(body, 28) });
     }
     private void Shortcuts() => ShowOverlay("Keyboard Shortcuts", Ui.Stack(16,
         Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print PDF")));

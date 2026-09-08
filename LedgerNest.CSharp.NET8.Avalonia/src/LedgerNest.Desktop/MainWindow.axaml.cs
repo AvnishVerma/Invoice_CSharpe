@@ -17,6 +17,18 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
+        Background = Ui.Canvas;
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == ActualThemeVariantProperty)
+                Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
+        };
+        Closed += (_, _) =>
+        {
+            if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
+            page.Content = null;
+        };
         Title = Branding.Name;
         DataContextChanged += (_, _) => { if (DataContext is MainWindowViewModel vm) InitializeShell(vm); };
         KeyDown += (_, e) =>

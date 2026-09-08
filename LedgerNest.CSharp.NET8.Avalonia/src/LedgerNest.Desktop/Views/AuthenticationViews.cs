@@ -16,8 +16,8 @@ public partial class MainWindow
         var forgot = Ui.Button("Forgot password?", ShowForgotPassword); forgot.Classes.Add("text"); forgot.HorizontalAlignment = HorizontalAlignment.Right;
         var content = Ui.Stack(16, logo, Ui.Card(Ui.Text("First time here? Log in with username admin and password admin, then set your own password when prompted.", 13, color: Ui.Muted), 12), Ui.Field(username), Ui.Field(password), new Border { Height = 0 }, login, forgot, new TextBlock { Text = Branding.Tagline, FontSize = 12, Foreground = Ui.Muted, HorizontalAlignment = HorizontalAlignment.Center });
         overlay.Margin = new Thickness(0); overlay.Children.Clear(); overlay.IsVisible = true;
-        var card = Ui.Card(content, 32); card.Width = 420; card.MaxWidth = Math.Max(280, Bounds.Width - 48); card.Background = Brush.Parse("#FAFAFA"); card.HorizontalAlignment = HorizontalAlignment.Center; card.VerticalAlignment = VerticalAlignment.Center; card.BoxShadow = BoxShadows.Parse("0 6 16 0 #33000000");
-        overlay.Children.Add(new Border { Background = Brush.Parse("#E3F2FD"), Child = Ui.Scroll(card, 24) });
+        var card = Ui.Card(content, 32); card.Width = 420; card.MaxWidth = Math.Max(280, Bounds.Width - 48); card.Background = Ui.Surface; card.HorizontalAlignment = HorizontalAlignment.Center; card.VerticalAlignment = VerticalAlignment.Center; card.BoxShadow = BoxShadows.Parse("0 6 16 0 #33000000");
+        overlay.Children.Add(new Border { Background = Ui.Palette("#E3F2FD", "#142A3B"), Child = Ui.Scroll(card, 24) });
     }
     private void ShowForgotPassword()
     {

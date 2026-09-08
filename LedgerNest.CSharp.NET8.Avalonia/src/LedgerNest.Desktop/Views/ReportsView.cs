@@ -31,7 +31,7 @@ public partial class MainWindow
         var dates = Ui.Fields([new("From Date", DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd"), "date"), new("To Date", DateTime.Today.ToString("yyyy-MM-dd"), "date")]); dates.IsVisible = false;
         period.SelectionChanged += (_, _) => dates.IsVisible = period.SelectedItem?.ToString() == "Custom…";
         nav.Children.Add(period); nav.Children.Add(dates); Select(reportTab);
-        return Ui.Columns("200,*", new Border { Background = Brush.Parse("#FAFAFA"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Scroll(nav, 16) }, host);
+        return Ui.Columns("200,*", new Border { Background = Ui.Surface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Scroll(nav, 16) }, host);
     }
     private Control ReportContent(string name)
     {

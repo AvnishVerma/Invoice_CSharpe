@@ -64,12 +64,31 @@ internal static class Ui
         ["picture_as_pdf"] = "\ue415",
         ["dark_mode"] = "\ue51c",
     };
+    private static readonly Dictionary<(string Light, string Dark), SolidColorBrush> palette = [];
+    private static bool darkTheme;
+    public static IBrush Palette(string light, string dark)
+    {
+        var key = (light, dark);
+        if (!palette.TryGetValue(key, out var brush))
+            palette[key] = brush = new SolidColorBrush(Color.Parse(darkTheme ? dark : light));
+        return brush;
+    }
+    public static void UpdateTheme(bool dark)
+    {
+        darkTheme = dark;
+        foreach (var entry in palette)
+            entry.Value.Color = Color.Parse(dark ? entry.Key.Dark : entry.Key.Light);
+    }
+    public static IBrush Accent => Palette("#0F766E", "#5EEAD4");
+    public static IBrush Surface => Palette("#FAFAFA", "#18212B");
+    public static IBrush Canvas => Palette("#FFFFFF", "#111820");
+    public static IBrush TextColor => Palette("#000000", "#F1F5F9");
     public static IBrush Primary => Brush.Parse(Branding.PrimaryColor);
-    public static IBrush CardSurface => Brush.Parse("#F7FAFC");
+    public static IBrush CardSurface => Palette("#F7FAFC", "#202B36");
     public static IBrush MaterialPrimary => Primary;
-    public static IBrush Muted => Brush.Parse("#666666");
-    public static IBrush Outline => Brush.Parse("#E0E0E0");
-    public static TextBlock Text(string text, double size = 14, bool bold = false, IBrush? color = null) => new() { Text = text, FontSize = size, FontWeight = bold ? FontWeight.Bold : FontWeight.Normal, Foreground = color ?? Brushes.Black, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+    public static IBrush Muted => Palette("#666666", "#BBC5D0");
+    public static IBrush Outline => Palette("#E0E0E0", "#526171");
+    public static TextBlock Text(string text, double size = 14, bool bold = false, IBrush? color = null) => new() { Text = text, FontSize = size, FontWeight = bold ? FontWeight.Bold : FontWeight.Normal, Foreground = color ?? TextColor, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
     public static StackPanel Stack(double spacing, params Control[] children)
     { var p = new StackPanel { Spacing = spacing }; foreach (var c in children) p.Children.Add(c); return p; }
     public static WrapPanel Wrap(params Control[] children)
@@ -87,10 +106,11 @@ internal static class Ui
         if (label.Length > 0 && symbols.TryGetValue(label[..1], out var symbol))
         {
             var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            content.Children.Add(Icon(symbol, 18, primary ? Brushes.White : Primary));
-            if (label.Length > 1) content.Children.Add(Text(label[1..].Trim(), 14, color: primary ? Brushes.White : Primary));
+            content.Children.Add(Icon(symbol, 18, primary ? Brushes.White : Accent));
+            if (label.Length > 1) content.Children.Add(Text(label[1..].Trim(), 14, color: primary ? Brushes.White : Accent));
             button.Content = content;
         }
+        if (!primary) button.Foreground = Accent;
         button.Classes.Add(primary ? "primary" : "outline");
         AutomationProperties.SetName(button, label);
         if (action == null) ToolTip.SetTip(button, "This service has not yet been migrated.");
