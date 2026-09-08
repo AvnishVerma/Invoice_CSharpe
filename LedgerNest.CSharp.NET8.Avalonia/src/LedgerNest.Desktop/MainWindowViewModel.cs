@@ -79,17 +79,60 @@ public partial class MainWindowViewModel : ObservableObject
         Status = $"{kind} saved.";
         return true;
     }
+    public string PeekNextDocumentNumber(string type)
+    {
+        ValidateDocumentType(type);
+        if (dbFactory == null)
+            return NextDocumentNumber(type, Invoices.Where(i => i["Type"] == type).Select(i => i.Name), InvoiceStartingNumber());
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        return NextDocumentNumber(db, type);
+    }
+
+    private static void ValidateDocumentType(string type)
+    {
+        if (type is not ("Invoice" or "Quotation" or "Receipt"))
+            throw new ArgumentException("Unknown document type.", nameof(type));
+    }
+
+    private long InvoiceStartingNumber()
+    {
+        var field = Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Starting Number");
+        return long.TryParse(field.Value, out var start) && start > 0 ? start : 1;
+    }
+
+    private string NextDocumentNumber(LedgerNestDbContext db, string type)
+    {
+        var key = SettingKey("Invoice Settings", "General", "Starting Number");
+        var setting = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == key)?.Value;
+        var start = long.TryParse(setting, out var parsed) && parsed > 0 ? parsed : InvoiceStartingNumber();
+        return NextDocumentNumber(type, db.Invoices.AsNoTracking().Where(i => i.Type == type).Select(i => i.InvoiceNumber).ToArray(), start);
+    }
+
+    private static string NextDocumentNumber(string type, IEnumerable<string> existing, long start)
+    {
+        // Earlier C# records used INV-0001; keep their numeric suffix in the sequence.
+        var maximum = existing.Select(number =>
+        {
+            var digits = new string(number.Where(char.IsAsciiDigit).ToArray());
+            return long.TryParse(digits, out var value) ? value : 0;
+        }).DefaultIfEmpty(0).Max();
+        var next = maximum > 0 ? checked(maximum + 1) : type == "Invoice" ? start : 1;
+        return next.ToString("D8", CultureInfo.InvariantCulture);
+    }
+
     public bool SaveInvoice()
     {
         if (Lines.Count == 0) { Status = "Add at least one item before creating an invoice."; return false; }
         if (Lines.Any(l => string.IsNullOrWhiteSpace(l.Name) || l.Quantity <= 0 || l.Price < 0 || l.TaxRate < 0 || l.Discount < 0))
         { Status = "Check item names, quantities, prices, tax and discounts."; return false; }
         var values = new Dictionary<string, string> {
-            ["Name"] = $"INV-{Invoices.Count + 1:0000}", ["Customer"] = InvoiceCustomer[0].Value,
+            ["Name"] = PeekNextDocumentNumber(InvoiceDetails[0].Value), ["Customer"] = InvoiceCustomer[0].Value,
             ["Type"] = InvoiceDetails[0].Value, ["Date"] = InvoiceDetails[1].Value,
             ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = "Unpaid"
         };
         Invoices.Add(new UiRecord { SourceId = SaveInvoiceToDatabase(values), Values = values });
+        InvoiceChanged?.Invoke();
         Status = $"{InvoiceDetails[0].Value} saved.";
         return true;
     }
@@ -907,6 +950,8 @@ public partial class MainWindowViewModel : ObservableObject
         if (dbFactory == null) return 0;
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
+        using var transaction = db.Database.BeginTransaction();
+        values["Name"] = NextDocumentNumber(db, values["Type"]);
         var customerName = InvoiceCustomer[0].Value.Trim();
         var customerId = db.Customers.AsNoTracking().FirstOrDefault(c => c.Name == customerName)?.Id;
         var invoice = new Invoice
@@ -941,6 +986,7 @@ public partial class MainWindowViewModel : ObservableObject
         };
         db.Invoices.Add(invoice);
         db.SaveChanges();
+        transaction.Commit();
         return invoice.Id;
     }
 

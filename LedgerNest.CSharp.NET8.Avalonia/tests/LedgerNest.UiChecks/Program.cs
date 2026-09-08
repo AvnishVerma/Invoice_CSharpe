@@ -26,6 +26,7 @@ internal static class Program
         CheckTotals();
         CheckPersistence();
         CheckDocumentTypes();
+        CheckDocumentNumbering();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
@@ -221,6 +222,34 @@ internal static class Program
         Check(model.InvoiceDetails[0].Value == "Receipt", "New receipt must select receipt type");
     }
 
+    private static void CheckDocumentNumbering()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-numbering-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Starting Number").Value = "27";
+        Check(model.SaveSettings("Invoice Settings"), "Starting number must persist");
+        Check(model.PeekNextDocumentNumber("Invoice") == "00000027" && model.PeekNextDocumentNumber("Invoice") == "00000027", "Number preview must honor settings without consuming a number");
+        Check(model.PeekNextDocumentNumber("Quotation") == "00000001" && model.PeekNextDocumentNumber("Receipt") == "00000001", "Quotation and receipt sequences must start independently at one");
+        var stale = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Numbered item", Price = 1 });
+        stale.Lines.Add(new InvoiceLineViewModel { Name = "Numbered item", Price = 1 });
+        Check(model.SaveInvoice() && stale.SaveInvoice(), "Two already-open editors must save distinct numbers");
+        using (var db = factory.CreateDbContext())
+            Check(db.Invoices.Select(i => i.InvoiceNumber).ToArray().Order().SequenceEqual(new[] { "00000027", "00000028" }), "Save must derive its number from current database rows");
+        model.InvoiceDetails[0].Value = "Quotation";
+        Check(model.SaveInvoice() && model.Invoices.Last().Name == "00000001", "Quotation must use its own sequence");
+        Check(new MainWindowViewModel(factory, path).PeekNextDocumentNumber("Invoice") == "00000029", "Invoice sequence must continue across restart");
+        var backup = model.CreateJsonBackup();
+        Check(model.RestoreJsonBackup(backup) && model.PeekNextDocumentNumber("Quotation") == "00000002", "Number sequence must survive backup restore");
+        using (var db = factory.CreateDbContext())
+        {
+            db.Invoices.Add(new LedgerNest.Domain.Invoice { InvoiceNumber = "INV-0099", Type = "Receipt" });
+            db.SaveChanges();
+        }
+        Check(model.PeekNextDocumentNumber("Receipt") == "00000100", "Pre-existing C# display numbers must retain numbering continuity");
+    }
+
     private static void CheckDocumentTypes()
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-types-{Guid.NewGuid():N}.db");
@@ -294,7 +323,7 @@ internal static class Program
         Check(reloaded.Products.Any(p => p.Name == "Imported Widget" && p["Sale Price"] == "12.75" && p["HSN/SAC"] == "HSN-55"), "Imported products must reload from SQLite");
         Check(reloaded.Invoices.Any(i => i["Customer"] == "Persisted Customer" && i["Total"] == "97.35" && i["Status"] == "Partial"), "Invoices must reload from SQLite");
         Check(reloaded.BuildReport("Products").Rows.Any(r => r[0] == "Persisted Product" && r[1] == "2" && r[2] == "₹ 85.00" && r[4] == "₹ -2.50" && r[5] == "-2.9%"), "Product report must reload historical invoice item cost and discount data from SQLite");
-        Check(reloaded.Payments.Any(p => p.Name == "INV-0001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
+        Check(reloaded.Payments.Any(p => p.Name == "00000001-R1" && p["Amount"] == "40.00" && p["Method"] == "UPI"), "Payments must reload from SQLite");
         var persistedUser = FormCatalog.User();
         persistedUser[0].Value = "persisted-admin";
         persistedUser[1].Value = "temporary-secret";
@@ -311,7 +340,7 @@ internal static class Program
             var savedUser = userDb.Users.Single(u => u.Username == "persisted-admin");
             Check(savedUser.Salt.Length > 0 && savedUser.PasswordHash.Length == 64 && savedUser.PasswordHash != "temporary-secret", "User password must be persisted only as a salted hash");
         }
-        var pdfBytes = reloaded.ExportDocumentPdf(reloaded.Invoices.Single(i => i.Name == "INV-0001"));
+        var pdfBytes = reloaded.ExportDocumentPdf(reloaded.Invoices.Single(i => i.Name == "00000001"));
         Check(pdfBytes.Length > 500 && System.Text.Encoding.ASCII.GetString(pdfBytes.Take(8).ToArray()).StartsWith("%PDF-1."), "Invoice PDF export must create a valid PDF document");
 
         var companySections = model.Settings["Company Info"];

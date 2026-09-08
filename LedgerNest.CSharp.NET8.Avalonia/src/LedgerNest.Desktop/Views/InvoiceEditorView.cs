@@ -82,7 +82,15 @@ public partial class MainWindow
             var action = Ui.Stack(4, button, Ui.Text(label, 12, true, Ui.Muted)); foreach (var c in action.Children) c.HorizontalAlignment = HorizontalAlignment.Center; actions.Children.Add(action);
         }
         var footer = new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(64, 10), Child = Ui.Columns("*,Auto,*", actions, create, new Border()) };
-        var body = Ui.Rows("Auto,*,Auto", Ui.AppBar("Create New Invoice", Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White), Ui.Text($"Invoice Number : #[{Model.Invoices.Count + 1:00000000}]", 16, color: Brushes.White)), viewport, footer);
+        var header = new ContentControl();
+        void UpdateHeader() => header.Content = Ui.AppBar($"Create New {Model.InvoiceDetails[0].Value}", Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White), Ui.Text($"{Model.InvoiceDetails[0].Value} Number : #[{Model.PeekNextDocumentNumber(Model.InvoiceDetails[0].Value)}]", 16, color: Brushes.White));
+        System.ComponentModel.PropertyChangedEventHandler headerChanged = (_, _) => UpdateHeader();
+        Model.InvoiceDetails[0].PropertyChanged += headerChanged;
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler documentsChanged = (_, _) => UpdateHeader();
+        Model.Invoices.CollectionChanged += documentsChanged;
+        UpdateHeader();
+        var body = Ui.Rows("Auto,*,Auto", header, viewport, footer);
+        body.DetachedFromVisualTree += (_, _) => { Model.InvoiceDetails[0].PropertyChanged -= headerChanged; Model.Invoices.CollectionChanged -= documentsChanged; };
         Model.InvoiceChanged += UpdateTotals;
         System.Collections.Specialized.NotifyCollectionChangedEventHandler collectionChanged = (_, _) => RefreshLines(); Model.Lines.CollectionChanged += collectionChanged;
         body.DetachedFromVisualTree += (_, _) => { Model.InvoiceChanged -= UpdateTotals; Model.Lines.CollectionChanged -= collectionChanged; };
