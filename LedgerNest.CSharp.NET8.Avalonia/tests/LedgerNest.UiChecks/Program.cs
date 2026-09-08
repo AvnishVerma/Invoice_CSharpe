@@ -28,6 +28,7 @@ internal static class Program
         CheckDocumentTypes();
         CheckDocumentNumbering();
         CheckDocumentTrash();
+        CheckRecordDeletion();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
@@ -228,6 +229,46 @@ internal static class Program
         Check(model.Title == "New Invoice" && model.InvoiceDetails[0].Value == "Quotation" && model.Lines.Count == 0 && model.InvoiceCustomer[0].Value == "", "New quotation must open a fresh quotation editor");
         model.StartDocument("Receipt");
         Check(model.InvoiceDetails[0].Value == "Receipt", "New receipt must select receipt type");
+    }
+
+    private static void CheckRecordDeletion()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-delete-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        var customer = FormCatalog.Customer();
+        customer[0].Value = "Historical customer"; customer[2].Value = "1234567890";
+        Check(model.SaveRecord("Customer", customer), "Deletion test customer must save");
+        var product = FormCatalog.Product();
+        product[1].Value = "Historical product"; product[5].Value = "100";
+        Check(model.SaveRecord("Product", product), "Deletion test product must save");
+        model.InvoiceCustomer[0].Value = customer[0].Value;
+        model.AddProductLine(model.Products.Single());
+        Check(model.SaveInvoice(), "Deletion test invoice must save");
+        using (var db = factory.CreateDbContext())
+        {
+            // Exercise a pre-snapshot invoice linked to both catalog records.
+            db.Invoices.Single().CustomerName = "";
+            db.InvoiceItems.Single().ProductId = model.Products.Single().SourceId;
+            db.SaveChanges();
+        }
+        Check(model.DeleteRecord("Customer", model.Customers.Single()), "Customer deletion must persist");
+        Check(model.DeleteRecord("Product", model.Products.Single()), "Product deletion must persist");
+        var reloaded = new MainWindowViewModel(factory, path);
+        Check(!reloaded.Customers.Any() && !reloaded.Products.Any(), "Deleted catalog records must stay deleted after restart");
+        Check(reloaded.Invoices.Single()["Customer"] == "Historical customer", "Deleting a customer must retain invoice customer identity");
+        Check(reloaded.BuildReport("Products").Rows.Any(r => r[0] == "Historical product" && r[1] == "1"), "Deleting a product must retain historical sales");
+        using (var db = factory.CreateDbContext())
+            Check(db.Invoices.Single().CustomerId == null && db.InvoiceItems.Single().ProductId == null, "Deletion must detach obsolete catalog references");
+        var backup = reloaded.CreateJsonBackup();
+        Check(reloaded.RestoreJsonBackup(backup) && reloaded.Invoices.Single()["Customer"] == "Historical customer", "Backup must preserve history after catalog deletion");
+        var user = FormCatalog.User();
+        user[0].Value = "deletable"; user[1].Value = "test-password";
+        Check(reloaded.SaveRecord("User", user) && reloaded.SignIn("deletable", "test-password"), "Deletion test user must sign in");
+        Check(reloaded.DeleteRecord("User", reloaded.Users.Single(u => u.Name == "deletable")) && reloaded.CurrentUsername == null, "Deleting signed-in user must clear session");
+        Check(!new MainWindowViewModel(factory, path).VerifyUser("deletable", "test-password"), "Deleted user must not authenticate after restart");
+        Check(reloaded.DeleteRecord("User", reloaded.Users.Single()), "Remaining user deletion must persist");
+        Check(!new MainWindowViewModel(factory, path).Users.Any(), "An emptied user table must not recreate default credentials on restart");
     }
 
     private static void CheckDocumentTrash()

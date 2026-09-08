@@ -46,6 +46,7 @@ public sealed class Invoice
     public DateTime? DeletedAt { get; set; }
     public DateTime InvoiceDate { get; set; } = DateTime.Now;
     public int? CustomerId { get; set; }
+    public string CustomerName { get; set; } = "";
     public string Status { get; set; } = "Draft";
     public decimal SubTotal { get; set; }
     public decimal TaxTotal { get; set; }

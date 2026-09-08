@@ -80,6 +80,53 @@ public partial class MainWindowViewModel : ObservableObject
         Status = $"{kind} saved.";
         return true;
     }
+    public bool DeleteRecord(string kind, UiRecord record)
+    {
+        var records = kind switch { "Customer" => Customers, "Product" => Products, "User" => Users, _ => null };
+        if (records == null || !records.Contains(record)) return false;
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            using var transaction = db.Database.BeginTransaction();
+            if (kind == "Customer")
+            {
+                var customer = db.Customers.Find(record.SourceId);
+                if (customer == null) return false;
+                foreach (var invoice in db.Invoices.Where(i => i.CustomerId == customer.Id))
+                {
+                    if (string.IsNullOrEmpty(invoice.CustomerName)) invoice.CustomerName = customer.Name;
+                    invoice.CustomerId = null;
+                }
+                db.Customers.Remove(customer);
+            }
+            else if (kind == "Product")
+            {
+                var product = db.Products.Find(record.SourceId);
+                if (product == null) return false;
+                foreach (var item in db.InvoiceItems.Where(i => i.ProductId == product.Id)) item.ProductId = null;
+                db.Products.Remove(product);
+            }
+            else
+            {
+                var user = db.Users.Find(record.SourceId);
+                if (user == null) return false;
+                db.Users.Remove(user);
+            }
+            db.SaveChanges();
+            transaction.Commit();
+        }
+        records.Remove(record);
+        DeletedRecords.Remove(record.Id);
+        if (kind == "User" && CurrentUsername == record.Name)
+        {
+            CurrentUsername = null;
+            RequiresPasswordChange = false;
+        }
+        Status = $"{kind} deleted.";
+        return true;
+    }
+
     public bool SetDocumentTrash(UiRecord record, bool trashed)
     {
         if (!Invoices.Contains(record)) return false;
@@ -671,7 +718,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["products"] = JsonSerializer.SerializeToNode(db.Products.AsNoTracking().OrderBy(p => p.Id).ToArray()),
             ["company_info"] = JsonSerializer.SerializeToNode(db.CompanyInfos.AsNoTracking().OrderBy(c => c.Id).ToArray()),
             ["settings"] = JsonSerializer.SerializeToNode(db.Settings.AsNoTracking().OrderBy(s => s.Key).ToArray()),
-            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount, i.Type, i.DeletedAt)).ToArray()),
+            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount, i.Type, i.DeletedAt, i.CustomerName)).ToArray()),
             ["invoice_items"] = JsonSerializer.SerializeToNode(db.InvoiceItems.AsNoTracking().OrderBy(i => i.Id).ToArray()),
             ["invoice_payments"] = JsonSerializer.SerializeToNode(db.Payments.AsNoTracking().OrderBy(p => p.Id).ToArray()),
             ["_metadata"] = new JsonObject
@@ -738,6 +785,7 @@ public partial class MainWindowViewModel : ObservableObject
                     InvoiceNumber = row.InvoiceNumber,
                     Type = row.Type ?? "Invoice",
                     DeletedAt = row.DeletedAt,
+                    CustomerName = row.CustomerName ?? "",
                     InvoiceDate = row.InvoiceDate,
                     CustomerId = row.CustomerId,
                     Status = row.Status,
@@ -852,7 +900,7 @@ public partial class MainWindowViewModel : ObservableObject
                 Values = new()
                 {
                     ["Name"] = invoice.InvoiceNumber,
-                    ["Customer"] = Customers.FirstOrDefault(c => c.SourceId == invoice.CustomerId)?.Name ?? "",
+                    ["Customer"] = string.IsNullOrEmpty(invoice.CustomerName) ? Customers.FirstOrDefault(c => c.SourceId == invoice.CustomerId)?.Name ?? "" : invoice.CustomerName,
                     ["Type"] = invoice.Type,
                     ["Date"] = invoice.InvoiceDate.ToString("yyyy-MM-dd"),
                     ["Items"] = invoice.Items.Count.ToString(),
@@ -1005,6 +1053,7 @@ public partial class MainWindowViewModel : ObservableObject
             Type = values["Type"],
             InvoiceDate = DateTime.TryParse(InvoiceDetails[1].Value, out var date) ? date : DateTime.Today,
             CustomerId = customerId,
+            CustomerName = customerName,
             Status = "Unpaid",
             SubTotal = Totals.Subtotal,
             TaxTotal = Totals.Tax,
@@ -1129,7 +1178,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     private static void EnsureDefaultAdmin(LedgerNestDbContext db)
     {
-        if (db.Users.Any()) return;
+        if (db.Settings.Any(s => s.Key == "auth.initialized")) return;
+        SetSetting(db, "auth.initialized", "true");
+        if (db.Users.Any()) { db.SaveChanges(); return; }
         var salt = Guid.NewGuid().ToString("N");
         db.Users.Add(new AppUser
         {
@@ -1161,7 +1212,7 @@ public partial class MainWindowViewModel : ObservableObject
         return rows.Deserialize<T[]>() ?? [];
     }
 
-    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice", DateTime? DeletedAt = null);
+    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice", DateTime? DeletedAt = null, string? CustomerName = null);
 
     private IEnumerable<UiRecord> RecordsForKind(string kind) => kind switch
     {

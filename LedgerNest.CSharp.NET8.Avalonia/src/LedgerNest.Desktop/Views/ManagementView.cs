@@ -108,7 +108,7 @@ internal sealed class ManagementView : ContentControl
     private void Actions(UiRecord record) => window.ShowOverlay("Actions", Ui.Stack(8, Ui.Button("View", () => View(record)), Ui.Button("Edit", Documents ? null : () => window.EditRecord(kind, Refresh, record)), Ui.Button(Documents ? (trash ? "Delete Permanently" : "Move to Trash") : "Delete", () => window.Confirm("Confirm Delete", $"{(trash && Documents ? "Permanently delete" : "Delete")} {record.Name}?", () => { Delete(record); Refresh(); })), Ui.Button("Export PDF", Documents ? async () => await ExportDocumentPdf(record) : null)));
     private void Delete(UiRecord record)
     {
-        if (!Documents) deleted.Add(record.Id);
+        if (!Documents) model.DeleteRecord(kind, record);
         else if (trash) model.DeleteDocumentPermanently(record);
         else model.SetDocumentTrash(record, true);
     }
