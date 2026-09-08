@@ -147,3 +147,8 @@ Store CI results, visual references, migration fixtures and release evidence dur
 | 5 | Recovery rehearsal and owner/account model | Verified backup restoration; enforced owner setup and role matrix |
 
 Estimate calendar dates only after Phase 0 establishes scope, staffing, available reference environments and integration requirements. Assign an accountable implementer and a distinct reviewer to each batch. No production date or numerical readiness score is promised by this plan.
+
+
+## Execution record — first batch
+
+Started the initial [release acceptance matrix](RELEASE_MATRIX.md) and added `.github/workflows/ledgernest-checks.yml` for .NET 8 build/headless checks with retained artifacts. Reproduced the duplicate service-calculation defect, then delegated InvoiceService to the existing decimal calculator. Both builds passed and all 401 checks passed locally. Hosted CI execution, complete feature enumeration and environment decisions remain open; neither Phase 0 nor Phase 1 is complete.

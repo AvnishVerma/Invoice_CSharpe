@@ -6,26 +6,11 @@ public sealed class InvoiceService
 {
     public InvoiceTotals CalculateTotals(IEnumerable<InvoiceItem> items)
     {
-        decimal subTotal = 0m;
-        decimal taxTotal = 0m;
-        decimal discountTotal = 0m;
+        var totals = InvoiceTotalsCalculator.Calculate(items.Select(item => new InvoiceLineInput(
+            item.UnitPrice, item.Quantity, item.Discount, item.DiscountPerUnit,
+            item.ExtraCost, item.TaxRate, item.PriceIncludesTax)));
 
-        foreach (var item in items)
-        {
-            var gross = item.Quantity * item.UnitPrice;
-            var net = Math.Max(0m, gross - item.Discount);
-            var tax = Math.Round(net * item.TaxRate / 100m, 2);
-
-            subTotal += net;
-            taxTotal += tax;
-            discountTotal += item.Discount;
-        }
-
-        return new InvoiceTotals(
-            subTotal,
-            taxTotal,
-            discountTotal,
-            subTotal + taxTotal);
+        return new InvoiceTotals(totals.Subtotal, totals.Tax, totals.ItemDiscount, totals.Total);
     }
 }
 

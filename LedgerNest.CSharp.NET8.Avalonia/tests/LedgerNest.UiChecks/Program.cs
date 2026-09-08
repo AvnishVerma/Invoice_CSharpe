@@ -24,6 +24,7 @@ internal static class Program
         var output = args.FirstOrDefault() ?? "/tmp/invoiso-ui-captures";
         Directory.CreateDirectory(output);
         CheckTotals();
+        CheckServiceTotals();
         CheckPersistence();
         CheckDocumentTypes();
         CheckDocumentNumbering();
@@ -140,6 +141,19 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckServiceTotals()
+    {
+        var service = new InvoiceService();
+        var discounted = service.CalculateTotals([new LedgerNest.Domain.InvoiceItem { UnitPrice = 100, Quantity = 2, Discount = 10, DiscountPerUnit = true, ExtraCost = 5, TaxRate = 18 }]);
+        Check(discounted.SubTotal == 185m && discounted.DiscountTotal == 20m && discounted.TaxTotal == 33.3m && discounted.GrandTotal == 218.3m, "Application service must honor per-unit discounts and extra costs");
+        var inclusive = service.CalculateTotals([new LedgerNest.Domain.InvoiceItem { UnitPrice = 118, Quantity = 2, PriceIncludesTax = true, TaxRate = 18 }]);
+        Check(inclusive.SubTotal == 200m && inclusive.TaxTotal == 36m && inclusive.GrandTotal == 236m, "Application service must back tax out of inclusive prices");
+        var fractional = service.CalculateTotals(Enumerable.Range(0, 3).Select(_ => new LedgerNest.Domain.InvoiceItem { UnitPrice = .03m, Quantity = 1, TaxRate = 18 }));
+        Check(fractional.TaxTotal == .0162m && fractional.GrandTotal == .1062m, "Application service must not round tax per line before aggregation");
+        var empty = service.CalculateTotals([]);
+        Check(empty == new InvoiceTotals(0, 0, 0, 0), "Empty invoice totals must be zero");
     }
 
     private static void CheckFormRoundTrips()
