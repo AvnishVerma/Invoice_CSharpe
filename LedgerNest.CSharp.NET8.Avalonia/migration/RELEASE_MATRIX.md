@@ -10,7 +10,7 @@ Statuses describe the listed scenario only. P0 means release-blocking; P1 still 
 | CALC-02 | P0 | lib/domain/invoice_totals_calculator.dart | Global/per-item/no tax and invoice discounts match reference amounts | Partial coverage: CheckTotals; exhaustive matrix pending |
 | DOC-01 | P0 | lib/database/invoice_service.dart | Invoice, quotation and receipt types survive restart and backups | Covered: CheckDocumentTypes |
 | DOC-02 | P0 | lib/database/invoice_service.dart | Independent sequence previews, persisted starting number and stale editors | Covered: CheckDocumentNumbering; concurrent processes and retry injection pending |
-| DOC-03 | P0 | lib/models/invoice.dart; lib/screens/create_invoice_screen_v2.dart | Load/edit/save complete historical invoice without losing dates, notes, currency, tax configuration or charges | Missing: document Edit action; incomplete Domain Invoice snapshot |
+| DOC-03 | P0 | lib/models/invoice.dart; lib/screens/create_invoice_screen_v2.dart | Load/edit/save complete historical invoice without losing dates, notes, currency, tax configuration or charges | In progress: versioned customer/editor snapshots added; document Edit action, complete item metadata and financial edit policy remain open |
 | PAY-01 | P0 | lib/domain/invoice_calculator.dart; lib/models/invoice.dart | Creation, partial payment and settlement reconcile immediately and after restart | Covered: CheckReceivablesLifecycle; refunds, concurrent payments and corrections pending |
 | CAT-01 | P0 | lib/database/customer_service.dart; lib/database/product_service.dart | Exposed catalog fields survive create/edit/reload/JSON restore | Covered: CheckFormRoundTrips; locale and malformed-import cases pending |
 | DEL-01 | P0 | lib/database/invoice_service.dart | Trash/restore and permanent deletion preserve or remove linked records correctly | Covered: CheckDocumentTrash |
@@ -54,3 +54,12 @@ The new CI workflow initially exercises Linux headless checks only; it does not 
 - Workflow YAML parsed successfully and diff whitespace checks passed. This is structural validation, not proof of hosted execution.
 - Local captures: `/tmp/ledgernest-production-baseline`. CI will retain logs/captures on runs once the workflow is pushed.
 - Phase 0 and Phase 1 remain in progress. No production-readiness claim follows from this batch.
+
+
+## Snapshot storage batch
+
+New invoices capture customer contact/business/address details, due date, title/custom number, hide-number/interstate flags, currency/quantity label, tax and discount configuration, notes and individual additional charges. Existing line snapshots retain the monetary inputs. JSON and database backups preserve the new snapshot. Older C# databases gain a nullable column; null explicitly means the original editor inputs are unavailable.
+
+CheckInvoiceSnapshots verifies field preservation, independence from subsequent editor changes, recalculation of stored totals, both backup formats and upgrade without invented historical values. This is a snapshot format version, not the planned replacement of ad hoc schema upgrades with versioned migrations. Invoice editing, complete item metadata, company/payment-account snapshots, PDF consumption and unknown-format handling remain open.
+
+Snapshot batch validation: build passed with zero warnings/errors; 434 local checks passed. Hosted CI has not run for this batch.

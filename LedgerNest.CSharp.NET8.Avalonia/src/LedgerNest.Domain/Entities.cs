@@ -47,6 +47,7 @@ public sealed class Invoice
     public DateTime InvoiceDate { get; set; } = DateTime.Now;
     public int? CustomerId { get; set; }
     public string CustomerName { get; set; } = "";
+    public InvoiceSnapshot? Snapshot { get; set; }
     public string Status { get; set; } = "Draft";
     public decimal SubTotal { get; set; }
     public decimal TaxTotal { get; set; }
@@ -112,3 +113,27 @@ public sealed class AppSetting
     public string Key { get; set; } = "";
     public string Value { get; set; } = "";
 }
+
+
+// Versioned historical input data. Null on records written before snapshot support.
+public sealed record InvoiceSnapshot(
+    int Version,
+    InvoiceCustomerSnapshot Customer,
+    DateTime? DueDate,
+    string DocumentTitle,
+    string CustomInvoiceNumber,
+    bool HideInvoiceNumber,
+    bool IsInterState,
+    string Currency,
+    string QuantityLabel,
+    string TaxMode,
+    decimal TaxRate,
+    string DiscountKind,
+    decimal DiscountValue,
+    string Notes,
+    InvoiceAdditionalCost[] AdditionalCosts);
+
+public sealed record InvoiceCustomerSnapshot(
+    string Name, string BusinessName, string Phone, string Email, string GstNumber, string Address);
+
+public sealed record InvoiceAdditionalCost(string Description, decimal Amount);

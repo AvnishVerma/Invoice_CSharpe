@@ -720,7 +720,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["products"] = JsonSerializer.SerializeToNode(db.Products.AsNoTracking().OrderBy(p => p.Id).ToArray()),
             ["company_info"] = JsonSerializer.SerializeToNode(db.CompanyInfos.AsNoTracking().OrderBy(c => c.Id).ToArray()),
             ["settings"] = JsonSerializer.SerializeToNode(db.Settings.AsNoTracking().OrderBy(s => s.Key).ToArray()),
-            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount, i.Type, i.DeletedAt, i.CustomerName)).ToArray()),
+            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount, i.Type, i.DeletedAt, i.CustomerName, i.Snapshot)).ToArray()),
             ["invoice_items"] = JsonSerializer.SerializeToNode(db.InvoiceItems.AsNoTracking().OrderBy(i => i.Id).ToArray()),
             ["invoice_payments"] = JsonSerializer.SerializeToNode(db.Payments.AsNoTracking().OrderBy(p => p.Id).ToArray()),
             ["_metadata"] = new JsonObject
@@ -788,6 +788,7 @@ public partial class MainWindowViewModel : ObservableObject
                     Type = row.Type ?? "Invoice",
                     DeletedAt = row.DeletedAt,
                     CustomerName = row.CustomerName ?? "",
+                    Snapshot = row.Snapshot,
                     InvoiceDate = row.InvoiceDate,
                     CustomerId = row.CustomerId,
                     Status = row.Status,
@@ -1041,6 +1042,22 @@ public partial class MainWindowViewModel : ObservableObject
         return sourceId;
     }
 
+    private InvoiceSnapshot CaptureInvoiceSnapshot()
+    {
+        string Setting(string label) => Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == label).Value;
+        return new InvoiceSnapshot(
+            1,
+            new InvoiceCustomerSnapshot(InvoiceCustomer[0].Value.Trim(), InvoiceCustomer[1].Value.Trim(),
+                InvoiceCustomer[2].Value.Trim(), InvoiceCustomer[3].Value.Trim(),
+                InvoiceCustomer[4].Value.Trim(), InvoiceCustomer[5].Value.Trim()),
+            DateTime.TryParse(InvoiceDetails[2].Value, out var due) ? due.Date : null,
+            InvoiceDetails[3].Value, InvoiceDetails[4].Value.Trim(), HideInvoiceNumber.IsChecked,
+            InterState.IsChecked, Setting("Currency"), Setting("Quantity Column"),
+            InvoiceOptions[3].Value, InvoiceOptions[4].Number, InvoiceOptions[0].Value,
+            InvoiceOptions[1].Number, InvoiceOptions[2].Value,
+            AdditionalCosts.Select(c => new InvoiceAdditionalCost(c[0].Value, c[1].Number)).ToArray());
+    }
+
     private int SaveInvoiceToDatabase(Dictionary<string, string> values)
     {
         if (dbFactory == null) return 0;
@@ -1057,6 +1074,7 @@ public partial class MainWindowViewModel : ObservableObject
             InvoiceDate = DateTime.TryParse(InvoiceDetails[1].Value, out var date) ? date : DateTime.Today,
             CustomerId = customerId,
             CustomerName = customerName,
+            Snapshot = CaptureInvoiceSnapshot(),
             Status = "Unpaid",
             SubTotal = Totals.Subtotal,
             TaxTotal = Totals.Tax,
@@ -1215,7 +1233,7 @@ public partial class MainWindowViewModel : ObservableObject
         return rows.Deserialize<T[]>() ?? [];
     }
 
-    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice", DateTime? DeletedAt = null, string? CustomerName = null);
+    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice", DateTime? DeletedAt = null, string? CustomerName = null, InvoiceSnapshot? Snapshot = null);
 
     private IEnumerable<UiRecord> RecordsForKind(string kind) => kind switch
     {

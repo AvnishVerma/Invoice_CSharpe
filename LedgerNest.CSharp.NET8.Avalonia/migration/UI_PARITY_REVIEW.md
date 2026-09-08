@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 401 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 434 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -53,7 +53,7 @@ The 302-check runner includes these behavior checks and clicks each new document
 | Document editing | Management document Edit action has no handler | Missing |
 | Trash/delete | Document trash/restore and customer/product/user permanent deletion persist | Core deletion workflows verified |
 | Document numbering | Separate eight-digit sequences, invoice starting setting, transactional allocation and live editor preview verified | PDF prefix/leading-zero formatting remains incomplete |
-| Invoice details | Domain Invoice does not persist due date, notes, tax mode, additional costs or customer snapshots | Incomplete |
+| Invoice details | New invoices persist versioned customer/editor snapshots including dates, tax configuration, notes and charges | Storage implemented; editor reload/edit and complete legacy fields remain incomplete |
 | PDF output | SimplePdf provides one basic page; bulk export selects the first document | Templates/pagination/bulk behavior incomplete |
 | Recovery | Generate Challenge and Reset Password lack handlers | Missing |
 | Onboarding | Company, invoice and appearance preferences now save atomically; completion is persisted | Core persistence verified; logo portability and automatic launch still need review |
@@ -86,3 +86,5 @@ Validation: build passed with zero warnings/errors; 376 checks passed. Added cas
 Newly saved invoices now initialize paid and outstanding values immediately. Previously those fields appeared only after reload or payment, causing the receivables report and revenue outstanding summary to omit new debt. Regression checks follow a discounted, taxed invoice through creation, partial payment and settlement, checking record fields and reports both immediately and after reload.
 
 Validation: build passed with zero warnings/errors; 397 checks passed. Captures: `/tmp/ledgernest-receivables-captures`. Full functional and visual parity remain incomplete.
+
+Snapshot validation: build passed with zero warnings/errors; 434 checks passed, including CheckInvoiceSnapshots. Captures: `/tmp/ledgernest-snapshot-captures`. Full parity remains incomplete.

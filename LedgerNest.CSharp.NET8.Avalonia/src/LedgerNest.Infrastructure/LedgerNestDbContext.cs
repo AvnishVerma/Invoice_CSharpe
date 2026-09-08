@@ -1,4 +1,5 @@
 using LedgerNest.Domain;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -33,7 +34,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 throw new InvalidOperationException("This database is not a LedgerNest C# database.");
             if (!columns.Contains("Type"))
                 Database.ExecuteSqlRaw("ALTER TABLE invoices ADD COLUMN Type TEXT NOT NULL DEFAULT 'Invoice'");
-            EnsureColumns("invoices", [("DeletedAt", "TEXT NULL"), ("CustomerName", "TEXT NOT NULL DEFAULT ''")]);
+            EnsureColumns("invoices", [("DeletedAt", "TEXT NULL"), ("CustomerName", "TEXT NOT NULL DEFAULT ''"), ("Snapshot", "TEXT NULL")]);
             EnsureColumns("customers", [("BusinessName", "TEXT NOT NULL DEFAULT ''")]);
             EnsureColumns("products", [
                 ("Type", "TEXT NOT NULL DEFAULT 'Product'"),
@@ -77,6 +78,9 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<Customer>().ToTable("customers");
         modelBuilder.Entity<Product>().ToTable("products");
         modelBuilder.Entity<Invoice>().ToTable("invoices");
+        modelBuilder.Entity<Invoice>().Property(i => i.Snapshot).HasConversion(
+            snapshot => JsonSerializer.Serialize(snapshot, (JsonSerializerOptions?)null),
+            json => JsonSerializer.Deserialize<InvoiceSnapshot>(json, (JsonSerializerOptions?)null));
         modelBuilder.Entity<InvoiceItem>().ToTable("invoice_items");
         modelBuilder.Entity<Payment>().ToTable("invoice_payments");
         modelBuilder.Entity<CompanyInfo>().ToTable("company_info");

@@ -25,6 +25,7 @@ internal static class Program
         Directory.CreateDirectory(output);
         CheckTotals();
         CheckServiceTotals();
+        CheckInvoiceSnapshots();
         CheckPersistence();
         CheckDocumentTypes();
         CheckDocumentNumbering();
@@ -141,6 +142,56 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckInvoiceSnapshots()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-snapshots-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        string[] customer = ["Original Customer", "Original Business", "1234567890", "original@example.com", "GST-123", "Original Address"];
+        for (var i = 0; i < customer.Length; i++) model.InvoiceCustomer[i].Value = customer[i];
+        model.InvoiceDetails[2].Value = "2026-12-31";
+        model.InvoiceDetails[3].Value = "Tax Invoice";
+        model.InvoiceDetails[4].Value = "CUSTOM-17";
+        model.HideInvoiceNumber.IsChecked = true;
+        model.InterState.IsChecked = true;
+        model.InvoiceOptions[0].Value = "Percentage";
+        model.InvoiceOptions[1].Value = "10";
+        model.InvoiceOptions[2].Value = "Historical notes";
+        model.InvoiceOptions[3].Value = "Global";
+        model.InvoiceOptions[4].Value = "7";
+        model.AdditionalCosts.Add([new FormField("Description", "Delivery"), new FormField("Amount", "12.50", "number")]);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Snapshot item", Price = 100, Quantity = 2, Discount = 5, DiscountPerUnit = true });
+        Check(model.SaveInvoice(), "Invoice with full editor snapshot must save");
+        string ReadSnapshot()
+        {
+            using var db = factory.CreateDbContext();
+            var invoice = db.Invoices.Single();
+            var snapshot = invoice.Snapshot!;
+            Check(snapshot != null && snapshot.Version == 1, "New invoices must carry versioned snapshots");
+            Check(snapshot!.Customer == new LedgerNest.Domain.InvoiceCustomerSnapshot(customer[0], customer[1], customer[2], customer[3], customer[4], customer[5]), "All historical customer fields must persist");
+            Check(snapshot.DueDate == new DateTime(2026, 12, 31) && snapshot.DocumentTitle == "Tax Invoice" && snapshot.CustomInvoiceNumber == "CUSTOM-17", "Dates and PDF title/number options must persist");
+            Check(snapshot.HideInvoiceNumber && snapshot.IsInterState && snapshot.Notes == "Historical notes", "Invoice flags and notes must persist");
+            Check(snapshot.TaxMode == "Global" && snapshot.TaxRate == 7 && snapshot.DiscountKind == "Percentage" && snapshot.DiscountValue == 10, "Calculation settings must persist");
+            Check(snapshot.AdditionalCosts.Single() == new LedgerNest.Domain.InvoiceAdditionalCost("Delivery", 12.5m), "Additional charges must persist individually");
+            var recalculated = InvoiceTotalsCalculator.Calculate(db.InvoiceItems.Select(item => new InvoiceLineInput(item.UnitPrice, item.Quantity, item.Discount, item.DiscountPerUnit, item.ExtraCost, item.TaxRate, item.PriceIncludesTax)).ToArray(), InvoiceTaxMode.Global, snapshot.TaxRate, snapshot.AdditionalCosts.Sum(c => c.Amount), InvoiceDiscountKind.Percent, snapshot.DiscountValue);
+            Check(recalculated.Total == invoice.GrandTotal && recalculated.Tax == invoice.TaxTotal, "Persisted inputs must reproduce saved totals");
+            return JsonSerializer.Serialize(snapshot);
+        }
+        var expected = ReadSnapshot();
+        model.InvoiceCustomer[5].Value = "Changed Address";
+        model.InvoiceOptions[2].Value = "Changed Notes";
+        model.AdditionalCosts[0][1].Value = "999";
+        Check(ReadSnapshot() == expected, "Changing current editor must not mutate historical snapshots");
+        var backup = model.CreateJsonBackup();
+        Check(model.RestoreJsonBackup(backup) && ReadSnapshot() == expected, "JSON restore must retain complete snapshots");
+        var dbBackup = model.CreateDatabaseBackup();
+        Check(model.RestoreDatabaseBackup(dbBackup) && ReadSnapshot() == expected, "Database restore must retain complete snapshots");
+        using (var db = factory.CreateDbContext()) db.Database.ExecuteSqlRaw("ALTER TABLE invoices DROP COLUMN Snapshot");
+        var upgraded = new MainWindowViewModel(factory, path);
+        using (var db = factory.CreateDbContext())
+            Check(db.Invoices.Single().Snapshot == null && upgraded.Invoices.Count == 1, "Pre-snapshot databases must preserve invoices without inventing missing history");
     }
 
     private static void CheckServiceTotals()
