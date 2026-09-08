@@ -33,6 +33,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 throw new InvalidOperationException("This database is not a LedgerNest C# database.");
             if (!columns.Contains("Type"))
                 Database.ExecuteSqlRaw("ALTER TABLE invoices ADD COLUMN Type TEXT NOT NULL DEFAULT 'Invoice'");
+            EnsureColumns("invoices", [("DeletedAt", "TEXT NULL")]);
             EnsureColumns("customers", [("BusinessName", "TEXT NOT NULL DEFAULT ''")]);
             EnsureColumns("products", [
                 ("Type", "TEXT NOT NULL DEFAULT 'Product'"),

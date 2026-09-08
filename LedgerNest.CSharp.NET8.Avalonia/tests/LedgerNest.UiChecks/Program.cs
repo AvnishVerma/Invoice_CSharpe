@@ -27,6 +27,7 @@ internal static class Program
         CheckPersistence();
         CheckDocumentTypes();
         CheckDocumentNumbering();
+        CheckDocumentTrash();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
@@ -70,6 +71,13 @@ internal static class Program
         Check(model.Totals.Total == 212.4m, "Invoice discount must affect totals");
         model.NavigateCommand.Execute("Dashboard"); model.NavigateCommand.Execute("New Invoice"); Check(model.Lines.Count == 1 && model.InvoiceOptions[1].Value == "10", "Navigation must preserve the invoice draft");
         Check(model.SaveInvoice(), "Invoice must save"); Check(model.Invoices.Single()["Total"] == "212.40", "Saved total must match displayed total");
+        model.NavigateCommand.Execute("Invoices");
+        Click("⋯"); Click("Move to Trash"); Click("Confirm");
+        Check(!model.ActiveInvoices.Any(), "Move to Trash action must hide the invoice");
+        Click("Trash"); Capture("invoice-trash");
+        Click("Restore");
+        Check(model.ActiveInvoices.Count() == 1, "Restore action must return the invoice to active records");
+
         foreach (var width in new[] { 1024, 768, 640 })
         {
             window.Width = width; window.Height = 768;
@@ -220,6 +228,45 @@ internal static class Program
         Check(model.Title == "New Invoice" && model.InvoiceDetails[0].Value == "Quotation" && model.Lines.Count == 0 && model.InvoiceCustomer[0].Value == "", "New quotation must open a fresh quotation editor");
         model.StartDocument("Receipt");
         Check(model.InvoiceDetails[0].Value == "Receipt", "New receipt must select receipt type");
+    }
+
+    private static void CheckDocumentTrash()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-trash-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Trash item", Price = 100, Quantity = 1 });
+        Check(model.SaveInvoice(), "Trash test invoice must save");
+        using (var db = factory.CreateDbContext()) db.Database.ExecuteSqlRaw("ALTER TABLE invoices DROP COLUMN DeletedAt");
+        model = new MainWindowViewModel(factory, path);
+        Check(model.ActiveInvoices.Count() == 1, "Older C# databases must gain trash state without losing invoices");
+        var record = model.Invoices.Single();
+        var payment = FormCatalog.Payment();
+        payment[0].Value = "20";
+        Check(model.ApplyPayment(record, payment), "Trash test payment must save");
+        Check(!model.DeleteDocumentPermanently(record), "Active document must not be permanently deleted");
+        Check(model.SetDocumentTrash(record, true), "Document must move to trash");
+        Check(!model.ActiveInvoices.Any() && model.BuildReport("Revenue").Billed == 0, "Trash must be excluded from dashboard and revenue");
+        Check(!model.ExportCsv("Invoice").Contains("00000001"), "Default document export must exclude trash");
+        Check(model.PeekNextDocumentNumber("Invoice") == "00000002", "Trashed document number must remain reserved");
+        var reloaded = new MainWindowViewModel(factory, path);
+        record = reloaded.Invoices.Single();
+        Check(reloaded.DeletedRecords.Contains(record.Id), "Trash must survive restart");
+        Check(reloaded.BuildReport("Products").Rows.Length == 1, "Trashed invoice items must not count as product sales");
+        Check(!reloaded.ApplyPayment(record, payment), "Trashed invoices must reject new payments");
+        var backup = reloaded.CreateJsonBackup();
+        Check(reloaded.RestoreJsonBackup(backup) && reloaded.DeletedRecords.Contains(reloaded.Invoices.Single().Id), "JSON backup must preserve trash state");
+        var dbBackup = reloaded.CreateDatabaseBackup();
+        Check(reloaded.SetDocumentTrash(reloaded.Invoices.Single(), false), "Document must restore from trash");
+        Check(reloaded.RestoreDatabaseBackup(dbBackup) && reloaded.DeletedRecords.Contains(reloaded.Invoices.Single().Id), "Database backup must preserve trash state");
+        Check(reloaded.SetDocumentTrash(reloaded.Invoices.Single(), false), "Restored backup document must restore from trash");
+        var restored = new MainWindowViewModel(factory, path);
+        record = restored.Invoices.Single();
+        Check(restored.ActiveInvoices.Count() == 1 && restored.BuildReport("Revenue").Billed == 100 && restored.Payments.Count == 1, "Restore must recover report totals and payment history after restart");
+        Check(restored.SetDocumentTrash(record, true) && restored.DeleteDocumentPermanently(record), "Trashed document must support permanent deletion");
+        using (var db = factory.CreateDbContext())
+            Check(!db.Invoices.Any() && !db.InvoiceItems.Any() && !db.Payments.Any(), "Permanent deletion must remove document, items and payments");
+        Check(!restored.Invoices.Any() && !restored.Payments.Any() && !restored.DeletedRecords.Any(), "Permanent deletion must update in-memory collections");
     }
 
     private static void CheckDocumentNumbering()

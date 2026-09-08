@@ -43,6 +43,7 @@ public sealed class Invoice
     public int Id { get; set; }
     public string InvoiceNumber { get; set; } = "";
     public string Type { get; set; } = "Invoice";
+    public DateTime? DeletedAt { get; set; }
     public DateTime InvoiceDate { get; set; } = DateTime.Now;
     public int? CustomerId { get; set; }
     public string Status { get; set; } = "Draft";

@@ -29,6 +29,7 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<UiRecord> Products { get; } = [];
     public ObservableCollection<UiRecord> Users { get; } = [];
     public ObservableCollection<UiRecord> Invoices { get; } = [];
+    public IEnumerable<UiRecord> ActiveInvoices => Invoices.Where(i => i["Type"] == "Invoice" && !DeletedRecords.Contains(i.Id));
     public ObservableCollection<UiRecord> Payments { get; } = [];
     public ObservableCollection<InvoiceLineViewModel> Lines { get; } = [];
     public Dictionary<string, FormSection[]> Settings { get; } = FormCatalog.Settings();
@@ -79,6 +80,46 @@ public partial class MainWindowViewModel : ObservableObject
         Status = $"{kind} saved.";
         return true;
     }
+    public bool SetDocumentTrash(UiRecord record, bool trashed)
+    {
+        if (!Invoices.Contains(record)) return false;
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            var invoice = db.Invoices.Find(record.SourceId);
+            if (invoice == null) { Status = "Document no longer exists."; return false; }
+            invoice.DeletedAt = trashed ? DateTime.UtcNow : null;
+            db.SaveChanges();
+        }
+        if (trashed) DeletedRecords.Add(record.Id); else DeletedRecords.Remove(record.Id);
+        Status = trashed ? "Document moved to trash." : "Document restored.";
+        return true;
+    }
+
+    public bool DeleteDocumentPermanently(UiRecord record)
+    {
+        if (!Invoices.Contains(record) || !DeletedRecords.Contains(record.Id)) return false;
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            using var transaction = db.Database.BeginTransaction();
+            var invoice = db.Invoices.Find(record.SourceId);
+            if (invoice == null || invoice.DeletedAt == null) return false;
+            db.Payments.RemoveRange(db.Payments.Where(p => p.InvoiceId == record.SourceId));
+            db.InvoiceItems.RemoveRange(db.InvoiceItems.Where(i => i.InvoiceId == record.SourceId));
+            db.Invoices.Remove(invoice);
+            db.SaveChanges();
+            transaction.Commit();
+        }
+        foreach (var payment in Payments.Where(p => p["InvoiceId"] == record.SourceId.ToString()).ToArray()) Payments.Remove(payment);
+        DeletedRecords.Remove(record.Id);
+        Invoices.Remove(record);
+        Status = "Document permanently deleted.";
+        return true;
+    }
+
     public string PeekNextDocumentNumber(string type)
     {
         ValidateDocumentType(type);
@@ -384,7 +425,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ReportSnapshot BuildReport(string name)
     {
-        var invoices = Invoices.Where(i => i["Type"] == "Invoice").ToArray();
+        var invoices = ActiveInvoices.ToArray();
         var billed = invoices.Sum(i => ParseDecimal(i["Total"]));
         var paid = invoices.Sum(i => ParseDecimal(i["Paid"]));
         var outstanding = invoices.Sum(i => ParseDecimal(i["Outstanding"]));
@@ -400,7 +441,7 @@ public partial class MainWindowViewModel : ObservableObject
             "Tax" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, Money(g.Sum(i => ParseDecimal(i["Total"]) - ParseDecimal(i["Total"]) / 1.18m)) }).Prepend(["Date", "Estimated Tax"]).ToArray(),
             "Customers" => invoices.GroupBy(i => i["Customer"]).Select(g => new[] { string.IsNullOrWhiteSpace(g.Key) ? "Unknown" : g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => ParseDecimal(r[2].Replace("₹", ""))).Prepend(["Customer", "Invoices", "Billed", "Collected", "Outstanding"]).ToArray(),
             "Products" => ProductReportRows(),
-            "Quotations" => new string[][] { ["Metric", "Value"], ["Quotations Issued", Invoices.Count(i => i["Type"] == "Quotation").ToString()], ["Invoices in Period", invoices.Length.ToString()] },
+            "Quotations" => new string[][] { ["Metric", "Value"], ["Quotations Issued", Invoices.Count(i => i["Type"] == "Quotation" && !DeletedRecords.Contains(i.Id)).ToString()], ["Invoices in Period", invoices.Length.ToString()] },
             "Invoice Status" => invoices.Select(i => new[] { i.Name, i["Customer"], i["Date"], Money(ParseDecimal(i["Total"])), i["Status"], Money(ParseDecimal(i["Outstanding"])) }).Prepend(["Invoice", "Customer", "Date", "Total", "Status", "Outstanding"]).ToArray(),
             "Daily Report" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => r[0]).Prepend(["Date", "Invoices", "Sales", "Collected", "Outstanding"]).ToArray(),
             _ => new string[][] { ["Metric", "Value"] }
@@ -419,7 +460,7 @@ public partial class MainWindowViewModel : ObservableObject
             db.EnsureCurrentSchema();
             lines = db.InvoiceItems.AsNoTracking()
                 .Join(db.Invoices.AsNoTracking(), item => item.InvoiceId, invoice => invoice.Id, (item, invoice) => new { item, invoice })
-                .Where(x => x.invoice.Status != "Draft" && x.invoice.Type == "Invoice")
+                .Where(x => x.invoice.Status != "Draft" && x.invoice.Type == "Invoice" && x.invoice.DeletedAt == null)
                 .Select(x => new ProductReportLine(x.item.Description, x.item.Quantity, x.item.UnitPrice, x.item.DiscountPerUnit ? x.item.Discount * x.item.Quantity : x.item.Discount, x.item.PurchasePrice))
                 .ToArray();
         }
@@ -630,7 +671,7 @@ public partial class MainWindowViewModel : ObservableObject
             ["products"] = JsonSerializer.SerializeToNode(db.Products.AsNoTracking().OrderBy(p => p.Id).ToArray()),
             ["company_info"] = JsonSerializer.SerializeToNode(db.CompanyInfos.AsNoTracking().OrderBy(c => c.Id).ToArray()),
             ["settings"] = JsonSerializer.SerializeToNode(db.Settings.AsNoTracking().OrderBy(s => s.Key).ToArray()),
-            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount, i.Type)).ToArray()),
+            ["invoices"] = JsonSerializer.SerializeToNode(db.Invoices.AsNoTracking().OrderBy(i => i.Id).Select(i => new InvoiceBackupRow(i.Id, i.InvoiceNumber, i.InvoiceDate, i.CustomerId, i.Status, i.SubTotal, i.TaxTotal, i.DiscountTotal, i.GrandTotal, i.PaidAmount, i.Type, i.DeletedAt)).ToArray()),
             ["invoice_items"] = JsonSerializer.SerializeToNode(db.InvoiceItems.AsNoTracking().OrderBy(i => i.Id).ToArray()),
             ["invoice_payments"] = JsonSerializer.SerializeToNode(db.Payments.AsNoTracking().OrderBy(p => p.Id).ToArray()),
             ["_metadata"] = new JsonObject
@@ -696,6 +737,7 @@ public partial class MainWindowViewModel : ObservableObject
                     Id = row.Id,
                     InvoiceNumber = row.InvoiceNumber,
                     Type = row.Type ?? "Invoice",
+                    DeletedAt = row.DeletedAt,
                     InvoiceDate = row.InvoiceDate,
                     CustomerId = row.CustomerId,
                     Status = row.Status,
@@ -724,7 +766,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ReloadFromDatabase()
     {
-        Customers.Clear(); Products.Clear(); Users.Clear(); Invoices.Clear(); Payments.Clear();
+        Customers.Clear(); Products.Clear(); Users.Clear(); Invoices.Clear(); Payments.Clear(); DeletedRecords.Clear();
         LoadPersistedRecords();
         LoadPersistedSettings();
         LoadThemeMode();
@@ -821,6 +863,9 @@ public partial class MainWindowViewModel : ObservableObject
                 }
             });
         }
+
+        var deletedIds = db.Invoices.AsNoTracking().Where(i => i.DeletedAt != null).Select(i => i.Id).ToHashSet();
+        foreach (var record in Invoices.Where(i => deletedIds.Contains(i.SourceId))) DeletedRecords.Add(record.Id);
 
         foreach (var payment in db.Payments.AsNoTracking().OrderBy(p => p.PaymentDate).ThenBy(p => p.Id))
         {
@@ -1008,9 +1053,9 @@ public partial class MainWindowViewModel : ObservableObject
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
         var invoice = db.Invoices.Include(i => i.Items).FirstOrDefault(i => i.Id == invoiceRecord.SourceId);
-        if (invoice == null)
+        if (invoice == null || invoice.DeletedAt != null)
         {
-            Status = "Invoice was not found in the database.";
+            Status = "Invoice was not found or is in trash.";
             return false;
         }
 
@@ -1116,14 +1161,14 @@ public partial class MainWindowViewModel : ObservableObject
         return rows.Deserialize<T[]>() ?? [];
     }
 
-    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice");
+    private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice", DateTime? DeletedAt = null);
 
     private IEnumerable<UiRecord> RecordsForKind(string kind) => kind switch
     {
         "Customer" => Customers,
         "Product" => Products,
         "User" => Users,
-        "Invoice" or "Quotation" or "Receipt" => Invoices.Where(r => r["Type"] == kind),
+        "Invoice" or "Quotation" or "Receipt" => Invoices.Where(r => r["Type"] == kind && !DeletedRecords.Contains(r.Id)),
         _ => []
     };
 
