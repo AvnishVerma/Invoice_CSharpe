@@ -254,6 +254,63 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    public FormField[][] CreateOnboardingFields()
+    {
+        FormField Copy(string category, string label)
+        {
+            var source = Settings[category].SelectMany(s => s.Fields).Single(f => f.Label == label);
+            return new FormField(source.Label, source.Value, source.Kind, source.Options, source.Required)
+                { IsChecked = source.IsChecked };
+        }
+        return [
+            new[] { "Company Name", "Country", "Company logo" }.Select(l => Copy("Company Info", l)).ToArray(),
+            new[] { "Currency", "Date Format", "Starting Number", "Leading Zeros", "Default Tax Rate (%)" }.Select(l => Copy("Invoice Settings", l)).ToArray(),
+            new[] { "Page Size", "Template" }.Select(l => Copy("PDF Settings", l)).ToArray()
+        ];
+    }
+
+    public bool CompleteOnboarding(FormField[][] groups)
+    {
+        if (groups.Length != 3) return false;
+        if (!groups.SelectMany(g => g).Select(f => f.Validate()).ToArray().All(v => v)) return false;
+        var starting = groups[1].Single(f => f.Label == "Starting Number");
+        if (!int.TryParse(starting.Value, out var number) || number < 1 || number > 99999999)
+        {
+            starting.Error = "Enter a whole number between 1 and 99999999.";
+            return false;
+        }
+        var tax = groups[1].Single(f => f.Label == "Default Tax Rate (%)");
+        if (tax.Number > 100) { tax.Error = "Tax rate must be between 0 and 100."; return false; }
+        string[] categories = ["Company Info", "Invoice Settings", "PDF Settings"];
+        var updates = groups.SelectMany((group, index) => group.Select(field =>
+        {
+            var section = Settings[categories[index]].Single(s => s.Fields.Any(f => f.Label == field.Label));
+            var target = section.Fields.Single(f => f.Label == field.Label);
+            var value = field.Kind == "toggle" ? field.IsChecked.ToString() : field.Value.Trim();
+            return (Key: SettingKey(categories[index], section.Title, field.Label), Target: target, Value: value);
+        })).ToArray();
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            using var transaction = db.Database.BeginTransaction();
+            foreach (var update in updates) SetSetting(db, update.Key, update.Value);
+            var company = db.CompanyInfos.OrderBy(c => c.Id).FirstOrDefault() ?? new CompanyInfo();
+            company.Name = groups[0].Single(f => f.Label == "Company Name").Value.Trim();
+            if (company.Id == 0) db.CompanyInfos.Add(company);
+            SetSetting(db, "onboarding.completed", "true");
+            db.SaveChanges();
+            transaction.Commit();
+        }
+        foreach (var update in updates)
+        {
+            update.Target.Value = update.Value;
+            update.Target.IsChecked = bool.TryParse(update.Value, out var value) && value;
+        }
+        Status = "Setup saved.";
+        return true;
+    }
+
     public bool SaveSettings(string name)
     {
         if (!Settings.TryGetValue(name, out var sections)) return false;

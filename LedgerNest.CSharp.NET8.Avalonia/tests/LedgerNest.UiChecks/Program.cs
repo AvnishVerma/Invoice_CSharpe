@@ -184,6 +184,25 @@ internal static class Program
         var upgraded = new MainWindowViewModel(factory, path);
         Check(upgraded.Customers.Count == 1 && upgraded.Customers.Single()["Business Name"] == "", "Existing customer schema must upgrade preserving records");
         Check(upgraded.Products.Single()["Alias Name (for invoice PDF)"] == "" && !bool.Parse(upgraded.Products.Single()["Price includes tax"]), "Existing product schema must upgrade with safe defaults");
+        var setup = model.CreateOnboardingFields();
+        setup[0].Single(f => f.Label == "Company Name").Value = "Setup company";
+        setup[0].Single(f => f.Label == "Country").Value = "Nepal";
+        setup[1].Single(f => f.Label == "Starting Number").Value = "27";
+        setup[1].Single(f => f.Label == "Leading Zeros").IsChecked = false;
+        setup[1].Single(f => f.Label == "Default Tax Rate (%)").Value = "13";
+        setup[2].Single(f => f.Label == "Page Size").Value = "A5";
+        setup[2].Single(f => f.Label == "Template").Value = "Modern";
+        Check(model.CompleteOnboarding(setup), "First-time setup must save");
+        var savedSetup = new MainWindowViewModel(factory, path).CreateOnboardingFields();
+        Check(savedSetup[0][0].Value == "Setup company" && savedSetup[0][1].Value == "Nepal", "Setup company and country must reload");
+        Check(savedSetup[1][2].Value == "27" && !savedSetup[1][3].IsChecked && savedSetup[1][4].Value == "13", "Setup invoice preferences must reload");
+        Check(savedSetup[2][0].Value == "A5" && savedSetup[2][1].Value == "Modern", "Setup appearance must reload");
+        using (var db = factory.CreateDbContext())
+            Check(db.CompanyInfos.Single().Name == "Setup company" && db.Settings.Single(s => s.Key == "onboarding.completed").Value == "true", "Setup must persist company entity and completion together");
+        setup[0][0].Value = "Must not save";
+        setup[1][2].Value = "1.5";
+        Check(!model.CompleteOnboarding(setup), "Setup must reject fractional starting number");
+        Check(new MainWindowViewModel(factory, path).CreateOnboardingFields()[0][0].Value == "Setup company", "Invalid setup must leave persisted values untouched");
         var user = FormCatalog.User();
         user[0].Value = "second-user"; user[1].Value = "initial-password";
         Check(model.SaveRecord("User", user), "Second user must save");

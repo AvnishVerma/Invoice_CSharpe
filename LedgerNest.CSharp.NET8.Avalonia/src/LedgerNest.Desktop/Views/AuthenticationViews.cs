@@ -36,9 +36,10 @@ public partial class MainWindow
     private void ShowOnboarding()
     {
         var step = 0;
-        var company = new FormField[] { new("Company Name", required: true), new("Country", "India", "choice", ["India", "Nepal", "United States", "United Kingdom"]), new("Company Logo", kind: "file") };
-        var invoice = new FormField[] { new("Currency", "INR", "choice", ["INR", "USD", "EUR", "GBP", "NPR"]), new("Date Format", "dd/MM/yyyy", "choice", ["dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd"]), new("Starting Number", "1", "number"), new("Leading Zeros", "true", "toggle"), new("Default Tax Rate (%)", "18", "number") };
-        var appearance = new FormField[] { new("Page Size", "A4", "choice", ["A4", "A5", "Letter", "Thermal 80mm"]), new("Template", "Classic", "choice", ["Classic", "Modern", "Minimal", "Compact", "Executive", "Grid Classic", "Thermal"]) };
+        var groups = Model.CreateOnboardingFields();
+        var company = groups[0];
+        var invoice = groups[1];
+        var appearance = groups[2];
         void Render()
         {
             string[] names = ["Company", "Invoice", "Appearance", "You're all set!"];
@@ -47,7 +48,7 @@ public partial class MainWindow
             else content.Children.Add(Ui.Empty("You're all set!", "Start creating invoices for your business.", "✓"));
             ShowOverlay($"Welcome to {Branding.Name}", content, Ui.Wrap(Ui.Button(step == 0 ? "Cancel" : "Back", () => { if (step == 0) CloseOverlay(); else { step--; Render(); } }), Ui.Button(step == 3 ? "Get Started" : "Continue", () =>
             {
-                if (step == 3) { CloseOverlay(); return; }
+                if (step == 3) { if (Model.CompleteOnboarding(groups)) CloseOverlay(); else { step = company.Any(f => f.Error.Length > 0) ? 0 : 1; Render(); } return; }
                 if (!(step == 0 ? company : step == 1 ? invoice : appearance).Select(f => f.Validate()).ToArray().All(v => v)) return;
                 step++; Render();
             }, true)), width: 700);

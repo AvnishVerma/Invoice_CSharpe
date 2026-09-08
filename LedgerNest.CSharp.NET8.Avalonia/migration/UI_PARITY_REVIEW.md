@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 302 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 309 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -56,9 +56,11 @@ The 302-check runner includes these behavior checks and clicks each new document
 | Invoice details | Domain Invoice does not persist due date, notes, tax mode, additional costs or customer snapshots | Incomplete |
 | PDF output | SimplePdf provides one basic page; bulk export selects the first document | Templates/pagination/bulk behavior incomplete |
 | Recovery | Generate Challenge and Reset Password lack handlers | Missing |
-| Onboarding | Wizard fields are local and completion only closes it | Not persistent |
+| Onboarding | Company, invoice and appearance preferences now save atomically; completion is persisted | Core persistence verified; logo portability and automatic launch still need review |
 | Authentication | Signed-in password workflow corrected; full session/role enforcement and mandatory first-login change remain unaudited | Incomplete |
 | Localization | Language preference persists; desktop strings remain English | Missing translations |
 | Visual comparison | No matching legacy PNG baseline; Flutter unavailable here | Unmeasured |
 
 No 100% claim is supported by this review. Legacy Flutter tests were not run; legacy source was not modified.
+
+Setup regression checks verify reload, completion, and rejection of fractional starting numbers without partial writes. Latest run: 309 checks passed; captures in `/tmp/ledgernest-setup-captures`.
