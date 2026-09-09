@@ -15,3 +15,7 @@ JSON restore requires all seven exported business tables as arrays before openin
 ## JSON restore failure injection
 
 The regression suite installs a temporary SQLite trigger that aborts invoice-item insertion after restore has deleted the prior rows and begun replacing them. It verifies that the outer transaction restores the original invoice total, item, settings and account, then drops the trigger and retries successfully. A separate injected context-creation failure verifies that database setup errors return a failed restore result rather than escaping the UI action. Transaction and context creation are now inside the restore error handler. These tests do not simulate disk exhaustion or process/power loss.
+
+## Destination write-lock drill
+
+Restore connections now use a two-second SQLite lock timeout. The regression suite holds a separate write transaction on the live database while attempting to restore an older backup. It verifies failure preserves the newer invoice total and session, staging cleanup completes, and retry after releasing the lock applies the older backup and clears authentication. This covers a competing writer already holding the destination lock, not arbitrary concurrent writes across all application operations. The timeout bounds lock waiting, not total validation or copy duration.

@@ -13,7 +13,7 @@ public static class DatabaseBackupRestore
         {
             var path = Path.Combine(staging.FullName, "candidate.db");
             File.WriteAllBytes(path, bytes);
-            var sourceOptions = new SqliteConnectionStringBuilder { DataSource = path, Pooling = false, Mode = SqliteOpenMode.ReadWrite };
+            var sourceOptions = new SqliteConnectionStringBuilder { DataSource = path, Pooling = false, Mode = SqliteOpenMode.ReadWrite, DefaultTimeout = 2 };
             using var source = new SqliteConnection(sourceOptions.ToString());
             source.Open();
             using (var command = source.CreateCommand())
@@ -50,7 +50,7 @@ public static class DatabaseBackupRestore
                 if (reader.Read()) throw new InvalidDataException("Backup contains broken record references.");
             }
             using var destination = new SqliteConnection(new SqliteConnectionStringBuilder
-            { DataSource = destinationPath, Pooling = false, Mode = SqliteOpenMode.ReadWrite }.ToString());
+            { DataSource = destinationPath, Pooling = false, Mode = SqliteOpenMode.ReadWrite, DefaultTimeout = 2 }.ToString());
             destination.Open();
             source.BackupDatabase(destination);
         }

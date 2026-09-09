@@ -31,6 +31,7 @@ internal static class Program
         CheckRejectedDatabaseRestores();
         CheckRejectedJsonRestores();
         CheckJsonRestoreRollback();
+        CheckLockedDatabaseRestore();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -220,6 +221,39 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckLockedDatabaseRestore()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-locked-restore-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Lock fixture", Price = 90, Quantity = 1 });
+        Check(model.SaveInvoice(), "Locked restore fixture must save");
+        var backup = model.CreateDatabaseBackup();
+        using (var db = factory.CreateDbContext())
+        {
+            db.Invoices.Single().GrandTotal = 180m;
+            db.SaveChanges();
+        }
+        Check(model.SignIn("admin", "admin"), "Locked restore fixture must sign in");
+        var stagingBefore = Directory.GetDirectories(Path.GetTempPath(), "ledgernest-restore-*").ToHashSet();
+        using (var blocker = new Microsoft.Data.Sqlite.SqliteConnection(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder { DataSource = path, Pooling = false }.ToString()))
+        {
+            blocker.Open();
+            using var transaction = blocker.BeginTransaction();
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            Check(!model.RestoreDatabaseBackup(backup), "Destination write lock must cause restore to fail safely");
+            Console.WriteLine($"Locked restore returned after {timer.ElapsedMilliseconds} ms");
+            Check(model.CurrentUsername == "admin", "Failed locked restore must not clear session identity");
+            transaction.Rollback();
+        }
+        using (var db = factory.CreateDbContext())
+            Check(db.Invoices.Single().GrandTotal == 180m && db.InvoiceItems.Count() == 1, "Failed copy must preserve current live data instead of applying the older backup");
+        Check(!Directory.GetDirectories(Path.GetTempPath(), "ledgernest-restore-*").Except(stagingBefore).Any(), "Failed copy must clean its staging directory");
+        Check(model.RestoreDatabaseBackup(backup), "Restore must succeed after the competing writer releases its lock");
+        using (var db = factory.CreateDbContext()) Check(db.Invoices.Single().GrandTotal == 90m, "Successful retry must apply the backup contents");
+        Check(model.CurrentUsername == null, "Successful restore retry must require fresh authentication");
     }
 
     private static void CheckJsonRestoreRollback()
