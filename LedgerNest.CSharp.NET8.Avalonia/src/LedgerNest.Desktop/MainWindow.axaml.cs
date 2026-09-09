@@ -24,6 +24,7 @@ public partial class MainWindow : Window
             if (e.Property == ActualThemeVariantProperty)
                 Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
         };
+        Activated += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.ValidateSession(); };
         Closed += (_, _) =>
         {
             if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
@@ -34,7 +35,7 @@ public partial class MainWindow : Window
         KeyDown += (_, e) =>
         {
             if (DataContext is not MainWindowViewModel currentModel) return;
-            if (!currentModel.CanAccessWorkspace)
+            if (((e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.Key == Key.Escape) && !currentModel.ValidateSession()) || !currentModel.CanAccessWorkspace)
             {
                 if (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.Key == Key.Escape) e.Handled = true;
                 return;

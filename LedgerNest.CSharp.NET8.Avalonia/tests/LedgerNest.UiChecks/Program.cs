@@ -27,6 +27,7 @@ internal static class Program
         CheckServiceTotals();
         CheckAdministratorGuards();
         CheckPasswordMigration();
+        CheckSessionInvalidation();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -171,6 +172,14 @@ internal static class Program
         FormField[] signedOutChange = [new("Current Password", "session-password"), new("New Password", "replacement-password"), new("Confirm", "replacement-password")];
         Check(!editModel.ChangeCurrentPassword(signedOutChange), "Signed-out account must not retain password-change authority");
         Check(editModel.SignIn("admin", "updated-admin-password") && editModel.CurrentRole == "Admin", "Session may switch to another account");
+        using (var db = editFactory.CreateDbContext())
+        {
+            db.Users.Single(u => u.Username == "admin").PasswordChanged = false;
+            db.SaveChanges();
+        }
+        editModel.NavigateCommand.Execute("Customers");
+        Settle();
+        Check(!editModel.CanAccessWorkspace && editModel.CurrentUsername == null && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login"), "Navigation must return externally invalidated sessions to login");
         Check(!editModel.SignIn("sidebar-user", "incorrect") && editModel.CurrentRole == "" && editModel.CurrentUsername == null, "Failed account switch must not retain previous role");
 
         window.Close();
@@ -208,6 +217,42 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckSessionInvalidation()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-session-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        var fields = FormCatalog.User(); fields[0].Value = "session-user"; fields[1].Value = "session-password";
+        Check(model.SaveRecord("User", fields), "Session invalidation fixture must save");
+        foreach (var change in new[] { "role", "password", "salt", "required-change", "username", "delete" })
+        {
+            using (var db = factory.CreateDbContext())
+            {
+                var user = db.Users.Single(u => u.Username != "admin");
+                user.Username = "session-user"; user.Role = "User"; user.PasswordChanged = true;
+                user.Salt = PasswordCredentials.CreateSalt(); user.PasswordHash = PasswordCredentials.Hash("session-password", user.Salt);
+                db.SaveChanges();
+            }
+            Check(model.SignIn("session-user", "session-password") && model.ValidateSession(), "Unchanged session must remain valid");
+            using (var db = factory.CreateDbContext())
+            {
+                var user = db.Users.Single(u => u.Username == "session-user");
+                switch (change)
+                {
+                    case "role": user.Role = "Admin"; break;
+                    case "password": user.PasswordHash = PasswordCredentials.Hash("replacement-password", user.Salt); break;
+                    case "salt": user.Salt = PasswordCredentials.CreateSalt(); break;
+                    case "required-change": user.PasswordChanged = false; break;
+                    case "username": user.Username = "renamed-user"; break;
+                    case "delete": db.Users.Remove(user); break;
+                }
+                db.SaveChanges();
+            }
+            Check(!model.ValidateSession() && model.CurrentUsername == null && model.CurrentRole == "" && !model.CanAccessWorkspace, $"External {change} must invalidate session identity and access");
+        }
+        Check(!model.ValidateSession(), "Signed-out sessions must remain invalid");
     }
 
     private static void CheckPasswordMigration()

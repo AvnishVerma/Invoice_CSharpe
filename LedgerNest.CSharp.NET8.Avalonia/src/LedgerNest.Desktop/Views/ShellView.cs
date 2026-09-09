@@ -62,7 +62,7 @@ public partial class MainWindow
     }
     private void ShowPage()
     {
-        if (!Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
+        if (!Model.ValidateSession() || !Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
         CloseOverlay();
         page.Content = Model.Title switch
         {

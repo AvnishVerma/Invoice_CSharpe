@@ -354,6 +354,8 @@ public partial class MainWindowViewModel : ObservableObject
         ThemeMode = setting is "Dark" or "System" ? setting : "Light";
     }
 
+    private AppUser? sessionAccount;
+
     public bool CanAccessWorkspace => dbFactory == null || (CurrentUsername != null && !RequiresPasswordChange);
     public string? CurrentUsername { get; private set; }
     public string CurrentRole { get; private set; } = "";
@@ -361,6 +363,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void SetSession(string? username, string role, bool requiresPasswordChange)
     {
+        if (username == null) sessionAccount = null;
         CurrentUsername = username;
         CurrentRole = role;
         RequiresPasswordChange = requiresPasswordChange;
@@ -379,16 +382,39 @@ public partial class MainWindowViewModel : ObservableObject
     public bool SignIn(string username, string password)
     {
         SetSession(null, "", false);
-        if (!VerifyUser(username, password)) return false;
-        using var db = dbFactory!.CreateDbContext();
-        var user = db.Users.AsNoTracking().Single(u => u.Username == username.Trim());
+        var user = AuthenticateUser(username, password);
+        if (user == null) return false;
+        sessionAccount = user;
         SetSession(user.Username, user.Role, !user.PasswordChanged);
         return true;
     }
 
+    public bool ValidateSession()
+    {
+        if (dbFactory == null) return true;
+        if (sessionAccount == null) return false;
+        try
+        {
+            using var db = dbFactory.CreateDbContext();
+            var current = db.Users.AsNoTracking().SingleOrDefault(u => u.Id == sessionAccount.Id);
+            if (current != null && current.Username == sessionAccount.Username && current.Role == sessionAccount.Role
+                && current.PasswordHash == sessionAccount.PasswordHash && current.Salt == sessionAccount.Salt
+                && current.PasswordChanged == sessionAccount.PasswordChanged) return true;
+        }
+        catch (Exception ex) when (ex is SqliteException or InvalidOperationException)
+        {
+            SetSession(null, "", false);
+            Status = "Unable to verify your session. Log in again.";
+            return false;
+        }
+        SetSession(null, "", false);
+        Status = "Your account changed. Log in again.";
+        return false;
+    }
+
     public bool ChangeCurrentPassword(FormField[] fields)
     {
-        if (CurrentUsername == null)
+        if (!ValidateSession() || CurrentUsername == null)
         {
             Status = "Log in before changing your password.";
             return false;
@@ -431,12 +457,14 @@ public partial class MainWindowViewModel : ObservableObject
         NavigateCommand.Execute("New Invoice");
     }
 
-    public bool VerifyUser(string username, string password)
+    public bool VerifyUser(string username, string password) => AuthenticateUser(username, password) != null;
+
+    private AppUser? AuthenticateUser(string username, string password)
     {
         if (dbFactory == null)
         {
             Status = "User storage is not available.";
-            return false;
+            return null;
         }
 
         using var db = dbFactory.CreateDbContext();
@@ -445,7 +473,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (user == null || !PasswordCredentials.Verify(password, user.Salt, user.PasswordHash, out var needsUpgrade))
         {
             Status = "Invalid username or password.";
-            return false;
+            return null;
         }
 
         if (needsUpgrade)
@@ -455,7 +483,7 @@ public partial class MainWindowViewModel : ObservableObject
             db.SaveChanges();
         }
         Status = $"Logged in as {user.Username}.";
-        return true;
+        return user;
     }
 
     public bool ChangePassword(string username, FormField[] fields)
@@ -490,6 +518,7 @@ public partial class MainWindowViewModel : ObservableObject
         user.PasswordHash = HashPassword(fields[1].Value, user.Salt);
         user.PasswordChanged = true;
         db.SaveChanges();
+        if (sessionAccount?.Id == user.Id) sessionAccount = user;
         Status = "Password changed.";
         return true;
     }
