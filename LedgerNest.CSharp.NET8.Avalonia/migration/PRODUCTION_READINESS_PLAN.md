@@ -160,3 +160,5 @@ Session progress: desktop sessions now retain the verified account snapshot and 
 Database restore progress: file restores now validate an isolated candidate before copying through the SQLite backup API; corrupt files, unsupported tables, malformed snapshots and broken references are rejected before live data changes. See [database restore design and remaining drills](DATABASE_RESTORE.md). Full disaster-recovery testing and restore authorization remain open.
 
 JSON restore progress: incomplete and malformed backups are rejected before the replacement transaction, including missing tables, duplicate IDs and broken references. Explicit complete empty backups remain supported. Financial consistency validation, schema versioning, authorization and failure drills are still pending.
+
+Recovery-drill progress: JSON restore now has injected insert-failure rollback and database-setup failure coverage, including successful retry and reopening. Database setup is covered by the restore error handler. Disk-full, power-loss, concurrent-write and platform recovery drills remain pending.

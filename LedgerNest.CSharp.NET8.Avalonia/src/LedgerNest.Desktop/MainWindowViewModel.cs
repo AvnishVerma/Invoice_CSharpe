@@ -886,11 +886,11 @@ public partial class MainWindowViewModel : ObservableObject
             return false;
         }
 
-        using var db = dbFactory.CreateDbContext();
-        db.EnsureCurrentSchema();
-        using var tx = db.Database.BeginTransaction();
         try
         {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            using var tx = db.Database.BeginTransaction();
             db.Payments.RemoveRange(db.Payments);
             db.InvoiceItems.RemoveRange(db.InvoiceItems);
             db.Invoices.RemoveRange(db.Invoices);

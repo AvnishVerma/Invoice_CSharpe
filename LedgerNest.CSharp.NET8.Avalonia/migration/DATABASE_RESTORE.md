@@ -11,3 +11,7 @@ This does not establish Flutter database compatibility, complete financial-data 
 ## JSON restore validation
 
 JSON restore requires all seven exported business tables as arrays before opening its replacement transaction. Missing/null tables, null records, malformed roots/metadata, unsupported declared versions, nonpositive or duplicate IDs, duplicate/blank setting keys and broken record references are rejected. Complete older exports without metadata remain accepted; complete exports containing explicitly empty arrays remain valid. An empty object is no longer treated as an empty database backup. Accounts are retained by the existing JSON restore path. This validation checks structure and relationships, not complete financial consistency or Flutter export compatibility.
+
+## JSON restore failure injection
+
+The regression suite installs a temporary SQLite trigger that aborts invoice-item insertion after restore has deleted the prior rows and begun replacing them. It verifies that the outer transaction restores the original invoice total, item, settings and account, then drops the trigger and retries successfully. A separate injected context-creation failure verifies that database setup errors return a failed restore result rather than escaping the UI action. Transaction and context creation are now inside the restore error handler. These tests do not simulate disk exhaustion or process/power loss.

@@ -30,6 +30,7 @@ internal static class Program
         CheckSessionInvalidation();
         CheckRejectedDatabaseRestores();
         CheckRejectedJsonRestores();
+        CheckJsonRestoreRollback();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -219,6 +220,35 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckJsonRestoreRollback()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-rollback-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Rollback original", Price = 90, Quantity = 1 });
+        Check(model.SaveInvoice(), "Rollback fixture must save");
+        var original = model.CreateJsonBackup();
+        var replacement = JsonNode.Parse(original)!.AsObject();
+        replacement["invoices"]![0]!["GrandTotal"] = 180;
+        using (var db = factory.CreateDbContext())
+            db.Database.ExecuteSqlRaw("CREATE TRIGGER reject_restore BEFORE INSERT ON invoice_items BEGIN SELECT RAISE(ABORT, 'Injected restore write failure'); END;");
+        Check(!model.RestoreJsonBackup(replacement.ToJsonString()), "Restore must report an injected write failure");
+        Check(model.CreateJsonBackup().Length > 0, "Database must remain readable after rollback");
+        using (var db = factory.CreateDbContext())
+        {
+            Check(db.Invoices.Single().GrandTotal == 90m && db.InvoiceItems.Single().Description == "Rollback original", "Failure after deletion must roll back original invoice and item records");
+            Check(db.Users.Single().Username == "admin" && db.Settings.Any(), "Rollback must retain accounts and settings");
+            db.Database.ExecuteSqlRaw("DROP TRIGGER reject_restore");
+        }
+        Check(model.RestoreJsonBackup(original), "A failed restore must not leave locks that prevent retry");
+        var reopened = new MainWindowViewModel(factory, path);
+        Check(reopened.Invoices.Count == 1, "Rolled-back and retried records must survive reopening");
+        factory.FailCreation = true;
+        Check(!model.RestoreJsonBackup(original) && model.Status.StartsWith("Restore failed:", StringComparison.Ordinal), "Database setup failures must be reported instead of escaping the restore action");
+        factory.FailCreation = false;
+        Check(model.RestoreJsonBackup(original), "Restore must remain usable after a database setup failure");
     }
 
     private static void CheckRejectedJsonRestores()
@@ -929,6 +959,7 @@ internal static class Program
 
     private sealed class TestDbContextFactory(DbContextOptions<LedgerNestDbContext> options) : IDbContextFactory<LedgerNestDbContext>
     {
-        public LedgerNestDbContext CreateDbContext() => new(options);
+        public bool FailCreation { get; set; }
+        public LedgerNestDbContext CreateDbContext() => FailCreation ? throw new InvalidOperationException("Injected database setup failure") : new(options);
     }
 }
