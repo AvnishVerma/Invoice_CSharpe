@@ -155,7 +155,7 @@ public partial class MainWindow
         using var reader = new StreamReader(stream, Encoding.UTF8, true);
         var restored = Model.RestoreJsonBackup(await reader.ReadToEndAsync());
         ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
-        page.Content = SettingsView();
+        page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
     private Control CustomizationView()
     {

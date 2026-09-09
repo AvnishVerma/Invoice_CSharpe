@@ -33,6 +33,7 @@ internal static class Program
         CheckJsonRestoreRollback();
         CheckLockedDatabaseRestore();
         CheckCommittedRestoreReloadFailure();
+        CheckCommittedJsonRestoreReloadFailure();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -222,6 +223,24 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckCommittedJsonRestoreReloadFailure()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-json-reload-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "JSON reload fixture", Price = 45, Quantity = 1 });
+        Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "JSON reload failure fixture must save and sign in");
+        var backup = model.CreateJsonBackup();
+        using (var db = factory.CreateDbContext()) { db.Invoices.Single().GrandTotal = 100m; db.SaveChanges(); }
+        factory.SuccessfulCreationsRemaining = 1;
+        Check(model.RestoreJsonBackup(backup), "Committed JSON restore must remain successful if reload fails");
+        Check(model.Status.Contains("workspace could not reload", StringComparison.Ordinal) && model.Status.Contains("Restart LedgerNest", StringComparison.Ordinal), "JSON reload failure must show restart guidance");
+        Check(model.CurrentUsername == null && !model.CanAccessWorkspace, "Partially reloaded JSON workspace must clear access");
+        factory.SuccessfulCreationsRemaining = null;
+        using (var db = factory.CreateDbContext()) Check(db.Invoices.Single().GrandTotal == 45m, "JSON replacement must already be committed before reload failure");
+        Check(new MainWindowViewModel(factory, path).Invoices.Count == 1, "JSON restored records must be available after reopening");
     }
 
     private static void CheckCommittedRestoreReloadFailure()
@@ -1013,6 +1032,12 @@ internal static class Program
     private sealed class TestDbContextFactory(DbContextOptions<LedgerNestDbContext> options) : IDbContextFactory<LedgerNestDbContext>
     {
         public bool FailCreation { get; set; }
-        public LedgerNestDbContext CreateDbContext() => FailCreation ? throw new InvalidOperationException("Injected database setup failure") : new(options);
+        public int? SuccessfulCreationsRemaining { get; set; }
+        public LedgerNestDbContext CreateDbContext()
+        {
+            if (FailCreation || SuccessfulCreationsRemaining == 0) throw new InvalidOperationException("Injected database setup failure");
+            if (SuccessfulCreationsRemaining.HasValue) SuccessfulCreationsRemaining--;
+            return new(options);
+        }
     }
 }

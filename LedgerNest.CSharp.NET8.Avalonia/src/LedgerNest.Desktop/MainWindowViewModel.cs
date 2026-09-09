@@ -946,8 +946,16 @@ public partial class MainWindowViewModel : ObservableObject
             return false;
         }
 
-        ReloadFromDatabase();
-        Status = "Backup restored successfully.";
+        try
+        {
+            ReloadFromDatabase();
+            Status = "Backup restored successfully.";
+        }
+        catch (Exception)
+        {
+            SetSession(null, "", false);
+            Status = "Backup restored, but the workspace could not reload. Restart LedgerNest before continuing.";
+        }
         return true;
     }
 

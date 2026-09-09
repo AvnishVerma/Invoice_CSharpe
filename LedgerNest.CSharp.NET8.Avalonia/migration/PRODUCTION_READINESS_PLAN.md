@@ -166,3 +166,5 @@ Recovery-drill progress: JSON restore now has injected insert-failure rollback a
 Recovery-drill progress: database-file restore now has a competing destination-writer test, including preserved live records, staging cleanup and successful retry after lock release. Restore connections use a two-second lock timeout. General concurrent-operation safety, disk exhaustion and power-loss drills remain open.
 
 Restore outcome progress: committed database copies are distinguished from later reload/cleanup problems. Reload failure provides restart guidance and retains signed-out access; cleanup IO/access failures preserve the copy outcome. Injected post-copy reload failure is covered; platform cleanup-failure injection remains open.
+
+JSON restore outcome progress: failures during reload after commit now report the completed restore with restart guidance and lock partial workspace state. An injected post-commit failure verifies persistence and reopening. Broader production-readiness gates remain incomplete.
