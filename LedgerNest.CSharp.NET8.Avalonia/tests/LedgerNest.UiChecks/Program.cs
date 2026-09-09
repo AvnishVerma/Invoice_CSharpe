@@ -28,6 +28,7 @@ internal static class Program
         CheckAdministratorGuards();
         CheckPasswordMigration();
         CheckSessionInvalidation();
+        CheckRejectedDatabaseRestores();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -217,6 +218,44 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckRejectedDatabaseRestores()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-restore-guard-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Protected invoice", Price = 125, Quantity = 1 });
+        Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "Restore guard fixture must persist and sign in");
+        var valid = model.CreateDatabaseBackup();
+        byte[] AlterBackup(string sql)
+        {
+            var candidatePath = Path.Combine(Path.GetTempPath(), $"ledgernest-invalid-{Guid.NewGuid():N}.db");
+            File.WriteAllBytes(candidatePath, valid);
+            using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder { DataSource = candidatePath, Pooling = false }.ToString()))
+            {
+                connection.Open();
+                using var command = connection.CreateCommand(); command.CommandText = sql; command.ExecuteNonQuery();
+            }
+            var result = File.ReadAllBytes(candidatePath); File.Delete(candidatePath); return result;
+        }
+        var invalidBackups = new[]
+        {
+            Array.Empty<byte>(), System.Text.Encoding.UTF8.GetBytes("not a database"), valid[..100],
+            AlterBackup("DROP TABLE users"),
+            AlterBackup("UPDATE invoices SET Snapshot = 'invalid-json'"),
+            AlterBackup("PRAGMA foreign_keys=OFF; UPDATE invoices SET CustomerId = 999999")
+        };
+        foreach (var invalid in invalidBackups)
+        {
+            Check(!model.RestoreDatabaseBackup(invalid), "Invalid backup must be rejected");
+            using var db = factory.CreateDbContext();
+            Check(db.Invoices.Single().GrandTotal == 125m && db.Users.Single().Username == "admin", "Rejected restore must preserve live invoices and credentials");
+            Check(model.CurrentUsername == "admin" && model.ValidateSession(), "Rejected restore must preserve the current valid session");
+        }
+        Check(model.RestoreDatabaseBackup(valid), "Validated backup must still restore");
+        Check(model.CurrentUsername == null && !model.CanAccessWorkspace, "Successful database restore must require a fresh login");
+        Check(new MainWindowViewModel(factory, path).Invoices.Count == 1, "Restored records must survive reopening");
     }
 
     private static void CheckSessionInvalidation()

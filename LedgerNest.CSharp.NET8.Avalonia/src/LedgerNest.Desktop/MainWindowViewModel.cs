@@ -815,20 +815,8 @@ public partial class MainWindowViewModel : ObservableObject
 
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
-            if (dbFactory != null)
-            {
-                using var db = dbFactory.CreateDbContext();
-                db.Database.CloseConnection();
-                db.Database.EnsureDeleted();
-            }
-            File.WriteAllBytes(databasePath, bytes);
-            if (dbFactory != null)
-            {
-                using var restored = dbFactory.CreateDbContext();
-                restored.Database.OpenConnection();
-                restored.Database.CloseConnection();
-            }
+            DatabaseBackupRestore.Restore(bytes, databasePath);
+            SetSession(null, "", false);
             ReloadFromDatabase();
             Status = "Database backup restored successfully.";
             return true;

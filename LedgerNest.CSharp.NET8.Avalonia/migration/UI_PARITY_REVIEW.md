@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 531 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 553 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -107,3 +107,5 @@ Workspace-access batch: database-backed windows now require login before display
 Credential-storage batch: 516 checks passed, including versioned PBKDF2 reference output, existing C# credential upgrades, malformed-hash rejection, and restart persistence. No visual parity claim is added by this security change.
 
 Session-revalidation batch: 531 local checks passed, including external account changes/deletion and a live-window navigation check that returns an invalidated session to login. Existing self-service password-change and workspace checks continue to pass. No new visual parity percentage is asserted.
+
+Safe database-restore batch: 553 local checks passed, including rejection of corrupt/incompatible backups without losing existing invoice/account data, valid restores and session clearing. This storage change adds no pixel-parity evidence.
