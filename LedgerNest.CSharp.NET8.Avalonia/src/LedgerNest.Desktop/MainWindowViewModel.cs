@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -442,13 +441,19 @@ public partial class MainWindowViewModel : ObservableObject
 
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
-        var user = db.Users.AsNoTracking().FirstOrDefault(u => u.Username == username.Trim());
-        if (user == null || user.PasswordHash != HashPassword(password, user.Salt))
+        var user = db.Users.FirstOrDefault(u => u.Username == username.Trim());
+        if (user == null || !PasswordCredentials.Verify(password, user.Salt, user.PasswordHash, out var needsUpgrade))
         {
             Status = "Invalid username or password.";
             return false;
         }
 
+        if (needsUpgrade)
+        {
+            user.Salt = PasswordCredentials.CreateSalt();
+            user.PasswordHash = HashPassword(password, user.Salt);
+            db.SaveChanges();
+        }
         Status = $"Logged in as {user.Username}.";
         return true;
     }
@@ -475,13 +480,13 @@ public partial class MainWindowViewModel : ObservableObject
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
         var user = db.Users.FirstOrDefault(u => u.Username == username.Trim());
-        if (user == null || user.PasswordHash != HashPassword(fields[0].Value, user.Salt))
+        if (user == null || !PasswordCredentials.Verify(fields[0].Value, user.Salt, user.PasswordHash, out _))
         {
             fields[0].Error = "Current password is incorrect.";
             return false;
         }
 
-        user.Salt = Guid.NewGuid().ToString("N");
+        user.Salt = PasswordCredentials.CreateSalt();
         user.PasswordHash = HashPassword(fields[1].Value, user.Salt);
         user.PasswordChanged = true;
         db.SaveChanges();
@@ -1139,7 +1144,7 @@ public partial class MainWindowViewModel : ObservableObject
             var password = values.GetValueOrDefault("Password", "");
             if (user.Id == 0 || !string.IsNullOrWhiteSpace(password))
             {
-                user.Salt = Guid.NewGuid().ToString("N");
+                user.Salt = PasswordCredentials.CreateSalt();
                 user.PasswordHash = HashPassword(password, user.Salt);
                 user.PasswordChanged = true;
             }
@@ -1338,7 +1343,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (db.Settings.Any(s => s.Key == "auth.initialized")) return;
         SetSetting(db, "auth.initialized", "true");
         if (db.Users.Any()) { db.SaveChanges(); return; }
-        var salt = Guid.NewGuid().ToString("N");
+        var salt = PasswordCredentials.CreateSalt();
         db.Users.Add(new AppUser
         {
             Username = "admin",
@@ -1352,8 +1357,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private static string HashPassword(string password, string salt)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(salt + password));
-        return Convert.ToHexString(bytes).ToLowerInvariant();
+        return PasswordCredentials.Hash(password, salt);
     }
 
     private static string Money(decimal value) => $"₹ {value:0.00}";

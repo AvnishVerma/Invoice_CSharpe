@@ -152,3 +152,5 @@ Estimate calendar dates only after Phase 0 establishes scope, staffing, availabl
 ## Execution record — first batch
 
 Started the initial [release acceptance matrix](RELEASE_MATRIX.md) and added `.github/workflows/ledgernest-checks.yml` for .NET 8 build/headless checks with retained artifacts. Reproduced the duplicate service-calculation defect, then delegated InvoiceService to the existing decimal calculator. Both builds passed and all 401 checks passed locally. Hosted CI execution, complete feature enumeration and environment decisions remain open; neither Phase 0 nor Phase 1 is complete.
+
+Credential-storage progress: versioned PBKDF2-HMAC-SHA256 now replaces new fast hashes, with successful-verification migration of existing C# credentials. See [password storage design and limitations](PASSWORD_STORAGE.md). Phase 2 remains open: service authorization, first-run owner setup, recovery and release-hardware performance/security review are not complete.

@@ -26,6 +26,7 @@ internal static class Program
         CheckTotals();
         CheckServiceTotals();
         CheckAdministratorGuards();
+        CheckPasswordMigration();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -207,6 +208,42 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckPasswordMigration()
+    {
+        Check(PasswordCredentials.Hash("password", "0123456789ABCDEF") == "pbkdf2-sha256$v1$600000$D538B33181CB6504852E04C1DE79050BD42A58CF6DA21B9B127332677C5595BE", "PBKDF2 output must match an independently calculated reference vector");
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-password-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        const string password = " legacy password é ";
+        var oldHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("old-salt" + password))).ToLowerInvariant();
+        using (var db = factory.CreateDbContext())
+        {
+            var user = db.Users.Single();
+            user.Salt = "old-salt"; user.PasswordHash = oldHash;
+            db.SaveChanges();
+        }
+        Check(!model.VerifyUser("admin", "incorrect"), "Incorrect password must fail legacy verification");
+        using (var db = factory.CreateDbContext()) Check(db.Users.Single().PasswordHash == oldHash, "Failed login must not migrate credentials");
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        Check(model.SignIn("admin", password), "Existing C# password must authenticate and migrate");
+        timer.Stop();
+        Console.WriteLine($"Legacy credential upgrade: {timer.ElapsedMilliseconds} ms");
+        string upgraded;
+        using (var db = factory.CreateDbContext())
+        {
+            var user = db.Users.Single(); upgraded = user.PasswordHash;
+            Check(upgraded.StartsWith("pbkdf2-sha256$v1$600000$", StringComparison.Ordinal) && user.Salt != "old-salt", "Successful verification must persist a versioned hash and fresh salt");
+            Check(!user.PasswordChanged && user.Role == "Admin", "Hash migration must preserve role and mandatory password change");
+            Check(PasswordCredentials.Verify(password, user.Salt, upgraded, out var needsUpgrade) && !needsUpgrade, "Modern hashes must verify without requesting migration");
+            Check(!PasswordCredentials.Verify(password.Trim(), user.Salt, upgraded, out _), "Password whitespace must remain significant");
+            foreach (var malformed in new[] { "", new string('z', 64), "pbkdf2-sha256$v2$600000$" + new string('0', 64), "pbkdf2-sha256$v1$999999999$" + new string('0', 64) })
+                Check(!PasswordCredentials.Verify(password, user.Salt, malformed, out _), "Malformed and unsupported credential formats must fail closed");
+        }
+        var reloaded = new MainWindowViewModel(factory, path);
+        Check(reloaded.SignIn("admin", password) && reloaded.RequiresPasswordChange, "Migrated credentials must survive restart and preserve forced change");
+        using (var db = factory.CreateDbContext()) Check(db.Users.Single().PasswordHash == upgraded, "Modern login must not rewrite the hash");
     }
 
     private static void CheckAdministratorGuards()
@@ -703,7 +740,7 @@ internal static class Program
         using (var userDb = factory.CreateDbContext())
         {
             var savedUser = userDb.Users.Single(u => u.Username == "persisted-admin");
-            Check(savedUser.Salt.Length > 0 && savedUser.PasswordHash.Length == 64 && savedUser.PasswordHash != "temporary-secret", "User password must be persisted only as a salted hash");
+            Check(savedUser.Salt.Length > 0 && savedUser.PasswordHash.StartsWith("pbkdf2-sha256$v1$600000$", StringComparison.Ordinal) && savedUser.PasswordHash != "temporary-secret", "User password must be persisted only as a salted hash");
         }
         var pdfBytes = reloaded.ExportDocumentPdf(reloaded.Invoices.Single(i => i.Name == "00000001"));
         Check(pdfBytes.Length > 500 && System.Text.Encoding.ASCII.GetString(pdfBytes.Take(8).ToArray()).StartsWith("%PDF-1."), "Invoice PDF export must create a valid PDF document");
