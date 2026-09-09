@@ -356,6 +356,10 @@ public partial class MainWindowViewModel : ObservableObject
 
     private AppUser? sessionAccount;
 
+    public long SessionVersion { get; private set; }
+
+    public bool CanContinueWorkspaceOperation(long version) => ValidateSession() && CanAccessWorkspace && SessionVersion == version;
+
     public bool CanAccessWorkspace => dbFactory == null || (CurrentUsername != null && !RequiresPasswordChange);
     public string? CurrentUsername { get; private set; }
     public string CurrentRole { get; private set; } = "";
@@ -363,6 +367,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void SetSession(string? username, string role, bool requiresPasswordChange)
     {
+        SessionVersion++;
         if (username == null) sessionAccount = null;
         CurrentUsername = username;
         CurrentRole = role;

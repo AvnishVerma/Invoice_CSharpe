@@ -89,8 +89,14 @@ public partial class MainWindow
     }
     private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create JSON Backup", async () => await CreateBackupFile()), Ui.Button("＋ Create DB Backup", async () => await CreateDatabaseBackupFile()), Ui.Button("↑ Restore JSON", async () => await RestoreBackupFile()), Ui.Button("↑ Restore DB", async () => await RestoreDatabaseBackupFile())), Ui.Card(Ui.Stack(8, Ui.Text("Backup modes", 18, true), Ui.Text("JSON backups export business data and exclude user credentials. DB backups copy the full SQLite database file for local restore, matching the legacy backup manager modes."))), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
 
+    private bool CanContinueBackupOperation(MainWindowViewModel model, long version) =>
+        ReferenceEquals(DataContext, model) && model.CanContinueWorkspaceOperation(version);
+
     private async Task CreateBackupFile()
     {
+        var operationModel = Model;
+        var sessionVersion = operationModel.SessionVersion;
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         var backup = Model.CreateJsonBackup();
         if (backup.Length == 0) { ShowOverlay("Backup", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true)); return; }
         var file = await StorageProvider.SaveFilePickerAsync(new()
@@ -100,16 +106,21 @@ public partial class MainWindow
             DefaultExtension = "json",
             FileTypeChoices = [new FilePickerFileType("JSON backup") { Patterns = ["*.json"], MimeTypes = ["application/json", "text/json"] }]
         });
-        if (file == null) return;
+        if (file == null || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
         await using var stream = await file.OpenWriteAsync();
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         await using var writer = new StreamWriter(stream, Encoding.UTF8);
         await writer.WriteAsync(backup);
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
 
 
     private async Task CreateDatabaseBackupFile()
     {
+        var operationModel = Model;
+        var sessionVersion = operationModel.SessionVersion;
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         var backup = Model.CreateDatabaseBackup();
         if (backup.Length == 0) { ShowOverlay("Backup", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true)); return; }
         var file = await StorageProvider.SaveFilePickerAsync(new()
@@ -119,41 +130,52 @@ public partial class MainWindow
             DefaultExtension = "invoicedb",
             FileTypeChoices = [new FilePickerFileType("Database backup") { Patterns = ["*.invoicedb"], MimeTypes = ["application/octet-stream"] }]
         });
-        if (file == null) return;
+        if (file == null || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
         await using var stream = await file.OpenWriteAsync();
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         await stream.WriteAsync(backup);
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
 
     private async Task RestoreDatabaseBackupFile()
     {
+        var operationModel = Model;
+        var sessionVersion = operationModel.SessionVersion;
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         var files = await StorageProvider.OpenFilePickerAsync(new()
         {
             Title = "Restore Database Backup",
             AllowMultiple = false,
             FileTypeFilter = [new FilePickerFileType("Database backup") { Patterns = ["*.invoicedb"], MimeTypes = ["application/octet-stream"] }]
         });
-        if (files.Count == 0) return;
+        if (files.Count == 0 || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
         await using var stream = await files[0].OpenReadAsync();
         using var memory = new MemoryStream();
         await stream.CopyToAsync(memory);
-        var restored = Model.RestoreDatabaseBackup(memory.ToArray());
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
+        var restored = operationModel.RestoreDatabaseBackup(memory.ToArray());
         ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
         page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
 
     private async Task RestoreBackupFile()
     {
+        var operationModel = Model;
+        var sessionVersion = operationModel.SessionVersion;
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         var files = await StorageProvider.OpenFilePickerAsync(new()
         {
             Title = "Restore JSON Backup",
             AllowMultiple = false,
             FileTypeFilter = [new FilePickerFileType("JSON backup") { Patterns = ["*.json"], MimeTypes = ["application/json", "text/json"] }]
         });
-        if (files.Count == 0) return;
+        if (files.Count == 0 || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
         await using var stream = await files[0].OpenReadAsync();
         using var reader = new StreamReader(stream, Encoding.UTF8, true);
-        var restored = Model.RestoreJsonBackup(await reader.ReadToEndAsync());
+        var json = await reader.ReadToEndAsync();
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
+        var restored = operationModel.RestoreJsonBackup(json);
         ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
         page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }

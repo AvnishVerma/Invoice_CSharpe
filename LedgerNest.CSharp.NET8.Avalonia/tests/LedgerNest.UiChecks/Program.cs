@@ -34,6 +34,7 @@ internal static class Program
         CheckLockedDatabaseRestore();
         CheckCommittedRestoreReloadFailure();
         CheckCommittedJsonRestoreReloadFailure();
+        CheckPendingOperationSession();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -223,6 +224,26 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckPendingOperationSession()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-pending-session-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        Check(!model.CanContinueWorkspaceOperation(model.SessionVersion), "Signed-out accounts must not start pending workspace operations");
+        Check(model.SignIn("admin", "admin") && !model.CanContinueWorkspaceOperation(model.SessionVersion), "Required password changes must block pending operations");
+        FormField[] change = [new("Current Password", "admin"), new("New Password", "operation-password"), new("Confirm", "operation-password")];
+        Check(model.ChangeCurrentPassword(change), "Pending operation fixture must unlock");
+        var version = model.SessionVersion;
+        Check(model.CanContinueWorkspaceOperation(version), "Unchanged authenticated session must allow continuation");
+        model.SignOut();
+        Check(!model.CanContinueWorkspaceOperation(version), "Logout must invalidate a pending operation");
+        Check(model.SignIn("admin", "operation-password"), "Same account must be able to sign in again");
+        Check(!model.CanContinueWorkspaceOperation(version) && model.CanContinueWorkspaceOperation(model.SessionVersion), "Signing into the same account again must not revive an old operation");
+        version = model.SessionVersion;
+        using (var db = factory.CreateDbContext()) { db.Users.Single().PasswordChanged = false; db.SaveChanges(); }
+        Check(!model.CanContinueWorkspaceOperation(version) && model.CurrentUsername == null, "External account changes must cancel pending operations");
     }
 
     private static void CheckCommittedJsonRestoreReloadFailure()

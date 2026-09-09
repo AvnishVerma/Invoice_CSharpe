@@ -168,3 +168,5 @@ Recovery-drill progress: database-file restore now has a competing destination-w
 Restore outcome progress: committed database copies are distinguished from later reload/cleanup problems. Reload failure provides restart guidance and retains signed-out access; cleanup IO/access failures preserve the copy outcome. Injected post-copy reload failure is covered; platform cleanup-failure injection remains open.
 
 JSON restore outcome progress: failures during reload after commit now report the completed restore with restart guidance and lock partial workspace state. An injected post-commit failure verifies persistence and reopening. Broader production-readiness gates remain incomplete.
+
+Pending-operation progress: asynchronous backup/restore UI callbacks now verify their original session version and model before continuing. This closes stale picker callbacks after session changes; direct service authorization and native picker automation remain open.
