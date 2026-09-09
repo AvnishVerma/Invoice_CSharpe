@@ -25,6 +25,7 @@ internal static class Program
         Directory.CreateDirectory(output);
         CheckTotals();
         CheckServiceTotals();
+        CheckAdministratorGuards();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -174,6 +175,32 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckAdministratorGuards()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-admin-guards-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        var admin = model.Users.Single();
+        FormField[] Demote(string username) => [new("Username", username), new("Role", "User")];
+        Check(!model.SaveRecord("User", Demote("admin"), admin), "Last admin demotion must fail");
+        var duplicate = FormCatalog.User();
+        duplicate[0].Value = " ADMIN "; duplicate[1].Value = "duplicate-password";
+        Check(!model.SaveRecord("User", duplicate) && model.Users.Count == 1, "Duplicate normalized usernames must fail without adding a row");
+        var second = FormCatalog.User(); second[0].Value = "second-admin"; second[1].Value = "second-password"; second[2].Value = "Admin";
+        Check(model.SaveRecord("User", second), "Second administrator must be creatable");
+        var stale = new MainWindowViewModel(factory, path);
+        Check(model.SaveRecord("User", Demote("admin"), admin), "Demotion must succeed when another administrator exists");
+        Check(!stale.DeleteRecord("User", stale.Users.Single(u => u.Name == "second-admin")), "Stale view must use database administrator count before deletion");
+        Check(!stale.SaveRecord("User", Demote("second-admin"), stale.Users.Single(u => u.Name == "second-admin")), "Stale view must use database administrator count before demotion");
+        var refreshed = new MainWindowViewModel(factory, path);
+        var rename = new[] { new FormField("Username", "second-admin"), new FormField("Role", "User") };
+        Check(!refreshed.SaveRecord("User", rename, refreshed.Users.Single(u => u.Name == "admin")), "Renaming onto an existing username must fail");
+        Check(refreshed.SignIn("admin", "admin"), "Ordinary user must be able to sign in");
+        Check(refreshed.DeleteRecord("User", refreshed.Users.Single(u => u.Name == "admin")) && refreshed.CurrentUsername == null, "Deleting a non-admin account must clear its session");
+        Check(!stale.SaveRecord("User", Demote("resurrected"), stale.Users.Single(u => u.Name == "admin")), "Stale edit must not recreate a deleted account");
+        Check(new MainWindowViewModel(factory, path).Users.Single().Name == "second-admin", "All rejected mutations must preserve the remaining administrator");
     }
 
     private static void CheckInvoiceEditing()
@@ -477,8 +504,8 @@ internal static class Program
         Check(reloaded.SaveRecord("User", user) && reloaded.SignIn("deletable", "test-password"), "Deletion test user must sign in");
         Check(reloaded.DeleteRecord("User", reloaded.Users.Single(u => u.Name == "deletable")) && reloaded.CurrentUsername == null, "Deleting signed-in user must clear session");
         Check(!new MainWindowViewModel(factory, path).VerifyUser("deletable", "test-password"), "Deleted user must not authenticate after restart");
-        Check(reloaded.DeleteRecord("User", reloaded.Users.Single()), "Remaining user deletion must persist");
-        Check(!new MainWindowViewModel(factory, path).Users.Any(), "An emptied user table must not recreate default credentials on restart");
+        Check(!reloaded.DeleteRecord("User", reloaded.Users.Single()), "Last administrator deletion must be rejected");
+        Check(new MainWindowViewModel(factory, path).Users.Single().Name == "admin", "Last administrator must remain available after restart");
     }
 
     private static void CheckDocumentTrash()

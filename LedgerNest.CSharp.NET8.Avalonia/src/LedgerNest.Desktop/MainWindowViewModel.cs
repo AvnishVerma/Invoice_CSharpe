@@ -75,8 +75,25 @@ public partial class MainWindowViewModel : ObservableObject
         var records = kind == "Customer" ? Customers : kind == "Product" ? Products : Users;
         var databaseValues = fields.ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Value.Trim());
         var values = fields.Where(f => f.Kind != "password").ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Value.Trim());
-        var record = new UiRecord { SourceId = SaveRecordToDatabase(kind, databaseValues, original?.SourceId ?? 0), Values = values };
+        if (original != null && !records.Contains(original)) { Status = "Record no longer exists in this view."; return false; }
+        if (kind == "User")
+        {
+            if (values.GetValueOrDefault("Role") is not ("Admin" or "User"))
+            { Status = "Select a valid user role."; return false; }
+            if (dbFactory == null && Users.Any(u => u != original && u.Name.Equals(values["Username"], StringComparison.OrdinalIgnoreCase)))
+            { Status = "Username is already in use."; return false; }
+            if (dbFactory == null && original?["Role"] == "Admin" && values["Role"] != "Admin" && Users.Count(u => u["Role"] == "Admin") <= 1)
+            { Status = "The last administrator cannot be demoted."; return false; }
+        }
+        var sourceId = SaveRecordToDatabase(kind, databaseValues, original?.SourceId ?? 0);
+        if (sourceId < 0) return false;
+        var record = new UiRecord { SourceId = sourceId, Values = values };
         if (original != null) records[records.IndexOf(original)] = record; else records.Add(record);
+        if (kind == "User" && original != null && CurrentUsername == original.Name)
+        {
+            CurrentUsername = null;
+            RequiresPasswordChange = false;
+        }
         Status = $"{kind} saved.";
         return true;
     }
@@ -84,6 +101,8 @@ public partial class MainWindowViewModel : ObservableObject
     {
         var records = kind switch { "Customer" => Customers, "Product" => Products, "User" => Users, _ => null };
         if (records == null || !records.Contains(record)) return false;
+        if (dbFactory == null && kind == "User" && record["Role"] == "Admin" && Users.Count(u => u["Role"] == "Admin") <= 1)
+        { Status = "The last administrator cannot be deleted."; return false; }
         if (dbFactory != null)
         {
             using var db = dbFactory.CreateDbContext();
@@ -111,6 +130,8 @@ public partial class MainWindowViewModel : ObservableObject
             {
                 var user = db.Users.Find(record.SourceId);
                 if (user == null) return false;
+                if (user.Role == "Admin" && db.Users.Count(u => u.Role == "Admin") <= 1)
+                { Status = "The last administrator cannot be deleted."; return false; }
                 db.Users.Remove(user);
             }
             db.SaveChanges();
@@ -1088,7 +1109,14 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (kind == "User")
         {
-            var user = sourceId > 0 ? db.Users.Find(sourceId) ?? new AppUser() : new AppUser();
+            using var transaction = db.Database.BeginTransaction();
+            var user = sourceId > 0 ? db.Users.Find(sourceId) : new AppUser();
+            if (user == null) { Status = "User no longer exists."; return -1; }
+            var username = values.GetValueOrDefault("Username", "");
+            if (db.Users.AsNoTracking().AsEnumerable().Any(u => u.Id != sourceId && u.Username.Equals(username, StringComparison.OrdinalIgnoreCase)))
+            { Status = "Username is already in use."; return -1; }
+            if (user.Role == "Admin" && values.GetValueOrDefault("Role") != "Admin" && db.Users.Count(u => u.Role == "Admin") <= 1)
+            { Status = "The last administrator cannot be demoted."; return -1; }
             user.Username = values.GetValueOrDefault("Username", "");
             user.Role = values.GetValueOrDefault("Role", "User");
             var password = values.GetValueOrDefault("Password", "");
@@ -1100,6 +1128,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
             if (user.Id == 0) db.Users.Add(user);
             db.SaveChanges();
+            transaction.Commit();
             return user.Id;
         }
 

@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 470 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 481 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -95,3 +95,5 @@ Unpaid-edit batch validation: build passed with zero warnings/errors; all 460 ch
 Theme/lifecycle follow-up: shared surfaces, labels, outlines, invoice accents and wordmark now update in place for light/dark mode. The window detaches reused shell controls and old model listeners when its DataContext changes; invoice editor subscriptions retain the original model for cleanup. Regression checks exercise a live model replacement, old-model event isolation, theme switching and preservation of an unsaved editor field. Reviewed both invoice-edit-dark.png and invoice-edit-light.png in `/tmp/ledgernest-theme-lifecycle-captures`.
 
 Build passed with zero warnings/errors; 470 checks passed. These fix the two issues observed during editing tests. Full cross-platform, contrast/accessibility and legacy pixel comparisons remain open.
+
+Account safeguards: deletion/demotion of the last administrator is rejected using current database state inside the write transaction. Duplicate usernames (trimmed, case-insensitive) and stale edits of deleted users are rejected. Updating the signed-in account invalidates its session. All 481 checks passed; captures: `/tmp/ledgernest-admin-guard-captures`. This does not complete role authorization, recovery or credential hardening.
