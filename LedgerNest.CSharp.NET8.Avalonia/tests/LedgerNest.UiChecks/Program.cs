@@ -35,6 +35,7 @@ internal static class Program
         CheckCommittedRestoreReloadFailure();
         CheckCommittedJsonRestoreReloadFailure();
         CheckPendingOperationSession();
+        CheckBackupStreamWriting();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -224,6 +225,32 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckBackupStreamWriting()
+    {
+        using var stream = new MemoryStream();
+        stream.Write(new byte[1024]);
+        var bytes = System.Text.Encoding.UTF8.GetBytes("{\"backup\":true}");
+        BackupStreamWriter.WriteAsync(stream, bytes).GetAwaiter().GetResult();
+        Check(stream.ToArray().SequenceEqual(bytes), "Replacing a longer backup must remove trailing bytes and reset stream position");
+        BackupStreamWriter.WriteAsync(stream, ReadOnlyMemory<byte>.Empty).GetAwaiter().GetResult();
+        Check(stream.Length == 0, "Empty replacement must not retain stale bytes");
+        using var readOnly = new MemoryStream(new byte[4], writable: false);
+        var rejected = false;
+        try { BackupStreamWriter.WriteAsync(readOnly, bytes).GetAwaiter().GetResult(); }
+        catch (IOException) { rejected = true; }
+        Check(rejected && readOnly.Length == 4, "Unwritable destination must fail without modifying its contents");
+        using var failing = new FailingFlushStream();
+        rejected = false;
+        try { BackupStreamWriter.WriteAsync(failing, bytes).GetAwaiter().GetResult(); }
+        catch (IOException) { rejected = true; }
+        Check(rejected, "Flush failure must propagate before export can report success");
+    }
+
+    private sealed class FailingFlushStream : MemoryStream
+    {
+        public override Task FlushAsync(CancellationToken cancellationToken) => Task.FromException(new IOException("Injected flush failure"));
     }
 
     private static void CheckPendingOperationSession()

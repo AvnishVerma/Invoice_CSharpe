@@ -170,3 +170,5 @@ Restore outcome progress: committed database copies are distinguished from later
 JSON restore outcome progress: failures during reload after commit now report the completed restore with restart guidance and lock partial workspace state. An injected post-commit failure verifies persistence and reopening. Broader production-readiness gates remain incomplete.
 
 Pending-operation progress: asynchronous backup/restore UI callbacks now verify their original session version and model before continuing. This closes stale picker callbacks after session changes; direct service authorization and native picker automation remain open.
+
+Backup export progress: seekable output streams are truncated and flushed before success, and file IO/access errors are handled in UI actions. Stream overwrite and flush-failure tests are present. Atomic export replacement, native provider checks and actual disk-full drills remain pending.

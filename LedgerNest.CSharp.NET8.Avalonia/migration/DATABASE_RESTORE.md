@@ -29,3 +29,7 @@ JSON restore now also separates its committed transaction from later workspace r
 ## Pending file-picker operations
 
 Backup/export and restore UI callbacks capture their starting model and session version. They verify access before opening pickers and recheck after picker completion, before writing backup content or applying restored content. Logout/login cycles, external account changes and model replacement invalidate the pending callback. This prevents an old picker from continuing under a different session. It does not cancel IO already in progress, guarantee an opened destination file is untouched, or provide service-level authorization. Session-continuation tests cover signed-out/forced-change states, normal continuation, logout, same-account relogin and external account changes; native picker automation remains pending.
+
+## Backup export stream handling
+
+JSON and database exports reset/truncate seekable destination streams, write the complete payload, flush, and dispose the stream before reporting success. This prevents trailing bytes when a provider opens an existing longer file without truncation. Backup file actions handle IO/access errors without an unhandled asynchronous UI exception. Tests cover shorter replacement, empty replacement, an unwritable destination and injected flush failure. Non-seekable stream replacement semantics remain provider-dependent. This is not atomic file replacement: interrupted writes can leave a partial destination, and actual disk-full/native-provider testing remains open.

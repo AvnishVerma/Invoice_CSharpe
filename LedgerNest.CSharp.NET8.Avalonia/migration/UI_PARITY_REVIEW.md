@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 629 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 633 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -121,3 +121,5 @@ Restore-outcome batch: 615 local checks passed, including committed-copy/reload-
 JSON restore-outcome batch: 621 local checks passed, including failure after commit, restart guidance, locked partial workspace and successful reopening. No new pixel-parity evidence is claimed.
 
 Pending backup-operation batch: 629 local checks passed, including session continuation rejection after logout/relogin and external account changes. Native picker automation and visual parity remain unverified.
+
+Backup export-stream batch: 633 local checks passed, including truncation, unwritable destination and flush-failure handling. Native file-provider behavior and pixel parity remain unverified.

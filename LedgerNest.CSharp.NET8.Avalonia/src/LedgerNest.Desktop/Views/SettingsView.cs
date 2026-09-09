@@ -5,6 +5,7 @@ using Avalonia.Media;
 using LedgerNest.Desktop.Views;
 using Avalonia.Platform.Storage;
 using System.Text;
+using LedgerNest.Infrastructure;
 
 namespace LedgerNest.Desktop;
 
@@ -87,7 +88,20 @@ public partial class MainWindow
         };
         Select(0); return Ui.Rows("Auto,*", Ui.AppBar("Invoice Settings"), layout);
     }
-    private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create JSON Backup", async () => await CreateBackupFile()), Ui.Button("＋ Create DB Backup", async () => await CreateDatabaseBackupFile()), Ui.Button("↑ Restore JSON", async () => await RestoreBackupFile()), Ui.Button("↑ Restore DB", async () => await RestoreDatabaseBackupFile())), Ui.Card(Ui.Stack(8, Ui.Text("Backup modes", 18, true), Ui.Text("JSON backups export business data and exclude user credentials. DB backups copy the full SQLite database file for local restore, matching the legacy backup manager modes."))), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
+    private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create JSON Backup", async () => await RunBackupFileAction(CreateBackupFile)), Ui.Button("＋ Create DB Backup", async () => await RunBackupFileAction(CreateDatabaseBackupFile)), Ui.Button("↑ Restore JSON", async () => await RunBackupFileAction(RestoreBackupFile)), Ui.Button("↑ Restore DB", async () => await RunBackupFileAction(RestoreDatabaseBackupFile))), Ui.Card(Ui.Stack(8, Ui.Text("Backup modes", 18, true), Ui.Text("JSON backups export business data and exclude user credentials. DB backups copy the full SQLite database file for local restore, matching the legacy backup manager modes."))), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
+
+    private async Task RunBackupFileAction(Func<Task> action)
+    {
+        var operationModel = Model;
+        var version = operationModel.SessionVersion;
+        try { await action(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            if (!CanContinueBackupOperation(operationModel, version)) return;
+            operationModel.Status = "The backup file could not be read or fully written. Check the file location and available space before trying again.";
+            ShowOverlay("Backup File Error", Ui.Text(operationModel.Status), Ui.Button("Close", CloseOverlay, true));
+        }
+    }
 
     private bool CanContinueBackupOperation(MainWindowViewModel model, long version) =>
         ReferenceEquals(DataContext, model) && model.CanContinueWorkspaceOperation(version);
@@ -107,10 +121,11 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("JSON backup") { Patterns = ["*.json"], MimeTypes = ["application/json", "text/json"] }]
         });
         if (file == null || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
-        await using var stream = await file.OpenWriteAsync();
-        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
-        await using var writer = new StreamWriter(stream, Encoding.UTF8);
-        await writer.WriteAsync(backup);
+        await using (var stream = await file.OpenWriteAsync())
+        {
+            if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
+            await BackupStreamWriter.WriteAsync(stream, Encoding.UTF8.GetBytes(backup));
+        }
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
@@ -131,9 +146,11 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("Database backup") { Patterns = ["*.invoicedb"], MimeTypes = ["application/octet-stream"] }]
         });
         if (file == null || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
-        await using var stream = await file.OpenWriteAsync();
-        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
-        await stream.WriteAsync(backup);
+        await using (var stream = await file.OpenWriteAsync())
+        {
+            if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
+            await BackupStreamWriter.WriteAsync(stream, backup);
+        }
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
