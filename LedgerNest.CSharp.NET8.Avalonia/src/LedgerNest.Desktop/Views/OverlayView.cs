@@ -9,7 +9,29 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
-    internal void CloseOverlay() { overlay.Children.Clear(); overlay.IsVisible = false; }
+    internal void CloseOverlay()
+    {
+        if (!Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
+        overlay.Children.Clear(); overlay.IsVisible = false;
+    }
+
+    private void ShowAccessScreen()
+    {
+        page.Content = null;
+        sidebar.Content = null;
+        page.IsEnabled = false;
+        sidebar.IsEnabled = false;
+        if (Model.CurrentUsername == null) ShowLogin(); else ShowChangePassword();
+    }
+
+    private void RefreshWorkspaceAccess()
+    {
+        page.IsEnabled = Model.CanAccessWorkspace;
+        sidebar.IsEnabled = Model.CanAccessWorkspace;
+        if (!Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
+        BuildSidebar();
+        ShowPage();
+    }
     internal void ShowOverlay(string title, Control content, Control? footer = null, bool side = false, double width = 560, Control? headerAccessory = null)
     {
         overlay.Children.Clear(); overlay.IsVisible = true;

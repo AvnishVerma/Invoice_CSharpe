@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 493 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 502 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -101,3 +101,5 @@ Account safeguards: deletion/demotion of the last administrator is rejected usin
 Password input consistency: creation now preserves leading/trailing password spaces while continuing to normalize usernames. Regression checks verify exact authentication, rejection of the trimmed alternative and restart. Build passed with zero warnings/errors; 485 local checks passed. Existing stored credentials are unchanged.
 
 Session identity follow-up: logout now clears username, role and password-change state; the sidebar follows the real signed-in account instead of hard-coded admin text. Failed account switches clear prior identity, and user edits/deletion notify session changes. Build passed with zero warnings/errors; 493 checks passed, including UI logout and sidebar refresh. Full route/service authorization, mandatory login, inactivity locking and recovery remain incomplete.
+
+Workspace-access batch: database-backed windows now require login before displaying navigation or business pages. Required password changes retain the lock through Cancel, overlay dismissal and shortcuts. Logout removes workspace content immediately. All 502 local checks passed; startup login capture is in `/tmp/ledgernest-access-captures`. This establishes a desktop UI gate, not service-level authorization or verified pixel parity.

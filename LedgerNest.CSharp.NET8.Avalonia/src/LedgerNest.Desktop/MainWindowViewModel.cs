@@ -355,6 +355,7 @@ public partial class MainWindowViewModel : ObservableObject
         ThemeMode = setting is "Dark" or "System" ? setting : "Light";
     }
 
+    public bool CanAccessWorkspace => dbFactory == null || (CurrentUsername != null && !RequiresPasswordChange);
     public string? CurrentUsername { get; private set; }
     public string CurrentRole { get; private set; } = "";
     public bool RequiresPasswordChange { get; private set; }
@@ -367,6 +368,7 @@ public partial class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(CurrentUsername));
         OnPropertyChanged(nameof(CurrentRole));
         OnPropertyChanged(nameof(RequiresPasswordChange));
+        OnPropertyChanged(nameof(CanAccessWorkspace));
     }
 
     public void SignOut()
@@ -394,6 +396,8 @@ public partial class MainWindowViewModel : ObservableObject
         }
         if (!ChangePassword(CurrentUsername, fields)) return false;
         RequiresPasswordChange = false;
+        OnPropertyChanged(nameof(RequiresPasswordChange));
+        OnPropertyChanged(nameof(CanAccessWorkspace));
         return true;
     }
 

@@ -121,6 +121,25 @@ internal static class Program
         model.NavigateCommand.Execute("Customers");
         Settle();
         Check(!window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "OLD MODEL STATUS"), "Old model events must not update the replacement shell");
+        Check(!editModel.CanAccessWorkspace, "Database-backed startup must require authentication");
+        Capture("startup-login");
+        editModel.NavigateCommand.Execute("New Invoice");
+        window.KeyPressQwerty(Avalonia.Input.PhysicalKey.S, Avalonia.Input.RawInputModifiers.Control);
+        window.KeyReleaseQwerty(Avalonia.Input.PhysicalKey.S, Avalonia.Input.RawInputModifiers.Control);
+        window.KeyPressQwerty(Avalonia.Input.PhysicalKey.Escape, Avalonia.Input.RawInputModifiers.None);
+        window.KeyReleaseQwerty(Avalonia.Input.PhysicalKey.Escape, Avalonia.Input.RawInputModifiers.None);
+        Settle();
+        Check(editModel.Invoices.Count == 1 && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login"), "Locked navigation and shortcuts must preserve login and avoid saving");
+        Check(editModel.SignIn("admin", "admin") && !editModel.CanAccessWorkspace, "Default administrator must remain locked pending password change");
+        Click("Cancel");
+        Check(window.GetVisualDescendants().OfType<TextBox>().Any(t => t.Watermark == "Current Password"), "Mandatory password change cannot be dismissed");
+        foreach (var field in window.GetVisualDescendants().OfType<TextBox>())
+        {
+            if (field.Watermark == "Current Password") field.Text = "admin";
+            if (field.Watermark is "New Password (min 8 characters)" or "Confirm New Password") field.Text = "updated-admin-password";
+        }
+        Click("Change Password");
+        Check(editModel.CanAccessWorkspace && !editModel.RequiresPasswordChange, "Successful password change must unlock workspace");
         editModel.NavigateCommand.Execute("Invoices");
         Click("⋯"); Click("Edit"); Capture("invoice-edit");
         Check(editModel.IsEditingDocument && editModel.Lines.Single().Name == "Editable service", "Edit action must load the saved document");
@@ -147,10 +166,10 @@ internal static class Program
         Check(editModel.CurrentRole == "User" && window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "sidebar-user"), "Sidebar must show signed-in account and role without navigating");
         Click("⇥");
         Check(editModel.CurrentUsername == null && editModel.CurrentRole == "" && !editModel.RequiresPasswordChange, "Logout button must clear all session identity");
-        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Not signed in") && !window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "sidebar-user"), "Logout must remove previous sidebar identity");
+        Check(!editModel.CanAccessWorkspace && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login") && !window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "sidebar-user"), "Logout must remove previous sidebar identity");
         FormField[] signedOutChange = [new("Current Password", "session-password"), new("New Password", "replacement-password"), new("Confirm", "replacement-password")];
         Check(!editModel.ChangeCurrentPassword(signedOutChange), "Signed-out account must not retain password-change authority");
-        Check(editModel.SignIn("admin", "admin") && editModel.CurrentRole == "Admin", "Session may switch to another account");
+        Check(editModel.SignIn("admin", "updated-admin-password") && editModel.CurrentRole == "Admin", "Session may switch to another account");
         Check(!editModel.SignIn("sidebar-user", "incorrect") && editModel.CurrentRole == "" && editModel.CurrentUsername == null, "Failed account switch must not retain previous role");
 
         window.Close();

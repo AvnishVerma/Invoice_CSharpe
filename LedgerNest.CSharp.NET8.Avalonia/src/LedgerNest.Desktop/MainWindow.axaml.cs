@@ -33,6 +33,12 @@ public partial class MainWindow : Window
         DataContextChanged += (_, _) => { if (DataContext is MainWindowViewModel vm) InitializeShell(vm); };
         KeyDown += (_, e) =>
         {
+            if (DataContext is not MainWindowViewModel currentModel) return;
+            if (!currentModel.CanAccessWorkspace)
+            {
+                if (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.Key == Key.Escape) e.Handled = true;
+                return;
+            }
             if (e.Key == Key.Escape && overlay.IsVisible) { CloseOverlay(); e.Handled = true; }
             if (!e.KeyModifiers.HasFlag(KeyModifiers.Control)) return;
             if (e.Key == Key.Q) { Model.NavigateCommand.Execute("New Invoice"); e.Handled = true; }

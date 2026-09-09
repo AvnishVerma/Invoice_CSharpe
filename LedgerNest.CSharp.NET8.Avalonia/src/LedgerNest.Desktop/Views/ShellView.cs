@@ -17,7 +17,7 @@ public partial class MainWindow
         if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
         page.Content = null;
         sidebar.Content = null;
-        CloseOverlay();
+        overlay.Children.Clear(); overlay.IsVisible = false;
         foreach (var control in new Control[] { sidebar, page, status })
             if (control.Parent is Panel parent) parent.Children.Remove(control);
         Root.Children.Clear();
@@ -28,12 +28,14 @@ public partial class MainWindow
         Root.Children.Add(Ui.Rows("*,Auto", body, statusBar)); Root.Children.Add(overlay);
         shellChanged = (_, e) =>
         {
-            if (e.PropertyName == nameof(vm.Title)) { ShowPage(); BuildSidebar(); }
-            if (e.PropertyName is nameof(vm.SidebarExpanded) or nameof(vm.CurrentUsername)) BuildSidebar();
+            if (e.PropertyName == nameof(vm.Title)) { ShowPage(); if (vm.CanAccessWorkspace) BuildSidebar(); }
+            if (e.PropertyName is nameof(vm.SidebarExpanded) or nameof(vm.CurrentUsername))
+                if (vm.CanAccessWorkspace) BuildSidebar();
+            if (e.PropertyName == nameof(vm.CanAccessWorkspace)) RefreshWorkspaceAccess();
             if (e.PropertyName == nameof(vm.Status)) { status.Text = vm.Status; statusBar.IsVisible = vm.Status.Length > 0; }
         };
         vm.PropertyChanged += shellChanged;
-        BuildSidebar(); ShowPage();
+        RefreshWorkspaceAccess();
     }
     private void BuildSidebar()
     {
@@ -60,6 +62,7 @@ public partial class MainWindow
     }
     private void ShowPage()
     {
+        if (!Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
         CloseOverlay();
         page.Content = Model.Title switch
         {
