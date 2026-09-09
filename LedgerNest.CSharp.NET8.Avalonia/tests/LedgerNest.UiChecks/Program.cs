@@ -185,6 +185,14 @@ internal static class Program
         var admin = model.Users.Single();
         FormField[] Demote(string username) => [new("Username", username), new("Role", "User")];
         Check(!model.SaveRecord("User", Demote("admin"), admin), "Last admin demotion must fail");
+        var spacedPassword = FormCatalog.User();
+        spacedPassword[0].Value = " whitespace-user ";
+        spacedPassword[1].Value = "  exact password  ";
+        Check(model.SaveRecord("User", spacedPassword), "Password whitespace account must save");
+        Check(model.VerifyUser("whitespace-user", "  exact password  ") && !model.VerifyUser("whitespace-user", "exact password"), "Creation must preserve password whitespace while normalizing username");
+        var freshCredentials = new MainWindowViewModel(factory, path);
+        Check(freshCredentials.VerifyUser("whitespace-user", "  exact password  "), "Exact password must authenticate after restart");
+        Check(model.DeleteRecord("User", model.Users.Single(u => u.Name == "whitespace-user")), "Password fixture must be removable");
         var duplicate = FormCatalog.User();
         duplicate[0].Value = " ADMIN "; duplicate[1].Value = "duplicate-password";
         Check(!model.SaveRecord("User", duplicate) && model.Users.Count == 1, "Duplicate normalized usernames must fail without adding a row");

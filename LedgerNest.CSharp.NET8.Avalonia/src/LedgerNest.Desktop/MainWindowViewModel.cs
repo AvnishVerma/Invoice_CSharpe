@@ -73,7 +73,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
         var records = kind == "Customer" ? Customers : kind == "Product" ? Products : Users;
-        var databaseValues = fields.ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Value.Trim());
+        var databaseValues = fields.ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Kind == "password" ? f.Value : f.Value.Trim());
         var values = fields.Where(f => f.Kind != "password").ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Value.Trim());
         if (original != null && !records.Contains(original)) { Status = "Record no longer exists in this view."; return false; }
         if (kind == "User")
