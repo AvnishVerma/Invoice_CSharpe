@@ -91,8 +91,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (original != null) records[records.IndexOf(original)] = record; else records.Add(record);
         if (kind == "User" && original != null && CurrentUsername == original.Name)
         {
-            CurrentUsername = null;
-            RequiresPasswordChange = false;
+            SetSession(null, "", false);
         }
         Status = $"{kind} saved.";
         return true;
@@ -141,8 +140,7 @@ public partial class MainWindowViewModel : ObservableObject
         DeletedRecords.Remove(record.Id);
         if (kind == "User" && CurrentUsername == record.Name)
         {
-            CurrentUsername = null;
-            RequiresPasswordChange = false;
+            SetSession(null, "", false);
         }
         Status = $"{kind} deleted.";
         return true;
@@ -358,17 +356,32 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     public string? CurrentUsername { get; private set; }
+    public string CurrentRole { get; private set; } = "";
     public bool RequiresPasswordChange { get; private set; }
+
+    private void SetSession(string? username, string role, bool requiresPasswordChange)
+    {
+        CurrentUsername = username;
+        CurrentRole = role;
+        RequiresPasswordChange = requiresPasswordChange;
+        OnPropertyChanged(nameof(CurrentUsername));
+        OnPropertyChanged(nameof(CurrentRole));
+        OnPropertyChanged(nameof(RequiresPasswordChange));
+    }
+
+    public void SignOut()
+    {
+        SetSession(null, "", false);
+        Status = "Signed out.";
+    }
 
     public bool SignIn(string username, string password)
     {
-        CurrentUsername = null;
-        RequiresPasswordChange = false;
+        SetSession(null, "", false);
         if (!VerifyUser(username, password)) return false;
         using var db = dbFactory!.CreateDbContext();
         var user = db.Users.AsNoTracking().Single(u => u.Username == username.Trim());
-        CurrentUsername = user.Username;
-        RequiresPasswordChange = !user.PasswordChanged;
+        SetSession(user.Username, user.Role, !user.PasswordChanged);
         return true;
     }
 

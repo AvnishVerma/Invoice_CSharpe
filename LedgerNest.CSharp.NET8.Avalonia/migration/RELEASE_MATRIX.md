@@ -85,3 +85,5 @@ Validation: build passed with zero warnings/errors; 470 checks passed. The test 
 Account-guard batch: 481 checks passed, including duplicate names, stale-view administrator counts, deleted-user edits, and session clearing. Production-plan administrator protection intentionally supersedes unrestricted legacy account deletion. Service extraction and full authorization remain pending.
 
 Hosted baseline CI is now confirmed successful for c693536: https://github.com/AvnishVerma/Invoice_CSharpe/actions/runs/34196349072 . This supersedes the earlier pending-hosted-baseline notes, but does not prove subsequent commits passed. The account guard batch was pushed as 0ca4038. Follow-up password creation preserves exact whitespace; 485 local checks passed. Credential hashing and complete authorization remain open.
+
+Session-identity batch: explicit SignOut and observable username/role updates are verified by 493 local checks, including the actual logout button and account switching. This fixes identity retention; it does not yet enforce authentication on all routes or operations. Hosted CI for prior commit c8ef571 passed; this batch awaits its own hosted run.

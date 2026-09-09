@@ -140,6 +140,19 @@ internal static class Program
         Check(editModel.Invoices.Count == 1 && editModel.LastSavedDocument?.Name == "00000001", "UI save must update the existing document");
         Click("Create New Invoice");
         Check(!editModel.IsEditingDocument && editModel.Lines.Count == 0, "Success screen must start a fresh invoice");
+        var sessionUser = FormCatalog.User();
+        sessionUser[0].Value = "sidebar-user"; sessionUser[1].Value = "session-password";
+        Check(editModel.SaveRecord("User", sessionUser) && editModel.SignIn("sidebar-user", "session-password"), "Sidebar fixture user must sign in");
+        Settle();
+        Check(editModel.CurrentRole == "User" && window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "sidebar-user"), "Sidebar must show signed-in account and role without navigating");
+        Click("⇥");
+        Check(editModel.CurrentUsername == null && editModel.CurrentRole == "" && !editModel.RequiresPasswordChange, "Logout button must clear all session identity");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Not signed in") && !window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "sidebar-user"), "Logout must remove previous sidebar identity");
+        FormField[] signedOutChange = [new("Current Password", "session-password"), new("New Password", "replacement-password"), new("Confirm", "replacement-password")];
+        Check(!editModel.ChangeCurrentPassword(signedOutChange), "Signed-out account must not retain password-change authority");
+        Check(editModel.SignIn("admin", "admin") && editModel.CurrentRole == "Admin", "Session may switch to another account");
+        Check(!editModel.SignIn("sidebar-user", "incorrect") && editModel.CurrentRole == "" && editModel.CurrentUsername == null, "Failed account switch must not retain previous role");
+
         window.Close();
         if (args.Length > 1) CompareScreenshots(output, args[1]);
         Console.WriteLine($"Passed {assertions} checks. Screenshots: {output}");

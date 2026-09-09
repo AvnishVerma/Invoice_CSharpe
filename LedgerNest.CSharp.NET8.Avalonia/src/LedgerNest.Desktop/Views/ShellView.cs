@@ -29,7 +29,7 @@ public partial class MainWindow
         shellChanged = (_, e) =>
         {
             if (e.PropertyName == nameof(vm.Title)) { ShowPage(); BuildSidebar(); }
-            if (e.PropertyName == nameof(vm.SidebarExpanded)) BuildSidebar();
+            if (e.PropertyName is nameof(vm.SidebarExpanded) or nameof(vm.CurrentUsername)) BuildSidebar();
             if (e.PropertyName == nameof(vm.Status)) { status.Text = vm.Status; statusBar.IsVisible = vm.Status.Length > 0; }
         };
         vm.PropertyChanged += shellChanged;
@@ -52,9 +52,10 @@ public partial class MainWindow
             button.Classes.Clear(); button.Classes.Add("nav"); if (Model.Title == route) button.Classes.Add("selected");
             ToolTip.SetTip(button, route); nav.Children.Add(button);
         }
-        var avatar = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(15), Background = Brush.Parse("#DDE3ED"), Child = Ui.Text("A", 12, true, Ui.Primary) }; ((TextBlock)avatar.Child!).HorizontalAlignment = HorizontalAlignment.Center;
-        var logout = Ui.Button("⇥", ShowLogin); logout.Classes.Add("text"); logout.Padding = new Thickness(4); logout.MinHeight = 30;
-        var footer = expanded ? Ui.Stack(8, Ui.Columns("30,10,*,Auto", avatar, new Border(), Ui.Stack(2, Ui.Text("admin", 13), Ui.Text("Admin", 11, color: Ui.Muted)), logout), new TextBlock { Text = "v4.4.0", FontSize = 12, Foreground = Ui.Outline, HorizontalAlignment = HorizontalAlignment.Center }) : Ui.Stack(8, avatar, logout);
+        var avatar = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(15), Background = Brush.Parse("#DDE3ED"), Child = Ui.Text(Model.CurrentUsername is { Length: > 0 } username ? username[..1].ToUpperInvariant() : "?", 12, true, Ui.Primary) }; ((TextBlock)avatar.Child!).HorizontalAlignment = HorizontalAlignment.Center;
+        var logout = Ui.Button("⇥", () => { Model.SignOut(); ShowLogin(); });
+        Avalonia.Automation.AutomationProperties.SetName(logout, Model.CurrentUsername == null ? "Sign in" : "Sign out"); logout.Classes.Add("text"); logout.Padding = new Thickness(4); logout.MinHeight = 30;
+        var footer = expanded ? Ui.Stack(8, Ui.Columns("30,10,*,Auto", avatar, new Border(), Ui.Stack(2, Ui.Text(Model.CurrentUsername ?? "Not signed in", 13), Ui.Text(Model.CurrentRole, 11, color: Ui.Muted)), logout), new TextBlock { Text = "v4.4.0", FontSize = 12, Foreground = Ui.Outline, HorizontalAlignment = HorizontalAlignment.Center }) : Ui.Stack(8, avatar, logout);
         sidebar.Content = new Border { Width = expanded ? 210 : 64, Background = Ui.Surface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Rows("76,*,Auto", new Border { Padding = new Thickness(expanded ? 12 : 0, 0), Child = logo }, new Border { Padding = new Thickness(0, 8, 0, 0), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Child = Ui.Scroll(nav, 0) }, new Border { BorderThickness = new Thickness(0, 1, 0, 0), BorderBrush = Ui.Outline, Padding = new Thickness(14, 12), Child = footer }) };
     }
     private void ShowPage()
