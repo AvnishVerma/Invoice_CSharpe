@@ -164,3 +164,5 @@ JSON restore progress: incomplete and malformed backups are rejected before the 
 Recovery-drill progress: JSON restore now has injected insert-failure rollback and database-setup failure coverage, including successful retry and reopening. Database setup is covered by the restore error handler. Disk-full, power-loss, concurrent-write and platform recovery drills remain pending.
 
 Recovery-drill progress: database-file restore now has a competing destination-writer test, including preserved live records, staging cleanup and successful retry after lock release. Restore connections use a two-second lock timeout. General concurrent-operation safety, disk exhaustion and power-loss drills remain open.
+
+Restore outcome progress: committed database copies are distinguished from later reload/cleanup problems. Reload failure provides restart guidance and retains signed-out access; cleanup IO/access failures preserve the copy outcome. Injected post-copy reload failure is covered; platform cleanup-failure injection remains open.

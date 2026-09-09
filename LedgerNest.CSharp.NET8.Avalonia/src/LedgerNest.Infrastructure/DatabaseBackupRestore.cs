@@ -5,10 +5,11 @@ namespace LedgerNest.Infrastructure;
 
 public static class DatabaseBackupRestore
 {
-    public static void Restore(byte[] bytes, string destinationPath)
+    public static string? Restore(byte[] bytes, string destinationPath)
     {
         if (bytes.Length == 0) throw new InvalidDataException("Database backup is empty.");
         var staging = Directory.CreateTempSubdirectory("ledgernest-restore-");
+        string? cleanupWarning = null;
         try
         {
             var path = Path.Combine(staging.FullName, "candidate.db");
@@ -56,8 +57,14 @@ public static class DatabaseBackupRestore
         }
         finally
         {
-            staging.Delete(true);
+            try { staging.Delete(true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Cleanup cannot undo a committed copy or replace the original restore exception.
+                cleanupWarning = $"Temporary backup cleanup failed. Remove the folder: {staging.FullName}";
+            }
         }
+        return cleanupWarning;
     }
 
     private static void ValidateRows<T>(DbSet<T> rows) where T : class

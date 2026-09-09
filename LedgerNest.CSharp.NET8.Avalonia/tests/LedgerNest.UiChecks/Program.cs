@@ -32,6 +32,7 @@ internal static class Program
         CheckRejectedJsonRestores();
         CheckJsonRestoreRollback();
         CheckLockedDatabaseRestore();
+        CheckCommittedRestoreReloadFailure();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -221,6 +222,24 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckCommittedRestoreReloadFailure()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-restore-reload-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Committed restore", Price = 60, Quantity = 1 });
+        Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "Reload failure fixture must save and sign in");
+        var backup = model.CreateDatabaseBackup();
+        using (var db = factory.CreateDbContext()) { db.Invoices.Single().GrandTotal = 120m; db.SaveChanges(); }
+        factory.FailCreation = true;
+        Check(model.RestoreDatabaseBackup(backup), "A committed restore must report success even if workspace reload fails");
+        Check(model.Status.Contains("workspace could not reload", StringComparison.Ordinal) && model.Status.Contains("Restart LedgerNest", StringComparison.Ordinal), "Post-commit reload failure must explain recovery without reporting a failed restore");
+        Check(model.CurrentUsername == null && !model.CanAccessWorkspace, "Post-commit reload failure must retain the signed-out state");
+        factory.FailCreation = false;
+        using (var db = factory.CreateDbContext()) Check(db.Invoices.Single().GrandTotal == 60m, "Backup contents must already be committed despite the reload failure");
+        Check(new MainWindowViewModel(factory, path).Invoices.Count == 1, "Restored data must be usable after reopening");
     }
 
     private static void CheckLockedDatabaseRestore()

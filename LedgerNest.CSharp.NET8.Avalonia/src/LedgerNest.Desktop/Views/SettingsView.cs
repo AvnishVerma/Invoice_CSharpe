@@ -139,7 +139,7 @@ public partial class MainWindow
         await stream.CopyToAsync(memory);
         var restored = Model.RestoreDatabaseBackup(memory.ToArray());
         ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
-        page.Content = SettingsView();
+        page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
 
     private async Task RestoreBackupFile()

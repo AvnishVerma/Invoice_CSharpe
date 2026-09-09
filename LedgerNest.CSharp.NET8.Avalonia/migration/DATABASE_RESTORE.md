@@ -19,3 +19,7 @@ The regression suite installs a temporary SQLite trigger that aborts invoice-ite
 ## Destination write-lock drill
 
 Restore connections now use a two-second SQLite lock timeout. The regression suite holds a separate write transaction on the live database while attempting to restore an older backup. It verifies failure preserves the newer invoice total and session, staging cleanup completes, and retry after releasing the lock applies the older backup and clears authentication. This covers a competing writer already holding the destination lock, not arbitrary concurrent writes across all application operations. The timeout bounds lock waiting, not total validation or copy duration.
+
+## Result reporting after database copy
+
+Once the database copy commits, a workspace reload failure reports that data was restored and asks the user to restart; it does not return a failed-copy result. The session remains cleared and the Settings page is not rebuilt for signed-out users. Staging cleanup IO/access failures cannot replace the copy outcome: after success the result includes a cleanup warning and folder path; during an existing copy failure the original exception remains primary. An injected context failure after copying verifies committed data, the restart message, signed-out state and reopening. Actual cleanup access failures still require platform-specific fault injection.

@@ -813,19 +813,30 @@ public partial class MainWindowViewModel : ObservableObject
             return false;
         }
 
+        string? cleanupWarning;
         try
         {
-            DatabaseBackupRestore.Restore(bytes, databasePath);
-            SetSession(null, "", false);
-            ReloadFromDatabase();
-            Status = "Database backup restored successfully.";
-            return true;
+            cleanupWarning = DatabaseBackupRestore.Restore(bytes, databasePath);
         }
         catch (Exception ex)
         {
             Status = $"Database restore failed: {ex.Message}";
             return false;
         }
+
+        // The database copy has committed; a presentation failure must not suggest retrying it.
+        SetSession(null, "", false);
+        try
+        {
+            ReloadFromDatabase();
+            Status = "Database backup restored successfully.";
+        }
+        catch (Exception)
+        {
+            Status = "Database backup restored, but the workspace could not reload. Restart LedgerNest before continuing.";
+        }
+        if (cleanupWarning != null) Status += " " + cleanupWarning;
+        return true;
     }
 
     public string CreateJsonBackup()
