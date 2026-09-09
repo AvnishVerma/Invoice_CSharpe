@@ -871,15 +871,16 @@ public partial class MainWindowViewModel : ObservableObject
         JsonObject backup;
         try
         {
-            backup = JsonNode.Parse(json)?.AsObject() ?? throw new JsonException("Backup is empty.");
-            var version = backup["_metadata"]?["version"]?.GetValue<string>();
-            if (!string.IsNullOrWhiteSpace(version) && version != "1.0")
+            backup = JsonNode.Parse(json) as JsonObject ?? throw new JsonException("Backup must be a JSON object.");
+            if (backup.ContainsKey("_metadata"))
             {
-                Status = $"Incompatible backup version: {version}.";
-                return false;
+                if (backup["_metadata"] is not JsonObject metadata || metadata["version"] is not JsonValue version
+                    || !version.TryGetValue<string>(out var value) || value != "1.0")
+                    throw new JsonException("Unsupported or missing backup version.");
             }
+            ValidateJsonBackup(backup);
         }
-        catch (JsonException ex)
+        catch (Exception ex) when (ex is JsonException or InvalidDataException or ArgumentException)
         {
             Status = $"Backup file is corrupted or invalid: {ex.Message}";
             return false;
@@ -1386,8 +1387,39 @@ public partial class MainWindowViewModel : ObservableObject
 
     private static T[] ReadRows<T>(JsonObject backup, string table)
     {
-        if (backup[table] is not { } rows) return [];
-        return rows.Deserialize<T[]>() ?? [];
+        if (backup[table] is not JsonArray rows)
+            throw new JsonException($"Backup table '{table}' must be an array.");
+        var result = rows.Deserialize<T[]>() ?? throw new JsonException($"Backup table '{table}' is invalid.");
+        if (result.Any(row => row is null)) throw new JsonException($"Backup table '{table}' contains a null record.");
+        return result;
+    }
+
+    private static void ValidateJsonBackup(JsonObject backup)
+    {
+        var customers = ReadRows<Customer>(backup, "customers");
+        var products = ReadRows<Product>(backup, "products");
+        var company = ReadRows<CompanyInfo>(backup, "company_info");
+        var settings = ReadRows<AppSetting>(backup, "settings");
+        var invoices = ReadRows<InvoiceBackupRow>(backup, "invoices");
+        var items = ReadRows<InvoiceItem>(backup, "invoice_items");
+        var payments = ReadRows<Payment>(backup, "invoice_payments");
+        static HashSet<int> Ids(IEnumerable<int> values)
+        {
+            var ids = new HashSet<int>();
+            foreach (var id in values)
+                if (id <= 0 || !ids.Add(id)) throw new InvalidDataException("Backup contains missing or duplicate record IDs.");
+            return ids;
+        }
+        var customerIds = Ids(customers.Select(row => row.Id));
+        var productIds = Ids(products.Select(row => row.Id));
+        var invoiceIds = Ids(invoices.Select(row => row.Id));
+        Ids(company.Select(row => row.Id)); Ids(items.Select(row => row.Id)); Ids(payments.Select(row => row.Id));
+        if (settings.Any(row => string.IsNullOrWhiteSpace(row.Key)) || settings.Select(row => row.Key).Distinct(StringComparer.Ordinal).Count() != settings.Length)
+            throw new InvalidDataException("Backup contains missing or duplicate setting keys.");
+        if (invoices.Any(row => row.CustomerId is int id && !customerIds.Contains(id))
+            || items.Any(row => !invoiceIds.Contains(row.InvoiceId) || (row.ProductId is int id && !productIds.Contains(id)))
+            || payments.Any(row => !invoiceIds.Contains(row.InvoiceId)))
+            throw new InvalidDataException("Backup contains broken record references.");
     }
 
     private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice", DateTime? DeletedAt = null, string? CustomerName = null, InvoiceSnapshot? Snapshot = null);

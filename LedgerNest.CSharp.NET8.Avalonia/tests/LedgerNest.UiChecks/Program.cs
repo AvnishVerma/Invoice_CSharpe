@@ -29,6 +29,7 @@ internal static class Program
         CheckPasswordMigration();
         CheckSessionInvalidation();
         CheckRejectedDatabaseRestores();
+        CheckRejectedJsonRestores();
         CheckInvoiceSnapshots();
         CheckInvoiceEditing();
         CheckPersistence();
@@ -218,6 +219,44 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckRejectedJsonRestores()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-json-guard-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Protected JSON invoice", Price = 75, Quantity = 1 });
+        Check(model.SaveInvoice(), "JSON restore fixture must persist");
+        var valid = model.CreateJsonBackup();
+        string Alter(Action<JsonObject> change)
+        {
+            var backup = JsonNode.Parse(valid)!.AsObject(); change(backup); return backup.ToJsonString();
+        }
+        var invalid = new[]
+        {
+            "{}", "[]", "null", "{", "{\"customers\":[],\"customers\":[]}", Alter(b => b.Remove("products")),
+            Alter(b => b["customers"] = null), Alter(b => b["customers"] = new JsonObject()),
+            Alter(b => b["customers"] = new JsonArray((JsonNode?)null)),
+            Alter(b => b["_metadata"] = 42), Alter(b => b["_metadata"]!["version"] = 2),
+            Alter(b => b["_metadata"]!["version"] = "9.0"),
+            Alter(b => b["invoices"]![0]!["CustomerId"] = 999999),
+            Alter(b => b["invoice_items"]![0]!["ProductId"] = 999999),
+            Alter(b => b["invoice_items"]![0]!["InvoiceId"] = 999999),
+            Alter(b => b["invoices"]!.AsArray().Add(b["invoices"]![0]!.DeepClone())),
+            Alter(b => b["invoices"]![0]!["Id"] = 0)
+        };
+        foreach (var json in invalid)
+        {
+            Check(!model.RestoreJsonBackup(json), "Malformed or incomplete JSON backup must be rejected");
+            using var db = factory.CreateDbContext();
+            Check(db.Invoices.Single().GrandTotal == 75m && db.InvoiceItems.Single().Description == "Protected JSON invoice" && db.Users.Single().Username == "admin", "Rejected JSON restore must preserve invoice, item and account data");
+        }
+        Check(model.RestoreJsonBackup(valid), "Complete JSON exports must remain restorable");
+        Check(model.RestoreJsonBackup(Alter(b => b.Remove("_metadata"))), "Complete older exports without metadata must remain supported");
+        var empty = JsonNode.Parse(valid)!.AsObject();
+        foreach (var table in new[] { "customers", "products", "company_info", "settings", "invoices", "invoice_items", "invoice_payments" }) empty[table] = new JsonArray();
+        Check(model.RestoreJsonBackup(empty.ToJsonString()) && model.Invoices.Count == 0, "Explicit complete empty backups must remain distinguishable from missing tables");
     }
 
     private static void CheckRejectedDatabaseRestores()

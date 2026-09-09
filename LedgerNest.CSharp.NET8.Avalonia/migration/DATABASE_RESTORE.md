@@ -7,3 +7,7 @@ Only validated candidates reach SQLite's BackupDatabase operation on the existin
 Regression checks cover empty, non-SQLite and truncated inputs; missing account tables; malformed invoice snapshot JSON; missing customer references; successful restore; and reopening restored data. Each rejected input is followed by checks of existing invoice totals, account credentials and session validity.
 
 This does not establish Flutter database compatibility, complete financial-data validation, or a complete disaster-recovery guarantee. Disk-full, power-loss, destination-lock contention, cleanup failure and concurrent application writes still need dedicated release-environment drills. Full restore authorization and stronger versioned schema migrations remain open. JSON restore follows its separate existing transaction path.
+
+## JSON restore validation
+
+JSON restore requires all seven exported business tables as arrays before opening its replacement transaction. Missing/null tables, null records, malformed roots/metadata, unsupported declared versions, nonpositive or duplicate IDs, duplicate/blank setting keys and broken record references are rejected. Complete older exports without metadata remain accepted; complete exports containing explicitly empty arrays remain valid. An empty object is no longer treated as an empty database backup. Accounts are retained by the existing JSON restore path. This validation checks structure and relationships, not complete financial consistency or Flutter export compatibility.
