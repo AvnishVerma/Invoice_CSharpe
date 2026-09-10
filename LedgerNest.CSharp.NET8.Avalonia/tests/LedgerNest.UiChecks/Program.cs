@@ -118,6 +118,9 @@ internal static class Program
         model.NavigateCommand.Execute("Invoices");
         Settle();
         Check(window.GetVisualDescendants().OfType<Button>().Where(b => b.Tag?.ToString()?.StartsWith("⋯", StringComparison.Ordinal) == true).All(b => b.Flyout is MenuFlyout), "Issue 10: row and toolbar actions must use anchored dropdowns");
+        Check(FindButton("Filter ▾").Flyout is MenuFlyout, "Issue 10: filter dropdown must use an anchored menu");
+        Check(FindButton("Sort: Name A–Z ▾").Flyout is MenuFlyout, "Issue 10: sort dropdown must use an anchored menu");
+        Check(FindButton("Customer ▾").Flyout is MenuFlyout, "Issue 10: customer dropdown must use an anchored menu");
         Click("⋯"); Capture("issue-10-action-dropdown"); Click("Move to Trash"); Click("Confirm");
         Check(!model.ActiveInvoices.Any(), "Move to Trash action must hide the invoice");
         Click("Trash"); Capture("invoice-trash");

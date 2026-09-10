@@ -33,12 +33,8 @@ internal sealed class ManagementView : ContentControl
         var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.StartDocument(kind); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
         var more = MoreMenu();
         var header = Ui.Header($"{kind} Management", kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : "Manage users and access permissions", Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add);
-        var filterButton = Ui.Button("Filter ▾", () =>
-        {
-            string[] options = Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "Without GST", "With Outstanding"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
-            window.ShowOverlay("Filter", Ui.Stack(8, options.Select(option => Ui.Button(option, () => { filter = option; page = 0; Refresh(); window.CloseOverlay(); })).ToArray()));
-        });
-        var sortButton = Ui.Button("Sort: Name A–Z ▾", () => window.ShowOverlay("Sort By", Ui.Stack(8, new[] { "Name A–Z", "Name Z–A", "Newest", "Oldest" }.Select(option => Ui.Button(option, () => { sort = option; Refresh(); window.CloseOverlay(); })).ToArray())));
+        var filterButton = MenuButton("Filter ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); });
+        var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
         var toolbar = Ui.Card(Ui.Stack(10, Ui.Columns("*,10,Auto", search, new Border(), Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible))), tabs), 12);
         var stack = Ui.Stack(12, header, stats, toolbar, results);
         if (kind == "Product")
@@ -47,9 +43,37 @@ internal sealed class ManagementView : ContentControl
         }
         if (Documents) foreach (var control in new Control[] { search, filterButton, sortButton, results }) if (control.Parent is Panel parent) parent.Children.Remove(control);
         Content = Documents
-            ? Ui.Rows("Auto,*", Ui.AppBar($"{kind} Management", Ui.Button($"＋ New {kind}", () => model.StartDocument(kind), true), Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), MoreMenu(), Ui.Button("↻", Refresh)), new Border { Background = Ui.Surface, Child = Ui.Rows("Auto,*", new Border { Padding = new Thickness(20), Child = Ui.Columns("360,12,Auto,*", search, new Border(), Ui.Wrap(Ui.Button("Customer", () => window.ShowOverlay("Select Customer", Ui.Stack(8, model.Customers.Select(c => Ui.Button(c.Name, () => { search.Text = c.Name; window.CloseOverlay(); })).ToArray()))), filterButton, sortButton), new Border()) }, results) })
+            ? Ui.Rows("Auto,*", Ui.AppBar($"{kind} Management", Ui.Button($"＋ New {kind}", () => model.StartDocument(kind), true), Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), MoreMenu(), Ui.Button("↻", Refresh)), new Border { Background = Ui.Surface, Child = Ui.Rows("Auto,*", new Border { Padding = new Thickness(20), Child = Ui.Columns("360,12,Auto,*", search, new Border(), Ui.Wrap(CustomerMenu(), filterButton, sortButton), new Border()) }, results) })
             : Ui.Scroll(stack);
         Refresh();
+    }
+    private string[] FilterOptions() => Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "Without GST", "With Outstanding"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
+    private Button MenuButton(string title, IEnumerable<string> options, Action<string> select)
+    {
+        var button = Ui.Button(title, () => { });
+        var menu = new MenuFlyout();
+        foreach (var option in options)
+        {
+            var item = new MenuItem { Header = option };
+            item.Click += (_, _) => { menu.Hide(); select(option); };
+            menu.Items.Add(item);
+        }
+        button.Flyout = menu;
+        return button;
+    }
+    private Button CustomerMenu()
+    {
+        var button = Ui.Button("Customer ▾", () => { });
+        var menu = new MenuFlyout();
+        foreach (var customer in model.Customers)
+        {
+            var item = new MenuItem { Header = customer.Name };
+            item.Click += (_, _) => { menu.Hide(); search.Text = customer.Name; };
+            menu.Items.Add(item);
+        }
+        if (menu.Items.Count == 0) menu.Items.Add(new MenuItem { Header = "No customers", IsEnabled = false });
+        button.Flyout = menu;
+        return button;
     }
     private IEnumerable<UiRecord> Filtered()
     {
@@ -172,7 +196,7 @@ internal sealed class ManagementView : ContentControl
         if (file == null) return;
         await using (var stream = await file.OpenWriteAsync())
             await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, model.ExportDocumentPdf(record));
-        window.ShowOverlay("PDF Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", window.CloseOverlay, true));
+        model.Status = $"Saved {file.Name}.";
     }
 
     private async Task ExportDocumentsPdf()
@@ -225,6 +249,6 @@ internal sealed class ManagementView : ContentControl
         await using var stream = await file.OpenWriteAsync();
         await using var writer = new StreamWriter(stream, Encoding.UTF8);
         await writer.WriteAsync(content);
-        window.ShowOverlay("Export Complete", Ui.Stack(8, Ui.Text($"Saved {suggestedName}.")), Ui.Button("Close", window.CloseOverlay, true));
+        model.Status = $"Saved {suggestedName}.";
     }
 }
