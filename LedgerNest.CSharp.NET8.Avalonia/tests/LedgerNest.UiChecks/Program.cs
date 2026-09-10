@@ -76,9 +76,9 @@ internal static class Program
             }
             Settle();
         }
-        var layoutButton = window.GetVisualDescendants().OfType<Button>().Single(b => b.Flyout is MenuFlyout menu && menu.Items.OfType<MenuItem>().Any(i => i.Header?.ToString() == "Bento"));
+        var layoutButton = window.GetVisualDescendants().OfType<Button>().Single(b => b.Flyout is MenuFlyout menu && menu.Items.OfType<MenuItem>().Any(i => i.Tag?.ToString() == "Bento"));
         Check(layoutButton.IsEnabled, "Issue 5: dashboard layout selector must be enabled");
-        ((MenuFlyout)layoutButton.Flyout!).Items.OfType<MenuItem>().Single(i => i.Header?.ToString() == "Simple Feed").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle();
+        ((MenuFlyout)layoutButton.Flyout!).Items.OfType<MenuItem>().Single(i => i.Tag?.ToString() == "Simple Feed").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle();
         Capture("issue-05-simple-feed");
         foreach (var route in MainWindowViewModel.Routes) { model.NavigateCommand.Execute(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
