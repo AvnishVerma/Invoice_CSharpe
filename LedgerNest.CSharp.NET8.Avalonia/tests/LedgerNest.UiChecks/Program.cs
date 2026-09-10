@@ -178,10 +178,14 @@ internal static class Program
         window.KeyReleaseQwerty(Avalonia.Input.PhysicalKey.Escape, Avalonia.Input.RawInputModifiers.None);
         Settle();
         Check(editModel.Invoices.Count == 1 && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login"), "Locked navigation and shortcuts must preserve login and avoid saving");
+        var loginHeightBeforeError = window.GetVisualDescendants().OfType<Button>().Single(b => b.Content?.ToString() == "Login").Bounds.Height + window.GetVisualDescendants().OfType<TextBox>().Where(t => t.Watermark is "Username" or "Password").Sum(t => t.Bounds.Height);
+        var loginCardBeforeError = window.GetVisualDescendants().OfType<Border>().Where(b => b.Bounds.Width is >= 390 and <= 430 && b.Bounds.Height > 300).OrderBy(b => b.Bounds.Height).First().Bounds.Height;
         window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Username").Text = "ADMIN";
         window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Password").Text = "wrong";
         Click("Login");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Invalid username or password."), "Issue 1: invalid login must show an inline visible alert");
+        var loginCardAfterError = window.GetVisualDescendants().OfType<Border>().Where(b => b.Bounds.Width is >= 390 and <= 430 && b.Bounds.Height > 300).OrderBy(b => b.Bounds.Height).First().Bounds.Height;
+        Check(Math.Abs(loginCardAfterError - loginCardBeforeError) <= 1 && loginHeightBeforeError > 120, "Invalid login alert must not resize the login card");
         Capture("issue-01-login-error");
         window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Username").Text = "AdMiN";
         var loginPassword = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Password"); loginPassword.Text = "admin";
