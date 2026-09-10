@@ -170,8 +170,8 @@ internal sealed class ManagementView : ContentControl
             FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
         });
         if (file == null) return;
-        await using var stream = await file.OpenWriteAsync();
-        await stream.WriteAsync(model.ExportDocumentPdf(record));
+        await using (var stream = await file.OpenWriteAsync())
+            await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, model.ExportDocumentPdf(record));
         window.ShowOverlay("PDF Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", window.CloseOverlay, true));
     }
 

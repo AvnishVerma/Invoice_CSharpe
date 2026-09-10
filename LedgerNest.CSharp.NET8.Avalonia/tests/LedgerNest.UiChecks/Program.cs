@@ -23,6 +23,7 @@ internal static class Program
     {
         var output = args.FirstOrDefault() ?? "/tmp/invoiso-ui-captures";
         Directory.CreateDirectory(output);
+        CheckReceiptPdf(output);
         CheckTotals();
         CheckServiceTotals();
         CheckAdministratorGuards();
@@ -296,6 +297,37 @@ internal static class Program
         Check(discount.ItemDiscount == 20m && discount.Total == 201.15m, "Per-unit and invoice discounts with additional costs");
         var clamp = InvoiceTotalsCalculator.Calculate([new(10, 1)], discountKind: InvoiceDiscountKind.Amount, discountValue: 20);
         Check(clamp.Total == 0, "Invoice total must not become negative");
+    }
+
+    private static void CheckReceiptPdf(string output)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-receipt-pdf-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        foreach (var field in model.Settings["Company Info"].SelectMany(s => s.Fields))
+        {
+            if (field.Label == "Company Name") field.Value = "Harbour Coffee & Kitchen";
+            if (field.Label == "Address") field.Value = "24 Market Street, Riverside";
+            if (field.Label == "Phone") field.Value = "+91 98765 43210";
+        }
+        model.StartDocument("Receipt"); model.InvoiceCustomer[0].Value = "Alex Morgan";
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Café latte", Quantity = 2, Price = 125, TaxRate = 5 });
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Fresh sourdough sandwich", Quantity = 1, Price = 240, TaxRate = 5 });
+        Check(model.SaveInvoice(), "Receipt PDF fixture must save");
+        var receipt = model.LastSavedDocument!;
+        var pdf = model.ExportDocumentPdf(receipt);
+        File.WriteAllBytes(Path.Combine(output, "receipt-formatted.pdf"), pdf);
+        Check(pdf.Length > 1500 && System.Text.Encoding.ASCII.GetString(pdf, 0, 5) == "%PDF-", "Receipt export must generate a PDF with embedded layout resources");
+        Check(System.Text.Encoding.Latin1.GetString(pdf).Contains("/FontDescriptor", StringComparison.Ordinal), "Receipt PDF must embed fonts instead of using the plain ASCII writer");
+        var pageSize = model.Settings["PDF Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Page Size");
+        pageSize.Value = "Thermal 80mm";
+        File.WriteAllBytes(Path.Combine(output, "receipt-thermal.pdf"), model.ExportDocumentPdf(receipt));
+        pageSize.Value = "A4";
+        model.StartDocument("Receipt"); model.InvoiceCustomer[0].Value = "Long receipt customer";
+        for (var i = 1; i <= 70; i++) model.Lines.Add(new InvoiceLineViewModel { Name = $"Receipt item {i:000} with a description that wraps across the available table width", Quantity = 1, Price = i });
+        Check(model.SaveInvoice(), "Multipage receipt fixture must save");
+        File.WriteAllBytes(Path.Combine(output, "receipt-multipage.pdf"), model.ExportDocumentPdf(model.LastSavedDocument!));
+        Check(model.Invoices.Count == 2, "PDF export must not create or change documents");
     }
 
     private static void CheckBackupStreamWriting()

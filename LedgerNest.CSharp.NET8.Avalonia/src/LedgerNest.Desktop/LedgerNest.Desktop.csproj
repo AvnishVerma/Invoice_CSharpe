@@ -8,6 +8,8 @@
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets/**" />
+    <EmbeddedResource Include="Assets/Roboto-Regular.ttf" LogicalName="LedgerNest.Pdf.Regular" />
+    <EmbeddedResource Include="Assets/Roboto-Bold.ttf" LogicalName="LedgerNest.Pdf.Bold" />
     <ProjectReference Include="..\LedgerNest.Application\LedgerNest.Application.csproj" />
     <ProjectReference Include="..\LedgerNest.Infrastructure\LedgerNest.Infrastructure.csproj" />
     <PackageReference Include="Avalonia" Version="11.3.2" />
