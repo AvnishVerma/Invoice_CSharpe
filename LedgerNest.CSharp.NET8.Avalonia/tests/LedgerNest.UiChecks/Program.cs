@@ -887,8 +887,8 @@ internal static class Program
         Check(model.ApplyPayment(model.Invoices.Single(), payment), "Partial payment must apply");
         Verify(model, "50.00", "150.00", "Partial", 150);
         Verify(new MainWindowViewModel(factory, path), "50.00", "150.00", "Partial", 150);
-        payment[0].Value = "150";
-        Check(model.ApplyPayment(model.Invoices.Single(), payment), "Final payment must apply");
+        payment[0].Value = "149.996";
+        Check(model.ApplyPayment(model.Invoices.Single(), payment), "Final payment inside legacy money tolerance must apply");
         Verify(model, "200.00", "0.00", "Paid", 0);
         Verify(new MainWindowViewModel(factory, path), "200.00", "0.00", "Paid", 0);
     }
@@ -1089,11 +1089,11 @@ internal static class Program
         product[10].Value = "4";
         Check(model.SaveRecord("Product", product), "Product must save to SQLite");
         var customerCsv = model.ExportCsv("Customer");
-        Check(customerCsv.Contains("name,phone,business_name,email,gstin,address"), "Customer export must include legacy CSV headers");
-        Check(customerCsv.Contains("Persisted Customer"), "Customer export must include saved customers");
+        Check(customerCsv.Contains("\"name\",\"phone\",\"business_name\",\"email\",\"gstin\",\"address\""), "Customer export must include legacy quoted CSV headers");
+        Check(customerCsv.Contains("\"Persisted Customer\""), "Customer export must include saved customers as quoted cells");
         var productCsv = model.ExportCsv("Product");
-        Check(productCsv.Contains("name,price,stock,tax_rate,hsncode,description"), "Product export must include legacy CSV headers");
-        Check(productCsv.Contains("Persisted Product") && productCsv.Contains("42.50"), "Product export must include saved products");
+        Check(productCsv.Contains("\"name\",\"price\",\"stock\",\"tax_rate\",\"hsncode\",\"description\""), "Product export must include legacy quoted CSV headers");
+        Check(productCsv.Contains("\"Persisted Product\"") && productCsv.Contains("\"42.50\""), "Product export must include saved products as quoted cells");
         Check(model.ImportCsv("Customer", "name,phone,business_name,email,gstin,address\n\"Comma, Customer\",4445556666,Comma Co,comma@example.com,GST-C,\"Street 1, City\"\n") == 1, "Customer CSV import must add quoted records");
         Check(model.ImportCsv("Product", "name,price,stock,tax_rate,hsncode,description\nImported Widget,12.75,9,5,HSN-55,CSV item\n") == 1, "Product CSV import must add products");
         model.InvoiceCustomer[0].Value = "Persisted Customer";

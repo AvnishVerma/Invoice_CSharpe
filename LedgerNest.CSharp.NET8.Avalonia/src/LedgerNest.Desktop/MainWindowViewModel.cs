@@ -1369,7 +1369,7 @@ public partial class MainWindowViewModel : ObservableObject
         };
         db.Payments.Add(payment);
         invoice.PaidAmount = previousPaid + amount;
-        invoice.Status = invoice.PaidAmount >= invoice.GrandTotal ? "Paid" : invoice.PaidAmount > 0 ? "Partial" : "Unpaid";
+        invoice.Status = invoice.BalanceAmount == 0 ? "Paid" : invoice.PaidAmount > 0.005m ? "Partial" : "Unpaid";
         db.SaveChanges();
 
         var receiptNumber = NextReceiptNumber(invoice.InvoiceNumber, Payments.Where(p => p["InvoiceId"] == invoice.Id.ToString()).Select(p => p.Name).ToArray());
@@ -1560,7 +1560,6 @@ public partial class MainWindowViewModel : ObservableObject
 
     private static string EscapeCsv(string value)
     {
-        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r')) return value;
         return "\"" + value.Replace("\"", "\"\"") + "\"";
     }
 
