@@ -1,3 +1,5 @@
+using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -24,20 +26,42 @@ public partial class MainWindow
         var customer = Ui.Card(Ui.Stack(6, customerHeader, customerFields), 12);
         var productSearch = new TextBox { Watermark = "Search & add a product or service (Ctrl+F)", MinWidth = 120, Background = Ui.Canvas };
         var suggestions = new ListBox { IsVisible = false, MaxHeight = 180 };
-        productSearch.TextChanged += (_, _) => { suggestions.ItemsSource = editorModel.Products.Where(p => p.Name.Contains(productSearch.Text ?? "", StringComparison.OrdinalIgnoreCase)).Select(p => p.Name).ToArray(); suggestions.IsVisible = !string.IsNullOrWhiteSpace(productSearch.Text); };
-        var selectingProduct = false;
-        suggestions.SelectionChanged += (_, _) =>
+        bool Matches(UiRecord p, string query) => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || p["SKU Code"].Contains(query, StringComparison.OrdinalIgnoreCase);
+        productSearch.TextChanged += (_, _) =>
         {
-            if (selectingProduct) return;
-            var product = editorModel.Products.FirstOrDefault(p => p.Name == suggestions.SelectedItem?.ToString()); if (product == null) return;
+            var query = productSearch.Text?.Trim() ?? "";
+            suggestions.ItemsSource = editorModel.Products.Where(p => Matches(p, query)).ToArray();
+            suggestions.DisplayMemberBinding = new Binding(nameof(UiRecord.Name));
+            suggestions.IsVisible = query.Length > 0;
+        };
+        var selectingProduct = false;
+        void SelectProduct(UiRecord product)
+        {
+            if (selectingProduct || overlay.IsVisible) return;
             selectingProduct = true;
             try
             {
                 suggestions.SelectedItem = null;
-                productSearch.Text = ""; suggestions.IsVisible = false;
-                editorModel.AddProductLine(product);
+                productSearch.Text = "";
+                suggestions.IsVisible = false;
+                ShowProductItem(product, productSearch);
             }
             finally { selectingProduct = false; }
+        }
+        suggestions.SelectionChanged += (_, _) =>
+        {
+            if (suggestions.SelectedItem is UiRecord product) SelectProduct(product);
+        };
+        productSearch.KeyDown += (_, e) =>
+        {
+            if (e.Key != Avalonia.Input.Key.Enter) return;
+            e.Handled = true;
+            var query = productSearch.Text?.Trim() ?? "";
+            if (query.Length == 0) return;
+            var exact = editorModel.Products.Where(p => p["SKU Code"].Equals(query, StringComparison.OrdinalIgnoreCase)).ToArray();
+            var matches = exact.Length > 0 ? exact : editorModel.Products.Where(p => Matches(p, query)).ToArray();
+            if (matches.Length == 1) SelectProduct(matches[0]);
         };
         var lineHost = new ContentControl(); var totals = new ContentControl(); var count = Ui.Text("0 items", 11, true, Ui.Muted);
         var create = Ui.Button($"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (!invoiceCompletionVisible && editorModel.SaveInvoice()) ShowInvoiceSuccess(); }, true);
@@ -64,7 +88,7 @@ public partial class MainWindow
                     NumericUpDown Number(string property, decimal min = 0)
                     { var n = new NumericUpDown { Minimum = min, Maximum = 1000000000, Increment = 1, FormatString = "0.##", ShowButtonSpinner = false, Margin = new Thickness(2), MinWidth = 0 }; n.Bind(NumericUpDown.ValueProperty, new Binding(property) { Source = line, Mode = BindingMode.TwoWay }); return n; }
                     var total = Ui.Text(line.Total.ToString("0.00"), 12, true); total.Bind(TextBlock.TextProperty, new Binding(nameof(line.Total)) { Source = line, StringFormat = "{0:0.00}" });
-                    rows.Children.Add(new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(8), Child = Ui.Columns("*,70,85,60,80,90,40", Ui.Text(line.Name, 13, true), Number(nameof(line.Quantity), .001m), Number(nameof(line.Price)), Number(nameof(line.TaxRate)), Number(nameof(line.Discount)), total, Ui.Button("×", () => editorModel.Lines.Remove(line))) });
+                    rows.Children.Add(new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(8), Child = Ui.Columns("*,70,85,60,80,90,40", Ui.Stack(2, Ui.Text(line.Name, 13, true), Ui.Text(line.Unit == "None" ? "" : line.Unit, 11, color: Ui.Muted)), Number(nameof(line.Quantity), .001m), Number(nameof(line.Price)), Number(nameof(line.TaxRate)), Number(nameof(line.Discount)), total, Ui.Button("×", () => editorModel.Lines.Remove(line))) });
                 }
                 lineHost.Content = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, Content = new Border { MinWidth = 650, Child = rows } };
             }
@@ -107,6 +131,71 @@ public partial class MainWindow
         body.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.F && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control)) { productSearch.Focus(); e.Handled = true; } };
         body.SizeChanged += (_, e) => footer.Padding = new Thickness(e.NewSize.Width < 700 ? 8 : 64, 10);
         RefreshLines(); return body;
+    }
+    private void ShowProductItem(UiRecord product, TextBox search)
+    {
+        var draft = MainWindowViewModel.CreateProductLine(product);
+        var quantity = new FormField("Quantity", "1", "number", required: true);
+        var unit = new FormField("Unit (override)", draft.Unit, "choice",
+            new[] { "None", "pcs", "kg", "g", "l", "m", "box", draft.Unit }.Distinct().ToArray());
+        var discount = new FormField("Discount", draft.Discount.ToString(), "number", required: true);
+        var price = new FormField("Unit Price (override)", draft.Price.ToString(), "number", required: true);
+        var extra = new FormField("Extra Cost (optional)", "", "number") { Help = "Flat fee added on top of the line total" };
+        var perUnit = new ToggleSwitch { IsChecked = true, OnContent = "", OffContent = "" };
+        var stockText = product["Unlimited stock"] == "true" ? "Unlimited Stock" : $"Available Stock: {product["Stock"]}";
+        var stock = new Border { Background = Brush.Parse("#E7F5E9"), BorderBrush = Brush.Parse("#A5D6A7"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 8), Child = Ui.Text(stockText, 13, color: Brush.Parse("#388E3C")) };
+        Control DialogField(FormField field)
+        {
+            var control = Ui.Field(field);
+            foreach (var input in control.GetLogicalDescendants().OfType<Avalonia.Controls.Primitives.TemplatedControl>())
+                if (input is TextBox or ComboBox) input.Background = Ui.Palette("#FFFFFF", "#25212B");
+            return control;
+        }
+        var content = Ui.Stack(12, stock, DialogField(quantity), DialogField(unit), DialogField(discount),
+            Ui.Columns("*,Auto", Ui.Stack(2, Ui.Text("Discount per unit", 13), Ui.Text("(price − discount) × qty", 11, color: Ui.Muted)), perUnit),
+            DialogField(price), Ui.Text($"Default: Rs.{draft.Price:0.00}", 11, color: Ui.Muted), DialogField(extra),
+            Ui.Text("Flat fee added on top of the line total", 11, color: Ui.Muted));
+        var added = false;
+        void Cancel() { CloseOverlay(); search.Focus(); }
+        void Add()
+        {
+            if (added) return;
+            if (!new[] { quantity, discount, price, extra }.Select(f => f.Validate()).ToArray().All(v => v)) return;
+            if (quantity.Number <= 0) { quantity.Error = "Quantity must be greater than zero."; return; }
+            draft.Quantity = quantity.Number;
+            draft.Unit = unit.Value;
+            draft.Discount = discount.Number;
+            draft.DiscountPerUnit = perUnit.IsChecked == true;
+            draft.Price = price.Number;
+            draft.ExtraCost = extra.Number;
+            added = true;
+            Model.Lines.Add(draft);
+            CloseOverlay();
+            search.Focus();
+        }
+        overlay.Children.Clear(); overlay.IsVisible = true; overlay.Margin = new Thickness(0);
+        overlay.Children.Add(new Border { Background = Brush.Parse("#88000000") });
+        var actions = Ui.Wrap(Ui.Button("Cancel", Cancel), Ui.Button("Add", Add, true));
+        actions.HorizontalAlignment = HorizontalAlignment.Right;
+        var panel = new Border
+        {
+            Width = 624, MaxWidth = Math.Max(280, Bounds.Width - 32), MaxHeight = Math.Max(280, Bounds.Height - 32),
+            Padding = new Thickness(24), CornerRadius = new CornerRadius(16),
+            Background = Ui.Palette("#EDE7F1", "#302A38"),
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            Child = Ui.Rows("Auto,*,Auto", new Border { Margin = new Thickness(0, 0, 0, 16), Child = Ui.Columns("Auto,12,*", Ui.Icon("shopping_cart", 28, Brush.Parse("#003580")), new Border(), Ui.Text($"{product.Name} (Rs. {draft.Price:0.0#})", 18)) }, Ui.Scroll(content, 0), new Border { Margin = new Thickness(0, 20, 0, 0), Child = actions })
+        };
+        panel.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Escape) { Cancel(); e.Handled = true; }
+            else if (e.Key == Avalonia.Input.Key.Enter && e.Source is TextBox) { Add(); e.Handled = true; }
+        };
+        overlay.Children.Add(panel);
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            var input = panel.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(t => t.Watermark == "Quantity");
+            input?.Focus(); input?.SelectAll();
+        });
     }
     private static Control TotalRow(string label, decimal value, bool bold = false) => Ui.Columns("*,Auto", Ui.Text(label, bold ? 18 : 13, bold), Ui.Text($"Rs.{value:0.00}", bold ? 22 : 14, bold, bold ? Brush.Parse("#4CAF50") : null));
     private void SelectCustomer()

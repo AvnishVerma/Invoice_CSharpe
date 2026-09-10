@@ -42,6 +42,7 @@ public sealed class UiRecord
 public sealed partial class InvoiceLineViewModel : ObservableObject
 {
     [ObservableProperty] private string name = "";
+    [ObservableProperty] private string unit = "None";
     [ObservableProperty] private decimal quantity = 1;
     [ObservableProperty] private decimal price;
     [ObservableProperty] private decimal taxRate;
@@ -50,6 +51,8 @@ public sealed partial class InvoiceLineViewModel : ObservableObject
     [ObservableProperty] private bool discountPerUnit;
     [ObservableProperty] private decimal extraCost;
     public decimal Total => Quantity * Price - (DiscountPerUnit ? Discount * Quantity : Discount) + ExtraCost;
+    partial void OnDiscountPerUnitChanged(bool value) => OnPropertyChanged(nameof(Total));
+    partial void OnExtraCostChanged(decimal value) => OnPropertyChanged(nameof(Total));
     partial void OnQuantityChanged(decimal value) => OnPropertyChanged(nameof(Total));
     partial void OnPriceChanged(decimal value) => OnPropertyChanged(nameof(Total));
     partial void OnTaxRateChanged(decimal value) => OnPropertyChanged(nameof(Total));

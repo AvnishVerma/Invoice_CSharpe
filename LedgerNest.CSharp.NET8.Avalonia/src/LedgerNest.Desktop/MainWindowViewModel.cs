@@ -274,6 +274,7 @@ public partial class MainWindowViewModel : ObservableObject
         foreach (var item in invoice.Items)
         {
             var line = new InvoiceLineViewModel { Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
+            line.Unit = snapshot.LineUnits?.ElementAtOrDefault(Lines.Count) ?? "None";
             historicalLines.Add(line, item);
             Lines.Add(line);
         }
@@ -432,18 +433,18 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
-    public void AddProductLine(UiRecord product)
+    public void AddProductLine(UiRecord product) => Lines.Add(CreateProductLine(product));
+
+    public static InvoiceLineViewModel CreateProductLine(UiRecord product) => new()
     {
-        Lines.Add(new InvoiceLineViewModel
-        {
-            Name = product.Name,
-            Price = ParseDecimal(product["Sale Price"]),
-            TaxRate = ParseDecimal(product["Tax (%)"]),
-            Discount = ParseDecimal(product["Default Discount"]),
-            DiscountPerUnit = true,
-            PriceIncludesTax = bool.TryParse(product["Price includes tax"], out var inclusive) && inclusive
-        });
-    }
+        Unit = product["Unit"] == "Custom…" ? product["Custom unit"] : product["Unit"],
+        Name = product.Name,
+        Price = ParseDecimal(product["Sale Price"]),
+        TaxRate = ParseDecimal(product["Tax (%)"]),
+        Discount = ParseDecimal(product["Default Discount"]),
+        DiscountPerUnit = true,
+        PriceIncludesTax = bool.TryParse(product["Price includes tax"], out var inclusive) && inclusive
+    };
 
     public void StartDocument(string type)
     {
@@ -1246,7 +1247,8 @@ public partial class MainWindowViewModel : ObservableObject
             InterState.IsChecked, editingSnapshot?.Currency ?? Setting("Currency"), editingSnapshot?.QuantityLabel ?? Setting("Quantity Column"),
             InvoiceOptions[3].Value, InvoiceOptions[4].Number, InvoiceOptions[0].Value,
             InvoiceOptions[1].Number, InvoiceOptions[2].Value,
-            AdditionalCosts.Select(c => new InvoiceAdditionalCost(c[0].Value, c[1].Number)).ToArray());
+            AdditionalCosts.Select(c => new InvoiceAdditionalCost(c[0].Value, c[1].Number)).ToArray())
+        { LineUnits = Lines.Select(line => line.Unit).ToArray() };
     }
 
     private int SaveInvoiceToDatabase(Dictionary<string, string> values)

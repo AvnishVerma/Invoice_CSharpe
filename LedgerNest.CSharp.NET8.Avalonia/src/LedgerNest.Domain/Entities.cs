@@ -131,7 +131,10 @@ public sealed record InvoiceSnapshot(
     string DiscountKind,
     decimal DiscountValue,
     string Notes,
-    InvoiceAdditionalCost[] AdditionalCosts);
+    InvoiceAdditionalCost[] AdditionalCosts)
+{
+    public string[]? LineUnits { get; init; }
+}
 
 public sealed record InvoiceCustomerSnapshot(
     string Name, string BusinessName, string Phone, string Email, string GstNumber, string Address);
