@@ -31,7 +31,7 @@ internal sealed class ManagementView : ContentControl
         search.Watermark = Documents ? "Search by Invoice ID or Customer Name…" : kind == "Customer" ? "Search customers by name, phone, email, GST…" : kind == "Product" ? "Search products by name, alias, HSN/SAC, SKU…" : "Search users…";
         search.TextChanged += (_, _) => { page = 0; Refresh(); };
         var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.StartDocument(kind); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
-        var more = Ui.Button("⋯ More", () => window.ShowOverlay("More Actions", Ui.Stack(8, Ui.Button("Export PDF", async () => await ExportDocumentsPdf()), Ui.Button("Delete selected", DeleteSelected), Ui.Button($"Delete All {kind}s", () => window.Confirm("Confirm Delete", $"{(trash && Documents ? "Permanently delete" : "Delete")} all {kind.ToLower()}s?", () => { foreach (var record in Records.ToArray()) Delete(record); Refresh(); })))));
+        var more = MoreMenu();
         var header = Ui.Header($"{kind} Management", kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : "Manage users and access permissions", Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add);
         var filterButton = Ui.Button("Filter ▾", () =>
         {
@@ -47,7 +47,7 @@ internal sealed class ManagementView : ContentControl
         }
         if (Documents) foreach (var control in new Control[] { search, filterButton, sortButton, results }) if (control.Parent is Panel parent) parent.Children.Remove(control);
         Content = Documents
-            ? Ui.Rows("Auto,*", Ui.AppBar($"{kind} Management", Ui.Button($"＋ New {kind}", () => model.StartDocument(kind), true), Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), Ui.Button("⋯", more.Command == null ? null : () => more.Command.Execute(null)), Ui.Button("↻", Refresh)), new Border { Background = Ui.Surface, Child = Ui.Rows("Auto,*", new Border { Padding = new Thickness(20), Child = Ui.Columns("360,12,Auto,*", search, new Border(), Ui.Wrap(Ui.Button("Customer", () => window.ShowOverlay("Select Customer", Ui.Stack(8, model.Customers.Select(c => Ui.Button(c.Name, () => { search.Text = c.Name; window.CloseOverlay(); })).ToArray()))), filterButton, sortButton), new Border()) }, results) })
+            ? Ui.Rows("Auto,*", Ui.AppBar($"{kind} Management", Ui.Button($"＋ New {kind}", () => model.StartDocument(kind), true), Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), MoreMenu(), Ui.Button("↻", Refresh)), new Border { Background = Ui.Surface, Child = Ui.Rows("Auto,*", new Border { Padding = new Thickness(20), Child = Ui.Columns("360,12,Auto,*", search, new Border(), Ui.Wrap(Ui.Button("Customer", () => window.ShowOverlay("Select Customer", Ui.Stack(8, model.Customers.Select(c => Ui.Button(c.Name, () => { search.Text = c.Name; window.CloseOverlay(); })).ToArray()))), filterButton, sortButton), new Border()) }, results) })
             : Ui.Scroll(stack);
         Refresh();
     }
@@ -93,7 +93,7 @@ internal sealed class ManagementView : ContentControl
             controls.Add(checkbox); controls.Add(Ui.Text(record == null ? "SL. NO." : (index + 1).ToString(), 12));
             string[] values = record == null ? Headers : Documents ? [$"{record.Name}\n{record["Customer"]}", record["Date"], record["Items"], record["Total"], record["Status"]] : kind == "Customer" ? [$"{record.Name}\n{record["Business Name"]}", record["Phone"], record["Email"], record["GST / VAT Number"], record["Address"], record["Outstanding"].Length == 0 ? "—" : record["Outstanding"]] : kind == "Product" ? [$"{record.Name}\n{record["Alias Name (for invoice PDF)"]}", record["Sale Price"], record["HSN/SAC"], record["Purchase Price"], record["Stock"], record["Tax (%)"], record["Expiry Date"]] : [record.Name, record["Role"]];
             for (var i = 0; i < Headers.Length; i++) if (!hidden.Contains(Headers[i])) controls.Add(Ui.Text(record == null ? values[i].ToUpperInvariant() : values[i], record == null ? 11 : 12, record == null, record == null ? Ui.Muted : null));
-            controls.Add(record == null ? Ui.Text("Actions", 12, true) : Ui.Wrap(Ui.Button(trash ? "Restore" : "View", () => { if (trash) { model.SetDocumentTrash(record, false); Refresh(); } else View(record); }), Ui.Button("⋯", () => Actions(record))));
+            controls.Add(record == null ? Ui.Text("Actions", 12, true) : Ui.Wrap(Ui.Button(trash ? "Restore" : "View", () => { if (trash) { model.SetDocumentTrash(record, false); Refresh(); } else View(record); }), ActionMenu(record)));
             return new Border { Background = Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, 8), Child = Ui.Columns(columns, controls.ToArray()) };
         }
         body.Children.Add(TableRow(null, 0));
@@ -105,7 +105,40 @@ internal sealed class ManagementView : ContentControl
         results.Content = Ui.Card(new ScrollViewer { Content = new Border { MinWidth = Documents ? 850 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
     private void View(UiRecord record) => window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
-    private void Actions(UiRecord record) => window.ShowOverlay("Actions", Ui.Stack(8, Ui.Button("View", () => View(record)), Ui.Button("Edit", () => { if (Documents) { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); } else window.EditRecord(kind, Refresh, record); }), Ui.Button(Documents ? (trash ? "Delete Permanently" : "Move to Trash") : "Delete", () => window.Confirm("Confirm Delete", $"{(trash && Documents ? "Permanently delete" : "Delete")} {record.Name}?", () => { Delete(record); Refresh(); })), Ui.Button("Export PDF", Documents ? async () => await ExportDocumentPdf(record) : null)));
+    private Button MoreMenu()
+    {
+        var button = Ui.Button(Documents ? "⋯" : "⋯ More", () => { });
+        var menu = new MenuFlyout();
+        void Add(string title, Action action)
+        {
+            var item = new MenuItem { Header = title };
+            item.Click += (_, _) => { menu.Hide(); action(); };
+            menu.Items.Add(item);
+        }
+        Add("Export PDF", async () => await ExportDocumentsPdf());
+        Add("Delete selected", DeleteSelected);
+        Add($"Delete All {kind}s", () => window.Confirm("Confirm Delete", $"{(trash && Documents ? "Permanently delete" : "Delete")} all {kind.ToLower()}s?", () => { foreach (var record in Records.ToArray()) Delete(record); Refresh(); }));
+        button.Flyout = menu;
+        return button;
+    }
+
+    private Button ActionMenu(UiRecord record)
+    {
+        var button = Ui.Button("⋯", () => { });
+        var menu = new MenuFlyout();
+        void Add(string title, Action? action)
+        {
+            var item = new MenuItem { Header = title, IsEnabled = action != null };
+            item.Click += (_, _) => { menu.Hide(); action?.Invoke(); };
+            menu.Items.Add(item);
+        }
+        Add("View", () => View(record));
+        Add("Edit", () => { if (Documents) { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); } else window.EditRecord(kind, Refresh, record); });
+        Add(Documents ? (trash ? "Delete Permanently" : "Move to Trash") : "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }));
+        Add("Export PDF", Documents ? async () => await ExportDocumentPdf(record) : null);
+        button.Flyout = menu;
+        return button;
+    }
     private void Delete(UiRecord record)
     {
         if (!Documents) model.DeleteRecord(kind, record);

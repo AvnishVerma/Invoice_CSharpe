@@ -99,6 +99,18 @@ internal static class Ui
     { var g = new Grid { RowDefinitions = new RowDefinitions(definitions) }; for (var i = 0; i < children.Length; i++) { Grid.SetRow(children[i], i); g.Children.Add(children[i]); } return g; }
     public static Border Card(Control content, double padding = 16) => new() { Background = CardSurface, BorderBrush = Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(padding), Child = content };
     public static ScrollViewer Scroll(Control child, double padding = 16) => new() { Content = new Border { Padding = new Thickness(padding), Child = child }, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+    public static Avalonia.Media.Imaging.Bitmap? LoadLogo(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        try
+        {
+            if (!value.StartsWith("base64:", StringComparison.Ordinal)) return new Avalonia.Media.Imaging.Bitmap(value);
+            using var stream = new MemoryStream(Convert.FromBase64String(value[7..]));
+            return new Avalonia.Media.Imaging.Bitmap(stream);
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or FormatException) { return null; }
+    }
+
     public static Button Button(string label, Action? action = null, bool primary = false)
     {
         var button = new Button { Content = label, Tag = label, Command = action == null ? null : new RelayCommand(action), IsEnabled = action != null, VerticalAlignment = VerticalAlignment.Center };
@@ -128,6 +140,7 @@ internal static class Ui
                 var thumb = new Avalonia.Controls.Shapes.Ellipse { Width = 16, Height = 16, Fill = Brushes.White, Margin = new Thickness(3) };
                 var track = new Border { Width = 40, Height = 24, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Child = thumb };
                 var toggle = new ToggleButton { Content = track, Padding = new Thickness(0), BorderThickness = new Thickness(0), Background = Brushes.Transparent, MinHeight = 32, VerticalAlignment = VerticalAlignment.Center };
+                toggle.Classes.Add("form-toggle");
                 toggle.Bind(ToggleButton.IsCheckedProperty, new Binding(nameof(FormField.IsChecked)) { Source = field, Mode = BindingMode.TwoWay });
                 void PaintToggle() { track.Background = toggle.IsChecked == true ? Brush.Parse("#8097BD") : Brushes.White; track.BorderBrush = toggle.IsChecked == true ? Brushes.Transparent : Brush.Parse("#BDBDBD"); thumb.Fill = toggle.IsChecked == true ? Primary : Brush.Parse("#BDBDBD"); thumb.HorizontalAlignment = toggle.IsChecked == true ? HorizontalAlignment.Right : HorizontalAlignment.Left; }
                 toggle.IsCheckedChanged += (_, _) => PaintToggle(); PaintToggle();
@@ -151,13 +164,26 @@ internal static class Ui
                 slider.PropertyChanged += (_, e) => { if (e.Property == RangeBase.ValueProperty) field.Value = slider.Value.ToString("0"); };
                 input = slider; break;
             case "file":
-                var selected = Text(field.Value.Length == 0 ? "No image selected" : field.Value, 12, color: Muted);
+                var selected = Text(field.Value.Length == 0 ? "No image selected" : "Image selected", 12, color: Muted);
                 var browse = Button("Upload image", () => { });
                 browse.Click += async (_, _) =>
                 {
                     if (TopLevel.GetTopLevel(browse) is not { } top) return;
                     var files = await top.StorageProvider.OpenFilePickerAsync(new() { Title = field.Label, AllowMultiple = false, FileTypeFilter = [Avalonia.Platform.Storage.FilePickerFileTypes.ImageAll] });
-                    if (files.Count > 0) { field.Value = files[0].Path.LocalPath; selected.Text = files[0].Name; }
+                    if (files.Count > 0)
+                    {
+                        try
+                        {
+                            await using var stream = await files[0].OpenReadAsync();
+                            using var bytes = new MemoryStream(); await stream.CopyToAsync(bytes);
+                            if (bytes.Length > 2 * 1024 * 1024) { field.Error = "Logo must be 2 MB or smaller."; return; }
+                            var value = "base64:" + Convert.ToBase64String(bytes.ToArray());
+                            using var bitmap = LoadLogo(value);
+                            if (bitmap == null || bitmap.PixelSize.Width > 1080 || bitmap.PixelSize.Height > 1080) { field.Error = "Choose an image up to 1080 × 1080 pixels."; return; }
+                            field.Value = value; field.Error = ""; selected.Text = files[0].Name;
+                        }
+                        catch (IOException) { field.Error = "The image could not be read."; }
+                    }
                 };
                 input = Wrap(browse, selected, Button("Remove", () => { field.Value = ""; selected.Text = "No image selected"; })); break;
             default:

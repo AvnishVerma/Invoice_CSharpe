@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Input;
 using Avalonia.Media;
 using LedgerNest.Desktop.Views;
 
@@ -8,17 +9,32 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
-    private void ShowLogin()
+    private void ShowLogin() => ShowLogin("");
+
+    private void ShowLogin(string message)
     {
         var username = new FormField("Username") { Icon = "person" }; var password = new FormField("Password", kind: "password") { Icon = "lock" };
         var logo = Ui.Logo();
-        var login = Ui.Button("Login", () => { if (Model.SignIn(username.Value, password.Value)) { if (Model.RequiresPasswordChange) ShowChangePassword(); else CloseOverlay(); } }); login.HorizontalAlignment = HorizontalAlignment.Stretch; login.Height = 50; login.CornerRadius = new CornerRadius(25);
+        void Submit()
+        {
+            if (Model.SignIn(username.Value, password.Value)) ContinueAfterLogin();
+            else ShowLogin(Model.Status);
+        }
+        var login = Ui.Button("Login", Submit); login.HorizontalAlignment = HorizontalAlignment.Stretch; login.Height = 50; login.CornerRadius = new CornerRadius(25);
         var forgot = Ui.Button("Forgot password?", ShowForgotPassword); forgot.Classes.Add("text"); forgot.HorizontalAlignment = HorizontalAlignment.Right;
-        var content = Ui.Stack(16, logo, Ui.Card(Ui.Text("First time here? Log in with username admin and password admin, then set your own password when prompted.", 13, color: Ui.Muted), 12), Ui.Field(username), Ui.Field(password), new Border { Height = 0 }, login, forgot, new TextBlock { Text = Branding.Tagline, FontSize = 12, Foreground = Ui.Muted, HorizontalAlignment = HorizontalAlignment.Center });
+        var content = Ui.Stack(16, logo, new TextBlock { Text = message, Foreground = Brushes.Firebrick, TextWrapping = TextWrapping.Wrap, IsVisible = message.Length > 0 }, Ui.Card(Ui.Text("First time here? Log in with username admin and password admin, then set your own password when prompted.", 13, color: Ui.Muted), 12), Ui.Field(username), Ui.Field(password), new Border { Height = 0 }, login, forgot, new TextBlock { Text = Branding.Tagline, FontSize = 12, Foreground = Ui.Muted, HorizontalAlignment = HorizontalAlignment.Center });
+        content.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; Submit(); } };
         overlay.Margin = new Thickness(0); overlay.Children.Clear(); overlay.IsVisible = true;
         var card = Ui.Card(content, 32); card.Width = 420; card.MaxWidth = Math.Max(280, Bounds.Width - 48); card.Background = Ui.Surface; card.HorizontalAlignment = HorizontalAlignment.Center; card.VerticalAlignment = VerticalAlignment.Center; card.BoxShadow = BoxShadows.Parse("0 6 16 0 #33000000");
         overlay.Children.Add(new Border { Background = Ui.Palette("#E3F2FD", "#142A3B"), Child = Ui.Scroll(card, 24) });
     }
+    private void ContinueAfterLogin()
+    {
+        if (Model.RequiresPasswordChange) ShowChangePassword();
+        else if (Model.NeedsFirstTimeSetup) ShowOnboarding();
+        else CloseOverlay();
+    }
+
     private void ShowForgotPassword()
     {
         var username = new FormField("Username", required: true);
@@ -31,7 +47,7 @@ public partial class MainWindow
     {
         if (Model.CurrentUsername == null) { ShowLogin(); return; }
         FormField[] fields = [new("Current Password", kind: "password", required: true), new("New Password (min 8 characters)", kind: "password", required: true), new("Confirm New Password", kind: "password", required: true)];
-        ShowOverlay("Change Password", Ui.Stack(20, Ui.Text("Choose a strong password to secure your account.", 13, color: Ui.Muted), Ui.Fields(fields)), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Change Password", () => { if (Model.ChangeCurrentPassword(fields)) CloseOverlay(); }, true)), width: 520);
+        ShowOverlay("Change Password", Ui.Stack(20, Ui.Text("Choose a strong password to secure your account.", 13, color: Ui.Muted), Ui.Fields(fields)), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Change Password", () => { if (Model.ChangeCurrentPassword(fields)) ContinueAfterLogin(); }, true)), width: 520);
     }
     private void ShowOnboarding()
     {

@@ -64,6 +64,7 @@ public partial class MainWindowViewModel : ObservableObject
         LoadPersistedSettings();
         LoadThemeMode();
         LoadLanguage();
+        ApplyDefaultCustomer();
     }
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();
     [RelayCommand] private void Navigate(string route) { if (Routes.Contains(route)) { Title = route; Status = ""; } }
@@ -452,6 +453,7 @@ public partial class MainWindowViewModel : ObservableObject
         Lines.Clear();
         AdditionalCosts.Clear();
         foreach (var field in InvoiceCustomer) field.Value = "";
+        ApplyDefaultCustomer();
         InvoiceDetails[0].Value = type;
         InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
         InvoiceDetails[2].Value = "";
@@ -474,7 +476,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
-        var user = db.Users.FirstOrDefault(u => u.Username == username.Trim());
+        var user = db.Users.AsEnumerable().FirstOrDefault(u => string.Equals(u.Username, username.Trim(), StringComparison.OrdinalIgnoreCase));
         if (user == null || !PasswordCredentials.Verify(password, user.Salt, user.PasswordHash, out var needsUpgrade))
         {
             Status = "Invalid username or password.";
@@ -512,7 +514,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
-        var user = db.Users.FirstOrDefault(u => u.Username == username.Trim());
+        var user = db.Users.AsEnumerable().FirstOrDefault(u => string.Equals(u.Username, username.Trim(), StringComparison.OrdinalIgnoreCase));
         if (user == null || !PasswordCredentials.Verify(fields[0].Value, user.Salt, user.PasswordHash, out _))
         {
             fields[0].Error = "Current password is incorrect.";
@@ -526,6 +528,41 @@ public partial class MainWindowViewModel : ObservableObject
         if (sessionAccount?.Id == user.Id) sessionAccount = user;
         Status = "Password changed.";
         return true;
+    }
+
+    public bool NeedsFirstTimeSetup
+    {
+        get
+        {
+            if (dbFactory == null || CurrentRole != "Admin") return false;
+            using var db = dbFactory.CreateDbContext();
+            return !db.Settings.Any(s => s.Key == "onboarding.completed" && s.Value == "true");
+        }
+    }
+
+    public void SetDefaultCustomer(UiRecord? customer)
+    {
+        if (customer != null && !Customers.Contains(customer)) return;
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            SetSetting(db, "invoice.default_customer", customer?.SourceId.ToString(CultureInfo.InvariantCulture) ?? "");
+            db.SaveChanges();
+        }
+        defaultCustomerId = customer?.SourceId;
+        Status = customer == null ? "Default customer cleared." : $"Default customer: {customer.Name}.";
+    }
+    private int? defaultCustomerId;
+    private void ApplyDefaultCustomer()
+    {
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            var value = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == "invoice.default_customer")?.Value;
+            defaultCustomerId = int.TryParse(value, out var id) ? id : null;
+        }
+        var customer = Customers.FirstOrDefault(c => c.SourceId == defaultCustomerId);
+        if (customer != null) foreach (var field in InvoiceCustomer) field.Value = customer[field.Label];
     }
 
     public FormField[][] CreateOnboardingFields()

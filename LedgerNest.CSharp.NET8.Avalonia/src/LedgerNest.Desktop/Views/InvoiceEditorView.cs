@@ -11,6 +11,7 @@ public partial class MainWindow
 {
     private Control InvoiceEditor()
     {
+        invoiceCompletionVisible = false;
         var editorModel = Model;
         var saveCustomer = Ui.Button("Save customer", () => editorModel.SaveRecord("Customer", editorModel.InvoiceCustomer)); saveCustomer.Classes.Add("text");
         var customerFields = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*"), RowDefinitions = new RowDefinitions("Auto,12,Auto") };
@@ -24,14 +25,22 @@ public partial class MainWindow
         var productSearch = new TextBox { Watermark = "Search & add a product or service (Ctrl+F)", MinWidth = 120, Background = Ui.Canvas };
         var suggestions = new ListBox { IsVisible = false, MaxHeight = 180 };
         productSearch.TextChanged += (_, _) => { suggestions.ItemsSource = editorModel.Products.Where(p => p.Name.Contains(productSearch.Text ?? "", StringComparison.OrdinalIgnoreCase)).Select(p => p.Name).ToArray(); suggestions.IsVisible = !string.IsNullOrWhiteSpace(productSearch.Text); };
+        var selectingProduct = false;
         suggestions.SelectionChanged += (_, _) =>
         {
+            if (selectingProduct) return;
             var product = editorModel.Products.FirstOrDefault(p => p.Name == suggestions.SelectedItem?.ToString()); if (product == null) return;
-            editorModel.AddProductLine(product);
-            productSearch.Text = ""; suggestions.IsVisible = false;
+            selectingProduct = true;
+            try
+            {
+                suggestions.SelectedItem = null;
+                productSearch.Text = ""; suggestions.IsVisible = false;
+                editorModel.AddProductLine(product);
+            }
+            finally { selectingProduct = false; }
         };
         var lineHost = new ContentControl(); var totals = new ContentControl(); var count = Ui.Text("0 items", 11, true, Ui.Muted);
-        var create = Ui.Button($"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (editorModel.SaveInvoice()) ShowInvoiceSuccess(); }, true);
+        var create = Ui.Button($"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (!invoiceCompletionVisible && editorModel.SaveInvoice()) ShowInvoiceSuccess(); }, true);
         System.ComponentModel.PropertyChangedEventHandler typeChanged = (_, _) => create.Content = $"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)";
         editorModel.InvoiceDetails[0].PropertyChanged += typeChanged;
         create.DetachedFromVisualTree += (_, _) => editorModel.InvoiceDetails[0].PropertyChanged -= typeChanged;
@@ -105,10 +114,12 @@ public partial class MainWindow
         var list = new ListBox { ItemsSource = Model.Customers.Select(c => c.Name).ToArray(), MinHeight = 180 };
         var search = new TextBox { Watermark = "Search customer" };
         search.TextChanged += (_, _) => list.ItemsSource = Model.Customers.Where(c => c.Name.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)).Select(c => c.Name).ToArray();
-        ShowOverlay("Select Customer", Ui.Stack(12, search, list), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Select", () => { var c = Model.Customers.FirstOrDefault(c => c.Name == list.SelectedItem?.ToString()); if (c == null) return; foreach (var f in Model.InvoiceCustomer) f.Value = c[f.Label]; CloseOverlay(); }, true)));
+        var useDefault = new CheckBox { Content = "Use as default for new invoices" };
+        ShowOverlay("Select Customer", Ui.Stack(12, search, list, useDefault, Ui.Button("Clear default customer", () => Model.SetDefaultCustomer(null))), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Select", () => { var c = Model.Customers.FirstOrDefault(c => c.Name == list.SelectedItem?.ToString()); if (c == null) return; foreach (var f in Model.InvoiceCustomer) f.Value = c[f.Label]; if (useDefault.IsChecked == true) Model.SetDefaultCustomer(c); CloseOverlay(); }, true)));
     }
     private void ShowInvoiceSuccess()
     {
+        invoiceCompletionVisible = true;
         page.Content = Ui.Scroll(Ui.Stack(24, Ui.Empty($"{Model.InvoiceDetails[0].Value} saved successfully", Model.LastSavedDocument!.Name, "✓"), Ui.Card(Ui.Stack(16, Ui.Text("Payment Summary", 18, true), TotalRow("Total", Model.Totals.Total), Ui.Button("Apply Payment", () => ShowPayment(Model.LastSavedDocument!)))), Ui.Wrap(Ui.Button("View", () => ShowPayment(Model.LastSavedDocument!)), Ui.Button("Preview"), Ui.Button("Download"), Ui.Button("Print"), Ui.Button("Create New Invoice", () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); }, true))));
     }
 }

@@ -19,6 +19,9 @@ public partial class MainWindow
         previewName.Bind(TextBlock.TextProperty, new Binding(nameof(FormField.Value)) { Source = F("Company Name") });
         var logo = Ui.Button("", () => { }); logo.Width = 180; logo.Height = 180;
         logo.Content = Ui.Stack(12, Ui.Icon("upload", 40, Ui.Primary), Ui.Text("Upload Logo", 14, color: Ui.Muted), Ui.Text("Click to browse", 12, color: Ui.Muted));
+        Avalonia.Media.Imaging.Bitmap? logoBitmap = Ui.LoadLogo(sections[0].Fields[0].Value);
+        if (logoBitmap != null) logo.Content = new Image { Source = logoBitmap, Stretch = Stretch.Uniform };
+        logo.DetachedFromVisualTree += (_, _) => logoBitmap?.Dispose();
         logo.Click += async (_, _) =>
         {
             var files = await StorageProvider.OpenFilePickerAsync(new() { Title = "Company Logo", FileTypeFilter = [Avalonia.Platform.Storage.FilePickerFileTypes.ImageAll] });
@@ -26,10 +29,14 @@ public partial class MainWindow
             try
             {
                 await using var stream = await files[0].OpenReadAsync();
-                if (stream.Length > 2 * 1024 * 1024) { Model.Status = "Logo must be 2 MB or smaller."; return; }
-                var bitmap = new Avalonia.Media.Imaging.Bitmap(stream);
+                using var imageBytes = new MemoryStream();
+                await stream.CopyToAsync(imageBytes);
+                if (imageBytes.Length > 2 * 1024 * 1024) { Model.Status = "Logo must be 2 MB or smaller."; return; }
+                imageBytes.Position = 0;
+                var bitmap = new Avalonia.Media.Imaging.Bitmap(imageBytes);
                 if (bitmap.PixelSize.Width > 1080 || bitmap.PixelSize.Height > 1080) { bitmap.Dispose(); Model.Status = "Logo must be at most 1080 × 1080 pixels."; return; }
-                logo.Content = new Image { Source = bitmap, Stretch = Stretch.Uniform }; sections[0].Fields[0].Value = files[0].Path.LocalPath;
+                logoBitmap?.Dispose(); logoBitmap = bitmap;
+                logo.Content = new Image { Source = bitmap, Stretch = Stretch.Uniform }; sections[0].Fields[0].Value = "base64:" + Convert.ToBase64String(imageBytes.ToArray());
             }
             catch (Exception ex) when (ex is IOException or ArgumentException) { Model.Status = "The selected image could not be opened."; }
         };

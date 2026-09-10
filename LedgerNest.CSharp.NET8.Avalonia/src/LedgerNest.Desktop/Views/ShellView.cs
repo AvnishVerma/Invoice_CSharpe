@@ -62,6 +62,7 @@ public partial class MainWindow
     }
     private void ShowPage()
     {
+        invoiceCompletionVisible = false;
         if (!Model.ValidateSession() || !Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
         CloseOverlay();
         page.Content = Model.Title switch

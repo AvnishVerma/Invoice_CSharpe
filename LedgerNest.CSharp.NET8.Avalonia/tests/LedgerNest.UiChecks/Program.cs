@@ -59,7 +59,26 @@ internal static class Program
             Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && !string.IsNullOrWhiteSpace(t.Text)), $"Blank screen: {name}");
         }
         Button FindButton(string text) => window.GetVisualDescendants().OfType<Button>().Last(b => b.IsVisible && (b.Content?.ToString() == text || b.Tag?.ToString() == text));
-        void Click(string text) { Settle(); var button = FindButton(text); Check(button.IsEnabled, $"Disabled button: {text}"); button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); button.Command?.Execute(button.CommandParameter); Settle(); }
+        void Click(string text)
+        {
+            Settle();
+            var button = window.GetVisualDescendants().OfType<Button>().LastOrDefault(b => b.IsVisible && (b.Content?.ToString() == text || b.Tag?.ToString() == text));
+            if (button == null)
+            {
+                var item = window.GetVisualDescendants().OfType<Button>().Select(b => b.Flyout).OfType<MenuFlyout>().SelectMany(f => f.Items.OfType<MenuItem>()).Last(i => i.Header?.ToString() == text);
+                Check(item.IsEnabled, $"Disabled menu item: {text}"); item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            }
+            else
+            {
+                Check(button.IsEnabled, $"Disabled button: {text}"); button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); button.Command?.Execute(button.CommandParameter);
+                if (button.Flyout is MenuFlyout menu) menu.ShowAt(button);
+            }
+            Settle();
+        }
+        var layoutButton = window.GetVisualDescendants().OfType<Button>().Single(b => b.Flyout is MenuFlyout menu && menu.Items.OfType<MenuItem>().Any(i => i.Header?.ToString() == "Bento"));
+        Check(layoutButton.IsEnabled, "Issue 5: dashboard layout selector must be enabled");
+        ((MenuFlyout)layoutButton.Flyout!).Items.OfType<MenuItem>().Single(i => i.Header?.ToString() == "Simple Feed").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle();
+        Capture("issue-05-simple-feed");
         foreach (var route in MainWindowViewModel.Routes) { model.NavigateCommand.Execute(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
         model.NavigateCommand.Execute("Reports");
@@ -83,13 +102,22 @@ internal static class Program
         Check(!model.Users.Single().Values.ContainsKey("Password"), "User table must not retain or expose password text"); Capture("customers-populated");
         model.NavigateCommand.Execute("Products"); Click("＋ New Product"); Capture("product-form"); Click("Cancel");
         model.NavigateCommand.Execute("New Invoice"); Click("＋ Custom Item"); Capture("custom-item-form"); Click("Cancel");
+        var productFields = FormCatalog.Product(); productFields.First(f => f.Label == "Name").Value = "Selection fixture";
+        Check(model.SaveRecord("Product", productFields), "Product selection fixture must save");
+        var searchBox = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Search & add a product or service (Ctrl+F)");
+        searchBox.Text = "Selection"; Settle();
+        var suggestions = window.GetVisualDescendants().OfType<ListBox>().Single(); suggestions.SelectedIndex = 0; Settle();
+        Check(model.Lines.Count == 1 && searchBox.Text == "", "Issue 7: selecting a suggestion must add exactly one item and reset search");
+        model.Lines.Clear();
         model.Lines.Add(new InvoiceLineViewModel { Name = "Test product", Price = 100, Quantity = 2, TaxRate = 18 }); Capture("invoice-populated");
         model.InvoiceOptions[0].Value = "Percentage"; model.InvoiceOptions[1].Value = "10";
         Check(model.Totals.Total == 212.4m, "Invoice discount must affect totals");
         model.NavigateCommand.Execute("Dashboard"); model.NavigateCommand.Execute("New Invoice"); Check(model.Lines.Count == 1 && model.InvoiceOptions[1].Value == "10", "Navigation must preserve the invoice draft");
         Check(model.SaveInvoice(), "Invoice must save"); Check(model.Invoices.Single()["Total"] == "212.40", "Saved total must match displayed total");
         model.NavigateCommand.Execute("Invoices");
-        Click("⋯"); Click("Move to Trash"); Click("Confirm");
+        Settle();
+        Check(window.GetVisualDescendants().OfType<Button>().Where(b => b.Tag?.ToString()?.StartsWith("⋯", StringComparison.Ordinal) == true).All(b => b.Flyout is MenuFlyout), "Issue 10: row and toolbar actions must use anchored dropdowns");
+        Click("⋯"); Capture("issue-10-action-dropdown"); Click("Move to Trash"); Click("Confirm");
         Check(!model.ActiveInvoices.Any(), "Move to Trash action must hide the invoice");
         Click("Trash"); Capture("invoice-trash");
         Click("Restore");
@@ -140,6 +168,17 @@ internal static class Program
         window.KeyReleaseQwerty(Avalonia.Input.PhysicalKey.Escape, Avalonia.Input.RawInputModifiers.None);
         Settle();
         Check(editModel.Invoices.Count == 1 && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login"), "Locked navigation and shortcuts must preserve login and avoid saving");
+        window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Username").Text = "ADMIN";
+        window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Password").Text = "wrong";
+        Click("Login");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Invalid username or password."), "Issue 1: invalid login must show an inline visible alert");
+        Capture("issue-01-login-error");
+        window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Username").Text = "AdMiN";
+        var loginPassword = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Password"); loginPassword.Text = "admin";
+        loginPassword.Focus(); Settle();
+        window.KeyPressQwerty(Avalonia.Input.PhysicalKey.Enter, Avalonia.Input.RawInputModifiers.None);
+        window.KeyReleaseQwerty(Avalonia.Input.PhysicalKey.Enter, Avalonia.Input.RawInputModifiers.None); Settle();
+        Check(editModel.CurrentUsername == "admin" && editModel.RequiresPasswordChange, "Issues 2/4: mixed-case username must sign in with Enter");
         Check(editModel.SignIn("admin", "admin") && !editModel.CanAccessWorkspace, "Default administrator must remain locked pending password change");
         Click("Cancel");
         Check(window.GetVisualDescendants().OfType<TextBox>().Any(t => t.Watermark == "Current Password"), "Mandatory password change cannot be dismissed");
@@ -150,6 +189,11 @@ internal static class Program
         }
         Click("Change Password");
         Check(editModel.CanAccessWorkspace && !editModel.RequiresPasswordChange, "Successful password change must unlock workspace");
+        Check(editModel.NeedsFirstTimeSetup && window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == $"Welcome to {Branding.Name}"), "Issue 3: first administrator login must present setup after password change");
+        Capture("issue-03-first-time-setup");
+        window.GetVisualDescendants().OfType<TextBox>().First(t => t.Watermark == "Company Name").Text = "Issue review company";
+        Click("Continue"); Click("Continue"); Click("Continue"); Click("Get Started");
+        Check(!editModel.NeedsFirstTimeSetup, "Issue 3: completed setup must remain completed");
         editModel.NavigateCommand.Execute("Invoices");
         Click("⋯"); Click("Edit"); Capture("invoice-edit");
         Check(editModel.IsEditingDocument && editModel.Lines.Single().Name == "Editable service", "Edit action must load the saved document");
@@ -167,6 +211,12 @@ internal static class Program
 
         Click("Save Invoice (Ctrl+S)");
         Check(editModel.Invoices.Count == 1 && editModel.LastSavedDocument?.Name == "00000001", "UI save must update the existing document");
+        window.KeyPressQwerty(Avalonia.Input.PhysicalKey.S, Avalonia.Input.RawInputModifiers.Control);
+        window.KeyReleaseQwerty(Avalonia.Input.PhysicalKey.S, Avalonia.Input.RawInputModifiers.Control); Settle();
+        Check(editModel.Invoices.Count == 1, "Issue 11: saving again from completion must not create another document");
+        Click("Apply Payment"); Click("Save Payment");
+        Check(!window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Save Payment"), "Issue 11: completed payment must close instead of reopening the form");
+        Check(editModel.Payments.Count == 1, "Issue 11: completion payment must be recorded once");
         Click("Create New Invoice");
         Check(!editModel.IsEditingDocument && editModel.Lines.Count == 0, "Success screen must start a fresh invoice");
         var sessionUser = FormCatalog.User();
@@ -190,6 +240,27 @@ internal static class Program
         Check(!editModel.CanAccessWorkspace && editModel.CurrentUsername == null && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login"), "Navigation must return externally invalidated sessions to login");
         Check(!editModel.SignIn("sidebar-user", "incorrect") && editModel.CurrentRole == "" && editModel.CurrentUsername == null, "Failed account switch must not retain previous role");
 
+        var defaultFields = FormCatalog.Customer(); defaultFields[0].Value = "Default customer"; defaultFields[2].Value = "1234567890";
+        Check(editModel.SaveRecord("Customer", defaultFields), "Default customer fixture must save");
+        editModel.SetDefaultCustomer(editModel.Customers.Single(c => c.Name == "Default customer"));
+        var defaultReload = new MainWindowViewModel(editFactory, editPath); defaultReload.StartDocument("Invoice");
+        Check(defaultReload.InvoiceCustomer[0].Value == "Default customer", "Issue 6: default customer must survive restart and populate new invoices");
+        defaultReload.SetDefaultCustomer(null); defaultReload.StartDocument("Invoice");
+        Check(defaultReload.InvoiceCustomer[0].Value == "", "Issue 6: clearing default must leave a new invoice blank");
+        var savedLogo = "base64:iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGP4z8AARAwQCgAf7gP9i18U1AAAAABJRU5ErkJggg==";
+        defaultReload.Settings["Company Info"][0].Fields[0].Value = savedLogo;
+        Check(defaultReload.SaveSettings("Company Info"), "Company settings must save embedded logo");
+        var logoReload = new MainWindowViewModel(editFactory, editPath);
+        Check(logoReload.Settings["Company Info"][0].Fields[0].Value == savedLogo, "Issue 8: image contents must persist independently of original file path");
+        using (var db = editFactory.CreateDbContext()) { db.Users.Single(u => u.Username == "admin").PasswordChanged = true; db.SaveChanges(); }
+        window.DataContext = logoReload; Check(logoReload.SignIn("ADMIN", "updated-admin-password"), "Logo review must sign in with normalized username");
+        logoReload.NavigateCommand.Execute("Settings"); Click("Company Info");
+        Check(window.GetVisualDescendants().OfType<Image>().Any(i => i.Source is Avalonia.Media.Imaging.Bitmap b && b.PixelSize.Width == 2), "Issue 8: saved logo must render on reopening company settings");
+        var toggle = window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().First(t => t.Classes.Contains("form-toggle"));
+        toggle.IsChecked = true; Settle();
+        var presenter = toggle.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().First(p => p.Name == "PART_ContentPresenter");
+        Check(presenter.Background is Avalonia.Media.ISolidColorBrush brush && brush.Color.A == 0, "Issue 9: enabled toggle must not retain an outer selected highlight");
+        Capture("issue-08-09-company-logo-toggle");
         window.Close();
         if (args.Length > 1) CompareScreenshots(output, args[1]);
         Console.WriteLine($"Passed {assertions} checks. Screenshots: {output}");

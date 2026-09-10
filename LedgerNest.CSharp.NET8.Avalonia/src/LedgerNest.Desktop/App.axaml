@@ -3,6 +3,10 @@
              x:Class="LedgerNest.Desktop.App" RequestedThemeVariant="Default">
   <Application.Styles>
     <FluentTheme />
+    <Style Selector="ToggleButton.form-toggle /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
     <Style Selector="Window">
       <Setter Property="FontFamily" Value="avares://LedgerNest.Desktop/Assets#Roboto" />
       <Setter Property="FontSize" Value="14" />

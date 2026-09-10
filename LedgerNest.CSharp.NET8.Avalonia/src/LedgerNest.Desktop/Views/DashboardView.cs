@@ -17,7 +17,7 @@ public partial class MainWindow
             var b = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(title, 13, true, Brush.Parse(foreground)), Ui.Text(subtitle, 12, color: Brush.Parse(foreground))), Ui.Wrap(Ui.Button("Got it", () => { dismissedBanners.Add(title); page.Content = Dashboard(); }), Ui.Button("×", () => { dismissedBanners.Add(title); page.Content = Dashboard(); }))), 12);
             b.Background = Brush.Parse(background); b.Margin = new Thickness(0, 0, 0, 20); b.IsVisible = !dismissedBanners.Contains(title); return b;
         }
-        var layout = Ui.Button("");
+        var layout = Ui.Button("", () => { });
         layout.Content = Ui.Icon("dashboard", 20, Brushes.White);
         layout.Classes.Add("text");
         ToolTip.SetTip(layout, "Dashboard layout");
@@ -31,7 +31,7 @@ public partial class MainWindow
         layout.Flyout = layoutMenu;
         var refresh = Ui.Button("↻", () => page.Content = Dashboard()); refresh.Content = Ui.Icon("refresh", 22, Brushes.White); refresh.Classes.Add("text");
         var top = Ui.AppBar("", layout, refresh);
-        var appbar = new Grid(); appbar.Children.Add(top); var heading = Ui.Text("Dashboard Overview", 20, color: Brushes.White); heading.HorizontalAlignment = HorizontalAlignment.Center; appbar.Children.Add(heading);
+        var appbar = new Grid(); appbar.Children.Add(top); var heading = Ui.Text("Dashboard Overview", 20, color: Brushes.White); heading.IsHitTestVisible = false; heading.HorizontalAlignment = HorizontalAlignment.Center; appbar.Children.Add(heading);
         var greeting = new Border { Padding = new Thickness(28, 24), CornerRadius = new CornerRadius(16), Background = new LinearGradientBrush { StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative), GradientStops = [new GradientStop(Color.Parse("#1E293B"), 0), new GradientStop(Color.Parse("#334155"), 1)] }, Child = Ui.Columns("*,Auto", Ui.Stack(6, Ui.Text("Welcome back, admin", 22, true, Brushes.White), Ui.Text("Here's your business at a glance", 13, color: Brush.Parse("#B8C0CB"))), Ui.Stack(2, Ui.Text(DateTime.Today.ToString("dddd"), 12, color: Brush.Parse("#B8C0CB")), Ui.Text(DateTime.Today.ToString("MMM d, yyyy"), 18, true, Brushes.White))) };
         var stats = new Grid { ColumnDefinitions = new ColumnDefinitions("*,16,*,16,*,16,*,16,*") };
         var values = new[] { ("Customers", Model.Customers.Count.ToString(), "people", "#1565C0"), ("Products", Model.Products.Count.ToString(), "inventory_2", "#2E7D32"), ("Invoices", Model.ActiveInvoices.Count().ToString(), "receipt_long", "#E65100"), ("Revenue Collected", "Rs. " + Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Paid"], out var n) ? n : 0).ToString("0.00"), "account_balance_wallet", "#6A1B9A"), ("Outstanding", "Rs. " + Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Outstanding"], out var n) ? n : decimal.TryParse(i["Total"], out var total) ? total : 0).ToString("0.00"), "hourglass_top", "#C62828") };

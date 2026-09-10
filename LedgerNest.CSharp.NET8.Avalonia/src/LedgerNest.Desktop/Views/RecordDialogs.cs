@@ -14,11 +14,13 @@ public partial class MainWindow
         var fields = kind == "Customer" ? FormCatalog.Customer() : kind == "Product" ? FormCatalog.Product() : FormCatalog.User();
         if (record != null && kind == "User") fields = fields.Where(f => f.Kind != "password").ToArray();
         if (record != null) foreach (var f in fields) { f.Value = record[f.Label]; f.IsChecked = bool.TryParse(f.Value, out var v) && v; }
+        var useDefault = new CheckBox { Content = "Use as default for new invoices", IsVisible = kind == "Customer" };
         var another = new CheckBox { Content = "Add another after saving", IsVisible = record == null };
         var cancel = Ui.Button("Cancel", CloseOverlay); cancel.CornerRadius = new CornerRadius(24); cancel.HorizontalAlignment = HorizontalAlignment.Stretch;
         var save = Ui.Button($"Save {kind}", () =>
         {
             if (!Model.SaveRecord(kind, fields, record)) return;
+            if (kind == "Customer" && useDefault.IsChecked == true) Model.SetDefaultCustomer(Model.Customers.Last(c => c.Name == fields[0].Value.Trim()));
             refresh(); if (another.IsChecked == true) EditRecord(kind, refresh); else CloseOverlay();
         }, true); save.Classes.Add("material"); save.CornerRadius = new CornerRadius(24); save.HorizontalAlignment = HorizontalAlignment.Stretch;
         Control form = Ui.Fields(fields);
@@ -26,7 +28,7 @@ public partial class MainWindow
         {
             form = Ui.Stack(20, Ui.Text("GENERAL", 11, true, Ui.Muted), Ui.Fields(fields.Skip(1).Take(4)), Ui.Text("PRICING", 11, true, Ui.Muted), Ui.Fields(fields.Skip(5).Take(2), 2), Ui.Field(fields[7]), Ui.Fields(fields.Skip(8).Take(2), 2), Ui.Text("STOCK & UNIT", 11, true, Ui.Muted), Ui.Fields(fields.Skip(10).Take(4), 2), new Expander { Header = "Advanced Information", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Fields(fields.Skip(14), 2) });
         }
-        ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, Ui.Stack(16, another, Ui.Columns("*,12,2*", cancel, new Border(), save)), true, kind == "Product" ? 550 : 520, kind == "Product" ? Ui.Segments(fields[0]) : null);
+        ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, Ui.Stack(16, useDefault, another, Ui.Columns("*,12,2*", cancel, new Border(), save)), true, kind == "Product" ? 550 : 520, kind == "Product" ? Ui.Segments(fields[0]) : null);
     }
 
     internal void ShowPayment(UiRecord invoice)
@@ -39,7 +41,7 @@ public partial class MainWindow
             if (payments.Length == 0) return Ui.Empty("No payments yet", "", "");
             return Ui.Stack(8, payments.Select(payment => Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(payment.Name, 13, true), Ui.Text($"{payment["Date"]} · {payment["Method"]}", 12, color: Ui.Muted)), Ui.Text("Rs." + payment["Amount"], 16, true)), 8)).ToArray());
         }
-        ShowOverlay("Apply Payment", Ui.Stack(18, Ui.Text($"Invoice: {invoice.Name} · {invoice["Customer"]}"), Ui.Stats(("Invoice Total", invoice["Total"], "", "#002E78"), ("Amount Paid", invoice["Paid"].Length > 0 ? invoice["Paid"] : "0.00", "", "#2E7D32"), ("Outstanding", invoice["Outstanding"].Length > 0 ? invoice["Outstanding"] : invoice["Total"], "", "#C62828")), Ui.Text("Payment History", 16, true), History(), Ui.Text("New Payment", 16, true), Ui.Fields(fields, 2)), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Save Payment", () => { if (Model.ApplyPayment(invoice, fields)) ShowPayment(invoice); }, true)), width: 760);
+        ShowOverlay("Apply Payment", Ui.Stack(18, Ui.Text($"Invoice: {invoice.Name} · {invoice["Customer"]}"), Ui.Stats(("Invoice Total", invoice["Total"], "", "#002E78"), ("Amount Paid", invoice["Paid"].Length > 0 ? invoice["Paid"] : "0.00", "", "#2E7D32"), ("Outstanding", invoice["Outstanding"].Length > 0 ? invoice["Outstanding"] : invoice["Total"], "", "#C62828")), Ui.Text("Payment History", 16, true), History(), Ui.Text("New Payment", 16, true), Ui.Fields(fields, 2)), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Save Payment", () => { if (Model.ApplyPayment(invoice, fields)) CloseOverlay(); }, true)), width: 760);
     }
     private void ShowCustomItem()
     {

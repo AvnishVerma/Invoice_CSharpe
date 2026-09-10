@@ -2,7 +2,7 @@
 
 The Avalonia migration now includes the main navigation, invoice editor, customer/product/user forms, document lists, settings sections, reporting surfaces, and authentication/onboarding forms. Invoice calculations use decimal arithmetic ported from the legacy calculator.
 
-Validation: the headless runner passes 633 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
+Validation: the headless runner passes 670 checks, including navigation, form validation, invoice calculations, SQLite reload behavior, settings, language/theme preferences, user persistence and password auth, CSV import/export, JSON and database-file backup/restore, report summaries, historical product reporting with cost/discount profit data and CSV export, document and report PDF export, payment status updates, responsive invoice panes, dark theme persistence, and rendering at desktop and narrow widths. Build succeeds with zero warnings and errors.
 
 Run from the repository root:
 
@@ -123,3 +123,5 @@ JSON restore-outcome batch: 621 local checks passed, including failure after com
 Pending backup-operation batch: 629 local checks passed, including session continuation rejection after logout/relogin and external account changes. Native picker automation and visual parity remain unverified.
 
 Backup export-stream batch: 633 local checks passed, including truncation, unwritable destination and flush-failure handling. Native file-provider behavior and pixel parity remain unverified.
+
+Reported UI issues batch (2026-09-10): all 11 pasted issues have implementations and focused checks. Build passed with zero warnings/errors; 670 checks passed using local runtime major roll-forward. Login error, onboarding, layout selection, action dropdown and logo/toggle captures were visually reviewed. See REPORTED_ISSUES_REVIEW.md and REPORTED_ISSUES_STATUS.csv. Native picker/user acceptance testing remains pending; no complete pixel-parity percentage is claimed.
