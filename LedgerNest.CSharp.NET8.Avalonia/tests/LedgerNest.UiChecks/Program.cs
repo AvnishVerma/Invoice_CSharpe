@@ -104,11 +104,17 @@ internal static class Program
         model.NavigateCommand.Execute("Products"); Click("＋ New Product"); Capture("product-form"); Click("Cancel");
         model.NavigateCommand.Execute("New Invoice"); Click("＋ Custom Item"); Capture("custom-item-form"); Click("Cancel");
         var productFields = FormCatalog.Product(); productFields.First(f => f.Label == "Name").Value = "Selection fixture";
+        productFields.First(f => f.Label == "Sale Price").Value = "4000";
+        productFields.First(f => f.Label == "Stock").Value = "8";
+        productFields.First(f => f.Label == "Default Discount").Value = "1";
+        productFields.First(f => f.Label == "Unit").Value = "pcs";
         Check(model.SaveRecord("Product", productFields), "Product selection fixture must save");
         var searchBox = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Watermark == "Search & add a product or service (Ctrl+F)");
         searchBox.Text = "Selection"; Settle();
         var suggestions = window.GetVisualDescendants().OfType<ListBox>().Single(); suggestions.SelectedIndex = 0; Settle();
         Check(model.Lines.Count == 1 && searchBox.Text == "", "Issue 7: selecting a suggestion must add exactly one item and reset search");
+        Check(model.Lines.Single().Price == 4000 && model.Lines.Single().Discount == 1, "Product quick add must keep saved price and discount without opening an options popup");
+        Check(!window.GetVisualDescendants().OfType<Border>().Any(b => b.IsVisible && b.Child is TextBlock { Text: "Selection fixture (Rs. 4000.0)" }), "Product quick add must not show the item customization popup before adding");
         model.Lines.Clear();
         model.Lines.Add(new InvoiceLineViewModel { Name = "Test product", Price = 100, Quantity = 2, TaxRate = 18 }); Capture("invoice-populated");
         model.InvoiceOptions[0].Value = "Percentage"; model.InvoiceOptions[1].Value = "10";
