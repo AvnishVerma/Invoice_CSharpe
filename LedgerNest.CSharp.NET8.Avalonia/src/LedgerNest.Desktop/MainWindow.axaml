@@ -3,5 +3,29 @@
         x:Class="LedgerNest.Desktop.MainWindow"
         Width="1440" Height="900" MinWidth="640" MinHeight="480"
         Title="LedgerNest" Background="White">
-  <Grid x:Name="Root" />
+  <Grid x:Name="Root">
+    <Grid RowDefinitions="*,Auto">
+      <Grid x:Name="Body" ColumnDefinitions="Auto,*">
+        <ContentControl x:Name="sidebar" />
+        <ContentControl x:Name="page" Grid.Column="1" />
+      </Grid>
+      <Border x:Name="statusBar"
+              Grid.Row="1"
+              IsVisible="False"
+              Background="#E8F5E9"
+              Padding="16,8">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock x:Name="status"
+                     FontSize="13"
+                     VerticalAlignment="Center"
+                     TextWrapping="Wrap" />
+          <Button Grid.Column="1"
+                  Content="x"
+                  Classes="outline"
+                  Click="OnDismissStatus" />
+        </Grid>
+      </Border>
+    </Grid>
+    <Grid x:Name="overlay" IsVisible="False" />
+  </Grid>
 </Window>

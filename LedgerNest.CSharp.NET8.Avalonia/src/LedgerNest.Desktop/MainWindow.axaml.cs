@@ -11,10 +11,6 @@ public partial class MainWindow : Window
 {
     private MainWindowViewModel Model => (MainWindowViewModel)DataContext!;
     private bool invoiceCompletionVisible;
-    private readonly ContentControl page = new();
-    private readonly ContentControl sidebar = new();
-    private readonly Grid overlay = new() { IsVisible = false };
-    private readonly TextBlock status = Ui.Text("", 13);
     public MainWindow()
     {
         InitializeComponent();
@@ -47,5 +43,11 @@ public partial class MainWindow : Window
             if (e.Key == Key.S && Model.Title == "New Invoice" && !invoiceCompletionVisible && !overlay.IsVisible) { if (Model.SaveInvoice()) ShowInvoiceSuccess(); e.Handled = true; }
             if (e.Key == Key.M && Model.Title == "New Invoice") { ShowCustomItem(); e.Handled = true; }
         };
+    }
+
+    private void OnDismissStatus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel vm)
+            vm.Status = "";
     }
 }

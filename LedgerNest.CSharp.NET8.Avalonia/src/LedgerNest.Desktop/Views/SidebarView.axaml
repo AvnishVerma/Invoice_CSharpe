@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.SidebarView">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="SidebarSurface">#FAFAFA</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarOutline">#E0E0E0</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="SidebarSurface">#18212B</SolidColorBrush>
+          <SolidColorBrush x:Key="SidebarOutline">#526171</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Border x:Name="Shell"
+          Background="{DynamicResource SidebarSurface}"
+          BorderBrush="{DynamicResource SidebarOutline}"
+          BorderThickness="0,0,1,0">
+    <Grid RowDefinitions="76,*,Auto">
+      <Border x:Name="LogoPanel">
+        <ContentControl x:Name="LogoHost" />
+      </Border>
+      <Border Grid.Row="1"
+              Padding="0,8,0,0"
+              BorderBrush="{DynamicResource SidebarOutline}"
+              BorderThickness="0,1,0,0">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+          <ContentControl x:Name="NavHost" />
+        </ScrollViewer>
+      </Border>
+      <Border Grid.Row="2"
+              Padding="14,12"
+              BorderBrush="{DynamicResource SidebarOutline}"
+              BorderThickness="0,1,0,0">
+        <ContentControl x:Name="FooterHost" />
+      </Border>
+    </Grid>
+  </Border>
+</UserControl>

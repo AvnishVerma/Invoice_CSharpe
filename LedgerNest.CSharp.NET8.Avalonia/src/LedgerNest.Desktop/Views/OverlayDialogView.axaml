@@ -1,0 +1,63 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.OverlayDialogView">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="OverlayCardSurface">#F7FAFC</SolidColorBrush>
+          <SolidColorBrush x:Key="OverlayText">#000000</SolidColorBrush>
+          <SolidColorBrush x:Key="OverlayOutline">#E0E0E0</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="OverlayCardSurface">#202B36</SolidColorBrush>
+          <SolidColorBrush x:Key="OverlayText">#F1F5F9</SolidColorBrush>
+          <SolidColorBrush x:Key="OverlayOutline">#526171</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Grid>
+    <Border Background="#4D000000" PointerPressed="OnScrimPressed" />
+    <Border x:Name="Panel"
+            Margin="16"
+            Padding="0"
+            CornerRadius="12"
+            BorderThickness="1"
+            Background="{DynamicResource OverlayCardSurface}"
+            BorderBrush="{DynamicResource OverlayOutline}">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <Border Padding="18,16">
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBlock x:Name="TitleText"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       Foreground="{DynamicResource OverlayText}"
+                       VerticalAlignment="Center"
+                       TextWrapping="Wrap" />
+            <ContentControl x:Name="HeaderAccessoryHost"
+                            Grid.Column="1"
+                            VerticalAlignment="Center" />
+            <Button Grid.Column="2"
+                    Content="x"
+                    Classes="outline"
+                    Click="OnClosePressed" />
+          </Grid>
+        </Border>
+        <ScrollViewer Grid.Row="1"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+          <Border Padding="18">
+            <ContentControl x:Name="BodyHost" />
+          </Border>
+        </ScrollViewer>
+        <Border Grid.Row="2"
+                Padding="18"
+                BorderBrush="{DynamicResource OverlayOutline}"
+                BorderThickness="0,1,0,0">
+          <ContentControl x:Name="FooterHost" />
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>
