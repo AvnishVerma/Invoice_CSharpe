@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceWorkspace"
+             Margin="10">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="WorkspaceSplitter">#E0F2F1</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="WorkspaceSplitter">#163B38</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Grid>
+    <Grid x:Name="WideRoot" ColumnDefinitions="*,10,360">
+      <ContentControl x:Name="WideLeft" Grid.Column="0" />
+      <GridSplitter x:Name="Splitter"
+                    Grid.Column="1"
+                    Width="10"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    ResizeDirection="Columns"
+                    ResizeBehavior="PreviousAndNext"
+                    Background="{DynamicResource WorkspaceSplitter}"
+                    AutomationProperties.Name="Resize invoice panels"
+                    ToolTip.Tip="Drag to resize invoice panels" />
+      <ContentControl x:Name="WideRight" Grid.Column="2" />
+    </Grid>
+    <ScrollViewer x:Name="NarrowRoot" IsVisible="False"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="8">
+        <ContentControl x:Name="NarrowLeft" />
+        <ContentControl x:Name="NarrowRight" />
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

@@ -8,7 +8,11 @@ namespace LedgerNest.Desktop.Views;
 /// <summary>Resolution-independent receipt mark and wordmark shared by all brand surfaces.</summary>
 public sealed class BrandLogo : StackPanel
 {
-    public BrandLogo(bool compact = false)
+    public BrandLogo() : this(false)
+    {
+    }
+
+    public BrandLogo(bool compact)
     {
         Orientation = Orientation.Horizontal;
         Spacing = 8;

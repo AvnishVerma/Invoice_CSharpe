@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop"
+             xmlns:views="using:LedgerNest.Desktop.Views"
+             xmlns:converters="using:Avalonia.Data.Converters"
+             x:Class="LedgerNest.Desktop.Views.LoginView"
+             x:DataType="vm:LoginViewModel"
+             KeyDown="OnKeyDown">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="LoginBackground">#E3F2FD</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginSurface">#FAFAFA</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginCardSurface">#F7FAFC</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginText">#000000</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginMuted">#666666</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginOutline">#E0E0E0</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="LoginBackground">#142A3B</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginSurface">#18212B</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginCardSurface">#202B36</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginText">#F1F5F9</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginMuted">#BBC5D0</SolidColorBrush>
+          <SolidColorBrush x:Key="LoginOutline">#526171</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource LoginText}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+      <Setter Property="Foreground" Value="{DynamicResource LoginMuted}" />
+    </Style>
+    <Style Selector="TextBox.login-field">
+      <Setter Property="MinHeight" Value="56" />
+      <Setter Property="Padding" Value="50,14,12,14" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.login-primary">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="Height" Value="50" />
+      <Setter Property="CornerRadius" Value="25" />
+      <Setter Property="Background" Value="#0F766E" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+  </UserControl.Styles>
+  <Border Background="{DynamicResource LoginBackground}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+      <Border Padding="24">
+        <Border Width="420" MaxWidth="{Binding $parent[UserControl].Bounds.Width}"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Padding="32" CornerRadius="12"
+                Background="{DynamicResource LoginSurface}"
+                BorderBrush="{DynamicResource LoginOutline}"
+                BorderThickness="1"
+                BoxShadow="0 6 16 0 #33000000">
+          <StackPanel Spacing="16">
+            <views:BrandLogo HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding Message}" MinHeight="20" Foreground="Firebrick"
+                       Opacity="{Binding Message, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+            <Border Padding="12" CornerRadius="12" Background="{DynamicResource LoginCardSurface}"
+                    BorderBrush="{DynamicResource LoginOutline}" BorderThickness="1">
+              <TextBlock Text="{Binding FirstTimeHelp}" FontSize="13" Classes="muted" />
+            </Border>
+            <StackPanel Spacing="4">
+              <Grid>
+                <TextBox x:Name="UsernameInput" Classes="login-field" Watermark="Username"
+                         Text="{Binding Username.Value, Mode=TwoWay}" AutomationProperties.Name="Username" />
+                <TextBlock Text="&#xE7FD;" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                           FontSize="24" Foreground="{DynamicResource LoginMuted}"
+                           HorizontalAlignment="Left" VerticalAlignment="Center" Margin="14,0,0,0"
+                           IsHitTestVisible="False" />
+              </Grid>
+              <TextBlock Text="{Binding Username.Error}" FontSize="12" Foreground="Firebrick"
+                         IsVisible="{Binding Username.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <Grid>
+                <TextBox Classes="login-field" Watermark="Password"
+                         PasswordChar="*"
+                         Text="{Binding Password.Value, Mode=TwoWay}" AutomationProperties.Name="Password" />
+                <TextBlock Text="&#xE897;" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                           FontSize="24" Foreground="{DynamicResource LoginMuted}"
+                           HorizontalAlignment="Left" VerticalAlignment="Center" Margin="14,0,0,0"
+                           IsHitTestVisible="False" />
+              </Grid>
+              <TextBlock Text="{Binding Password.Error}" FontSize="12" Foreground="Firebrick"
+                         IsVisible="{Binding Password.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+            <Border Height="0" />
+            <Button Content="Login" Classes="login-primary" Command="{Binding LoginCommand}" />
+            <Button Content="Forgot password?" Classes="text" HorizontalAlignment="Right" Command="{Binding ForgotPasswordCommand}" />
+            <TextBlock Text="{Binding Tagline}" FontSize="12" Classes="muted" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Border>
+      </Border>
+    </ScrollViewer>
+  </Border>
+</UserControl>
