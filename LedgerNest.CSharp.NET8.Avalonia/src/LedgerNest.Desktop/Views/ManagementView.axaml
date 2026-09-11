@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ManagementView">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="ManagementSurface">#FAFAFA</SolidColorBrush>
+          <SolidColorBrush x:Key="ManagementCardSurface">#F7FAFC</SolidColorBrush>
+          <SolidColorBrush x:Key="ManagementOutline">#E0E0E0</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="ManagementSurface">#18212B</SolidColorBrush>
+          <SolidColorBrush x:Key="ManagementCardSurface">#202B36</SolidColorBrush>
+          <SolidColorBrush x:Key="ManagementOutline">#526171</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Grid>
+    <ScrollViewer x:Name="RecordRoot"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+      <Border Padding="16">
+        <StackPanel Spacing="12">
+          <ContentControl x:Name="ProductBannerHost" />
+          <ContentControl x:Name="HeaderHost" />
+          <ContentControl x:Name="StatsHost" />
+          <Border Padding="12"
+                  CornerRadius="12"
+                  Background="{DynamicResource ManagementCardSurface}"
+                  BorderBrush="{DynamicResource ManagementOutline}"
+                  BorderThickness="1">
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,10,Auto">
+                <ContentControl x:Name="SearchHost" />
+                <ContentControl x:Name="ToolbarButtonsHost" Grid.Column="2" />
+              </Grid>
+              <ContentControl x:Name="TabsHost" />
+            </StackPanel>
+          </Border>
+          <ContentControl x:Name="RecordResultsHost" />
+        </StackPanel>
+      </Border>
+    </ScrollViewer>
+    <Grid x:Name="DocumentRoot"
+          IsVisible="False"
+          RowDefinitions="Auto,*">
+      <ContentControl x:Name="DocumentAppBarHost" />
+      <Border Grid.Row="1"
+              Background="{DynamicResource ManagementSurface}">
+        <Grid RowDefinitions="Auto,*">
+          <Border Padding="20">
+            <Grid ColumnDefinitions="360,12,Auto,*">
+              <ContentControl x:Name="DocumentSearchHost" />
+              <ContentControl x:Name="DocumentToolbarHost" Grid.Column="2" />
+            </Grid>
+          </Border>
+          <ContentControl x:Name="DocumentResultsHost" Grid.Row="1" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

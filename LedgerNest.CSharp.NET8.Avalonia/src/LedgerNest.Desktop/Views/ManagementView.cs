@@ -7,7 +7,7 @@ using System.Text;
 
 namespace LedgerNest.Desktop.Views;
 
-internal sealed class ManagementView : ContentControl
+internal sealed partial class ManagementView : UserControl
 {
     private readonly MainWindowViewModel model;
     private readonly MainWindow window;
@@ -27,6 +27,7 @@ internal sealed class ManagementView : ContentControl
     private IEnumerable<UiRecord> Records => (kind == "Customer" ? model.Customers : kind == "Product" ? model.Products : kind == "User" ? model.Users : model.Invoices.Where(r => r["Type"] == kind)).Where(r => deleted.Contains(r.Id) == trash);
     public ManagementView(MainWindowViewModel model, string kind, MainWindow window)
     {
+        InitializeComponent();
         this.model = model; this.kind = kind; this.window = window;
         search.PlaceholderText = Documents ? "Search by Invoice ID or Customer Name…" : kind == "Customer" ? "Search customers by name, phone, email, GST…" : kind == "Product" ? "Search products by name, alias, HSN/SAC, SKU…" : "Search users…";
         search.TextChanged += (_, _) => { page = 0; Refresh(); };
@@ -35,16 +36,30 @@ internal sealed class ManagementView : ContentControl
         var header = Ui.Header($"{kind} Management", kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : "Manage users and access permissions", Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add);
         var filterButton = MenuButton("Filter ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); });
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
-        var toolbar = Ui.Card(Ui.Stack(10, Ui.Columns("*,10,Auto", search, new Border(), Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible))), tabs), 12);
-        var stack = Ui.Stack(12, header, stats, toolbar, results);
         if (kind == "Product")
         {
-            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text("New: Customize product fields", 13, true, Ui.Primary), Ui.Text("Choose which fields show for a simpler catalog. Settings > Customize Product Details.", 12, color: Ui.Primary)), Ui.Button("Configure", () => model.NavigateCommand.Execute("Settings"))), 16); banner.Background = Brush.Parse("#EFF6FF"); stack.Children.Insert(0, banner);
+            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text("New: Customize product fields", 13, true, Ui.Primary), Ui.Text("Choose which fields show for a simpler catalog. Settings > Customize Product Details.", 12, color: Ui.Primary)), Ui.Button("Configure", () => model.NavigateCommand.Execute("Settings"))), 16);
+            banner.Background = Brush.Parse("#EFF6FF");
+            ProductBannerHost.Content = banner;
         }
-        if (Documents) foreach (var control in new Control[] { search, filterButton, sortButton, results }) if (control.Parent is Panel parent) parent.Children.Remove(control);
-        Content = Documents
-            ? Ui.Rows("Auto,*", Ui.AppBar($"{kind} Management", Ui.Button($"＋ New {kind}", () => model.StartDocument(kind), true), Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), MoreMenu(), Ui.Button("↻", Refresh)), new Border { Background = Ui.Surface, Child = Ui.Rows("Auto,*", new Border { Padding = new Thickness(20), Child = Ui.Columns("360,12,Auto,*", search, new Border(), Ui.Wrap(CustomerMenu(), filterButton, sortButton), new Border()) }, results) })
-            : Ui.Scroll(stack);
+        RecordRoot.IsVisible = !Documents;
+        DocumentRoot.IsVisible = Documents;
+        if (Documents)
+        {
+            DocumentAppBarHost.Content = Ui.AppBar($"{kind} Management", Ui.Button($"＋ New {kind}", () => model.StartDocument(kind), true), Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), MoreMenu(), Ui.Button("↻", Refresh));
+            DocumentSearchHost.Content = search;
+            DocumentToolbarHost.Content = Ui.Wrap(CustomerMenu(), filterButton, sortButton);
+            DocumentResultsHost.Content = results;
+        }
+        else
+        {
+            HeaderHost.Content = header;
+            StatsHost.Content = stats;
+            SearchHost.Content = search;
+            ToolbarButtonsHost.Content = Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
+            TabsHost.Content = tabs;
+            RecordResultsHost.Content = results;
+        }
         Refresh();
     }
     private string[] FilterOptions() => Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "Without GST", "With Outstanding"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
