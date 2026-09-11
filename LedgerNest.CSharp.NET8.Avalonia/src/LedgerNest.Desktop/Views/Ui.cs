@@ -151,7 +151,7 @@ internal static class Ui
                 var combo = new ComboBox { ItemsSource = field.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 44 };
                 combo.Bind(SelectingItemsControl.SelectedItemProperty, binding); input = combo; break;
             case "date":
-                var dateText = new TextBox { IsReadOnly = true, Watermark = labelText, MinHeight = 48, Padding = new Thickness(12, 12, 44, 12) };
+                var dateText = new TextBox { IsReadOnly = true, PlaceholderText = labelText, MinHeight = 48, Padding = new Thickness(12, 12, 44, 12) };
                 dateText.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = field, Converter = new Avalonia.Data.Converters.FuncValueConverter<string, string>(value => DateTime.TryParse(value, out var parsed) ? parsed.ToString("dd/MM/yyyy") : "") });
                 var calendar = new Calendar { SelectedDate = DateTime.TryParse(field.Value, out var d) ? d : null, DisplayDate = DateTime.TryParse(field.Value, out var initial) ? initial : DateTime.Today };
                 var flyout = new Flyout { Content = calendar };
@@ -187,7 +187,7 @@ internal static class Ui
                 };
                 input = Wrap(browse, selected, Button("Remove", () => { field.Value = ""; selected.Text = "No image selected"; })); break;
             default:
-                var box = new TextBox { Watermark = labelText, MinHeight = 48, MaxLength = field.MaxLength, AcceptsReturn = field.Kind == "multiline" && !singleLine, TextWrapping = TextWrapping.Wrap, PasswordChar = field.Kind == "password" ? '●' : '\0' };
+                var box = new TextBox { PlaceholderText = labelText, MinHeight = 48, MaxLength = field.MaxLength, AcceptsReturn = field.Kind == "multiline" && !singleLine, TextWrapping = TextWrapping.Wrap, PasswordChar = field.Kind == "password" ? '●' : '\0' };
                 if (field.Kind == "multiline" && !singleLine) box.MinHeight = 104;
                 box.Bind(TextBox.TextProperty, binding);
                 if (withIcon)

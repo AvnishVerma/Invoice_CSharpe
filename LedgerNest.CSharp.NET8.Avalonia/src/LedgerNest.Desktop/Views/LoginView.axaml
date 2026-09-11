@@ -71,7 +71,7 @@
             </Border>
             <StackPanel Spacing="4">
               <Grid>
-                <TextBox x:Name="UsernameInput" Classes="login-field" Watermark="Username"
+                <TextBox x:Name="UsernameInput" Classes="login-field" PlaceholderText="Username"
                          Text="{Binding Username.Value, Mode=TwoWay}" AutomationProperties.Name="Username" />
                 <TextBlock Text="&#xE7FD;" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
                            FontSize="24" Foreground="{DynamicResource LoginMuted}"
@@ -83,7 +83,7 @@
             </StackPanel>
             <StackPanel Spacing="4">
               <Grid>
-                <TextBox Classes="login-field" Watermark="Password"
+                <TextBox Classes="login-field" PlaceholderText="Password"
                          PasswordChar="*"
                          Text="{Binding Password.Value, Mode=TwoWay}" AutomationProperties.Name="Password" />
                 <TextBlock Text="&#xE897;" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"

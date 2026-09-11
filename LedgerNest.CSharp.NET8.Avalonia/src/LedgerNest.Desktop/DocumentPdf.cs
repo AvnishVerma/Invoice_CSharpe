@@ -24,7 +24,7 @@ internal static class DocumentPdf
         using var boldStream = typeof(DocumentPdf).Assembly.GetManifestResourceStream("LedgerNest.Pdf.Bold");
         using var regular = SKTypeface.FromStream(regularStream);
         using var bold = SKTypeface.FromStream(boldStream);
-        using var paint = new SKPaint { IsAntialias = true, Typeface = regular, TextSize = size };
+        using var paint = new SKPaint { IsAntialias = true };
         using var output = new MemoryStream();
         using var pdf = SKDocument.CreatePdf(output);
         SKCanvas canvas = null!;
@@ -32,8 +32,9 @@ internal static class DocumentPdf
         var ink = SKColor.Parse("#172B3A"); var muted = SKColor.Parse("#52616B"); var accent = SKColor.Parse("#0F766E");
         void Text(string text, float x, float baseline, float fontSize, bool strong = false, SKColor? color = null, bool right = false)
         {
-            paint.Typeface = strong ? bold : regular; paint.TextSize = fontSize; paint.Color = color ?? ink;
-            canvas.DrawText(text, right ? x - paint.MeasureText(text) : x, baseline, paint);
+            using var font = new SKFont(strong ? bold : regular, fontSize);
+            paint.Color = color ?? ink;
+            canvas.DrawText(text, right ? x - font.MeasureText(text) : x, baseline, SKTextAlign.Left, font, paint);
         }
         void Rule(float baseline)
         {
@@ -61,14 +62,14 @@ internal static class DocumentPdf
         // Wrap by measured glyph width, including long identifiers without spaces.
         IEnumerable<string> Wrap(string? text, float maxWidth, float fontSize)
         {
-            paint.Typeface = regular; paint.TextSize = fontSize;
+            using var font = new SKFont(regular, fontSize);
             foreach (var paragraph in (text ?? "").Replace("\r", "").Split('\n'))
             {
                 var remaining = paragraph;
                 while (remaining.Length > 0)
                 {
                     var count = remaining.Length;
-                    while (count > 1 && paint.MeasureText(remaining[..count]) > maxWidth) count--;
+                    while (count > 1 && font.MeasureText(remaining[..count]) > maxWidth) count--;
                     if (count < remaining.Length)
                     {
                         var space = remaining.LastIndexOf(' ', count - 1, count);

@@ -22,7 +22,7 @@ public partial class MainWindow
         }
         var customerHeader = Ui.Columns("Auto,8,*,Auto", Ui.Icon("person", 16), new Border(), Ui.Text("CUSTOMER DETAILS", 12, true), Ui.Wrap(saveCustomer, Ui.Button("Select from existing", SelectCustomer), Ui.Button("⌃", () => customerFields.IsVisible = !customerFields.IsVisible)));
         var customer = Ui.Card(Ui.Stack(6, customerHeader, customerFields), 12);
-        var productSearch = new TextBox { Watermark = "Search & add a product or service (Ctrl+F)", MinWidth = 120, Background = Ui.Canvas };
+        var productSearch = new TextBox { PlaceholderText = "Search & add a product or service (Ctrl+F)", MinWidth = 120, Background = Ui.Canvas };
         var suggestions = new ListBox { IsVisible = false, MaxHeight = 180 };
         bool Matches(UiRecord p, string query) => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
             || p["SKU Code"].Contains(query, StringComparison.OrdinalIgnoreCase);
@@ -146,7 +146,7 @@ public partial class MainWindow
     private void SelectCustomer()
     {
         var list = new ListBox { ItemsSource = Model.Customers.Select(c => c.Name).ToArray(), MinHeight = 180 };
-        var search = new TextBox { Watermark = "Search customer" };
+        var search = new TextBox { PlaceholderText = "Search customer" };
         search.TextChanged += (_, _) => list.ItemsSource = Model.Customers.Where(c => c.Name.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)).Select(c => c.Name).ToArray();
         var useDefault = new CheckBox { Content = "Use as default for new invoices" };
         ShowOverlay("Select Customer", Ui.Stack(12, search, list, useDefault, Ui.Button("Clear default customer", () => Model.SetDefaultCustomer(null))), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Select", () => { var c = Model.Customers.FirstOrDefault(c => c.Name == list.SelectedItem?.ToString()); if (c == null) return; foreach (var f in Model.InvoiceCustomer) f.Value = c[f.Label]; if (useDefault.IsChecked == true) Model.SetDefaultCustomer(c); CloseOverlay(); }, true)));

@@ -27,7 +27,7 @@ public partial class MainWindow
         var response = new FormField("Response Code", required: true);
         var password = new FormField("New Password (min 8 characters)", kind: "password", required: true);
         var confirm = new FormField("Confirm New Password", kind: "password", required: true);
-        ShowOverlay("Reset Password", Ui.Stack(18, Ui.Text("Recover access to your account", 22, true), Ui.Text("Enter your username to start password recovery.", 13, color: Ui.Muted), Ui.Field(username), Ui.Button("Generate Challenge"), Ui.Text("Challenge Code", 13, true), new TextBox { IsReadOnly = true, Watermark = "Challenge code" }, Ui.Field(response), Ui.Field(password), Ui.Field(confirm)), Ui.Wrap(Ui.Button("Back to Login", ShowLogin), Ui.Button("Reset Password")), width: 520);
+        ShowOverlay("Reset Password", Ui.Stack(18, Ui.Text("Recover access to your account", 22, true), Ui.Text("Enter your username to start password recovery.", 13, color: Ui.Muted), Ui.Field(username), Ui.Button("Generate Challenge"), Ui.Text("Challenge Code", 13, true), new TextBox { IsReadOnly = true, PlaceholderText = "Challenge code" }, Ui.Field(response), Ui.Field(password), Ui.Field(confirm)), Ui.Wrap(Ui.Button("Back to Login", ShowLogin), Ui.Button("Reset Password")), width: 520);
     }
     private void ShowChangePassword()
     {

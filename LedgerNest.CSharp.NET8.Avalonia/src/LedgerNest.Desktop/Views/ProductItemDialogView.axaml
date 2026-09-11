@@ -72,7 +72,7 @@
               </Border>
               <StackPanel Spacing="4">
                 <Grid>
-                  <TextBox x:Name="QuantityInput" Watermark="Quantity" Text="{Binding Quantity.Value, Mode=TwoWay}" AutomationProperties.Name="Quantity" />
+                  <TextBox x:Name="QuantityInput" PlaceholderText="Quantity" Text="{Binding Quantity.Value, Mode=TwoWay}" AutomationProperties.Name="Quantity" />
                   <Border Classes="label"><TextBlock Classes="caption" Text="Quantity" /></Border>
                 </Grid>
                 <TextBlock Classes="error" Text="{Binding Quantity.Error}"
@@ -84,7 +84,7 @@
               </Grid>
               <StackPanel Spacing="4">
                 <Grid>
-                  <TextBox Watermark="Discount" Text="{Binding Discount.Value, Mode=TwoWay}" AutomationProperties.Name="Discount" />
+                  <TextBox PlaceholderText="Discount" Text="{Binding Discount.Value, Mode=TwoWay}" AutomationProperties.Name="Discount" />
                   <Border Classes="label"><TextBlock Classes="caption" Text="Discount" /></Border>
                 </Grid>
                 <TextBlock Classes="error" Text="{Binding Discount.Error}"
@@ -99,7 +99,7 @@
               </Grid>
               <StackPanel Spacing="4">
                 <Grid>
-                  <TextBox Watermark="Unit Price (override)" Text="{Binding Price.Value, Mode=TwoWay}" AutomationProperties.Name="Unit Price (override)" />
+                  <TextBox PlaceholderText="Unit Price (override)" Text="{Binding Price.Value, Mode=TwoWay}" AutomationProperties.Name="Unit Price (override)" />
                   <Border Classes="label"><TextBlock Classes="caption" Text="Unit Price (override)" /></Border>
                 </Grid>
                 <TextBlock Classes="error" Text="{Binding Price.Error}"
@@ -108,7 +108,7 @@
               <TextBlock Classes="helper" Text="{Binding DefaultPriceText}" />
               <StackPanel Spacing="4">
                 <Grid>
-                  <TextBox Watermark="Extra Cost (optional)" Text="{Binding ExtraCost.Value, Mode=TwoWay}" AutomationProperties.Name="Extra Cost (optional)" />
+                  <TextBox PlaceholderText="Extra Cost (optional)" Text="{Binding ExtraCost.Value, Mode=TwoWay}" AutomationProperties.Name="Extra Cost (optional)" />
                   <Border Classes="label"><TextBlock Classes="caption" Text="Extra Cost (optional)" /></Border>
                 </Grid>
                 <TextBlock Classes="error" Text="{Binding ExtraCost.Error}"
