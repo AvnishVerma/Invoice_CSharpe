@@ -117,7 +117,7 @@ public partial class MainWindow
                 body.Children.Add(RecentFeed());
                 break;
         }
-        body.MaxWidth = 1600; return Ui.Rows("Auto,*", appbar, new Border { Background = Ui.Surface, Child = Ui.Scroll(body, 28) });
+        return new DashboardPageView(appbar, body);
     }
     private void Shortcuts() => ShowOverlay("Keyboard Shortcuts", Ui.Stack(16,
         Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print PDF")));

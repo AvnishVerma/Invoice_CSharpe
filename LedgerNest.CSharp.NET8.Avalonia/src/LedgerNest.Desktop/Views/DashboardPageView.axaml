@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.DashboardPageView">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="DashboardSurface">#FAFAFA</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="DashboardSurface">#18212B</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Grid RowDefinitions="Auto,*">
+    <ContentControl x:Name="AppBarHost" />
+    <Border Grid.Row="1" Background="{DynamicResource DashboardSurface}">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <Border Padding="28">
+          <ContentControl x:Name="BodyHost" MaxWidth="1600" />
+        </Border>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>
