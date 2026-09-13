@@ -163,37 +163,34 @@ public partial class MainWindow
 
     private static Control ChartCard(string title, string subtitle, decimal billed, decimal collected, decimal profit)
     {
-        var chart = new Grid { Height = 300, RowDefinitions = new RowDefinitions("*,Auto") };
-        var plot = new Grid { ColumnDefinitions = new ColumnDefinitions("60,*"), RowDefinitions = new RowDefinitions("*,*,*,*,*") };
-        for (var i = 0; i < 5; i++)
-        {
-            var line = new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1) };
-            Grid.SetColumn(line, 1); Grid.SetRow(line, i); plot.Children.Add(line);
-            var label = Ui.Text(i == 0 ? "216" : i == 1 ? "200" : i == 2 ? "150" : i == 3 ? "50" : "0", 11, color: Ui.Muted);
-            Grid.SetColumn(label, 0); Grid.SetRow(label, i); plot.Children.Add(label);
-        }
-        var max = Math.Max(1m, Math.Max(billed, Math.Max(collected, profit)));
-        var bars = new Grid { Width = 90, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, ColumnDefinitions = new ColumnDefinitions("*,8,*,8,*") };
-        Border Bar(decimal value, string color) => new() { Width = 10, Height = (double)(180m * value / max), CornerRadius = new CornerRadius(5), Background = Brush.Parse(color), VerticalAlignment = VerticalAlignment.Bottom };
-        var billedBar = Bar(billed, "#3B82F6"); var collectedBar = Bar(collected, "#22C55E"); var profitBar = Bar(profit, "#7C3AED");
-        Grid.SetColumn(billedBar, 0); Grid.SetColumn(collectedBar, 2); Grid.SetColumn(profitBar, 4);
-        bars.Children.Add(billedBar); bars.Children.Add(collectedBar); bars.Children.Add(profitBar);
-        Grid.SetColumn(bars, 1); Grid.SetRowSpan(bars, 5); plot.Children.Add(bars);
-        chart.Children.Add(plot);
-        var legend = Ui.Wrap(Legend("#3B82F6", "Billed"), Legend("#22C55E", "Collected"), Legend("#7C3AED", "Profit"));
-        legend.HorizontalAlignment = HorizontalAlignment.Center; Grid.SetRow(legend, 1); chart.Children.Add(legend);
+        var chart = new ScottPlot.Avalonia.AvaPlot { Height = 300 };
+        var billedBar = chart.Plot.Add.Bar(1, (double)billed); billedBar.Color = ScottPlot.Color.FromHex("#3B82F6"); billedBar.LegendText = "Billed";
+        var collectedBar = chart.Plot.Add.Bar(2, (double)collected); collectedBar.Color = ScottPlot.Color.FromHex("#22C55E"); collectedBar.LegendText = "Collected";
+        var profitBar = chart.Plot.Add.Bar(3, (double)profit); profitBar.Color = ScottPlot.Color.FromHex("#7C3AED"); profitBar.LegendText = "Profit";
+        chart.Plot.Axes.Left.Min = 0;
+        chart.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericManual([1, 2, 3], ["Billed", "Collected", "Profit"]);
+        chart.Plot.Legend.IsVisible = true;
+        chart.Plot.HideGrid();
+        chart.Refresh();
+
         return Ui.Card(Ui.Stack(10, Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(title, 16, true), Ui.Text(subtitle, 12, color: Ui.Muted)), Ui.Button("↓ Export CSV", () => { })), chart), 20);
     }
 
     private static Control DonutCard()
     {
-        var donut = new Grid { Width = 230, Height = 230 };
-        donut.Children.Add(new Avalonia.Controls.Shapes.Ellipse { Fill = Brush.Parse("#EF4444") });
-        donut.Children.Add(new Border { Background = Brush.Parse("#22C55E"), Width = 230, Height = 115, VerticalAlignment = VerticalAlignment.Bottom });
-        donut.Children.Add(new Avalonia.Controls.Shapes.Ellipse { Fill = Brush.Parse("#FBF5FF"), Width = 120, Height = 120, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
-        donut.Children.Add(Ui.Text("50%", 14, true, Brushes.White));
+        var chart = new ScottPlot.Avalonia.AvaPlot { Width = 260, Height = 240 };
+        var pie = chart.Plot.Add.Pie([
+            new ScottPlot.PieSlice { Value = 1, Label = "Paid", LegendText = "Paid", FillColor = ScottPlot.Color.FromHex("#22C55E") },
+            new ScottPlot.PieSlice { Value = 1, Label = "Unpaid", LegendText = "Unpaid", FillColor = ScottPlot.Color.FromHex("#EF4444") }
+        ]);
+        pie.DonutFraction = .55;
+        pie.SliceLabelDistance = .65;
+        chart.Plot.Axes.Frameless();
+        chart.Plot.Legend.IsVisible = false;
+        chart.Refresh();
+
         var legend = Ui.Stack(14, Legend("#22C55E", "Paid  1  (50.0%)"), Legend("#F59E0B", "Partial  0  (0.0%)"), Legend("#EF4444", "Unpaid  1  (50.0%)"), Ui.Text("2 total invoices", 13, color: Ui.Muted));
-        return Ui.Card(Ui.Stack(10, Ui.Text("Payment Status Breakdown", 16, true), Ui.Columns("260,30,*", donut, new Border(), legend)), 20);
+        return Ui.Card(Ui.Stack(10, Ui.Text("Payment Status Breakdown", 16, true), Ui.Columns("300,30,*", chart, new Border(), legend)), 20);
     }
 
     private static Control CustomerRevenueCard(string[][] rows)

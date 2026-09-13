@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
     <ProjectReference Include="../../src/LedgerNest.Desktop/LedgerNest.Desktop.csproj" />
     <PackageReference Include="Avalonia.Headless" Version="12.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.8" />
