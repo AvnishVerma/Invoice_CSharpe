@@ -14,7 +14,7 @@ internal sealed partial class ManagementView : UserControl
     private readonly string kind;
     private readonly ContentControl results = new();
     private readonly ContentControl stats = new();
-    private readonly TextBox search = new() { MinWidth = 180, HorizontalAlignment = HorizontalAlignment.Stretch };
+    private readonly TextBox search = new() { MinWidth = 180, Height = 38, MinHeight = 38, Padding = new Thickness(12, 0), VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly ContentControl tabs = new();
     private string filter = "All";
     private string sort = "Name A–Z";
