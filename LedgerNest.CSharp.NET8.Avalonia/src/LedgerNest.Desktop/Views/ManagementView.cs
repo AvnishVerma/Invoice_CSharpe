@@ -119,10 +119,11 @@ internal sealed partial class ManagementView : UserControl
         stats.Content = Documents ? DocumentStats(total) : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(($"Total {kind}s", total.ToString(), "Total items", "#002E78"), (kind == "Product" ? "Products" : "Admins", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Product" : "Admin")).ToString(), "", "#4CAF50"), (kind == "Product" ? "Services" : "Users", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Service" : "User")).ToString(), "", "#673AB7"));
         var filtered = Filtered().ToArray();
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)pageSize)); page = Math.Clamp(page, 0, pages - 1);
-        var body = Ui.Stack(0); var columns = kind == "Product" ? ProductColumns() : Documents ? DocumentColumns() : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
+        var body = Ui.Stack(0); var columns = kind == "Product" ? ProductColumns() : kind == "Customer" ? CustomerColumns() : Documents ? DocumentColumns() : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
         Control TableRow(UiRecord? record, int index)
         {
             if (kind == "Product") return ProductTableRow(record, index);
+            if (kind == "Customer") return CustomerTableRow(record, index);
             var controls = new List<Control>();
             var checkbox = new CheckBox { IsChecked = record != null && selected.Contains(record.Id), IsVisible = record != null };
             checkbox.IsCheckedChanged += (_, _) => { if (record == null) return; if (checkbox.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); };
@@ -138,7 +139,7 @@ internal sealed partial class ManagementView : UserControl
         var sizes = new ComboBox { ItemsSource = new[] { 10, 25, 50, 100 }, SelectedItem = pageSize };
         sizes.SelectionChanged += (_, _) => { pageSize = (int)(sizes.SelectedItem ?? 10); page = 0; Refresh(); };
         body.Children.Add(new Border { Padding = new Thickness(16, 8), Child = Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); }))) });
-        results.Content = Ui.Card(new ScrollViewer { Content = new Border { MinWidth = Documents ? 1150 : kind == "Product" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
+        results.Content = Ui.Card(new ScrollViewer { Content = new Border { MinWidth = Documents ? 1150 : kind is "Product" or "Customer" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
 
     private Control DocumentStats(int total)
@@ -155,6 +156,99 @@ internal sealed partial class ManagementView : UserControl
         var widths = new Dictionary<string, string> { ["Invoice / Customer"] = "2*", ["Title"] = "*", ["Date"] = "*", ["Items"] = ".6*", ["Total"] = "*", ["Status"] = "*", ["Outstanding"] = "*" };
         return string.Join(",", new[] { "40", "70" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("210"));
     }
+
+
+    private string CustomerColumns()
+    {
+        var widths = new Dictionary<string, string>
+        {
+            ["Name / Business"] = "2.1*",
+            ["Phone"] = "1.2*",
+            ["Email"] = "1.8*",
+            ["GST / VAT No."] = "1.35*",
+            ["Address"] = "2.1*",
+            ["Outstanding"] = "1.2*"
+        };
+        return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("164"));
+    }
+
+    private Control CustomerTableRow(UiRecord? record, int index)
+    {
+        var controls = new List<Control> { HeaderOrCell(record == null ? "SL. NO." : (index + 1).ToString(), record == null, false, record == null ? null : Ui.Muted) };
+        string[] values = record == null
+            ? Headers
+            : [$"{record.Name}\n{record["Business Name"]}", record["Phone"], record["Email"], record["GST / VAT Number"], record["Address"], record["Outstanding"]];
+        for (var i = 0; i < Headers.Length; i++)
+            if (!hidden.Contains(Headers[i])) controls.Add(CustomerCell(record, Headers[i], values[i]));
+        controls.Add(record == null ? HeaderOrCell("ACTIONS", true) : CustomerActions(record));
+        return new Border
+        {
+            Background = record == null ? Ui.CardSurface : Brush.Parse("#FFF7FE"),
+            BorderBrush = Ui.Outline,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(14, record == null ? 8 : 10),
+            MinHeight = record == null ? 32 : 58,
+            Child = Ui.Columns(CustomerColumns(), controls.ToArray())
+        };
+    }
+
+    private Control CustomerCell(UiRecord? record, string header, string value)
+    {
+        if (record == null) return HeaderOrCell(value.ToUpperInvariant(), true);
+        return header switch
+        {
+            "Name / Business" => CustomerNameCell(record),
+            "Outstanding" => HeaderOrCell(OutstandingText(value), false, true, OutstandingBrush(value)),
+            _ => HeaderOrCell(TrimLong(value), false, false, Ui.Muted)
+        };
+    }
+
+    private static Control CustomerNameCell(UiRecord record)
+    {
+        var business = record["Business Name"];
+        return Ui.Columns("40,*",
+            new Border
+            {
+                Width = 36,
+                Height = 36,
+                CornerRadius = new CornerRadius(18),
+                Background = Brush.Parse("#FFE5CC"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = Ui.Text(Initials(record.Name), 12, true, Brush.Parse("#FF7A00"))
+            },
+            Ui.Stack(2, Ui.Text(record.Name, 13, true), Ui.Text(string.IsNullOrWhiteSpace(business) ? record.Name : business, 11, color: Ui.Muted)));
+    }
+
+    private Control CustomerActions(UiRecord record) => new StackPanel
+    {
+        Orientation = Orientation.Horizontal,
+        Spacing = 8,
+        HorizontalAlignment = HorizontalAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Center,
+        Children =
+        {
+            PlainIconAction("visibility", "View", () => View(record), "#6E6E6E"),
+            PlainIconAction("receipt_long", "Invoices", () => { search.Text = record.Name; model.NavigateCommand.Execute("Invoices"); }, "#6E6E6E"),
+            PlainIconAction("account_balance_wallet", "Payment", () => model.Status = "Customer payment workflow is not yet migrated.", "#6E6E6E"),
+            PlainIconAction("edit", "Edit", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
+            PlainIconAction("delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F")
+        }
+    };
+
+    private static string Initials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return parts.Length == 0 ? "?" : string.Concat(parts.Take(2).Select(p => char.ToUpperInvariant(p[0])));
+    }
+
+    private static string TrimLong(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return "—";
+        return value.Length > 24 ? value[..21] + "…" : value;
+    }
+
+    private static string OutstandingText(string value) => decimal.TryParse(value, out var amount) && amount != 0 ? $"Rs. {amount:0.00}" : "—";
+    private static IBrush OutstandingBrush(string value) => decimal.TryParse(value, out var amount) && amount > 0 ? Brush.Parse("#F57C00") : Ui.Muted;
 
 
     private string ProductColumns()
