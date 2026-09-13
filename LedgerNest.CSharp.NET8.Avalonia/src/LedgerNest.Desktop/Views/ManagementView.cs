@@ -192,10 +192,11 @@ internal sealed partial class ManagementView : UserControl
         };
     }
 
-    private static Control HeaderOrCell(string text, bool header, bool strong = false, IBrush? color = null)
+    private static Control HeaderOrCell(string text, bool header, bool strong = false, IBrush? color = null, HorizontalAlignment alignment = HorizontalAlignment.Left)
     {
         var block = Ui.Text(text.Length == 0 ? "—" : text, header ? 11 : 13, header || strong, color ?? (header ? Ui.Muted : Ui.TextColor));
         block.VerticalAlignment = VerticalAlignment.Center;
+        block.HorizontalAlignment = alignment;
         return block;
     }
 
@@ -207,8 +208,8 @@ internal sealed partial class ManagementView : UserControl
             "Name / Alias" => ProductNameCell(record),
             "Price" => HeaderOrCell(ProductMoney(value), false, true),
             "Purchase Price" => HeaderOrCell(ProductMoney(value, true), false, false, Ui.Muted),
-            "Stock" => HeaderOrCell(value, false, false),
-            "Tax Rate" => HeaderOrCell(value.Length == 0 ? "—" : value + "%", false),
+            "Stock" => HeaderOrCell(value, false, false, null, HorizontalAlignment.Center),
+            "Tax Rate" => HeaderOrCell(value.Length == 0 ? "—" : value + "%", false, false, null, HorizontalAlignment.Center),
             "Expiry Date" => HeaderOrCell(value.Length == 0 ? "—" : value, false, false, Ui.Muted),
             _ => HeaderOrCell(value.Length == 0 ? "—" : value, false, false, Ui.Muted)
         };
@@ -234,19 +235,31 @@ internal sealed partial class ManagementView : UserControl
         return $"Rs.{amount:0.00}";
     }
 
-    private Control ProductActions(UiRecord record) => Ui.Wrap(
-        PlainIconAction("visibility", "View", () => View(record), "#6E6E6E"),
-        PlainIconAction("edit", "Edit", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
-        PlainIconAction("delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F"));
+    private Control ProductActions(UiRecord record) => new StackPanel
+    {
+        Orientation = Orientation.Horizontal,
+        Spacing = 8,
+        HorizontalAlignment = HorizontalAlignment.Right,
+        VerticalAlignment = VerticalAlignment.Center,
+        Children =
+        {
+            PlainIconAction("visibility", "View", () => View(record), "#6E6E6E"),
+            PlainIconAction("edit", "Edit", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
+            PlainIconAction("delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F")
+        }
+    };
 
     private static Button PlainIconAction(string icon, string label, Action action, string color)
     {
         var button = Ui.Button(label, action);
         button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
-        button.Width = 30; button.Height = 30;
+        button.Width = 26; button.Height = 26;
+        button.MinWidth = 26; button.MinHeight = 26;
         button.Padding = new Thickness(0);
+        button.Margin = new Thickness(0);
         button.Background = Brushes.Transparent;
         button.BorderBrush = Brushes.Transparent;
+        button.BorderThickness = new Thickness(0);
         button.Tag = label;
         return button;
     }
