@@ -737,7 +737,28 @@ public partial class MainWindowViewModel : ObservableObject
         var business = new DocumentPdf.Business(Setting("Company Info", "Company Name"), Setting("Company Info", "Address"),
             Setting("Company Info", "Phone"), Setting("Company Info", "Email"), Setting("Company Info", "GSTIN"),
             showLogo ? Setting("Company Info", "Company logo") : "", Setting("Invoice Settings", "Thank You Note"));
-        var bytes = DocumentPdf.Create(invoice, InvoiceItemsFor(document), business, Setting("PDF Settings", "Page Size"), Setting("PDF Settings", "Orientation") == "Landscape", Setting("PDF Settings", "Template"), Setting("PDF Settings", "Theme Color"));
+        bool Checked(string category, string label) => Settings[category].SelectMany(s => s.Fields).FirstOrDefault(f => f.Label == label)?.IsChecked ?? false;
+        var pdfOptions = new DocumentPdf.PdfExportOptions(
+            Setting("Invoice Settings", "Date Format"),
+            Setting("Invoice Settings", "Time Format"),
+            Checked("Invoice Settings", "Show time in PDF"),
+            Setting("Invoice Settings", "Quantity Column"),
+            Checked("Invoice Settings", "Show Description"),
+            Checked("Invoice Settings", "Description on new line"),
+            Checked("Invoice Settings", "Show Customer Business Name"),
+            Checked("Invoice Settings", "Show Customer Address"),
+            Checked("Invoice Settings", "Show Customer Phone"),
+            Checked("Invoice Settings", "Show Customer Email"),
+            Checked("Invoice Settings", "Show Customer GSTIN"),
+            Checked("Invoice Settings", "Show Sl. No."),
+            Checked("Invoice Settings", "Item Name"),
+            Checked("Invoice Settings", "Show Quantity"),
+            Checked("Invoice Settings", "Price"),
+            Checked("Invoice Settings", "Tax"),
+            Checked("Invoice Settings", "Show Discount"),
+            Checked("Invoice Settings", "Total"),
+            Checked("PDF Settings", "Show Total Quantity"));
+        var bytes = DocumentPdf.Create(invoice, InvoiceItemsFor(document), business, Setting("PDF Settings", "Page Size"), Setting("PDF Settings", "Orientation") == "Landscape", Setting("PDF Settings", "Template"), Setting("PDF Settings", "Theme Color"), pdfOptions);
         Status = $"Exported {document.Name} PDF.";
         return bytes;
     }

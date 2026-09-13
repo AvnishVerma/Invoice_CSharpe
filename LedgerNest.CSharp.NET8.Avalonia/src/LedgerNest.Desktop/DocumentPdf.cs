@@ -7,9 +7,30 @@ namespace LedgerNest.Desktop;
 internal static class DocumentPdf
 {
     internal sealed record Business(string Name, string Address, string Phone, string Email, string TaxId, string Logo, string Note);
+    internal sealed record PdfExportOptions(
+        string DateFormat,
+        string TimeFormat,
+        bool ShowTime,
+        string QuantityLabel,
+        bool ShowDescription,
+        bool DescriptionOnNewLine,
+        bool ShowCustomerBusinessName,
+        bool ShowCustomerAddress,
+        bool ShowCustomerPhone,
+        bool ShowCustomerEmail,
+        bool ShowCustomerGstin,
+        bool ShowSlNo,
+        bool ShowItemName,
+        bool ShowQuantity,
+        bool ShowPrice,
+        bool ShowTax,
+        bool ShowDiscount,
+        bool ShowTotal,
+        bool ShowTotalQuantity);
 
-    public static byte[] Create(Invoice invoice, InvoiceItem[] items, Business business, string pageSize, bool landscape, string template = "Classic", string themeColor = "#0F766E")
+    public static byte[] Create(Invoice invoice, InvoiceItem[] items, Business business, string pageSize, bool landscape, string template = "Classic", string themeColor = "#0F766E", PdfExportOptions? options = null)
     {
+        options ??= new PdfExportOptions("dd MMM yyyy", "24 hour", false, "Qty", true, false, true, true, true, true, true, true, true, true, true, true, true, true, true);
         template = string.IsNullOrWhiteSpace(template) ? "Classic" : template.Trim();
         var useThermalTemplate = template.Equals("Thermal", StringComparison.OrdinalIgnoreCase);
         var (width, height) = (useThermalTemplate && !pageSize.StartsWith("Thermal", StringComparison.Ordinal))
@@ -133,6 +154,14 @@ internal static class DocumentPdf
             { Ensure(size + 7); Text(line, margin, y, size, strong); y += size + 5; }
         }
         string Money(decimal amount) => amount.ToString("N2", CultureInfo.InvariantCulture);
+        string DateTimeText(DateTime value)
+        {
+            var pattern = string.IsNullOrWhiteSpace(options.DateFormat) ? "dd/MM/yyyy" : options.DateFormat;
+            var text = value.ToString(pattern, CultureInfo.InvariantCulture);
+            if (!options.ShowTime) return text;
+            var timePattern = options.TimeFormat.Contains("12", StringComparison.OrdinalIgnoreCase) ? "hh:mm tt" : "HH:mm";
+            return text + " " + value.ToString(timePattern, CultureInfo.InvariantCulture);
+        }
         NewPage();
         if (!string.IsNullOrWhiteSpace(business.Logo))
         {
@@ -156,11 +185,15 @@ internal static class DocumentPdf
         {
             paint.Color = WithAlpha(accent, 16); canvas.DrawRoundRect(new SKRoundRect(new SKRect(margin, y - 8, width - margin, y + 54), 6, 6), paint);
         }
-        Paragraph("Date: " + invoice.InvoiceDate.ToString("dd MMM yyyy", CultureInfo.InvariantCulture));
+        Paragraph("Date: " + DateTimeText(invoice.InvoiceDate));
         Paragraph("Status: " + invoice.Status);
-        Paragraph("Customer: " + (invoice.Snapshot?.Customer.Name ?? invoice.CustomerName), true);
-        Paragraph(invoice.Snapshot?.Customer.Address);
-        Paragraph(invoice.Snapshot?.Customer.Phone);
+        var customer = invoice.Snapshot?.Customer;
+        Paragraph("Customer: " + (customer?.Name ?? invoice.CustomerName), true);
+        if (options.ShowCustomerBusinessName && !string.IsNullOrWhiteSpace(customer?.BusinessName)) Paragraph("Business: " + customer.BusinessName);
+        if (options.ShowCustomerAddress) Paragraph(customer?.Address);
+        if (options.ShowCustomerPhone) Paragraph(customer?.Phone);
+        if (options.ShowCustomerEmail) Paragraph(customer?.Email);
+        if (options.ShowCustomerGstin && !string.IsNullOrWhiteSpace(customer?.GstNumber)) Paragraph("GSTIN: " + customer.GstNumber);
         y += 8;
         void TableHeader()
         {
@@ -177,35 +210,49 @@ internal static class DocumentPdf
             }
             else { paint.Color = accent; canvas.DrawRect(margin, y, usable, compact ? 20 : 23, paint); }
             var headerColor = minimal || grid ? ink : SKColors.White;
-            Text("ITEM / SERVICE", margin + 6, y + 15, size, true, headerColor);
+            Text(options.ShowItemName ? "ITEM / SERVICE" : "DETAILS", margin + 6, y + 15, size, true, headerColor);
             if (!narrow)
             {
-                Text("QTY", margin + usable * .63f, y + 15, size, true, headerColor, true);
-                Text("RATE", margin + usable * .81f, y + 15, size, true, headerColor, true);
-                Text("TAX %", width - margin - 6, y + 15, size, true, headerColor, true);
+                if (options.ShowSlNo) Text("#", margin + usable * .52f, y + 15, size, true, headerColor, true);
+                if (options.ShowQuantity) Text(string.IsNullOrWhiteSpace(options.QuantityLabel) ? "QTY" : options.QuantityLabel.ToUpperInvariant(), margin + usable * .63f, y + 15, size, true, headerColor, true);
+                if (options.ShowPrice) Text("RATE", margin + usable * .78f, y + 15, size, true, headerColor, true);
+                if (options.ShowTax) Text("TAX %", width - margin - 6, y + 15, size, true, headerColor, true);
             }
             y += compact ? 30 : 38;
         }
         TableHeader();
+        var rowNumber = 0;
         foreach (var item in items)
         {
-            var description = Wrap(item.Description, narrow ? usable - 12 : usable * .51f, size).DefaultIfEmpty("Item").ToArray();
+            rowNumber++;
+            var itemText = options.ShowItemName ? item.Description : "Item";
+            var productDescription = options.ShowDescription && !string.IsNullOrWhiteSpace(item.ProductDescription) && !item.ProductDescription.Equals(itemText, StringComparison.OrdinalIgnoreCase) ? item.ProductDescription : "";
+            var firstLine = options.DescriptionOnNewLine || string.IsNullOrWhiteSpace(productDescription) ? itemText : itemText + " — " + productDescription;
+            var description = Wrap(firstLine, narrow ? usable - 12 : usable * .49f, size).DefaultIfEmpty("Item").ToArray();
             if (y + size + 26 > height - 45) { NewPage(); TableHeader(); }
             Text(description[0], margin + 6, y, size, true);
             if (!narrow)
             {
-                Text(item.Quantity.ToString("0.###", CultureInfo.InvariantCulture), margin + usable * .63f, y, size, right: true);
-                Text(Money(item.UnitPrice), margin + usable * .81f, y, size, right: true);
-                Text(item.TaxRate.ToString("0.##", CultureInfo.InvariantCulture), width - margin - 6, y, size, right: true);
+                if (options.ShowSlNo) Text(rowNumber.ToString(CultureInfo.InvariantCulture), margin + usable * .52f, y, size, right: true);
+                if (options.ShowQuantity) Text(item.Quantity.ToString("0.###", CultureInfo.InvariantCulture), margin + usable * .63f, y, size, right: true);
+                if (options.ShowPrice) Text(Money(item.UnitPrice), margin + usable * .78f, y, size, right: true);
+                if (options.ShowTax) Text(item.TaxRate.ToString("0.##", CultureInfo.InvariantCulture), width - margin - 6, y, size, right: true);
             }
             y += size + 5;
-            foreach (var line in description.Skip(1))
+            foreach (var line in description.Skip(1).Concat(options.DescriptionOnNewLine && productDescription.Length > 0 ? Wrap(productDescription, narrow ? usable - 12 : usable * .49f, size) : []))
             {
                 if (y + size + 6 > height - 45) { NewPage(); TableHeader(); }
-                Text(line, margin + 6, y, size); y += size + 5;
+                Text(line, margin + 6, y, size, color: muted); y += size + 5;
             }
-            if (narrow) Paragraph($"Qty {item.Quantity:0.###} × {Money(item.UnitPrice)} · Tax {item.TaxRate:0.##}%");
-            if (item.Discount != 0) Paragraph("Item discount: " + Money(item.DiscountPerUnit ? item.Discount * item.Quantity : item.Discount));
+            if (narrow)
+            {
+                var parts = new List<string>();
+                if (options.ShowQuantity) parts.Add($"{options.QuantityLabel} {item.Quantity:0.###}");
+                if (options.ShowPrice) parts.Add("Rate " + Money(item.UnitPrice));
+                if (options.ShowTax) parts.Add($"Tax {item.TaxRate:0.##}%");
+                Paragraph(string.Join(" · ", parts));
+            }
+            if (options.ShowDiscount && item.Discount != 0) Paragraph("Item discount: " + Money(item.DiscountPerUnit ? item.Discount * item.Quantity : item.Discount));
             if (item.ExtraCost != 0) Paragraph("Item extra cost: " + Money(item.ExtraCost));
             Ensure(10); Rule(y); y += compact || narrow ? 10 : 16;
         }
@@ -217,13 +264,19 @@ internal static class DocumentPdf
         }
         var currency = invoice.Snapshot?.Currency?.Split('—')[0].Trim() ?? "";
         Paragraph("AMOUNTS" + (currency.Length > 0 ? " · " + currency : ""), true);
-        void Total(string label, decimal amount, bool strong = false)
+        void Total(string label, decimal amount, bool strong = false) => TotalText(label, Money(amount), strong);
+        void TotalText(string label, string value, bool strong = false)
         {
-            Ensure(24); Text(label, margin, y, size, strong); Text(Money(amount), width - margin, y, size, strong, right: true); y += 21;
+            Ensure(24); Text(label, margin, y, size, strong); Text(value, width - margin, y, size, strong, right: true); y += 21;
         }
-        Total("Subtotal", invoice.SubTotal); Total("Tax", invoice.TaxTotal);
-        if (invoice.DiscountTotal != 0) Total("Discount", invoice.DiscountTotal);
-        Total("Total", invoice.GrandTotal, true); Total("Paid", invoice.PaidAmount);
+        if (options.ShowTotalQuantity) TotalText("Total quantity", items.Sum(i => i.Quantity).ToString("0.###", CultureInfo.InvariantCulture));
+        Total("Subtotal", invoice.SubTotal);
+        if (options.ShowTax) Total("Tax", invoice.TaxTotal);
+        if (options.ShowDiscount && invoice.DiscountTotal != 0) Total("Discount", invoice.DiscountTotal);
+        foreach (var cost in invoice.Snapshot?.AdditionalCosts ?? [])
+            if (cost.Amount != 0) Total(string.IsNullOrWhiteSpace(cost.Description) ? "Charges / adjustment" : cost.Description, cost.Amount);
+        if (options.ShowTotal) Total("Total", invoice.GrandTotal, true);
+        Total("Paid", invoice.PaidAmount);
         Total("Balance due", invoice.GrandTotal - invoice.PaidAmount, true);
         y += 8; Paragraph(invoice.Snapshot?.Notes); Paragraph(business.Note);
         FinishPage(); pdf.Close();
