@@ -29,9 +29,16 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
         });
         if (file == null) return;
-        await using var stream = await file.OpenWriteAsync();
-        await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, bytes);
-        Model.Status = $"Saved {file.Name}.";
+        try
+        {
+            await using var stream = await file.OpenWriteAsync();
+            await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, bytes);
+            Model.Status = $"Saved {file.Name}.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            NotifyError($"Could not save PDF: {ex.Message}", ex, $"Saving invoice PDF {document.Name}");
+        }
     }
 
     private async Task PrintDocumentPdf(UiRecord document)
@@ -39,8 +46,15 @@ public partial class MainWindow
         var bytes = TryExportDocumentPdf(document);
         if (bytes == null) return;
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-{document.Name}-{Guid.NewGuid():N}.pdf");
-        await File.WriteAllBytesAsync(path, bytes);
-        Model.Status = $"Print-ready PDF created: {path}";
+        try
+        {
+            await File.WriteAllBytesAsync(path, bytes);
+            Model.Status = $"Print-ready PDF created: {path}";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            NotifyError($"Could not create print PDF: {ex.Message}", ex, $"Creating print PDF {document.Name}");
+        }
     }
 
     private void DeleteDocumentFromDashboard(UiRecord document)
@@ -60,8 +74,14 @@ public partial class MainWindow
         }
         catch (Exception ex) when (ex is InvalidOperationException or IOException or ArgumentException)
         {
-            Model.Status = $"Could not export {document.Name}: {ex.Message}";
+            NotifyError($"Could not export {document.Name}: {ex.Message}", ex, $"Exporting invoice PDF {document.Name}");
             return null;
         }
+    }
+
+    private void NotifyError(string message, Exception exception, string context)
+    {
+        AppErrorLog.Write(exception, context);
+        Model.Status = $"{message} Details saved to {AppErrorLog.Path}";
     }
 }

@@ -209,9 +209,17 @@ internal sealed partial class ManagementView : UserControl
             FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
         });
         if (file == null) return;
-        await using (var stream = await file.OpenWriteAsync())
-            await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, model.ExportDocumentPdf(record));
-        model.Status = $"Saved {file.Name}.";
+        try
+        {
+            await using (var stream = await file.OpenWriteAsync())
+                await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, model.ExportDocumentPdf(record));
+            model.Status = $"Saved {file.Name}.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        {
+            AppErrorLog.Write(ex, $"Exporting {kind} PDF {record.Name}");
+            model.Status = $"Could not save PDF: {ex.Message} Details saved to {AppErrorLog.Path}";
+        }
     }
 
     private async Task ExportDocumentsPdf()
@@ -261,9 +269,17 @@ internal sealed partial class ManagementView : UserControl
             FileTypeChoices = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
         });
         if (file == null) return;
-        await using var stream = await file.OpenWriteAsync();
-        await using var writer = new StreamWriter(stream, Encoding.UTF8);
-        await writer.WriteAsync(content);
-        model.Status = $"Saved {suggestedName}.";
+        try
+        {
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream, Encoding.UTF8);
+            await writer.WriteAsync(content);
+            model.Status = $"Saved {suggestedName}.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            AppErrorLog.Write(ex, $"Saving CSV {suggestedName}");
+            model.Status = $"Could not save file: {ex.Message} Details saved to {AppErrorLog.Path}";
+        }
     }
 }

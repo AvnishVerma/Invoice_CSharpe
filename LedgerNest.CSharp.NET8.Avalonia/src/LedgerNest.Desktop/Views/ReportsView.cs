@@ -77,10 +77,18 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
         });
         if (file == null) return;
-        await using var stream = await file.OpenWriteAsync();
-        await using var writer = new StreamWriter(stream, Encoding.UTF8);
-        await writer.WriteAsync(Model.ExportReportCsv(name));
-        ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+        try
+        {
+            await using var stream = await file.OpenWriteAsync();
+            await using var writer = new StreamWriter(stream, Encoding.UTF8);
+            await writer.WriteAsync(Model.ExportReportCsv(name));
+            ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            AppErrorLog.Write(ex, $"Exporting report CSV {name}");
+            Model.Status = $"Could not save report: {ex.Message} Details saved to {AppErrorLog.Path}";
+        }
     }
 
 
@@ -94,9 +102,17 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
         });
         if (file == null) return;
-        await using var stream = await file.OpenWriteAsync();
-        await stream.WriteAsync(Model.ExportReportPdf(name));
-        ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+        try
+        {
+            await using var stream = await file.OpenWriteAsync();
+            await stream.WriteAsync(Model.ExportReportPdf(name));
+            ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        {
+            AppErrorLog.Write(ex, $"Exporting report PDF {name}");
+            Model.Status = $"Could not save PDF: {ex.Message} Details saved to {AppErrorLog.Path}";
+        }
     }
 
     private static string Money(decimal value) => $"₹ {value:0.00}";
