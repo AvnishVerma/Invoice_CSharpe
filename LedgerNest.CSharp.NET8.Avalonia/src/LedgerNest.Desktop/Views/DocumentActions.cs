@@ -23,13 +23,7 @@ public partial class MainWindow
         {
             var bytes = TryExportDocumentPdf(document);
             if (bytes == null) return;
-            var file = await StorageProvider.SaveFilePickerAsync(new()
-            {
-                Title = $"Save {document.Name} PDF",
-                SuggestedFileName = $"{document.Name}.pdf",
-                DefaultExtension = "pdf",
-                FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
-            });
+            var file = await StorageProvider.SaveFilePickerAsync(FilePickerHelpers.PdfSaveOptions($"Save {document.Name} PDF", document.Name));
             if (file == null) return;
             await using var stream = await file.OpenWriteAsync();
             await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, bytes);
@@ -47,7 +41,7 @@ public partial class MainWindow
         {
             var bytes = TryExportDocumentPdf(document);
             if (bytes == null) return;
-            var path = Path.Combine(Path.GetTempPath(), $"ledgernest-{document.Name}-{Guid.NewGuid():N}.pdf");
+            var path = Path.Combine(Path.GetTempPath(), $"ledgernest-{FilePickerHelpers.SanitizeFileName(document.Name)}-{Guid.NewGuid():N}.pdf");
             await File.WriteAllBytesAsync(path, bytes);
             Model.Status = $"Print-ready PDF created: {path}";
         }

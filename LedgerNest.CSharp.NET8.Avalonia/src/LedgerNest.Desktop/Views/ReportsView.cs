@@ -96,13 +96,7 @@ public partial class MainWindow
     {
         try
         {
-            var file = await StorageProvider.SaveFilePickerAsync(new()
-            {
-                Title = $"Export {name} PDF",
-                SuggestedFileName = $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report.pdf",
-                DefaultExtension = "pdf",
-                FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
-            });
+            var file = await StorageProvider.SaveFilePickerAsync(FilePickerHelpers.PdfSaveOptions($"Export {name} PDF", $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report"));
             if (file == null) return;
             await using var stream = await file.OpenWriteAsync();
             await stream.WriteAsync(Model.ExportReportPdf(name));

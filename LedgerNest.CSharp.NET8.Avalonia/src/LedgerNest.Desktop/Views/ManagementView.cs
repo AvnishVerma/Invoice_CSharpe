@@ -203,13 +203,7 @@ internal sealed partial class ManagementView : UserControl
     {
         try
         {
-            var file = await window.StorageProvider.SaveFilePickerAsync(new()
-            {
-                Title = $"Export {record.Name} PDF",
-                SuggestedFileName = $"{record.Name.ToLowerInvariant()}.pdf",
-                DefaultExtension = "pdf",
-                FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
-            });
+            var file = await window.StorageProvider.SaveFilePickerAsync(FilePickerHelpers.PdfSaveOptions($"Export {record.Name} PDF", record.Name.ToLowerInvariant()));
             if (file == null) return;
             await using (var stream = await file.OpenWriteAsync())
                 await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, model.ExportDocumentPdf(record));
