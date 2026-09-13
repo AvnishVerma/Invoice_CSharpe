@@ -17,6 +17,7 @@ public sealed partial class LoginViewModel : ObservableObject
         this.forgotPassword = forgotPassword;
         this.showAlert = showAlert;
         Message = message;
+        if (!string.IsNullOrWhiteSpace(message)) showAlert(message);
     }
 
     public FormField Username { get; } = new("Username") { Icon = "person" };
