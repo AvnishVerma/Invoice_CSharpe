@@ -20,6 +20,7 @@ public sealed partial class LoginViewModel : ObservableObject
     public FormField Username { get; } = new("Username") { Icon = "person" };
     public FormField Password { get; } = new("Password", kind: "password") { Icon = "lock" };
     public string Message { get; private set; }
+    public string DisplayMessage => string.IsNullOrWhiteSpace(Message) ? " " : Message;
     public string Tagline => Branding.Tagline;
     public string FirstTimeHelp => "First time here? Log in with username admin and password admin, then set your own password when prompted.";
 
@@ -33,7 +34,8 @@ public sealed partial class LoginViewModel : ObservableObject
         }
 
         Message = model.Status;
-        //OnPropertyChanged(nameof(Message));
+        OnPropertyChanged(nameof(Message));
+        OnPropertyChanged(nameof(DisplayMessage));
     }
 
     [RelayCommand]

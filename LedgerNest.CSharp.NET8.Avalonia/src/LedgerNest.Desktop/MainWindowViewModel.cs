@@ -712,7 +712,15 @@ public partial class MainWindowViewModel : ObservableObject
         if (dbFactory != null && document.SourceId > 0)
         {
             using var db = dbFactory.CreateDbContext();
-            invoice = db.Invoices.AsNoTracking().Single(i => i.Id == document.SourceId);
+            db.EnsureCurrentSchema();
+            invoice = db.Invoices.AsNoTracking().FirstOrDefault(i => i.Id == document.SourceId)
+                ?? new Invoice
+                {
+                    InvoiceNumber = document.Name, Type = document["Type"], CustomerName = document["Customer"],
+                    InvoiceDate = DateTime.TryParse(document["Date"], out var missingDate) ? missingDate : DateTime.Today,
+                    Status = document["Status"], GrandTotal = ParseDecimal(document["Total"]),
+                    PaidAmount = ParseDecimal(document["Paid"]), TaxTotal = ParseDecimal(document["Tax"])
+                };
         }
         else invoice = new Invoice
         {

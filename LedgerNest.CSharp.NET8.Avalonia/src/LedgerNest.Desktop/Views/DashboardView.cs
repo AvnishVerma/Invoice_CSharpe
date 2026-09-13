@@ -17,7 +17,7 @@ public partial class MainWindow
         var paid = Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Paid"], out var n) ? n : 0);
         var outstanding = Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Outstanding"], out var n) ? n : decimal.TryParse(i["Total"], out var total) ? total : 0);
         var outOfStock = Model.Products.Where(p => decimal.TryParse(p["Stock"], out var stock) && stock <= 0).ToArray();
-        var layout = Ui.Button("", () => { });
+        var layout = new Button { Padding = new Thickness(8, 6), MinHeight = 36, Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
         layout.Content = Ui.Icon("dashboard", 20, Brushes.White);
         layout.Classes.Add("text");
         ToolTip.SetTip(layout, "Dashboard layout");
@@ -50,8 +50,8 @@ public partial class MainWindow
         }
         Control KpiGrid(IEnumerable<(string Label, string Value, string Icon, string Color)> items)
         {
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*,12,*,12,*") };
             var array = items.ToArray();
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Range(0, array.Length).SelectMany(i => i == 0 ? ["*"] : new[] { "12", "*" }))) };
             for (var i = 0; i < array.Length; i++) { var card = KpiCard(array[i], array[i].Label == "Products" && outOfStock.Length > 0 ? $"{outOfStock.Length} out of stock" : null); Grid.SetColumn(card, i * 2); grid.Children.Add(card); }
             return grid;
         }
@@ -60,7 +60,7 @@ public partial class MainWindow
         Control QuickActions() => Ui.Card(Ui.Stack(14, Ui.Text("Quick Actions", 13, true), ActionRow("add", "New Invoice", () => Model.NavigateCommand.Execute("New Invoice"), "#1565C0"), ActionRow("people", "Customers", () => Model.NavigateCommand.Execute("Customers"), "#1976D2"), ActionRow("bar_chart", "Reports", () => Model.NavigateCommand.Execute("Reports"), "#2E7D32")), 18);
         Control ActionRow(string icon, string title, Action action, string color)
         {
-            var button = new Button { Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), HorizontalAlignment = HorizontalAlignment.Stretch, Command = new CommunityToolkit.Mvvm.Input.RelayCommand(action), Content = Ui.Columns("34,12,*,Auto", new Border { Width = 28, Height = 28, CornerRadius = new CornerRadius(7), Background = new SolidColorBrush(Color.Parse(color), .1), Child = Ui.Icon(icon, 17, Brush.Parse(color)) }, new Border(), Ui.Text(title, 13, true), Ui.Icon("chevron_right", 18, Ui.Muted)) };
+            var button = new Button { Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), MinHeight = 36, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, Command = new CommunityToolkit.Mvvm.Input.RelayCommand(action), Content = Ui.Columns("34,12,*,Auto", new Border { Width = 28, Height = 28, CornerRadius = new CornerRadius(7), Background = new SolidColorBrush(Color.Parse(color), .1), Child = Ui.Icon(icon, 17, Brush.Parse(color)) }, new Border(), Ui.Text(title, 13, true), Ui.Icon("chevron_right", 18, Ui.Muted)) };
             return button;
         }
         Control OutOfStockCard(bool wide = false)
@@ -75,7 +75,7 @@ public partial class MainWindow
         {
             var stack = Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Recent Invoices", 13, true), Ui.Text("Last " + take, 12, color: Ui.Muted)), Ui.Columns("*,*,Auto", Ui.Text("Invoice", 12, color: Ui.Muted), Ui.Text("Customer", 12, color: Ui.Muted), Ui.Text("Amount", 12, color: Ui.Muted)));
             if (invoices.Length == 0) stack.Children.Add(Ui.Empty("No invoices yet", "Create your first invoice to see it here"));
-            foreach (var inv in invoices.Take(take)) stack.Children.Add(Ui.Columns("*,*,Auto", Ui.Text("#" + inv.Name, 12), Ui.Text(inv["Customer"], 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rs. " + inv["Total"], 12), Ui.Text(inv["Status"], 11, color: Ui.Muted), Ui.Button("✎", () => Model.LoadDocumentForEditing(inv)), Ui.Button("↓", () => { }))));
+            foreach (var inv in invoices.Take(take)) stack.Children.Add(Ui.Columns("*,*,Auto", Ui.Text("#" + inv.Name, 12), Ui.Text(inv["Customer"], 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rs. " + inv["Total"], 12), Ui.Text(inv["Status"], 11, color: Ui.Muted), Ui.Button("✎", () => Model.LoadDocumentForEditing(inv)), Ui.Button("↓", async () => await DownloadDocumentPdf(inv)))));
             return Ui.Card(stack, 18);
         }
         Control RecentFeed()
@@ -84,7 +84,7 @@ public partial class MainWindow
             var index = 1;
             foreach (var inv in invoices.Take(5))
             {
-                var row = new Border { Padding = new Thickness(20), CornerRadius = new CornerRadius(10), Background = Brush.Parse("#FBF5FF"), Child = Ui.Columns("52,16,*,Auto", new Border { Width = 48, Height = 48, CornerRadius = new CornerRadius(10), Background = Ui.Primary, Child = Ui.Text((index++).ToString(), 20, true, Brushes.White) }, new Border(), Ui.Stack(8, Ui.Wrap(Ui.Text("Invoice #" + inv.Name, 20, true), Ui.Text("Invoice", 12, color: Ui.Primary), Ui.Text(inv["Status"], 12, color: Brushes.Red)), Ui.Text(inv["Customer"], 14, color: Ui.Muted), Ui.Text(inv["Date"], 14, color: Ui.Muted)), Ui.Stack(12, new Border { Padding = new Thickness(20, 12), CornerRadius = new CornerRadius(8), Background = Brush.Parse("#F3DDFB"), Child = Ui.Text("Rs. " + inv["Total"], 20, true, Brush.Parse("#A21CAF")) }, Ui.Wrap(Ui.Button("View", () => ShowPayment(inv)), Ui.Button("✎", () => Model.LoadDocumentForEditing(inv)), Ui.Button("↓", () => { }), Ui.Button("🖨", () => { }), Ui.Button("Delete", () => { })))) };
+                var row = new Border { Padding = new Thickness(20), CornerRadius = new CornerRadius(10), Background = Brush.Parse("#FBF5FF"), Child = Ui.Columns("52,16,*,Auto", new Border { Width = 48, Height = 48, CornerRadius = new CornerRadius(10), Background = Ui.Primary, Child = Ui.Text((index++).ToString(), 20, true, Brushes.White) }, new Border(), Ui.Stack(8, Ui.Wrap(Ui.Text("Invoice #" + inv.Name, 20, true), Ui.Text("Invoice", 12, color: Ui.Primary), Ui.Text(inv["Status"], 12, color: Brushes.Red)), Ui.Text(inv["Customer"], 14, color: Ui.Muted), Ui.Text(inv["Date"], 14, color: Ui.Muted)), Ui.Stack(12, new Border { Padding = new Thickness(20, 12), CornerRadius = new CornerRadius(8), Background = Brush.Parse("#F3DDFB"), Child = Ui.Text("Rs. " + inv["Total"], 20, true, Brush.Parse("#A21CAF")) }, Ui.Wrap(Ui.Button("View", () => ShowDocumentPreview(inv)), Ui.Button("✎", () => Model.LoadDocumentForEditing(inv)), Ui.Button("↓", async () => await DownloadDocumentPdf(inv)), Ui.Button("🖨", async () => await PrintDocumentPdf(inv)), Ui.Button("Delete", () => DeleteDocumentFromDashboard(inv))))) };
                 stack.Children.Add(row);
             }
             if (invoices.Length == 0) stack.Children.Add(Ui.Empty("No invoices yet", "Create your first invoice to see it here"));

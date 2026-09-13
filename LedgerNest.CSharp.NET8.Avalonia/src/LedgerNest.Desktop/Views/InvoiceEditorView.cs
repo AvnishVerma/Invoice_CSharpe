@@ -110,7 +110,15 @@ public partial class MainWindow
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         foreach (var (label, icon) in new[] { ("View", "visibility"), ("Preview", "picture_as_pdf"), ("Download", "download"), ("Print", "print") })
         {
-            var button = Ui.Button(label); button.Content = Ui.Icon(icon, 24); button.Width = 48; button.Height = 48;
+            var button = label switch
+            {
+                "View" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowDocumentPreview(Model.LastSavedDocument); }),
+                "Preview" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowDocumentPreview(Model.LastSavedDocument); }),
+                "Download" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await DownloadDocumentPdf(Model.LastSavedDocument); }),
+                "Print" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await PrintDocumentPdf(Model.LastSavedDocument); }),
+                _ => Ui.Button(label)
+            };
+            button.Content = Ui.Icon(icon, 24); button.Width = 48; button.Height = 48;
             var action = Ui.Stack(4, button, Ui.Text(label, 12, true, Ui.Muted)); foreach (var c in action.Children) c.HorizontalAlignment = HorizontalAlignment.Center; actions.Children.Add(action);
         }
         var footer = Ui.Columns("*,Auto,*", actions, create, new Border());
@@ -153,6 +161,11 @@ public partial class MainWindow
     private void ShowInvoiceSuccess()
     {
         invoiceCompletionVisible = true;
-        page.Content = Ui.Scroll(Ui.Stack(24, Ui.Empty($"{Model.InvoiceDetails[0].Value} saved successfully", Model.LastSavedDocument!.Name, "✓"), Ui.Card(Ui.Stack(16, Ui.Text("Payment Summary", 18, true), TotalRow("Total", Model.Totals.Total), Ui.Button("Apply Payment", () => ShowPayment(Model.LastSavedDocument!)))), Ui.Wrap(Ui.Button("View", () => ShowPayment(Model.LastSavedDocument!)), Ui.Button("Preview"), Ui.Button("Download"), Ui.Button("Print"), Ui.Button("Create New Invoice", () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); }, true))));
+        var document = Model.LastSavedDocument!;
+        var outstanding = decimal.TryParse(document["Outstanding"], out var balance) ? balance : decimal.TryParse(document["Total"], out var total) ? total : 0m;
+        Action? applyPaymentAction = outstanding <= 0.005m ? null : () => ShowPayment(document);
+        var applyPayment = Ui.Button("Apply Payment", applyPaymentAction);
+        applyPayment.IsEnabled = outstanding > 0.005m;
+        page.Content = Ui.Scroll(Ui.Stack(24, Ui.Empty($"{Model.InvoiceDetails[0].Value} saved successfully", document.Name, "✓"), Ui.Card(Ui.Stack(16, Ui.Text("Payment Summary", 18, true), TotalRow("Total", Model.Totals.Total), applyPayment)), Ui.Wrap(Ui.Button("View", () => ShowDocumentPreview(document)), Ui.Button("Preview", () => ShowDocumentPreview(document)), Ui.Button("Download", async () => await DownloadDocumentPdf(document)), Ui.Button("Print", async () => await PrintDocumentPdf(document)), Ui.Button("Create New Invoice", () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); }, true))));
     }
 }

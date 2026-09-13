@@ -39,8 +39,9 @@
                             Grid.Column="1"
                             VerticalAlignment="Center" />
             <Button Grid.Column="2"
-                    Content="x"
+                    Content="×"
                     Classes="outline"
+                    MinWidth="38"
                     Click="OnClosePressed" />
           </Grid>
         </Border>
@@ -55,7 +56,7 @@
                 Padding="18"
                 BorderBrush="{DynamicResource OverlayOutline}"
                 BorderThickness="0,1,0,0">
-          <ContentControl x:Name="FooterHost" />
+          <ContentControl x:Name="FooterHost" HorizontalAlignment="Right" />
         </Border>
       </Grid>
     </Border>

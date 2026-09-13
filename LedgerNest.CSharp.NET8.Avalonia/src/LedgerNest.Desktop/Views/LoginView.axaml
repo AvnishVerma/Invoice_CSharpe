@@ -44,8 +44,7 @@
             <TextBlock Text="Please log in to continue" FontSize="14" Foreground="{DynamicResource LoginMuted}" HorizontalAlignment="Center" />
 
             <!-- Error Message -->
-            <TextBlock Text="{Binding Message}" MinHeight="20" Foreground="Firebrick"
-                       Opacity="{Binding Message, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+            <TextBlock Text="{Binding DisplayMessage}" MinHeight="20" Foreground="Firebrick" TextWrapping="Wrap" />
 
             <!-- Username Input -->
             <StackPanel Spacing="4"> 
