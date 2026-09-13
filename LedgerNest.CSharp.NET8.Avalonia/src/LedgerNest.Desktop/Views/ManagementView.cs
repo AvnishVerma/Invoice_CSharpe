@@ -180,8 +180,8 @@ internal sealed partial class ManagementView : UserControl
             Background = record == null ? Brush.Parse("#26364C") : Ui.Canvas,
             BorderBrush = record == null ? Brush.Parse("#26364C") : Ui.Outline,
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(20, record == null ? 13 : 12),
-            MinHeight = record == null ? 58 : 62,
+            Padding = new Thickness(18, record == null ? 10 : 8),
+            MinHeight = record == null ? 46 : 48,
             Child = Ui.Columns(DocumentColumns(), controls.ToArray())
         };
     }
@@ -414,7 +414,7 @@ internal sealed partial class ManagementView : UserControl
         return header switch
         {
             "Invoice / Customer" => Ui.Stack(3, Ui.Text(record.Name, 13, true), Ui.Text("♙ " + record["Customer"] + "  ⓘ", 11, color: Ui.Muted)),
-            "Items" => new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 5), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(value, 12, true, Brush.Parse("#1976D2")) },
+            "Items" => new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(5), Padding = new Thickness(7, 3), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(value, 11, true, Brush.Parse("#1976D2")) },
             "Status" => StatusBadge(value),
             "Total" => Ui.Text(value, 13, true, Brush.Parse("#4CAF50")),
             "Outstanding" => Ui.Text(value, 13, true, value == "—" ? Ui.Muted : Brush.Parse("#F44336")),
@@ -434,14 +434,18 @@ internal sealed partial class ManagementView : UserControl
     private Control DocumentActions(UiRecord record)
     {
         if (trash) return Ui.Wrap(Ui.Button("Restore", () => { model.SetDocumentTrash(record, false); Refresh(); }), DocumentOverflowMenu(record));
-        return Ui.Wrap(IconAction("visibility", "View", () => View(record), "#4CAF50"), IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"), IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"), IconAction("picture_as_pdf", "PDF", async () => await ExportDocumentPdf(record), "#FF9800"), IconAction("download", "Download", async () => await ExportDocumentPdf(record), "#673AB7"), IconAction("print", "Print", async () => await ExportDocumentPdf(record), "#607D8B"), DocumentOverflowMenu(record));
+        var actions = Ui.Wrap(IconAction("visibility", "View", () => View(record), "#4CAF50"), IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"), IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"), IconAction("picture_as_pdf", "PDF", async () => await ExportDocumentPdf(record), "#FF9800"), IconAction("download", "Download", async () => await ExportDocumentPdf(record), "#673AB7"), IconAction("print", "Print", async () => await ExportDocumentPdf(record), "#607D8B"), DocumentOverflowMenu(record));
+        foreach (var child in actions.Children) child.Margin = new Thickness(0, 0, 5, 0);
+        return actions;
     }
 
     private static Button IconAction(string icon, string label, Action action, string color)
     {
         var button = Ui.Button(label, action);
-        button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
-        button.Width = 38; button.Height = 38;
+        button.Content = Ui.Icon(icon, 16, Brush.Parse(color));
+        button.Width = 30; button.Height = 30;
+        button.MinWidth = 30; button.MinHeight = 30;
+        button.Padding = new Thickness(0);
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
         button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
         button.Tag = label;
@@ -451,8 +455,10 @@ internal sealed partial class ManagementView : UserControl
     private static Button IconAction(string icon, string label, Func<Task> action, string color)
     {
         var button = Ui.Button(label, async () => await action());
-        button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
-        button.Width = 38; button.Height = 38;
+        button.Content = Ui.Icon(icon, 16, Brush.Parse(color));
+        button.Width = 30; button.Height = 30;
+        button.MinWidth = 30; button.MinHeight = 30;
+        button.Padding = new Thickness(0);
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
         button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
         button.Tag = label;
