@@ -1,0 +1,193 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceCreatedView">
+  <Grid RowDefinitions="Auto,*">
+    <Border Background="{DynamicResource PrimaryBrush}"
+            Height="56"
+            Padding="20,0">
+      <Grid ColumnDefinitions="*,Auto,*">
+        <TextBlock Text="Invoice Created"
+                   Foreground="White"
+                   FontSize="20"
+                   VerticalAlignment="Center" />
+        <TextBlock x:Name="DateText"
+                   Grid.Column="1"
+                   Foreground="White"
+                   FontSize="20"
+                   VerticalAlignment="Center" />
+        <TextBlock x:Name="InvoiceNumberText"
+                   Grid.Column="2"
+                   Foreground="White"
+                   FontSize="16"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1"
+          Background="{DynamicResource CanvasBrush}">
+      <Border Padding="0,210,0,0">
+        <Border Width="480"
+                MinHeight="520"
+                CornerRadius="22"
+                Padding="42"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                BoxShadow="0 6 18 0 #37000000">
+          <Border.Background>
+            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+              <GradientStop Color="#EEF9F0" Offset="0" />
+              <GradientStop Color="#FFFFFF" Offset="1" />
+            </LinearGradientBrush>
+          </Border.Background>
+
+          <StackPanel Spacing="24"
+                      HorizontalAlignment="Center">
+            <Border Width="128"
+                    Height="128"
+                    CornerRadius="64"
+                    Background="#C8EBCB"
+                    HorizontalAlignment="Center">
+              <Border Width="72"
+                      Height="72"
+                      CornerRadius="36"
+                      Background="#338E3C"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center">
+                <TextBlock Text=""
+                           FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                           FontSize="66"
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+              </Border>
+            </Border>
+
+            <TextBlock Text="Invoice Created Successfully!"
+                       FontSize="26"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center" />
+
+            <Border Background="#E3F2FD"
+                    CornerRadius="18"
+                    Padding="16,8"
+                    HorizontalAlignment="Center">
+              <TextBlock x:Name="InvoiceIdText"
+                         Foreground="#1E88E5"
+                         FontSize="16"
+                         FontWeight="Bold" />
+            </Border>
+
+            <StackPanel Orientation="Horizontal"
+                        Spacing="28"
+                        HorizontalAlignment="Center">
+              <StackPanel Spacing="8">
+                <Button x:Name="ViewButton"
+                        Width="72"
+                        Height="72"
+                        Background="#1A4CAF50"
+                        BorderBrush="#594CAF50"
+                        BorderThickness="2">
+                  <TextBlock Text=""
+                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                             FontSize="34"
+                             Foreground="#4CAF50" />
+                </Button>
+                <TextBlock Text="View Details"
+                           Foreground="#4CAF50"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           TextAlignment="Center" />
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <Button x:Name="PreviewButton"
+                        Width="72"
+                        Height="72"
+                        Background="#1A9C27B0"
+                        BorderBrush="#599C27B0"
+                        BorderThickness="2">
+                  <TextBlock Text=""
+                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                             FontSize="34"
+                             Foreground="#9C27B0" />
+                </Button>
+                <TextBlock Text="Preview PDF"
+                           Foreground="#9C27B0"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           TextAlignment="Center" />
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <Button x:Name="DownloadButton"
+                        Width="72"
+                        Height="72"
+                        Background="#1A673AB7"
+                        BorderBrush="#59673AB7"
+                        BorderThickness="2">
+                  <TextBlock Text=""
+                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                             FontSize="34"
+                             Foreground="#673AB7" />
+                </Button>
+                <TextBlock Text="Download PDF"
+                           Foreground="#673AB7"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           TextAlignment="Center" />
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <Button x:Name="PrintButton"
+                        Width="72"
+                        Height="72"
+                        Background="#1A2196F3"
+                        BorderBrush="#592196F3"
+                        BorderThickness="2">
+                  <TextBlock Text=""
+                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                             FontSize="34"
+                             Foreground="#2196F3" />
+                </Button>
+                <TextBlock Text="Print PDF"
+                           Foreground="#2196F3"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           TextAlignment="Center" />
+              </StackPanel>
+            </StackPanel>
+
+            <Button x:Name="CreateNewButton"
+                    Tag="Create New Invoice"
+                    HorizontalAlignment="Stretch"
+                    MinHeight="52"
+                    Classes="primary">
+              <Grid ColumnDefinitions="Auto,10,*">
+                <TextBlock Text=""
+                           FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                           FontSize="18"
+                           Foreground="White"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2"
+                           Text="Create New Invoice (Shortcut: Ctrl+q)"
+                           Foreground="White"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </Button>
+          </StackPanel>
+        </Border>
+      </Border>
+
+      <Button x:Name="ApplyPaymentButton"
+              Content="Apply Payment"
+              Width="1"
+              Height="1"
+              Opacity="0"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Top" />
+    </Grid>
+  </Grid>
+</UserControl>

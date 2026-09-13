@@ -172,120 +172,15 @@ public partial class MainWindow
     private Control InvoiceCreatedScreen(UiRecord document, Button applyPayment)
     {
         var invoiceId = document.Name.TrimStart('#').Replace("[", "").Replace("]", "");
-        var card = new Border
-        {
-            Width = 480,
-            MinHeight = 520,
-            CornerRadius = new CornerRadius(22),
-            Padding = new Thickness(42),
-            Background = new LinearGradientBrush
-            {
-                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
-                GradientStops =
-                {
-                    new GradientStop(Color.Parse("#EEF9F0"), 0),
-                    new GradientStop(Color.Parse("#FFFFFF"), 1)
-                }
-            },
-            BoxShadow = new BoxShadows(new BoxShadow { Blur = 18, OffsetY = 6, Color = Color.FromArgb(55, 0, 0, 0) })
-        };
-
-        var check = new Border
-        {
-            Width = 128,
-            Height = 128,
-            CornerRadius = new CornerRadius(64),
-            Background = Brush.Parse("#C8EBCB"),
-            Child = new Border
-            {
-                Width = 72,
-                Height = 72,
-                CornerRadius = new CornerRadius(36),
-                Background = Brush.Parse("#338E3C"),
-                Child = Ui.Icon("check_circle", 66, Brushes.White),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            }
-        };
-
-        var idPill = new Border
-        {
-            Background = Brush.Parse("#E3F2FD"),
-            CornerRadius = new CornerRadius(18),
-            Padding = new Thickness(16, 8),
-            Child = Ui.Text($"Invoice ID: {invoiceId}", 16, true, Brush.Parse("#1E88E5")),
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-
-        Control ActionTile(string label, string icon, string color, Func<Task>? asyncAction = null, Action? action = null)
-        {
-            var button = Ui.Button("", action ?? (asyncAction == null ? null : async () => await asyncAction()));
-            button.Content = Ui.Icon(icon, 34, Brush.Parse(color));
-            button.Width = 72;
-            button.Height = 72;
-            button.Background = new SolidColorBrush(Color.Parse(color), .12);
-            button.BorderBrush = new SolidColorBrush(Color.Parse(color), .35);
-            button.BorderThickness = new Thickness(2);
-            var text = Ui.Text(label, 13, true, Brush.Parse(color));
-            text.TextAlignment = TextAlignment.Center;
-            return Ui.Stack(8, button, text);
-        }
-
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 28, HorizontalAlignment = HorizontalAlignment.Center };
-        actions.Children.Add(ActionTile("View Details", "visibility", "#4CAF50", action: () => ShowDocumentPreview(document)));
-        actions.Children.Add(ActionTile("Preview PDF", "picture_as_pdf", "#9C27B0", action: () => ShowDocumentPreview(document)));
-        actions.Children.Add(ActionTile("Download PDF", "download", "#673AB7", asyncAction: () => DownloadDocumentPdf(document)));
-        actions.Children.Add(ActionTile("Print PDF", "print", "#2196F3", asyncAction: () => PrintDocumentPdf(document)));
-
-        var createNew = Ui.Button("Create New Invoice", () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); }, true);
-        createNew.Content = Ui.Columns("Auto,10,*", Ui.Icon("add", 18, Brushes.White), new Border(), Ui.Text("Create New Invoice (Shortcut: Ctrl+q)", 16, true, Brushes.White));
-        createNew.HorizontalAlignment = HorizontalAlignment.Stretch;
-        createNew.MinHeight = 52;
-
-        var content = Ui.Stack(24, check, Ui.Text("Invoice Created Successfully!", 26, true), idPill, actions, createNew);
-        foreach (var child in content.Children) child.HorizontalAlignment = HorizontalAlignment.Center;
-        card.Child = content;
-        card.HorizontalAlignment = HorizontalAlignment.Center;
-        card.VerticalAlignment = VerticalAlignment.Top;
-
-        var header = new Border
-        {
-            Background = Ui.Primary,
-            Height = 56,
-            Padding = new Thickness(20, 0),
-            Child = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto,*"),
-                Children =
-                {
-                    Ui.Text("Invoice Created", 20, color: Brushes.White),
-                    Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White),
-                    new TextBlock
-                    {
-                        Text = $"Invoice Number : #[{Model.EditorDocumentNumber}] ⓘ",
-                        Foreground = Brushes.White,
-                        FontSize = 16,
-                        HorizontalAlignment = HorizontalAlignment.Right,
-                        VerticalAlignment = VerticalAlignment.Center
-                    }
-                }
-            }
-        };
-        Grid.SetColumn(((Grid)header.Child!).Children[1], 1);
-        Grid.SetColumn(((Grid)header.Child!).Children[2], 2);
-
-        applyPayment.Opacity = 0;
-        applyPayment.Width = 1;
-        applyPayment.Height = 1;
-        applyPayment.HorizontalAlignment = HorizontalAlignment.Left;
-        applyPayment.VerticalAlignment = VerticalAlignment.Top;
-        applyPayment.IsVisible = applyPayment.IsEnabled;
-
-        var successCanvas = new Grid { Background = Ui.Canvas };
-        successCanvas.Children.Add(new Border { Child = card, Padding = new Thickness(0, 210, 0, 0) });
-        successCanvas.Children.Add(applyPayment);
-
-        return Ui.Rows("Auto,*", header, successCanvas);
+        return new InvoiceCreatedView(
+            invoiceId,
+            Model.EditorDocumentNumber,
+            applyPayment.IsEnabled,
+            () => ShowDocumentPreview(document),
+            () => ShowDocumentPreview(document),
+            () => DownloadDocumentPdf(document),
+            () => PrintDocumentPdf(document),
+            () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); },
+            () => ShowPayment(document));
     }
 }
