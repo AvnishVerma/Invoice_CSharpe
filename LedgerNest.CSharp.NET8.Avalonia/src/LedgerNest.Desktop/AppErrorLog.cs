@@ -5,11 +5,7 @@ using Serilog.Core;
 
 internal static class AppErrorLog
 {
-    public static string Path { get; } = System.IO.Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "LedgerNest",
-        "logs",
-        "ledgernest-errors.log");
+    public static string Path { get; } = BuildPath();
 
     private static readonly Lazy<Logger> Logger = new(() => new LoggerConfiguration()
         .MinimumLevel.Debug()
@@ -20,5 +16,18 @@ internal static class AppErrorLog
     {
         try { Logger.Value.Error(exception, "{Context}", context); }
         catch { }
+    }
+
+    private static string BuildPath()
+    {
+        var root = OperatingSystem.IsMacOS()
+            ? System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Library",
+                "Application Support")
+            : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var directory = System.IO.Path.Combine(root, "LedgerNest", "logs");
+        Directory.CreateDirectory(directory);
+        return System.IO.Path.Combine(directory, "ledgernest-errors.log");
     }
 }

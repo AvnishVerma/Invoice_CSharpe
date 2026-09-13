@@ -19,41 +19,41 @@ public partial class MainWindow
 
     private async Task DownloadDocumentPdf(UiRecord document)
     {
-        var bytes = TryExportDocumentPdf(document);
-        if (bytes == null) return;
-        var file = await StorageProvider.SaveFilePickerAsync(new()
-        {
-            Title = $"Save {document.Name} PDF",
-            SuggestedFileName = $"{document.Name}.pdf",
-            DefaultExtension = "pdf",
-            FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
-        });
-        if (file == null) return;
         try
         {
+            var bytes = TryExportDocumentPdf(document);
+            if (bytes == null) return;
+            var file = await StorageProvider.SaveFilePickerAsync(new()
+            {
+                Title = $"Save {document.Name} PDF",
+                SuggestedFileName = $"{document.Name}.pdf",
+                DefaultExtension = "pdf",
+                FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
+            });
+            if (file == null) return;
             await using var stream = await file.OpenWriteAsync();
             await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, bytes);
             Model.Status = $"Saved {file.Name}.";
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception ex)
         {
-            NotifyError($"Could not save PDF: {ex.Message}", ex, $"Saving invoice PDF {document.Name}");
+            NotifyError("Could not save PDF. The error has been logged.", ex, $"Saving invoice PDF {document.Name}");
         }
     }
 
     private async Task PrintDocumentPdf(UiRecord document)
     {
-        var bytes = TryExportDocumentPdf(document);
-        if (bytes == null) return;
-        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-{document.Name}-{Guid.NewGuid():N}.pdf");
         try
         {
+            var bytes = TryExportDocumentPdf(document);
+            if (bytes == null) return;
+            var path = Path.Combine(Path.GetTempPath(), $"ledgernest-{document.Name}-{Guid.NewGuid():N}.pdf");
             await File.WriteAllBytesAsync(path, bytes);
             Model.Status = $"Print-ready PDF created: {path}";
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception ex)
         {
-            NotifyError($"Could not create print PDF: {ex.Message}", ex, $"Creating print PDF {document.Name}");
+            NotifyError("Could not create print PDF. The error has been logged.", ex, $"Creating print PDF {document.Name}");
         }
     }
 
@@ -72,9 +72,9 @@ public partial class MainWindow
         {
             return Model.ExportDocumentPdf(document);
         }
-        catch (Exception ex) when (ex is InvalidOperationException or IOException or ArgumentException)
+        catch (Exception ex)
         {
-            NotifyError($"Could not export {document.Name}: {ex.Message}", ex, $"Exporting invoice PDF {document.Name}");
+            NotifyError($"Could not export {document.Name}. The error has been logged.", ex, $"Exporting invoice PDF {document.Name}");
             return null;
         }
     }
@@ -82,6 +82,6 @@ public partial class MainWindow
     private void NotifyError(string message, Exception exception, string context)
     {
         AppErrorLog.Write(exception, context);
-        Model.Status = $"{message} Details saved to {AppErrorLog.Path}";
+        Model.Status = $"{message} Log: {AppErrorLog.Path}";
     }
 }

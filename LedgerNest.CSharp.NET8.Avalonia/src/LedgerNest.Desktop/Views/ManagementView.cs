@@ -201,24 +201,24 @@ internal sealed partial class ManagementView : UserControl
 
     private async Task ExportDocumentPdf(UiRecord record)
     {
-        var file = await window.StorageProvider.SaveFilePickerAsync(new()
-        {
-            Title = $"Export {record.Name} PDF",
-            SuggestedFileName = $"{record.Name.ToLowerInvariant()}.pdf",
-            DefaultExtension = "pdf",
-            FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
-        });
-        if (file == null) return;
         try
         {
+            var file = await window.StorageProvider.SaveFilePickerAsync(new()
+            {
+                Title = $"Export {record.Name} PDF",
+                SuggestedFileName = $"{record.Name.ToLowerInvariant()}.pdf",
+                DefaultExtension = "pdf",
+                FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
+            });
+            if (file == null) return;
             await using (var stream = await file.OpenWriteAsync())
                 await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, model.ExportDocumentPdf(record));
             model.Status = $"Saved {file.Name}.";
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        catch (Exception ex)
         {
             AppErrorLog.Write(ex, $"Exporting {kind} PDF {record.Name}");
-            model.Status = $"Could not save PDF: {ex.Message} Details saved to {AppErrorLog.Path}";
+            model.Status = $"Could not save PDF. Log: {AppErrorLog.Path}";
         }
     }
 
@@ -261,25 +261,25 @@ internal sealed partial class ManagementView : UserControl
 
     private async Task SaveTextFile(string suggestedName, string content)
     {
-        var file = await window.StorageProvider.SaveFilePickerAsync(new()
-        {
-            Title = suggestedName,
-            SuggestedFileName = suggestedName,
-            DefaultExtension = "csv",
-            FileTypeChoices = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
-        });
-        if (file == null) return;
         try
         {
+            var file = await window.StorageProvider.SaveFilePickerAsync(new()
+            {
+                Title = suggestedName,
+                SuggestedFileName = suggestedName,
+                DefaultExtension = "csv",
+                FileTypeChoices = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
+            });
+            if (file == null) return;
             await using var stream = await file.OpenWriteAsync();
             await using var writer = new StreamWriter(stream, Encoding.UTF8);
             await writer.WriteAsync(content);
             model.Status = $"Saved {suggestedName}.";
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception ex)
         {
             AppErrorLog.Write(ex, $"Saving CSV {suggestedName}");
-            model.Status = $"Could not save file: {ex.Message} Details saved to {AppErrorLog.Path}";
+            model.Status = $"Could not save file. Log: {AppErrorLog.Path}";
         }
     }
 }

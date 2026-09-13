@@ -69,49 +69,49 @@ public partial class MainWindow
 
     private async Task ExportReportCsv(string name)
     {
-        var file = await StorageProvider.SaveFilePickerAsync(new()
-        {
-            Title = $"Export {name} CSV",
-            SuggestedFileName = $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report.csv",
-            DefaultExtension = "csv",
-            FileTypeChoices = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
-        });
-        if (file == null) return;
         try
         {
+            var file = await StorageProvider.SaveFilePickerAsync(new()
+            {
+                Title = $"Export {name} CSV",
+                SuggestedFileName = $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report.csv",
+                DefaultExtension = "csv",
+                FileTypeChoices = [new FilePickerFileType("CSV files") { Patterns = ["*.csv"], MimeTypes = ["text/csv", "text/plain"] }]
+            });
+            if (file == null) return;
             await using var stream = await file.OpenWriteAsync();
             await using var writer = new StreamWriter(stream, Encoding.UTF8);
             await writer.WriteAsync(Model.ExportReportCsv(name));
             ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception ex)
         {
             AppErrorLog.Write(ex, $"Exporting report CSV {name}");
-            Model.Status = $"Could not save report: {ex.Message} Details saved to {AppErrorLog.Path}";
+            Model.Status = $"Could not save report. Log: {AppErrorLog.Path}";
         }
     }
 
 
     private async Task ExportReportPdf(string name)
     {
-        var file = await StorageProvider.SaveFilePickerAsync(new()
-        {
-            Title = $"Export {name} PDF",
-            SuggestedFileName = $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report.pdf",
-            DefaultExtension = "pdf",
-            FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
-        });
-        if (file == null) return;
         try
         {
+            var file = await StorageProvider.SaveFilePickerAsync(new()
+            {
+                Title = $"Export {name} PDF",
+                SuggestedFileName = $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report.pdf",
+                DefaultExtension = "pdf",
+                FileTypeChoices = [new FilePickerFileType("PDF files") { Patterns = ["*.pdf"], MimeTypes = ["application/pdf"] }]
+            });
+            if (file == null) return;
             await using var stream = await file.OpenWriteAsync();
             await stream.WriteAsync(Model.ExportReportPdf(name));
             ShowOverlay("Report Exported", Ui.Text($"Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        catch (Exception ex)
         {
             AppErrorLog.Write(ex, $"Exporting report PDF {name}");
-            Model.Status = $"Could not save PDF: {ex.Message} Details saved to {AppErrorLog.Path}";
+            Model.Status = $"Could not save PDF. Log: {AppErrorLog.Path}";
         }
     }
 
