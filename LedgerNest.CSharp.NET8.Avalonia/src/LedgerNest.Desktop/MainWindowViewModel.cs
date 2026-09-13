@@ -389,7 +389,11 @@ public partial class MainWindowViewModel : ObservableObject
     public bool SignIn(string username, string password)
     {
         var user = AuthenticateUser(username, password);
-        if (user == null) return false;
+        if (user == null)
+        {
+            if (CurrentUsername != null || sessionAccount != null) SetSession(null, "", false);
+            return false;
+        }
         sessionAccount = user;
         SetSession(user.Username, user.Role, !user.PasswordChanged);
         return true;
