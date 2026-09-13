@@ -243,13 +243,49 @@ public partial class MainWindow
         createNew.HorizontalAlignment = HorizontalAlignment.Stretch;
         createNew.MinHeight = 52;
 
-        var content = Ui.Stack(24, check, Ui.Text("Invoice Created Successfully!", 26, true), idPill, actions, applyPayment, createNew);
+        var content = Ui.Stack(24, check, Ui.Text("Invoice Created Successfully!", 26, true), idPill, actions, createNew);
         foreach (var child in content.Children) child.HorizontalAlignment = HorizontalAlignment.Center;
-        applyPayment.IsVisible = applyPayment.IsEnabled;
         card.Child = content;
+        card.HorizontalAlignment = HorizontalAlignment.Center;
+        card.VerticalAlignment = VerticalAlignment.Top;
 
-        return Ui.Rows("Auto,*",
-            Ui.AppBar("Invoice Created", Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White), Ui.Text($"Invoice Number : #[{Model.EditorDocumentNumber}]", 16, color: Brushes.White)),
-            new Border { Background = Ui.Canvas, Child = card, Padding = new Thickness(0, 210, 0, 0) });
+        var header = new Border
+        {
+            Background = Ui.Primary,
+            Height = 56,
+            Padding = new Thickness(20, 0),
+            Child = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("*,Auto,*"),
+                Children =
+                {
+                    Ui.Text("Invoice Created", 20, color: Brushes.White),
+                    Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White),
+                    new TextBlock
+                    {
+                        Text = $"Invoice Number : #[{Model.EditorDocumentNumber}] ⓘ",
+                        Foreground = Brushes.White,
+                        FontSize = 16,
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            }
+        };
+        Grid.SetColumn(((Grid)header.Child!).Children[1], 1);
+        Grid.SetColumn(((Grid)header.Child!).Children[2], 2);
+
+        applyPayment.Opacity = 0;
+        applyPayment.Width = 1;
+        applyPayment.Height = 1;
+        applyPayment.HorizontalAlignment = HorizontalAlignment.Left;
+        applyPayment.VerticalAlignment = VerticalAlignment.Top;
+        applyPayment.IsVisible = applyPayment.IsEnabled;
+
+        var successCanvas = new Grid { Background = Ui.Canvas };
+        successCanvas.Children.Add(new Border { Child = card, Padding = new Thickness(0, 210, 0, 0) });
+        successCanvas.Children.Add(applyPayment);
+
+        return Ui.Rows("Auto,*", header, successCanvas);
     }
 }
