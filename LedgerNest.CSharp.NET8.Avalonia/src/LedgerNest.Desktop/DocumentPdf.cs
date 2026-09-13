@@ -274,7 +274,7 @@ internal static class DocumentPdf
         if (options.ShowTax) Total("Tax", invoice.TaxTotal);
         if (options.ShowDiscount && invoice.DiscountTotal != 0) Total("Discount", invoice.DiscountTotal);
         foreach (var cost in invoice.Snapshot?.AdditionalCosts ?? [])
-            if (cost.Amount != 0) Total(string.IsNullOrWhiteSpace(cost.Description) ? "Charges / adjustment" : cost.Description, cost.Amount);
+            if (cost.Amount != 0) Total(string.IsNullOrWhiteSpace(cost.Description) ? "Charges and adjustments" : cost.Description, cost.Amount);
         if (options.ShowTotal) Total("Total", invoice.GrandTotal, true);
         Total("Paid", invoice.PaidAmount);
         Total("Balance due", invoice.GrandTotal - invoice.PaidAmount, true);

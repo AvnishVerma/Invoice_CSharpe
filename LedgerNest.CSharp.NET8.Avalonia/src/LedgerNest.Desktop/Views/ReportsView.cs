@@ -42,22 +42,22 @@ public partial class MainWindow
         if (name == "Revenue")
         {
             body.Children.Add(ReportStats(("Total Billed", Money(report.Billed), "receipt_long", "#0D47A1"), ("Total Collected", Money(report.Collected), "check_circle", "#16A34A"), ("Outstanding", Money(report.Outstanding), "hourglass_top", "#E53935"), ("Avg Invoice Value", Money(report.InvoiceCount == 0 ? 0 : report.Billed / report.InvoiceCount), "bar_chart", "#7C3AED"), ("Total Profit", Money(Model.Invoices.Sum(i => decimal.TryParse(i["Profit"], out var p) ? p : 0m)), "account_balance_wallet", "#16A34A")));
-            body.Children.Add(ChartCard("Monthly Revenue Trend", $"{report.InvoiceCount} invoices in period · INR", report.Billed, report.Collected, Model.Invoices.Sum(i => decimal.TryParse(i["Profit"], out var p) ? p : 0m)));
+            body.Children.Add(ChartCard("Revenue", "Monthly Revenue Trend", $"{report.InvoiceCount} invoices in period · INR", report.Billed, report.Collected, Model.Invoices.Sum(i => decimal.TryParse(i["Profit"], out var p) ? p : 0m)));
         }
         else if (name == "Receivables")
         {
             body.Children.Add(DonutCard());
-            body.Children.Add(ReportTable("Aged Receivables (1)", report.Rows, true));
+            body.Children.Add(ReportTable("Aged Receivables (1)", report.Rows, true, "Receivables"));
         }
         else if (name == "Tax")
         {
             body.Children.Add(ReportStats(("Total Tax Collected", Money(report.Collected), "account_balance_wallet", "#8B5CF6"), ("Tax Rate Buckets", Math.Max(1, report.Rows.Length - 1).ToString(), "bar_chart", "#0284C7")));
-            body.Children.Add(ReportTable("Tax Collected by Rate", report.Rows, true));
+            body.Children.Add(ReportTable("Tax Collected by Rate", report.Rows, true, "Tax"));
         }
         else if (name == "Customers")
         {
             var statement = new ContentControl { Content = CustomerRevenueCard(report.Rows) };
-            body.Children.Add(Ui.Wrap(Ui.Button("✓  Overview", () => statement.Content = CustomerRevenueCard(Model.BuildReport("Customers").Rows), true), Ui.Button("Statements", () => statement.Content = Ui.Stack(16, Ui.Field(new("Customer", "Select customer", "choice", new[] { "Select customer" }.Concat(Model.Customers.Select(c => c.Name)).ToArray())), ReportTable("Customer Statement", Model.BuildReport("Invoice Status").Rows, true)))));
+            body.Children.Add(Ui.Wrap(Ui.Button("✓  Overview", () => statement.Content = CustomerRevenueCard(Model.BuildReport("Customers").Rows), true), Ui.Button("Statements", () => statement.Content = Ui.Stack(16, Ui.Field(new("Customer", "Select customer", "choice", new[] { "Select customer" }.Concat(Model.Customers.Select(c => c.Name)).ToArray())), ReportTable("Customer Statement", Model.BuildReport("Invoice Status").Rows, true, "Customers")))));
             body.Children.Add(statement);
         }
         else if (name == "Products")
@@ -74,7 +74,7 @@ public partial class MainWindow
             body.Children.Add(Ui.Text($"ⓘ Showing invoices dated {DateTime.Today.AddDays(-30):dd/MM/yyyy} - {DateTime.Today:dd/MM/yyyy}", 12, color: Ui.Muted));
             body.Children.Add(Ui.Wrap(Ui.Button("Last 30 days", () => { }, true), Ui.Button("Month & Year", () => { })));
             body.Children.Add(ReportStats(("Total Invoices", report.InvoiceCount.ToString(), "receipt_long", "#0D47A1"), ("Paid", report.Rows.Count(r => r.Contains("Paid")).ToString(), "check_circle", "#16A34A"), ("Partial", report.Rows.Count(r => r.Contains("Partial")).ToString(), "hourglass_top", "#F59E0B"), ("Unpaid", report.Rows.Count(r => r.Contains("Unpaid")).ToString(), "info_outline", "#6B7280"), ("Overdue", "0", "info_outline", "#DC2626")));
-            body.Children.Add(ReportTable("", report.Rows, true));
+            body.Children.Add(ReportTable("", report.Rows, true, name));
         }
         else if (name == "Daily Report")
         {
@@ -82,7 +82,7 @@ public partial class MainWindow
         }
         else
         {
-            body.Children.Add(ReportTable(name, report.Rows, true));
+            body.Children.Add(ReportTable(name, report.Rows, true, name));
         }
 
         return Ui.Scroll(body, 18);
@@ -161,7 +161,7 @@ public partial class MainWindow
         return grid;
     }
 
-    private static Control ChartCard(string title, string subtitle, decimal billed, decimal collected, decimal profit)
+    private Control ChartCard(string reportName, string title, string subtitle, decimal billed, decimal collected, decimal profit)
     {
         var chart = new ScottPlot.Avalonia.AvaPlot { Height = 300 };
         var billedBar = chart.Plot.Add.Bar(1, (double)billed); billedBar.Color = ScottPlot.Color.FromHex("#3B82F6"); billedBar.LegendText = "Billed";
@@ -173,7 +173,7 @@ public partial class MainWindow
         chart.Plot.HideGrid();
         chart.Refresh();
 
-        return Ui.Card(Ui.Stack(10, Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(title, 16, true), Ui.Text(subtitle, 12, color: Ui.Muted)), Ui.Button("↓ Export CSV", () => { })), chart), 20);
+        return Ui.Card(Ui.Stack(10, Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(title, 16, true), Ui.Text(subtitle, 12, color: Ui.Muted)), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv(reportName)), Ui.Button("↓ Export PDF", async () => await ExportReportPdf(reportName)))), chart), 20);
     }
 
     private static Control DonutCard()
@@ -193,14 +193,14 @@ public partial class MainWindow
         return Ui.Card(Ui.Stack(10, Ui.Text("Payment Status Breakdown", 16, true), Ui.Columns("300,30,*", chart, new Border(), legend)), 20);
     }
 
-    private static Control CustomerRevenueCard(string[][] rows)
+    private Control CustomerRevenueCard(string[][] rows)
     {
         var name = rows.Length > 1 && rows[1].Length > 0 ? rows[1][0] : "Cash";
         var amount = rows.Length > 1 && rows[1].Length > 3 ? rows[1][3] : "Rs. 0.00";
-        return Ui.Card(Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Top 1 Customers by Revenue", 16, true), Ui.Button("↓ Export CSV", () => { })), Ui.Columns("130,*,110", Ui.Text(name, 13), new Border { Height = 22, CornerRadius = new CornerRadius(4), Background = Brush.Parse("#3B82F6") }, Ui.Text(amount, 13, true, Ui.Primary)), ReportTable("", rows, false)), 20);
+        return Ui.Card(Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Top 1 Customers by Revenue", 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Customers")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Customers")))), Ui.Columns("130,*,110", Ui.Text(name, 13), new Border { Height = 22, CornerRadius = new CornerRadius(4), Background = Brush.Parse("#3B82F6") }, Ui.Text(amount, 13, true, Ui.Primary)), ReportTable("", rows, false, "Customers")), 20);
     }
 
-    private static Control ProductRevenueCard(string[][] rows)
+    private Control ProductRevenueCard(string[][] rows)
     {
         var list = Ui.Stack(8);
         for (var i = 1; i < rows.Length; i++)
@@ -211,20 +211,20 @@ public partial class MainWindow
             list.Children.Add(Ui.Columns("120,*,110", Ui.Text(name, 13), new Border { Height = 22, CornerRadius = new CornerRadius(4), Background = Brush.Parse("#7C3AED"), HorizontalAlignment = HorizontalAlignment.Stretch }, Ui.Text(amount, 13, true, Brush.Parse("#7C3AED"))));
         }
         if (rows.Length <= 1) list.Children.Add(Ui.Empty("No product sales for this period"));
-        return Ui.Card(Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Top 2 Products / Services by Revenue", 16, true), Ui.Wrap(Ui.Text("▣ Rank: Revenue", 12, true, Ui.Muted), Ui.Button("↓ Export CSV", () => { }))), list, ReportTable("", rows, false)), 20);
+        return Ui.Card(Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Top 2 Products / Services by Revenue", 16, true), Ui.Wrap(Ui.Text("▣ Rank: Revenue", 12, true, Ui.Muted), Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Products")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Products")))), list, ReportTable("", rows, false, "Products")), 20);
     }
 
-    private static Control DailyReportCard(string[][] rows)
+    private Control DailyReportCard(string[][] rows)
     {
-        return Ui.Card(Ui.Stack(14, Ui.Columns("*,Auto", Ui.Text("Daily Sales & Profit", 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", () => { }), Ui.Button("↓ Export PDF", () => { }))), Ui.Wrap(Ui.Button("Today", () => { }, true), Ui.Button("Last 30 days", () => { }), Ui.Button("Month & Year", () => { }), Ui.Button("Custom Range", () => { })), ReportTable("", rows, false)), 20);
+        return Ui.Card(Ui.Stack(14, Ui.Columns("*,Auto", Ui.Text("Daily Sales & Profit", 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Daily Report")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Daily Report")))), Ui.Wrap(Ui.Button("Today", () => { }, true), Ui.Button("Last 30 days", () => { }), Ui.Button("Month & Year", () => { }), Ui.Button("Custom Range", () => { })), ReportTable("", rows, false, "Daily Report")), 20);
     }
 
     private static Control Legend(string color, string text) => Ui.Columns("Auto,8,*", new Border { Width = 13, Height = 13, CornerRadius = new CornerRadius(3), Background = Brush.Parse(color), VerticalAlignment = VerticalAlignment.Center }, new Border(), Ui.Text(text, 13, true));
 
-    private static Control ReportTable(string title, string[][] rows, bool wrapInCard)
+    private Control ReportTable(string title, string[][] rows, bool wrapInCard, string reportName = "")
     {
         var table = Ui.Stack(0);
-        if (!string.IsNullOrWhiteSpace(title)) table.Children.Add(new Border { Padding = new Thickness(0, 0, 0, 10), Child = Ui.Columns("*,Auto", Ui.Text(title, 16, true), Ui.Button("↓ Export CSV", () => { })) });
+        if (!string.IsNullOrWhiteSpace(title)) table.Children.Add(new Border { Padding = new Thickness(0, 0, 0, 10), Child = Ui.Columns("*,Auto", Ui.Text(title, 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv(string.IsNullOrWhiteSpace(reportName) ? title : reportName)), Ui.Button("↓ Export PDF", async () => await ExportReportPdf(string.IsNullOrWhiteSpace(reportName) ? title : reportName)))) });
         if (rows.Length == 0) table.Children.Add(Ui.Empty("No data for this period"));
         for (var index = 0; index < rows.Length; index++)
         {

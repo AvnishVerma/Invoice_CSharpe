@@ -70,7 +70,7 @@ public partial class MainWindow
         {
             var t = editorModel.Totals; var rows = Ui.Stack(8, TotalRow("Subtotal:", t.Subtotal), TotalRow("Tax:", t.Tax));
             if (t.ItemDiscount != 0) rows.Children.Add(TotalRow("Item Discount:", t.ItemDiscount));
-            if (t.AdditionalCosts != 0) rows.Children.Add(TotalRow("Additional Costs:", t.AdditionalCosts));
+            if (t.AdditionalCosts != 0) rows.Children.Add(TotalRow("Charges and Adjustments:", t.AdditionalCosts));
             if (t.InvoiceDiscount != 0) rows.Children.Add(TotalRow("Invoice Discount:", t.InvoiceDiscount));
             rows.Children.Add(new Border { Height = 6 }); rows.Children.Add(TotalRow("Total:", t.Total, true)); totals.Content = rows;
         }
@@ -100,7 +100,7 @@ public partial class MainWindow
         var additional = Ui.Stack(8);
         void AddCost(FormField[] fields) => additional.Children.Add(Ui.Columns("*,Auto", Ui.Fields(fields, 2), Ui.Button("×", () => { editorModel.AdditionalCosts.Remove(fields); additional.Children.Clear(); foreach (var cost in editorModel.AdditionalCosts) AddCost(cost); })));
         foreach (var cost in editorModel.AdditionalCosts) AddCost(cost);
-        var costs = new Expander { Header = "⊞  Additional Costs", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(8, additional, Ui.Button("＋ Add Cost", () => { FormField[] fields = [new("Description"), new("Amount", "0", "number")]; editorModel.AdditionalCosts.Add(fields); AddCost(fields); })) };
+        var costs = new Expander { Header = "⊞  Charges and Adjustments", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(8, additional, Ui.Button("＋ Add Cost", () => { FormField[] fields = [new("Description"), new("Amount", "0", "number")]; editorModel.AdditionalCosts.Add(fields); AddCost(fields); })) };
         var discount = Ui.Card(Ui.Fields(editorModel.InvoiceOptions.Take(2), 2), 8); discount.Background = Ui.Palette("#FFF4F4", "#392A30"); discount.BorderBrush = Brush.Parse("#FFD6A5");
         var tax = Ui.Fields(editorModel.InvoiceOptions.Skip(3));
         var options = Ui.Stack(12, costs, discount, Ui.Text("NOTES", 11, true, Ui.Muted), Ui.Field(editorModel.InvoiceOptions[2]), Ui.Text("TAX SETTINGS", 11, true, Ui.Muted), tax, Ui.Field(editorModel.InterState));
