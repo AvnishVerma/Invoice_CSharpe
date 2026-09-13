@@ -737,7 +737,7 @@ public partial class MainWindowViewModel : ObservableObject
         var business = new DocumentPdf.Business(Setting("Company Info", "Company Name"), Setting("Company Info", "Address"),
             Setting("Company Info", "Phone"), Setting("Company Info", "Email"), Setting("Company Info", "GSTIN"),
             showLogo ? Setting("Company Info", "Company logo") : "", Setting("Invoice Settings", "Thank You Note"));
-        var bytes = DocumentPdf.Create(invoice, InvoiceItemsFor(document), business, Setting("PDF Settings", "Page Size"), Setting("PDF Settings", "Orientation") == "Landscape");
+        var bytes = DocumentPdf.Create(invoice, InvoiceItemsFor(document), business, Setting("PDF Settings", "Page Size"), Setting("PDF Settings", "Orientation") == "Landscape", Setting("PDF Settings", "Template"), Setting("PDF Settings", "Theme Color"));
         Status = $"Exported {document.Name} PDF.";
         return bytes;
     }
