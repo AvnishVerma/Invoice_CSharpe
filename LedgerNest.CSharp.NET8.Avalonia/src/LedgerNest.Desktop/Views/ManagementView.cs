@@ -203,6 +203,13 @@ internal sealed partial class ManagementView : UserControl
     {
         try
         {
+            if (OperatingSystem.IsMacOS())
+            {
+                var path = FilePickerHelpers.MacDownloadsPdfPath(record.Name);
+                await File.WriteAllBytesAsync(path, model.ExportDocumentPdf(record));
+                model.Status = $"Saved PDF to {path}";
+                return;
+            }
             var file = await window.StorageProvider.SaveFilePickerAsync(FilePickerHelpers.PdfSaveOptions($"Export {record.Name} PDF", record.Name.ToLowerInvariant()));
             if (file == null) return;
             await using (var stream = await file.OpenWriteAsync())

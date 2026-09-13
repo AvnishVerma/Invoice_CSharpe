@@ -96,6 +96,13 @@ public partial class MainWindow
     {
         try
         {
+            if (OperatingSystem.IsMacOS())
+            {
+                var path = FilePickerHelpers.MacDownloadsPdfPath($"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report");
+                await File.WriteAllBytesAsync(path, Model.ExportReportPdf(name));
+                Model.Status = $"Saved PDF to {path}";
+                return;
+            }
             var file = await StorageProvider.SaveFilePickerAsync(FilePickerHelpers.PdfSaveOptions($"Export {name} PDF", $"ledgernest-{name.ToLowerInvariant().Replace(" ", "-")}-report"));
             if (file == null) return;
             await using var stream = await file.OpenWriteAsync();

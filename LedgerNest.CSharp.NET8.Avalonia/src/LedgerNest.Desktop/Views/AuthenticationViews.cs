@@ -12,7 +12,7 @@ public partial class MainWindow
         overlay.Margin = new Avalonia.Thickness(0);
         overlay.Children.Clear();
         overlay.IsVisible = true;
-        overlay.Children.Add(new LoginView { DataContext = new LoginViewModel(Model, message, ContinueAfterLogin, ShowForgotPassword) });
+        overlay.Children.Add(new LoginView { DataContext = new LoginViewModel(Model, message, ContinueAfterLogin, ShowForgotPassword, alert => Model.Status = alert) });
     }
     private void ContinueAfterLogin()
     {

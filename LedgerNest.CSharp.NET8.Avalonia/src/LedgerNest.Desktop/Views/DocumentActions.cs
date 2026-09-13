@@ -23,6 +23,13 @@ public partial class MainWindow
         {
             var bytes = TryExportDocumentPdf(document);
             if (bytes == null) return;
+            if (OperatingSystem.IsMacOS())
+            {
+                var path = FilePickerHelpers.MacDownloadsPdfPath(document.Name);
+                await File.WriteAllBytesAsync(path, bytes);
+                Model.Status = $"Saved PDF to {path}";
+                return;
+            }
             var file = await StorageProvider.SaveFilePickerAsync(FilePickerHelpers.PdfSaveOptions($"Save {document.Name} PDF", document.Name));
             if (file == null) return;
             await using var stream = await file.OpenWriteAsync();

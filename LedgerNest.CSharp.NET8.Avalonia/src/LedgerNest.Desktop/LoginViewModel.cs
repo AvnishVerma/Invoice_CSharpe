@@ -8,12 +8,14 @@ public sealed partial class LoginViewModel : ObservableObject
     private readonly MainWindowViewModel model;
     private readonly Action loginSucceeded;
     private readonly Action forgotPassword;
+    private readonly Action<string> showAlert;
 
-    public LoginViewModel(MainWindowViewModel model, string message, Action loginSucceeded, Action forgotPassword)
+    public LoginViewModel(MainWindowViewModel model, string message, Action loginSucceeded, Action forgotPassword, Action<string> showAlert)
     {
         this.model = model;
         this.loginSucceeded = loginSucceeded;
         this.forgotPassword = forgotPassword;
+        this.showAlert = showAlert;
         Message = message;
     }
 
@@ -34,6 +36,7 @@ public sealed partial class LoginViewModel : ObservableObject
         }
 
         Message = model.Status;
+        showAlert(Message);
         OnPropertyChanged(nameof(Message));
         OnPropertyChanged(nameof(DisplayMessage));
     }

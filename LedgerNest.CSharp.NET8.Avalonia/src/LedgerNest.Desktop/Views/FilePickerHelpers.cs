@@ -17,6 +17,18 @@ internal static class FilePickerHelpers
 
     private static string SanitizedFallback => "ledgernest-document";
 
+    public static string MacDownloadsPdfPath(string suggestedName)
+    {
+        var downloads = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads");
+        Directory.CreateDirectory(downloads);
+        var baseName = Path.GetFileNameWithoutExtension(SanitizeFileName(suggestedName));
+        var path = Path.Combine(downloads, EnsureExtension(baseName, ".pdf"));
+        if (!File.Exists(path)) return path;
+        return Path.Combine(downloads, $"{baseName}-{DateTime.Now:yyyyMMdd-HHmmss}.pdf");
+    }
+
     public static string SanitizeFileName(string value)
     {
         var invalid = Path.GetInvalidFileNameChars();
