@@ -33,7 +33,11 @@ internal sealed partial class ManagementView : UserControl
         search.TextChanged += (_, _) => { page = 0; Refresh(); };
         var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.StartDocument(kind); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
         var more = MoreMenu();
-        var header = Ui.Header($"{kind} Management", kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : "Manage users and access permissions", Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add);
+        var trashButton = Ui.Button("Trash", () => { trash = !trash; Refresh(); });
+        var headerActions = Documents
+            ? new Control[] { Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, trashButton, Ui.Button("↻", Refresh), add }
+            : [Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add];
+        var header = Ui.Header($"{kind} Management", Subtitle(), headerActions);
         var filterButton = MenuButton("Filter ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); });
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
         if (kind == "Product")
@@ -42,26 +46,19 @@ internal sealed partial class ManagementView : UserControl
             banner.Background = Brush.Parse("#EFF6FF");
             ProductBannerHost.Content = banner;
         }
-        RecordRoot.IsVisible = !Documents;
-        DocumentRoot.IsVisible = Documents;
-        if (Documents)
-        {
-            DocumentAppBarHost.Content = Ui.AppBar($"{kind} Management", Ui.Button($"＋ New {kind}", () => model.StartDocument(kind), true), Ui.Button("↓", Export), Ui.Button("Trash", () => { trash = !trash; Refresh(); }), MoreMenu(), Ui.Button("↻", Refresh));
-            DocumentSearchHost.Content = search;
-            DocumentToolbarHost.Content = Ui.Wrap(CustomerMenu(), filterButton, sortButton);
-            DocumentResultsHost.Content = results;
-        }
-        else
-        {
-            HeaderHost.Content = header;
-            StatsHost.Content = stats;
-            SearchHost.Content = search;
-            ToolbarButtonsHost.Content = Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
-            TabsHost.Content = tabs;
-            RecordResultsHost.Content = results;
-        }
+        RecordRoot.IsVisible = true;
+        DocumentRoot.IsVisible = false;
+        HeaderHost.Content = header;
+        StatsHost.Content = stats;
+        SearchHost.Content = search;
+        ToolbarButtonsHost.Content = Documents
+            ? Ui.Wrap(CustomerMenu(), filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible))
+            : Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
+        TabsHost.Content = tabs;
+        RecordResultsHost.Content = results;
         Refresh();
     }
+    private string Subtitle() => kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : Documents ? $"Manage {kind.ToLowerInvariant()}s and payment status" : "Manage users and access permissions";
     private string[] FilterOptions() => Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "Without GST", "With Outstanding"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
     private Button MenuButton(string title, IEnumerable<string> options, Action<string> select)
     {
@@ -101,7 +98,7 @@ internal sealed partial class ManagementView : UserControl
             "Admin" or "User" => query.Where(r => r["Role"] == filter), "Paid" or "Partial" or "Unpaid" or "Overdue" => query.Where(r => r["Status"] == filter), _ => query };
         return sort switch { "Name A–Z" => query.OrderBy(r => r.Name), "Name Z–A" => query.OrderByDescending(r => r.Name), "Newest" => query.Reverse(), _ => query };
     }
-    private string[] Headers => Documents ? ["Invoice / Customer", "Date", "Items", "Total", "Status"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Expiry Date"] : ["Username", "Role"];
+    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Expiry Date"] : ["Username", "Role"];
     private readonly HashSet<string> hidden = [];
     private void Columns()
     {
@@ -111,7 +108,7 @@ internal sealed partial class ManagementView : UserControl
     private void Refresh()
     {
         var total = Records.Count();
-        string[] tabNames = kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "With Outstanding", "Without GST"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
+        string[] tabNames = Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "With Outstanding", "Without GST"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
         var chips = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         foreach (var tab in tabNames)
         {
@@ -119,21 +116,20 @@ internal sealed partial class ManagementView : UserControl
             var chip = Ui.Button($"{tab} ({count})", () => { filter = tab; page = 0; Refresh(); }, tab == filter); chips.Children.Add(chip);
         }
         tabs.Content = new ScrollViewer { Content = chips, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
-        stats.Content = Documents ? null : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(($"Total {kind}s", total.ToString(), "Total items", "#002E78"), (kind == "Product" ? "Products" : "Admins", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Product" : "Admin")).ToString(), "", "#4CAF50"), (kind == "Product" ? "Services" : "Users", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Service" : "User")).ToString(), "", "#673AB7"));
+        stats.Content = Documents ? DocumentStats(total) : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(($"Total {kind}s", total.ToString(), "Total items", "#002E78"), (kind == "Product" ? "Products" : "Admins", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Product" : "Admin")).ToString(), "", "#4CAF50"), (kind == "Product" ? "Services" : "Users", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Service" : "User")).ToString(), "", "#673AB7"));
         var filtered = Filtered().ToArray();
-        if (Documents && filtered.Length == 0) { results.Content = Ui.Empty(trash ? "Trash is empty" : $"No {kind.ToLower()}s found", $"Create your first {kind.ToLower()} to see it here"); return; }
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)pageSize)); page = Math.Clamp(page, 0, pages - 1);
-        var body = Ui.Stack(0); var columns = string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
+        var body = Ui.Stack(0); var columns = Documents ? DocumentColumns() : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
         Control TableRow(UiRecord? record, int index)
         {
             var controls = new List<Control>();
             var checkbox = new CheckBox { IsChecked = record != null && selected.Contains(record.Id), IsVisible = record != null };
             checkbox.IsCheckedChanged += (_, _) => { if (record == null) return; if (checkbox.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); };
             controls.Add(checkbox); controls.Add(Ui.Text(record == null ? "SL. NO." : (index + 1).ToString(), 12));
-            string[] values = record == null ? Headers : Documents ? [$"{record.Name}\n{record["Customer"]}", record["Date"], record["Items"], record["Total"], record["Status"]] : kind == "Customer" ? [$"{record.Name}\n{record["Business Name"]}", record["Phone"], record["Email"], record["GST / VAT Number"], record["Address"], record["Outstanding"].Length == 0 ? "—" : record["Outstanding"]] : kind == "Product" ? [$"{record.Name}\n{record["Alias Name (for invoice PDF)"]}", record["Sale Price"], record["HSN/SAC"], record["Purchase Price"], record["Stock"], record["Tax (%)"], record["Expiry Date"]] : [record.Name, record["Role"]];
-            for (var i = 0; i < Headers.Length; i++) if (!hidden.Contains(Headers[i])) controls.Add(Ui.Text(record == null ? values[i].ToUpperInvariant() : values[i], record == null ? 11 : 12, record == null, record == null ? Ui.Muted : null));
-            controls.Add(record == null ? Ui.Text("Actions", 12, true) : Ui.Wrap(Ui.Button(trash ? "Restore" : "View", () => { if (trash) { model.SetDocumentTrash(record, false); Refresh(); } else View(record); }), ActionMenu(record)));
-            return new Border { Background = Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, 8), Child = Ui.Columns(columns, controls.ToArray()) };
+            string[] values = record == null ? Headers : Documents ? [$"{record.Name}\n{record["Customer"]}", record["Title"].Length == 0 ? "—" : record["Title"], record["Date"], record["Items"], FormatMoney(record["Total"]), record["Status"], string.IsNullOrWhiteSpace(record["Outstanding"]) || record["Outstanding"] == "0" ? "—" : FormatMoney(record["Outstanding"])] : kind == "Customer" ? [$"{record.Name}\n{record["Business Name"]}", record["Phone"], record["Email"], record["GST / VAT Number"], record["Address"], record["Outstanding"].Length == 0 ? "—" : record["Outstanding"]] : kind == "Product" ? [$"{record.Name}\n{record["Alias Name (for invoice PDF)"]}", record["Sale Price"], record["HSN/SAC"], record["Purchase Price"], record["Stock"], record["Tax (%)"], record["Expiry Date"]] : [record.Name, record["Role"]];
+            for (var i = 0; i < Headers.Length; i++) if (!hidden.Contains(Headers[i])) controls.Add(DocumentCell(record, values[i], i));
+            controls.Add(record == null ? Ui.Text("Actions", 12, true) : DocumentActions(record));
+            return new Border { Background = record == null && Documents ? Brush.Parse("#243447") : Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, Documents ? 12 : 8), Child = Ui.Columns(columns, controls.ToArray()) };
         }
         body.Children.Add(TableRow(null, 0));
         if (filtered.Length == 0) body.Children.Add(Ui.Empty(trash ? "Trash is empty" : $"No {kind.ToLower()}s found", search.Text?.Length > 0 ? "Try adjusting your search" : $"Add your first {kind.ToLower()} to get started"));
@@ -141,7 +137,61 @@ internal sealed partial class ManagementView : UserControl
         var sizes = new ComboBox { ItemsSource = new[] { 10, 25, 50, 100 }, SelectedItem = pageSize };
         sizes.SelectionChanged += (_, _) => { pageSize = (int)(sizes.SelectedItem ?? 10); page = 0; Refresh(); };
         body.Children.Add(new Border { Padding = new Thickness(16, 8), Child = Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); }))) });
-        results.Content = Ui.Card(new ScrollViewer { Content = new Border { MinWidth = Documents ? 850 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
+        results.Content = Ui.Card(new ScrollViewer { Content = new Border { MinWidth = Documents ? 1150 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
+    }
+
+    private Control DocumentStats(int total)
+    {
+        var paid = Records.Count(r => r["Status"] == "Paid");
+        var partial = Records.Count(r => r["Status"] == "Partial");
+        var unpaid = Records.Count(r => r["Status"] == "Unpaid");
+        var overdue = Records.Count(r => r["Status"] == "Overdue");
+        return Ui.Stats(($"Total {kind}s", total.ToString(), $"All {kind.ToLowerInvariant()}s", "#002E78"), ("Paid", paid.ToString(), "Fully settled", "#4CAF50"), ("Partial", partial.ToString(), "Part paid", "#FF9800"), ("Unpaid", unpaid.ToString(), "Awaiting payment", "#F44336"), ("Overdue", overdue.ToString(), "Needs attention", "#D32F2F"));
+    }
+
+    private string DocumentColumns()
+    {
+        var widths = new Dictionary<string, string> { ["Invoice / Customer"] = "2*", ["Title"] = "*", ["Date"] = "*", ["Items"] = ".6*", ["Total"] = "*", ["Status"] = "*", ["Outstanding"] = "*" };
+        return string.Join(",", new[] { "40", "70" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("210"));
+    }
+
+    private static string FormatMoney(string value) => decimal.TryParse(value, out var amount) ? $"Rs. {amount:0.00}" : value;
+
+    private Control DocumentCell(UiRecord? record, string value, int index)
+    {
+        if (record == null) return Ui.Text(value.ToUpperInvariant(), 11, true, Documents ? Brushes.White : Ui.Muted);
+        var color = Documents && Headers[index] == "Status" ? StatusBrush(value) : Documents && (Headers[index] == "Total" || Headers[index] == "Outstanding") && value.StartsWith("Rs.", StringComparison.Ordinal) ? (value == "—" ? Ui.Muted : value.Contains("70") ? Brush.Parse("#F44336") : Brush.Parse("#4CAF50")) : null;
+        return Ui.Text(value, 12, Headers[index] is "Invoice / Customer" or "Total", color);
+    }
+
+    private static IBrush StatusBrush(string status) => status switch { "Paid" => Brush.Parse("#4CAF50"), "Partial" => Brush.Parse("#FF9800"), "Unpaid" => Brush.Parse("#F44336"), "Overdue" => Brush.Parse("#D32F2F"), _ => Ui.TextColor };
+
+    private Control DocumentActions(UiRecord record)
+    {
+        if (trash) return Ui.Wrap(Ui.Button("Restore", () => { model.SetDocumentTrash(record, false); Refresh(); }), ActionMenu(record));
+        return Ui.Wrap(IconAction("visibility", "View", () => View(record), "#4CAF50"), IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"), IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"), IconAction("picture_as_pdf", "PDF", async () => await ExportDocumentPdf(record), "#FF9800"), IconAction("download", "Download", async () => await ExportDocumentPdf(record), "#673AB7"), IconAction("print", "Print", async () => await ExportDocumentPdf(record), "#607D8B"), ActionMenu(record));
+    }
+
+    private static Button IconAction(string icon, string label, Action action, string color)
+    {
+        var button = Ui.Button(label, action);
+        button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
+        button.Width = 38; button.Height = 38;
+        button.Background = new SolidColorBrush(Color.Parse(color), .12);
+        button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
+        button.Tag = label;
+        return button;
+    }
+
+    private static Button IconAction(string icon, string label, Func<Task> action, string color)
+    {
+        var button = Ui.Button(label, async () => await action());
+        button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
+        button.Width = 38; button.Height = 38;
+        button.Background = new SolidColorBrush(Color.Parse(color), .12);
+        button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
+        button.Tag = label;
+        return button;
     }
     private void View(UiRecord record) => window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
     private Button MoreMenu()
