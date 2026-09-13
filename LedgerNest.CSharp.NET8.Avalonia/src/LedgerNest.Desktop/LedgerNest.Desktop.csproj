@@ -10,8 +10,12 @@
     <AvaloniaResource Include="Assets/**" />
     <EmbeddedResource Include="Assets/Roboto-Regular.ttf" LogicalName="LedgerNest.Pdf.Regular" />
     <EmbeddedResource Include="Assets/Roboto-Bold.ttf" LogicalName="LedgerNest.Pdf.Bold" />
-    <ProjectReference Include="..\LedgerNest.Application\LedgerNest.Application.csproj" />
-    <ProjectReference Include="..\LedgerNest.Infrastructure\LedgerNest.Infrastructure.csproj" />
+    <ProjectReference Include="..\LedgerNest.Application\LedgerNest.Application.csproj">
+      <ReferenceSourceTarget></ReferenceSourceTarget>
+    </ProjectReference>
+    <ProjectReference Include="..\LedgerNest.Infrastructure\LedgerNest.Infrastructure.csproj">
+      <ReferenceSourceTarget></ReferenceSourceTarget>
+    </ProjectReference>
     <PackageReference Include="Avalonia" Version="12.0.0" />
     <PackageReference Include="Avalonia.Desktop" Version="12.0.0" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.0" />

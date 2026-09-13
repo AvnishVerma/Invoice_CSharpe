@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "LedgerNest.Desktop",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/LedgerNest.CSharp.NET8.Avalonia/src/LedgerNest.Desktop/bin/Debug/net9.0/LedgerNest.Desktop.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/LedgerNest.CSharp.NET8.Avalonia/src/LedgerNest.Desktop",
+            "stopAtEntry": false,
+            "env": {
+                "DOTNET_ENVIRONMENT": "Development"
+            }
+        }
+    ]
+}

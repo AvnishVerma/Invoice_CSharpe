@@ -33,7 +33,7 @@ public sealed partial class LoginViewModel : ObservableObject
         }
 
         Message = model.Status;
-        OnPropertyChanged(nameof(Message));
+        //OnPropertyChanged(nameof(Message));
     }
 
     [RelayCommand]
