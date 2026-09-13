@@ -119,9 +119,10 @@ internal sealed partial class ManagementView : UserControl
         stats.Content = Documents ? DocumentStats(total) : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(($"Total {kind}s", total.ToString(), "Total items", "#002E78"), (kind == "Product" ? "Products" : "Admins", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Product" : "Admin")).ToString(), "", "#4CAF50"), (kind == "Product" ? "Services" : "Users", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Service" : "User")).ToString(), "", "#673AB7"));
         var filtered = Filtered().ToArray();
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)pageSize)); page = Math.Clamp(page, 0, pages - 1);
-        var body = Ui.Stack(0); var columns = Documents ? DocumentColumns() : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
+        var body = Ui.Stack(0); var columns = kind == "Product" ? ProductColumns() : Documents ? DocumentColumns() : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
         Control TableRow(UiRecord? record, int index)
         {
+            if (kind == "Product") return ProductTableRow(record, index);
             var controls = new List<Control>();
             var checkbox = new CheckBox { IsChecked = record != null && selected.Contains(record.Id), IsVisible = record != null };
             checkbox.IsCheckedChanged += (_, _) => { if (record == null) return; if (checkbox.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); };
@@ -137,7 +138,7 @@ internal sealed partial class ManagementView : UserControl
         var sizes = new ComboBox { ItemsSource = new[] { 10, 25, 50, 100 }, SelectedItem = pageSize };
         sizes.SelectionChanged += (_, _) => { pageSize = (int)(sizes.SelectedItem ?? 10); page = 0; Refresh(); };
         body.Children.Add(new Border { Padding = new Thickness(16, 8), Child = Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); }))) });
-        results.Content = Ui.Card(new ScrollViewer { Content = new Border { MinWidth = Documents ? 1150 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
+        results.Content = Ui.Card(new ScrollViewer { Content = new Border { MinWidth = Documents ? 1150 : kind == "Product" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
 
     private Control DocumentStats(int total)
@@ -153,6 +154,101 @@ internal sealed partial class ManagementView : UserControl
     {
         var widths = new Dictionary<string, string> { ["Invoice / Customer"] = "2*", ["Title"] = "*", ["Date"] = "*", ["Items"] = ".6*", ["Total"] = "*", ["Status"] = "*", ["Outstanding"] = "*" };
         return string.Join(",", new[] { "40", "70" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("210"));
+    }
+
+
+    private string ProductColumns()
+    {
+        var widths = new Dictionary<string, string>
+        {
+            ["Name / Alias"] = "2.2*",
+            ["Price"] = "1.25*",
+            ["HSN/SAC"] = "1.2*",
+            ["Purchase Price"] = "1.55*",
+            ["Stock"] = ".9*",
+            ["Tax Rate"] = ".95*",
+            ["Expiry Date"] = "1.25*"
+        };
+        return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("122"));
+    }
+
+    private Control ProductTableRow(UiRecord? record, int index)
+    {
+        var controls = new List<Control> { HeaderOrCell(record == null ? "SL. NO." : (index + 1).ToString(), record == null, false) };
+        string[] values = record == null
+            ? Headers
+            : [$"{record.Name}\n{record["Type"]}", record["Sale Price"], record["HSN/SAC"], record["Purchase Price"], ProductStock(record), record["Tax (%)"], record["Expiry Date"]];
+        for (var i = 0; i < Headers.Length; i++)
+            if (!hidden.Contains(Headers[i])) controls.Add(ProductCell(record, Headers[i], values[i]));
+        controls.Add(record == null ? new Border() : ProductActions(record));
+        return new Border
+        {
+            Background = record == null ? Ui.CardSurface : Brush.Parse("#FFF7FE"),
+            BorderBrush = Ui.Outline,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(14, record == null ? 8 : 14),
+            MinHeight = record == null ? 32 : 69,
+            Child = Ui.Columns(ProductColumns(), controls.ToArray())
+        };
+    }
+
+    private static Control HeaderOrCell(string text, bool header, bool strong = false, IBrush? color = null)
+    {
+        var block = Ui.Text(text.Length == 0 ? "—" : text, header ? 11 : 13, header || strong, color ?? (header ? Ui.Muted : Ui.TextColor));
+        block.VerticalAlignment = VerticalAlignment.Center;
+        return block;
+    }
+
+    private Control ProductCell(UiRecord? record, string header, string value)
+    {
+        if (record == null) return HeaderOrCell(value.ToUpperInvariant(), true);
+        return header switch
+        {
+            "Name / Alias" => ProductNameCell(record),
+            "Price" => HeaderOrCell(ProductMoney(value), false, true),
+            "Purchase Price" => HeaderOrCell(ProductMoney(value, true), false, false, Ui.Muted),
+            "Stock" => HeaderOrCell(value, false, false),
+            "Tax Rate" => HeaderOrCell(value.Length == 0 ? "—" : value + "%", false),
+            "Expiry Date" => HeaderOrCell(value.Length == 0 ? "—" : value, false, false, Ui.Muted),
+            _ => HeaderOrCell(value.Length == 0 ? "—" : value, false, false, Ui.Muted)
+        };
+    }
+
+    private static Control ProductNameCell(UiRecord record)
+    {
+        var type = record["Type"].Length == 0 ? "Product" : record["Type"];
+        var badgeColor = type == "Service" ? "#FF7A00" : "#2E7D32";
+        var badgeBack = type == "Service" ? "#FFE9D6" : "#E4F3E7";
+        var alias = record["Alias Name (for invoice PDF)"];
+        var children = new List<Control> { Ui.Text(record.Name, 13, false), new Border { CornerRadius = new CornerRadius(5), Padding = new Thickness(8, 3), HorizontalAlignment = HorizontalAlignment.Left, Background = Brush.Parse(badgeBack), Child = Ui.Text(type, 11, true, Brush.Parse(badgeColor)) } };
+        if (!string.IsNullOrWhiteSpace(alias)) children.Add(Ui.Text("(" + alias + ")", 11, color: Ui.Muted));
+        return Ui.Stack(4, children.ToArray());
+    }
+
+    private static string ProductStock(UiRecord record) => bool.TryParse(record["Unlimited stock"], out var unlimited) && unlimited ? "∞" : record["Stock"];
+
+    private static string ProductMoney(string value, bool dashWhenZero = false)
+    {
+        if (!decimal.TryParse(value, out var amount)) return string.IsNullOrWhiteSpace(value) ? "—" : value;
+        if (dashWhenZero && amount == 0) return "—";
+        return $"Rs.{amount:0.00}";
+    }
+
+    private Control ProductActions(UiRecord record) => Ui.Wrap(
+        PlainIconAction("visibility", "View", () => View(record), "#6E6E6E"),
+        PlainIconAction("edit", "Edit", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
+        PlainIconAction("delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F"));
+
+    private static Button PlainIconAction(string icon, string label, Action action, string color)
+    {
+        var button = Ui.Button(label, action);
+        button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
+        button.Width = 30; button.Height = 30;
+        button.Padding = new Thickness(0);
+        button.Background = Brushes.Transparent;
+        button.BorderBrush = Brushes.Transparent;
+        button.Tag = label;
+        return button;
     }
 
     private static string FormatMoney(string value) => decimal.TryParse(value, out var amount) ? $"Rs. {amount:0.00}" : value;
