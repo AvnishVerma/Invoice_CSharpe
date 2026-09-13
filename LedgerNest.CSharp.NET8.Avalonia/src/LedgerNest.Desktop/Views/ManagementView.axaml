@@ -50,10 +50,12 @@
       <Border Grid.Row="1"
               Background="{DynamicResource ManagementSurface}">
         <Grid RowDefinitions="Auto,*">
-          <Border Padding="20">
-            <Grid ColumnDefinitions="360,12,Auto,*">
-              <ContentControl x:Name="DocumentSearchHost" />
-              <ContentControl x:Name="DocumentToolbarHost" Grid.Column="2" />
+          <Border Padding="20,22,20,18">
+            <Grid ColumnDefinitions="Auto,12,280,12,Auto,*,Auto">
+              <ContentControl x:Name="DocumentAddHost" />
+              <ContentControl x:Name="DocumentSearchHost" Grid.Column="2" />
+              <ContentControl x:Name="DocumentToolbarHost" Grid.Column="4" />
+              <ContentControl x:Name="DocumentPageSummaryHost" Grid.Column="6" />
             </Grid>
           </Border>
           <ContentControl x:Name="DocumentResultsHost" Grid.Row="1" />
