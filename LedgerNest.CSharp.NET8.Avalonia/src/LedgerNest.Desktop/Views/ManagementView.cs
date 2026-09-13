@@ -440,7 +440,9 @@ internal sealed partial class ManagementView : UserControl
     private void DeleteSelected() => window.Confirm("Delete Selected", $"{(trash && Documents ? "Permanently delete" : "Delete")} {selected.Count} selected records?", () => { foreach (var record in Records.Where(r => selected.Contains(r.Id)).ToArray()) Delete(record); selected.Clear(); Refresh(); });
     private void Import()
     {
-        var columns = kind == "Customer" ? "name (required), phone (required), business_name, email, gstin, address" : "name (required), price (required), stock, tax_rate, hsncode, description";
+        var columns = kind == "Customer"
+            ? "name (required), email, phone, address, business_name, tax_number"
+            : "name (required), price (required), hsn_code, description, tax_rate, stock, type, default_discount, purchase_price, alias_name, unit, unlimited_stock, price_includes_tax, storage_location, container_number, batch_number, expiry_date, manufacture_date, manufacture_name, supplier_name, sku_code, notes";
         window.ShowOverlay($"Import {kind}s from CSV", Ui.Stack(16, Ui.Text("CSV columns", 16, true), Ui.Text(columns), Ui.Button("Download Sample CSV", async () => await DownloadSampleCsv()), Ui.Button("Choose File", async () => await ChooseCsvFile())));
     }
 
@@ -486,8 +488,8 @@ internal sealed partial class ManagementView : UserControl
     private async Task DownloadSampleCsv()
     {
         var sample = kind == "Customer"
-            ? "name,phone,business_name,email,gstin,address\nSample Customer,9876543210,Sample Trading Co,sample@example.com,29ABCDE1234F1Z5,Main Road\n"
-            : "name,price,stock,tax_rate,hsncode,description\nSample Product,199.00,25,18,9983,Sample item\n";
+            ? "name,email,phone,address,business_name,tax_number\nSample Customer,sample@example.com,9876543210,Main Road,Sample Trading Co,29ABCDE1234F1Z5\n"
+            : "name,price,hsn_code,description,tax_rate,stock,type,default_discount,purchase_price,alias_name,unit,unlimited_stock,price_includes_tax,storage_location,container_number,batch_number,expiry_date,manufacture_date,manufacture_name,supplier_name,sku_code,notes\nSample Product,199.00,9983,Sample item,18,25,product,0,120.00,Sample Alias,pcs,false,false,Rack A,CN-1,B-1,2027-03-31,2026-03-31,Sample Manufacturer,Sample Supplier,SKU-001,Imported sample\n";
         await SaveTextFile($"ledgernest-{kind.ToLowerInvariant()}-sample.csv", sample);
     }
 

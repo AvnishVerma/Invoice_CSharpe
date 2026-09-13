@@ -825,24 +825,135 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         var header = rows[0].Select(NormalizeCsvHeader).ToArray();
-        var imported = 0;
-        foreach (var row in rows.Skip(1))
+        var allowed = kind == "Customer" ? CustomerCsvHeaders : ProductCsvHeaders;
+        var required = kind == "Customer" ? new[] { "name" } : ["name", "price"];
+        foreach (var column in required)
         {
-            var fields = kind == "Customer" ? FormCatalog.Customer() : FormCatalog.Product();
-            foreach (var field in fields)
+            if (!header.Contains(column))
             {
-                var value = CsvFieldValue(kind, field.Label, header, row);
-                if (value == null) continue;
-                field.Value = value;
-                field.IsChecked = bool.TryParse(value, out var checkedValue) && checkedValue;
+                Status = $"CSV is missing required column '{column}'.";
+                return 0;
             }
-
-            if (SaveRecord(kind, fields)) imported++;
+        }
+        var unknown = header.FirstOrDefault(column => !allowed.Contains(column));
+        if (unknown != null)
+        {
+            Status = $"Unknown CSV column '{unknown}'. Allowed columns: {string.Join(", ", allowed)}.";
+            return 0;
         }
 
-        Status = imported == 0 ? $"No {kind.ToLowerInvariant()}s were imported." : $"Imported {imported} {kind.ToLowerInvariant()} record{(imported == 1 ? "" : "s")}.";
-        return imported;
+        var dataRows = rows.Skip(1).ToArray();
+        var maxRows = kind == "Customer" ? 200 : 500;
+        if (dataRows.Length > maxRows)
+        {
+            Status = $"CSV contains {dataRows.Length} rows. Maximum allowed is {maxRows}.";
+            return 0;
+        }
+
+        var imported = 0;
+        var updated = 0;
+        var skipped = 0;
+        var errors = new List<string>();
+        foreach (var (row, rowIndex) in dataRows.Select((row, index) => (row, index + 2)))
+        {
+            var fields = kind == "Customer" ? FormCatalog.Customer() : FormCatalog.Product();
+            var byLabel = fields.ToDictionary(f => f.Label);
+            string Get(string column)
+            {
+                var index = Array.IndexOf(header, column);
+                return index >= 0 && index < row.Length ? row[index].Trim() : "";
+            }
+
+            var name = Get("name");
+            if (string.IsNullOrWhiteSpace(name)) { errors.Add($"row {rowIndex}: missing name"); skipped++; continue; }
+            byLabel["Name"].Value = name;
+
+            UiRecord? duplicate = null;
+            if (kind == "Customer")
+            {
+                duplicate = FindCustomerDuplicate(Get("email"), Get("phone"), name);
+                SetImportField(byLabel, "Email", Get("email"));
+                SetImportField(byLabel, "Phone", Get("phone"));
+                SetImportField(byLabel, "Address", Get("address"));
+                SetImportField(byLabel, "Business Name", Get("business_name"));
+                SetImportField(byLabel, "GST / VAT Number", FirstNonEmpty(Get("tax_number"), Get("gstin"), Get("gst"), Get("gst_vat_number")));
+            }
+            else
+            {
+                var priceText = Get("price");
+                if (!decimal.TryParse(priceText, NumberStyles.Number, CultureInfo.InvariantCulture, out var price) || price < 0)
+                { errors.Add($"row {rowIndex}: invalid price '{priceText}'"); skipped++; continue; }
+                duplicate = Products.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                SetImportField(byLabel, "Sale Price", price.ToString("0.##", CultureInfo.InvariantCulture));
+                SetImportField(byLabel, "HSN/SAC", FirstNonEmpty(Get("hsn_code"), Get("hsncode"), Get("hsn"), Get("hsn_sac")));
+                SetImportField(byLabel, "Description", Get("description"));
+                SetImportField(byLabel, "Tax (%)", ClampDecimal(Get("tax_rate"), 0, 100).ToString("0.##", CultureInfo.InvariantCulture));
+                SetImportField(byLabel, "Stock", Math.Max(0, ParseDecimalInvariant(Get("stock"))).ToString("0.###", CultureInfo.InvariantCulture));
+                SetImportField(byLabel, "Type", NormalizeProductType(Get("type")));
+                SetImportField(byLabel, "Default Discount", Math.Max(0, ParseDecimalInvariant(Get("default_discount"))).ToString("0.##", CultureInfo.InvariantCulture));
+                SetImportField(byLabel, "Purchase Price", Math.Max(0, ParseDecimalInvariant(Get("purchase_price"))).ToString("0.##", CultureInfo.InvariantCulture));
+                SetImportField(byLabel, "Alias Name (for invoice PDF)", Get("alias_name"));
+                SetImportField(byLabel, "Unit", Get("unit"));
+                SetImportToggle(byLabel, "Unlimited stock", Get("unlimited_stock"));
+                SetImportToggle(byLabel, "Price includes tax", Get("price_includes_tax"));
+                SetImportField(byLabel, "Storage Location", Get("storage_location"));
+                SetImportField(byLabel, "Container Number", Get("container_number"));
+                SetImportField(byLabel, "Batch Number", Get("batch_number"));
+                SetImportField(byLabel, "Expiry Date", Get("expiry_date"));
+                SetImportField(byLabel, "Manufacture Date", Get("manufacture_date"));
+                SetImportField(byLabel, "Supplier Name", Get("supplier_name"));
+                SetImportField(byLabel, "SKU Code", Get("sku_code"));
+                SetImportField(byLabel, "Notes", JoinNotes(Get("notes"), Get("manufacture_name")));
+            }
+
+            if (SaveRecord(kind, fields, duplicate))
+            {
+                if (duplicate == null) imported++; else updated++;
+            }
+            else skipped++;
+        }
+
+        var parts = new List<string>();
+        if (imported > 0) parts.Add($"imported {imported}");
+        if (updated > 0) parts.Add($"updated {updated}");
+        if (skipped > 0) parts.Add($"skipped {skipped}");
+        Status = parts.Count == 0 ? $"No {kind.ToLowerInvariant()}s were imported." : $"CSV import complete: {string.Join(", ", parts)} {kind.ToLowerInvariant()} record{(imported + updated == 1 ? "" : "s")}.";
+        if (errors.Count > 0) Status += " " + string.Join("; ", errors.Take(3)) + (errors.Count > 3 ? "; …" : "");
+        return imported + updated;
     }
+
+    private static readonly string[] CustomerCsvHeaders = ["name", "email", "phone", "address", "business_name", "tax_number", "gstin", "gst", "gst_vat_number"];
+    private static readonly string[] ProductCsvHeaders = ["name", "hsn_code", "hsncode", "hsn", "hsn_sac", "description", "price", "tax_rate", "stock", "type", "default_discount", "purchase_price", "alias_name", "unit", "unlimited_stock", "price_includes_tax", "storage_location", "container_number", "batch_number", "expiry_date", "manufacture_date", "manufacture_name", "supplier_name", "sku_code", "notes"];
+
+    private UiRecord? FindCustomerDuplicate(string email, string phone, string name)
+    {
+        return Customers.FirstOrDefault(c =>
+            (!string.IsNullOrWhiteSpace(email) && c["Email"].Equals(email, StringComparison.OrdinalIgnoreCase))
+            || (!string.IsNullOrWhiteSpace(phone) && c["Phone"].Equals(phone, StringComparison.OrdinalIgnoreCase))
+            || c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void SetImportField(Dictionary<string, FormField> fields, string label, string value)
+    {
+        if (!fields.TryGetValue(label, out var field) || string.IsNullOrWhiteSpace(value)) return;
+        field.Value = value.Trim();
+        field.IsChecked = ParseCsvBool(field.Value);
+    }
+
+    private static void SetImportToggle(Dictionary<string, FormField> fields, string label, string value)
+    {
+        if (!fields.TryGetValue(label, out var field) || string.IsNullOrWhiteSpace(value)) return;
+        field.IsChecked = ParseCsvBool(value);
+        field.Value = field.IsChecked ? "true" : "false";
+    }
+
+    private static bool ParseCsvBool(string value) => value.Trim().Equals("1", StringComparison.OrdinalIgnoreCase) || value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase) || value.Trim().Equals("yes", StringComparison.OrdinalIgnoreCase);
+    private static decimal ParseDecimalInvariant(string value) => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) ? amount : 0m;
+    private static decimal ClampDecimal(string value, decimal min, decimal max) => Math.Min(max, Math.Max(min, ParseDecimalInvariant(value)));
+    private static string NormalizeProductType(string value) => value.Trim().Equals("service", StringComparison.OrdinalIgnoreCase) ? "Service" : "Product";
+    private static string FirstNonEmpty(params string[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? "";
+    private static string JoinNotes(string notes, string manufactureName) => string.IsNullOrWhiteSpace(manufactureName) ? notes : string.IsNullOrWhiteSpace(notes) ? $"Manufacturer: {manufactureName}" : notes + Environment.NewLine + $"Manufacturer: {manufactureName}";
+
 
 
 
@@ -1557,38 +1668,6 @@ public partial class MainWindowViewModel : ObservableObject
         (_, "status") => record["Status"],
         _ => ""
     };
-
-    private static string? CsvFieldValue(string kind, string label, string[] header, string[] row)
-    {
-        string[] candidates = kind == "Customer" ? label switch
-        {
-            "Name" => ["name", "customer_name"],
-            "Phone" => ["phone", "phone_number", "mobile"],
-            "Business Name" => ["business_name", "company", "company_name"],
-            "Email" => ["email"],
-            "GST / VAT Number" => ["gstin", "gst", "gst_vat_number", "tax_number"],
-            "Address" => ["address"],
-            _ => []
-        } : label switch
-        {
-            "Name" => ["name", "product_name"],
-            "Sale Price" => ["price", "sale_price", "selling_price"],
-            "Stock" => ["stock", "quantity", "stock_quantity"],
-            "Tax (%)" => ["tax_rate", "tax", "gst", "tax_percent"],
-            "HSN/SAC" => ["hsncode", "hsn", "hsn_sac", "sku"],
-            "SKU Code" => ["sku", "code"],
-            "Description" => ["description"],
-            _ => []
-        };
-
-        foreach (var candidate in candidates)
-        {
-            var index = Array.IndexOf(header, candidate);
-            if (index >= 0 && index < row.Length) return row[index].Trim();
-        }
-
-        return null;
-    }
 
     private static string NormalizeCsvHeader(string value) => value.Trim().ToLowerInvariant().Replace(" ", "_").Replace("/", "_").Replace(".", "");
 
