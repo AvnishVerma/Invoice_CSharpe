@@ -7,15 +7,43 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
-    private void ShowDocumentPreview(UiRecord document)
+    internal void ShowDocumentPreview(UiRecord document)
+    {
+        static string Money(string value) => decimal.TryParse(value, out var amount) ? $"Rs. {amount:0.00}" : string.IsNullOrWhiteSpace(value) ? "Rs. 0.00" : value;
+        var items = Model.PreviewItemsFor(document);
+        Control itemRows = items.Length == 0
+            ? Ui.Text("No items available", 13, color: Ui.Muted)
+            : Ui.Stack(6, items.Select(item => Ui.Columns("*,Auto", Ui.Text($"{item.Description} x{item.Quantity:0.###}", 13), Ui.Text($"Rs. {item.LineTotal:0.00}", 13))).ToArray());
+        var content = Ui.Stack(18,
+            Ui.Text($"Invoice #{document.Name}", 24),
+            Ui.Stack(4, Ui.Text($"Customer: {document["Customer"]}", 13), Ui.Text($"Date: {document["Date"]}", 13)),
+            Ui.Stack(10, Ui.Text("Items:", 14, true), itemRows),
+            new Border { Height = 1, Background = Ui.Outline },
+            Ui.Stack(6,
+                Ui.Columns("*,Auto", Ui.Text("Subtotal:", 13, true), Ui.Text(Money(document["Subtotal"].Length == 0 ? document["Total"] : document["Subtotal"]), 13)),
+                Ui.Columns("*,Auto", Ui.Text($"Tax ({TaxLabel(document)}):", 13, true), Ui.Text(Money(document["Tax"]), 13)),
+                Ui.Columns("*,Auto", Ui.Text("Total:", 14, true), Ui.Text(Money(document["Total"]), 14, true))));
+        ShowOverlay("", content, Ui.Button("Close", CloseOverlay, true), width: 650);
+    }
+
+    internal void ShowPdfPreview(UiRecord document)
     {
         var bytes = TryExportDocumentPdf(document);
         if (bytes == null) return;
         ShowOverlay("PDF Preview", Ui.Stack(14,
-            Ui.Text($"Document: {document.Name}", 16, true),
-            Ui.Text("PDF preview is ready. Use Download or Print to create an output file.")),
-            Ui.Wrap(Ui.Button("Download", async () => await DownloadDocumentPdf(document)), Ui.Button("Print", async () => await PrintDocumentPdf(document)), Ui.Button("Close", CloseOverlay, true)),
+            Ui.Text($"PDF file is ready for {document.Name}.", 16, true),
+            Ui.Text("Preview uses the selected PDF configuration. Download saves the generated file.")),
+            Ui.Wrap(Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)), Ui.Button("Close", CloseOverlay, true)),
             width: 520);
+    }
+
+    private static string TaxLabel(UiRecord document)
+    {
+        var total = decimal.TryParse(document["Total"], out var totalValue) ? totalValue : 0m;
+        var tax = decimal.TryParse(document["Tax"], out var taxValue) ? taxValue : 0m;
+        var beforeTax = total - tax;
+        if (beforeTax <= 0m || tax <= 0m) return "0%";
+        return Math.Round(tax * 100m / beforeTax).ToString("0") + "%";
     }
 
     private async Task DownloadDocumentPdf(UiRecord document)

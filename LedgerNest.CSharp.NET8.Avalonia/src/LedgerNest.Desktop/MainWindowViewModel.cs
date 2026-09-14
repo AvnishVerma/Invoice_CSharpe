@@ -239,6 +239,49 @@ public partial class MainWindowViewModel : ObservableObject
     private static string Fingerprint(Invoice invoice) =>
         JsonSerializer.Serialize(new { Invoice = invoice, Items = invoice.Items.OrderBy(i => i.Id).ToArray() });
 
+    public bool CloneDocumentForEditing(UiRecord record)
+    {
+        if (dbFactory == null) { Status = "Cloning requires saved document storage."; return false; }
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var invoice = db.Invoices.Include(i => i.Items).SingleOrDefault(i => i.Id == record.SourceId);
+        if (invoice == null || invoice.DeletedAt != null) { Status = "Document is unavailable or in trash."; return false; }
+        if (invoice.Snapshot is not { Version: 1 } snapshot)
+        { Status = "This document lacks a supported historical snapshot and cannot be safely cloned."; return false; }
+
+        editingDocument = null;
+        editingSnapshot = null;
+        editingFingerprint = null;
+        historicalLines.Clear();
+        Lines.Clear();
+        AdditionalCosts.Clear();
+        string[] customer = [snapshot.Customer.Name, snapshot.Customer.BusinessName, snapshot.Customer.Phone, snapshot.Customer.Email, snapshot.Customer.GstNumber, snapshot.Customer.Address];
+        for (var i = 0; i < customer.Length; i++) InvoiceCustomer[i].Value = customer[i];
+        InvoiceDetails[0].Value = invoice.Type;
+        InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
+        InvoiceDetails[2].Value = snapshot.DueDate?.ToString("yyyy-MM-dd") ?? "";
+        InvoiceDetails[3].Value = snapshot.DocumentTitle;
+        InvoiceDetails[4].Value = "";
+        HideInvoiceNumber.IsChecked = snapshot.HideInvoiceNumber;
+        InterState.IsChecked = snapshot.IsInterState;
+        InvoiceOptions[0].Value = snapshot.DiscountKind;
+        InvoiceOptions[1].Value = snapshot.DiscountValue.ToString(CultureInfo.CurrentCulture);
+        InvoiceOptions[2].Value = snapshot.Notes;
+        InvoiceOptions[3].Value = snapshot.TaxMode;
+        InvoiceOptions[4].Value = snapshot.TaxRate.ToString(CultureInfo.CurrentCulture);
+        foreach (var cost in snapshot.AdditionalCosts)
+            AdditionalCosts.Add([new("Description", cost.Description), new("Amount", cost.Amount.ToString(CultureInfo.CurrentCulture), "number")]);
+        foreach (var item in invoice.Items)
+        {
+            var line = new InvoiceLineViewModel { Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
+            line.Unit = snapshot.LineUnits?.ElementAtOrDefault(Lines.Count) ?? "None";
+            Lines.Add(line);
+        }
+        NavigateCommand.Execute("New Invoice");
+        Status = $"Cloned {record.Name}. Review and save to create a new invoice.";
+        return true;
+    }
+
     public bool LoadDocumentForEditing(UiRecord record)
     {
         if (dbFactory == null) { Status = "Editing requires saved document storage."; return false; }
@@ -762,6 +805,8 @@ public partial class MainWindowViewModel : ObservableObject
         Status = $"Exported {document.Name} PDF.";
         return bytes;
     }
+
+    public InvoiceItem[] PreviewItemsFor(UiRecord document) => InvoiceItemsFor(document);
 
     private InvoiceItem[] InvoiceItemsFor(UiRecord document)
     {

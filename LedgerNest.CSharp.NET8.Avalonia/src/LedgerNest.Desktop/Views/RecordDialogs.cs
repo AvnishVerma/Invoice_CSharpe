@@ -33,20 +33,66 @@ public partial class MainWindow
 
     internal void ShowPayment(UiRecord invoice)
     {
+        static decimal Amount(string value) => decimal.TryParse(value, out var amount) ? amount : 0m;
+        static string Money(decimal amount) => $"Rs. {amount:0.00}";
+
+        var total = Amount(invoice["Total"]);
+        var paid = Amount(invoice["Paid"]);
+        var outstanding = invoice["Outstanding"].Length > 0 ? Amount(invoice["Outstanding"]) : Math.Max(0m, total - paid);
+        var payments = Model.PaymentsFor(invoice).ToArray();
         var fields = FormCatalog.Payment();
-        fields[0].Value = invoice["Outstanding"].Length > 0 ? invoice["Outstanding"] : invoice["Total"];
-        var outstanding = decimal.TryParse(fields[0].Value, out var parsedOutstanding) ? parsedOutstanding : 0m;
+        fields[0].Value = outstanding.ToString("0.00");
+        fields[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
+        fields[3].Value = invoice["Tax"].Length > 0 ? invoice["Tax"] : "0.00";
+
+        Control SummaryCard(string label, decimal value, string color, string background) => new Border
+        {
+            Padding = new Thickness(16, 12),
+            CornerRadius = new CornerRadius(6),
+            BorderBrush = new SolidColorBrush(Color.Parse(color), .35),
+            BorderThickness = new Thickness(1),
+            Background = Brush.Parse(background),
+            Child = Ui.Stack(8, Ui.Text(label, 12, color: Ui.Muted), Ui.Text(Money(value), 16, true, Brush.Parse(color)))
+        };
+
         Control History()
         {
-            var payments = Model.PaymentsFor(invoice).ToArray();
-            if (payments.Length == 0) return Ui.Empty("No payments yet", "", "");
-            return Ui.Stack(8, payments.Select(payment => Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(payment.Name, 13, true), Ui.Text($"{payment["Date"]} · {payment["Method"]}", 12, color: Ui.Muted)), Ui.Text("Rs." + payment["Amount"], 16, true)), 8)).ToArray());
+            if (payments.Length == 0)
+                return new Border { Background = Ui.Canvas, BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Padding = new Thickness(18), Child = Ui.Text("No payments recorded yet", 13, color: Ui.Muted) };
+            var rows = Ui.Stack(0);
+            rows.Children.Add(new Border { Background = Ui.Canvas, Padding = new Thickness(14, 10), Child = Ui.Columns("1.2*,.8*,.9*,1*,1*", Ui.Text("Receipt #", 12), Ui.Text("Date", 12), Ui.Text("Amount", 12), Ui.Text("Tax Covered", 12), Ui.Text("Method", 12)) });
+            foreach (var payment in payments)
+            {
+                var row = new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(14, 11), Child = Ui.Columns("1.2*,.8*,.9*,1*,1*", Ui.Text(payment.Name, 12, color: Ui.Primary), Ui.Text(payment["Date"], 12), Ui.Text(Money(Amount(payment["Amount"])), 12, true, Brush.Parse("#16A34A")), Ui.Text(Money(Amount(invoice["Tax"])), 12, color: Ui.Muted), Ui.Text(payment["Method"], 12, color: Ui.Muted)) };
+                rows.Children.Add(row);
+            }
+            return new Border { Background = Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Child = rows };
         }
-        Action? savePaymentAction = outstanding <= 0.005m ? null : () => { if (Model.ApplyPayment(invoice, fields)) CloseOverlay(); };
-        var savePayment = Ui.Button("Save Payment", savePaymentAction, true);
-        savePayment.IsEnabled = outstanding > 0.005m;
-        var paymentForm = outstanding <= 0.005m ? Ui.Text("Invoice is fully paid.", 13, color: Ui.Muted) : Ui.Fields(fields, 2);
-        ShowOverlay("Apply Payment", Ui.Stack(18, Ui.Text($"Invoice: {invoice.Name} · {invoice["Customer"]}"), Ui.Stats(("Invoice Total", invoice["Total"], "", "#002E78"), ("Amount Paid", invoice["Paid"].Length > 0 ? invoice["Paid"] : "0.00", "", "#2E7D32"), ("Outstanding", invoice["Outstanding"].Length > 0 ? invoice["Outstanding"] : invoice["Total"], "", "#C62828")), Ui.Text("Payment History", 16, true), History(), Ui.Text("New Payment", 16, true), paymentForm), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), savePayment), width: 760);
+
+        var summary = Ui.Columns("*,12,*,12,*",
+            SummaryCard("Invoice Total", total, "#0A84FF", "#EEF5FF"), new Border(),
+            SummaryCard("Amount Paid", paid, "#16A34A", "#EEF8F0"), new Border(),
+            SummaryCard("Outstanding", outstanding, outstanding <= 0.005m ? "#16A34A" : "#F59E0B", outstanding <= 0.005m ? "#EEF8F0" : "#FFF5E8"));
+
+        Control content;
+        Control footer;
+        if (outstanding <= 0.005m)
+        {
+            var paidBanner = new Border { BorderBrush = new SolidColorBrush(Color.Parse("#16A34A"), .35), BorderThickness = new Thickness(1), Background = new SolidColorBrush(Color.Parse("#16A34A"), .08), CornerRadius = new CornerRadius(7), Padding = new Thickness(16, 14), Child = Ui.Columns("*,Auto,*", new Border(), Ui.Columns("22,8,Auto", Ui.Icon("check_circle", 18, Brush.Parse("#16A34A")), new Border(), Ui.Text("Invoice fully paid", 14, color: Brush.Parse("#16A34A"))), new Border()) };
+            content = Ui.Stack(20, Ui.Text($"{invoice.Name} — {invoice["Customer"]}", 13, color: Ui.Muted), summary, Ui.Text("Payment History", 14, true, Ui.Muted), History(), paidBanner);
+            footer = Ui.Button("Close", CloseOverlay, true);
+        }
+        else
+        {
+            var amountHint = Ui.Text($"Max: {Money(outstanding)}", 11, color: Ui.Muted);
+            var form = Ui.Stack(12, Ui.Text("New Payment", 14, true), Ui.Fields(fields.Take(2), 2), amountHint, Ui.Fields(fields.Skip(2).Take(2), 2), Ui.Field(fields[4]));
+            var savePayment = Ui.Button("Save Payment", () => { if (Model.ApplyPayment(invoice, fields)) ShowPayment(invoice); }, true);
+            savePayment.Content = Ui.Columns("18,8,Auto", Ui.Icon("check_circle", 16, Brushes.White), new Border(), Ui.Text("Record Payment", 13, true, Brushes.White));
+            content = Ui.Stack(20, Ui.Text($"{invoice.Name} — {invoice["Customer"]}", 13, color: Ui.Muted), summary, Ui.Text("Payment History", 14, true, Ui.Muted), History(), new Border { Height = 1, Background = Ui.Outline }, form);
+            footer = Ui.Wrap(Ui.Button("Close", CloseOverlay), savePayment);
+        }
+
+        ShowOverlay("Record Payment", content, footer, width: 700);
     }
     private void ShowCustomItem()
     {

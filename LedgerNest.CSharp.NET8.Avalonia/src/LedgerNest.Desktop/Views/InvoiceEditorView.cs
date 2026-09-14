@@ -177,7 +177,7 @@ public partial class MainWindow
             Model.EditorDocumentNumber,
             applyPayment.IsEnabled,
             () => ShowDocumentPreview(document),
-            () => ShowDocumentPreview(document),
+            () => ShowPdfPreview(document),
             () => DownloadDocumentPdf(document),
             () => PrintDocumentPdf(document),
             () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); },
