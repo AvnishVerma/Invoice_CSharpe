@@ -16,7 +16,7 @@ public partial class MainWindow
         var invoices = Model.ActiveInvoices.OrderByDescending(i => i["Date"]).ThenByDescending(i => i.SourceId).ToArray();
         var paid = Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Paid"], out var n) ? n : 0);
         var outstanding = Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Outstanding"], out var n) ? n : decimal.TryParse(i["Total"], out var total) ? total : 0);
-        var outOfStock = Model.Products.Where(p => decimal.TryParse(p["Stock"], out var stock) && stock <= 0).ToArray();
+        var outOfStock = Model.Products.Where(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0).ToArray();
         var layout = new Button { Padding = new Thickness(8, 6), MinHeight = 36, Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
         layout.Content = Ui.Icon("dashboard", 20, Brushes.White);
         layout.Classes.Add("text");
@@ -42,6 +42,8 @@ public partial class MainWindow
             ("Revenue Collected", "Rs. " + paid.ToString("0.00"), "account_balance_wallet", "#8A2BE2"),
             ("Outstanding", "Rs. " + outstanding.ToString("0.00"), "hourglass_top", "#D32F2F")
         ];
+        static bool HasUnlimitedStock(UiRecord product) => bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited;
+
         Control KpiCard((string Label, string Value, string Icon, string Color) item, string? alert = null)
         {
             var badge = new Border { Width = 37, Height = 37, CornerRadius = new CornerRadius(9), Background = new SolidColorBrush(Color.Parse(item.Color), .12), Child = Ui.Icon(item.Icon, 19, Brush.Parse(item.Color)) };

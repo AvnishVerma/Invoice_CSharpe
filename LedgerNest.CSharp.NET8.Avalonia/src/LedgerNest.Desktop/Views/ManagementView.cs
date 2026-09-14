@@ -105,7 +105,7 @@ internal sealed partial class ManagementView : UserControl
             "Businesses" => query.Where(r => r["Business Name"].Length > 0), "Individuals" => query.Where(r => r["Business Name"].Length == 0),
             "Without GST" => query.Where(r => r["GST / VAT Number"].Length == 0), "With Outstanding" => query.Where(r => decimal.TryParse(r["Outstanding"], out var outstanding) && outstanding > 0), "Expired" => query.Where(r => DateTime.TryParse(r["Expiry Date"], out var expiry) && expiry < DateTime.Today),
             "GST Registered" => query.Where(r => r["GST / VAT Number"].Length > 0), "Services" => query.Where(r => r["Type"] == "Service"), "Products" => query.Where(r => r["Type"] == "Product"),
-            "Low Stock" => query.Where(r => decimal.TryParse(r["Stock"], out var s) && s <= 5), "Out of Stock" => query.Where(r => decimal.TryParse(r["Stock"], out var s) && s <= 0),
+            "Low Stock" => query.Where(r => !HasUnlimitedStock(r) && decimal.TryParse(r["Stock"], out var s) && s <= 5), "Out of Stock" => query.Where(r => !HasUnlimitedStock(r) && decimal.TryParse(r["Stock"], out var s) && s <= 0),
             "Admin" or "User" => query.Where(r => r["Role"] == filter), "Paid" or "Partial" or "Unpaid" or "Overdue" => query.Where(r => r["Status"] == filter), _ => query };
         return sort switch { "Name A–Z" => query.OrderBy(r => r.Name), "Name Z–A" => query.OrderByDescending(r => r.Name), "Newest" => query.Reverse(), _ => query };
     }
@@ -367,7 +367,9 @@ internal sealed partial class ManagementView : UserControl
         return Ui.Stack(4, children.ToArray());
     }
 
-    private static string ProductStock(UiRecord record) => bool.TryParse(record["Unlimited stock"], out var unlimited) && unlimited ? "∞" : record["Stock"];
+    private static bool HasUnlimitedStock(UiRecord record) => bool.TryParse(record["Unlimited stock"], out var unlimited) && unlimited;
+
+    private static string ProductStock(UiRecord record) => HasUnlimitedStock(record) ? "∞" : record["Stock"];
 
     private static string ProductMoney(string value, bool dashWhenZero = false)
     {

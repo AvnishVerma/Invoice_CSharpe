@@ -26,7 +26,8 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
         this.addLine = addLine;
         this.close = close;
         Title = $"{product.Name} (Rs. {draft.Price:0.0#})";
-        StockText = product["Unlimited stock"] == "true" ? "Unlimited Stock" : $"Available Stock: {product["Stock"]}";
+        var hasUnlimitedStock = bool.TryParse(product["Unlimited stock"], out var unlimitedStock) && unlimitedStock;
+        StockText = hasUnlimitedStock ? "Unlimited Stock" : $"Available Stock: {product["Stock"]}";
         DefaultPriceText = $"Default: Rs.{draft.Price:0.00}";
         Unit = new FormField("Unit (override)", draft.Unit, "choice",
             new[] { "None", "pcs", "kg", "g", "l", "m", "box", draft.Unit }.Distinct().ToArray());
