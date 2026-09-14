@@ -278,7 +278,7 @@ public partial class MainWindowViewModel : ObservableObject
             Lines.Add(line);
         }
         NavigateCommand.Execute("New Invoice");
-        Status = $"Cloned {record.Name}. Review and save to create a new invoice.";
+        Status = $"Cloned {record.Name} without payment history. Review and save to create a new invoice.";
         return true;
     }
 

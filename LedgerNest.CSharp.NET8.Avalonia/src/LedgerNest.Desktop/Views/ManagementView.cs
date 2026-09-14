@@ -451,6 +451,7 @@ internal sealed partial class ManagementView : UserControl
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
         button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
         button.Tag = label;
+        ToolTip.SetTip(button, label);
         return button;
     }
 
@@ -464,6 +465,7 @@ internal sealed partial class ManagementView : UserControl
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
         button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
         button.Tag = label;
+        ToolTip.SetTip(button, label);
         return button;
     }
 

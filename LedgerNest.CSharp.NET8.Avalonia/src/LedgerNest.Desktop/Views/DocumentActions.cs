@@ -26,15 +26,27 @@ public partial class MainWindow
         ShowOverlay("", content, Ui.Button("Close", CloseOverlay, true), width: 650);
     }
 
-    internal void ShowPdfPreview(UiRecord document)
+    internal async void ShowPdfPreview(UiRecord document)
     {
-        var bytes = TryExportDocumentPdf(document);
-        if (bytes == null) return;
-        ShowOverlay("PDF Preview", Ui.Stack(14,
-            Ui.Text($"PDF file is ready for {document.Name}.", 16, true),
-            Ui.Text("Preview uses the selected PDF configuration. Download saves the generated file.")),
-            Ui.Wrap(Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)), Ui.Button("Close", CloseOverlay, true)),
-            width: 520);
+        string? path = null;
+        try
+        {
+            var bytes = TryExportDocumentPdf(document);
+            if (bytes == null) return;
+            path = Path.Combine(Path.GetTempPath(), $"ledgernest-preview-{FilePickerHelpers.SanitizeFileName(document.Name)}-{Guid.NewGuid():N}.pdf");
+            await File.WriteAllBytesAsync(path, bytes);
+            OpenPdfFile(path);
+            Model.Status = $"Opened PDF preview for {document.Name}.";
+            ShowOverlay("PDF Preview", Ui.Stack(14,
+                Ui.Text($"PDF preview opened for {document.Name}.", 16, true),
+                Ui.Text("Use Download PDF to save a copy of the generated file.")),
+                Ui.Wrap(Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)), Ui.Button("Close", CloseOverlay, true)),
+                width: 520);
+        }
+        catch (Exception ex)
+        {
+            NotifyError(path == null ? "Could not create PDF preview. The error has been logged." : $"Could not open PDF preview. Preview file: {path}. The error has been logged.", ex, $"Previewing invoice PDF {document.Name}");
+        }
     }
 
     private static string TaxLabel(UiRecord document)
@@ -87,6 +99,19 @@ public partial class MainWindow
         {
             NotifyError(path == null ? "Could not create print PDF. The error has been logged." : $"Could not send PDF to printer. Saved print file: {path}. The error has been logged.", ex, $"Printing invoice PDF {document.Name}");
         }
+    }
+
+    private static void OpenPdfFile(string path)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+            return;
+        }
+
+        var command = OperatingSystem.IsMacOS() ? "open" : "xdg-open";
+        using var process = Process.Start(new ProcessStartInfo(command, path) { UseShellExecute = false, CreateNoWindow = true });
+        if (process == null) throw new InvalidOperationException("The system PDF preview command could not be started.");
     }
 
     private static async Task SendPdfToPrinter(string path)
