@@ -1,4 +1,12 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
+using Docnet.Core;
+using Docnet.Core.Models;
+using System.Runtime.InteropServices;
 using Avalonia.Platform.Storage;
 using System.Diagnostics;
 using LedgerNest.Desktop.Views;
@@ -35,18 +43,49 @@ public partial class MainWindow
             if (bytes == null) return;
             path = Path.Combine(Path.GetTempPath(), $"ledgernest-preview-{FilePickerHelpers.SanitizeFileName(document.Name)}-{Guid.NewGuid():N}.pdf");
             await File.WriteAllBytesAsync(path, bytes);
-            OpenPdfFile(path);
-            Model.Status = $"Opened PDF preview for {document.Name}.";
-            ShowOverlay("PDF Preview", Ui.Stack(14,
-                Ui.Text($"PDF preview opened for {document.Name}.", 16, true),
-                Ui.Text("Use Download PDF to save a copy of the generated file.")),
-                Ui.Wrap(Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)), Ui.Button("Close", CloseOverlay, true)),
-                width: 520);
+            var pages = RenderPdfPreviewPages(bytes);
+            var pageCountText = pages.Count == 1 ? "1 page" : $"{pages.Count} pages";
+            var pageStack = Ui.Stack(18, pages.Select(page => new Border { Background = Brushes.White, BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8), Child = page }).ToArray());
+            var previewPanel = new Border { Background = Brush.Parse("#ECEFF4"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(14), MaxHeight = Math.Max(360, Bounds.Height * .72), Child = Ui.Scroll(pageStack, 0) };
+            Model.Status = $"Rendered PDF preview for {document.Name}.";
+            ShowOverlay("PDF Preview", Ui.Stack(12,
+                Ui.Columns("*,Auto", Ui.Text($"{document.Name} PDF", 16, true), Ui.Text(pageCountText, 12, color: Ui.Muted)),
+                previewPanel,
+                Ui.Text("Preview rendered with Docnet.Core. Use Download PDF to save the file.", 12, color: Ui.Muted)),
+                Ui.Wrap(Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)), Ui.Button("Open Externally", () => { if (path != null) OpenPdfFile(path); }), Ui.Button("Close", CloseOverlay, true)),
+                width: 860);
         }
         catch (Exception ex)
         {
-            NotifyError(path == null ? "Could not create PDF preview. The error has been logged." : $"Could not open PDF preview. Preview file: {path}. The error has been logged.", ex, $"Previewing invoice PDF {document.Name}");
+            NotifyError(path == null ? "Could not create PDF preview. The error has been logged." : $"Could not render PDF preview. Preview file: {path}. The error has been logged.", ex, $"Previewing invoice PDF {document.Name}");
         }
+    }
+
+    private static List<Image> RenderPdfPreviewPages(byte[] bytes)
+    {
+        var pages = new List<Image>();
+        using var reader = DocLib.Instance.GetDocReader(bytes, new PageDimensions(1.65));
+        for (var pageIndex = 0; pageIndex < reader.GetPageCount(); pageIndex++)
+        {
+            using var pageReader = reader.GetPageReader(pageIndex);
+            var width = pageReader.GetPageWidth();
+            var height = pageReader.GetPageHeight();
+            var pixels = pageReader.GetImage();
+            var source = CreateBitmapFromBgra(pixels, width, height);
+            pages.Add(new Image { Source = source, Stretch = Stretch.Uniform, MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Center });
+        }
+        return pages.Count == 0 ? [new Image { Height = 1 }] : pages;
+    }
+
+    private static WriteableBitmap CreateBitmapFromBgra(byte[] pixels, int width, int height)
+    {
+        var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
+        using var locked = bitmap.Lock();
+        var sourceStride = width * 4;
+        var rows = Math.Min(height, pixels.Length / sourceStride);
+        for (var row = 0; row < rows; row++)
+            Marshal.Copy(pixels, row * sourceStride, IntPtr.Add(locked.Address, row * locked.RowBytes), Math.Min(sourceStride, locked.RowBytes));
+        return bitmap;
     }
 
     private static string TaxLabel(UiRecord document)

@@ -10,6 +10,7 @@
     <AvaloniaResource Include="Assets/**" />
     <EmbeddedResource Include="Assets/Roboto-Regular.ttf" LogicalName="LedgerNest.Pdf.Regular" />
     <EmbeddedResource Include="Assets/Roboto-Bold.ttf" LogicalName="LedgerNest.Pdf.Bold" />
+    <PackageReference Include="Docnet.Core" Version="2.6.0" />
     <PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
     <ProjectReference Include="..\LedgerNest.Application\LedgerNest.Application.csproj">
       <ReferenceSourceTarget></ReferenceSourceTarget>
