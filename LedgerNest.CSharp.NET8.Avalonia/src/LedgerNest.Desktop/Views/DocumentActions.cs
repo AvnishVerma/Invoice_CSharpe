@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using System.Diagnostics;
 using LedgerNest.Desktop.Views;
 
 namespace LedgerNest.Desktop;
@@ -42,19 +43,48 @@ public partial class MainWindow
         }
     }
 
-    private async Task PrintDocumentPdf(UiRecord document)
+    internal async Task PrintDocumentPdf(UiRecord document)
     {
+        string? path = null;
         try
         {
             var bytes = TryExportDocumentPdf(document);
             if (bytes == null) return;
-            var path = Path.Combine(Path.GetTempPath(), $"ledgernest-{FilePickerHelpers.SanitizeFileName(document.Name)}-{Guid.NewGuid():N}.pdf");
+            path = Path.Combine(Path.GetTempPath(), $"ledgernest-{FilePickerHelpers.SanitizeFileName(document.Name)}-{Guid.NewGuid():N}.pdf");
             await File.WriteAllBytesAsync(path, bytes);
-            Model.Status = $"Print-ready PDF created: {path}";
+            await SendPdfToPrinter(path);
+            Model.Status = $"Sent {document.Name} to printer.";
         }
         catch (Exception ex)
         {
-            NotifyError("Could not create print PDF. The error has been logged.", ex, $"Creating print PDF {document.Name}");
+            NotifyError(path == null ? "Could not create print PDF. The error has been logged." : $"Could not send PDF to printer. Saved print file: {path}. The error has been logged.", ex, $"Printing invoice PDF {document.Name}");
+        }
+    }
+
+    private static async Task SendPdfToPrinter(string path)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            using var process = Process.Start(new ProcessStartInfo(path) { Verb = "print", UseShellExecute = true, CreateNoWindow = true });
+            if (process == null) throw new InvalidOperationException("The system print command could not be started.");
+            return;
+        }
+
+        var command = OperatingSystem.IsMacOS() ? "lp" : File.Exists("/usr/bin/lp") || File.Exists("/bin/lp") ? "lp" : "lpr";
+        using var print = Process.Start(new ProcessStartInfo(command, path)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        });
+        if (print == null) throw new InvalidOperationException("The system print command could not be started.");
+        await print.WaitForExitAsync();
+        if (print.ExitCode != 0)
+        {
+            var error = await print.StandardError.ReadToEndAsync();
+            if (string.IsNullOrWhiteSpace(error)) error = await print.StandardOutput.ReadToEndAsync();
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(error) ? $"Print command exited with code {print.ExitCode}." : error.Trim());
         }
     }
 

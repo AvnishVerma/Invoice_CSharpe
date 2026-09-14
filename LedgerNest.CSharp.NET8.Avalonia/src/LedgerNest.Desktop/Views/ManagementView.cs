@@ -434,7 +434,7 @@ internal sealed partial class ManagementView : UserControl
     private Control DocumentActions(UiRecord record)
     {
         if (trash) return Ui.Wrap(Ui.Button("Restore", () => { model.SetDocumentTrash(record, false); Refresh(); }), DocumentOverflowMenu(record));
-        var actions = Ui.Wrap(IconAction("visibility", "View", () => View(record), "#4CAF50"), IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"), IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"), IconAction("picture_as_pdf", "PDF", async () => await ExportDocumentPdf(record), "#FF9800"), IconAction("download", "Download", async () => await ExportDocumentPdf(record), "#673AB7"), IconAction("print", "Print", async () => await ExportDocumentPdf(record), "#607D8B"), DocumentOverflowMenu(record));
+        var actions = Ui.Wrap(IconAction("visibility", "View", () => View(record), "#4CAF50"), IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"), IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"), IconAction("picture_as_pdf", "PDF", async () => await ExportDocumentPdf(record), "#FF9800"), IconAction("download", "Download", async () => await ExportDocumentPdf(record), "#673AB7"), IconAction("print", "Print", async () => await window.PrintDocumentPdf(record), "#607D8B"), DocumentOverflowMenu(record));
         foreach (var child in actions.Children) child.Margin = new Thickness(0, 0, 5, 0);
         return actions;
     }
