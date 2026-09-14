@@ -31,8 +31,12 @@
       </ResourceDictionary.ThemeDictionaries>
       <LinearGradientBrush x:Key="LoginBackdrop" StartPoint="0%,0%" EndPoint="100%,100%">
         <GradientStop Color="#EAF2FF" Offset="0" />
-        <GradientStop Color="#F8FAFC" Offset="0.52" />
-        <GradientStop Color="#F4EFFF" Offset="1" />
+        <GradientStop Color="#F8FAFC" Offset="0.55" />
+        <GradientStop Color="#F3E8FF" Offset="1" />
+      </LinearGradientBrush>
+      <LinearGradientBrush x:Key="LoginHeroGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#003B8F" Offset="0" />
+        <GradientStop Color="#0F766E" Offset="1" />
       </LinearGradientBrush>
     </ResourceDictionary>
   </UserControl.Resources>
@@ -84,67 +88,88 @@
              VerticalAlignment="Center"
              Width="{Binding Bounds.Width, RelativeSource={RelativeSource AncestorType=UserControl}}"
              Height="{Binding Bounds.Height, RelativeSource={RelativeSource AncestorType=UserControl}}">
-      <Grid Width="466" MinHeight="620">
-        <Border Width="420"
-                MaxWidth="420"
+      <Grid Width="930" Height="590">
+        <Border Width="880"
+                Height="540"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Margin="23"
-                Padding="10"
-                CornerRadius="24"
+                CornerRadius="28"
+                ClipToBounds="True"
                 Background="{DynamicResource LoginCardSurface}"
                 BoxShadow="0 24 80 0 #24000000">
-          <Border Width="400" MinHeight="420" Padding="24" Background="Transparent">
-            <StackPanel Spacing="22">
-              <Border Width="64" Height="64" CornerRadius="20" Background="{DynamicResource LoginPrimaryLight}" HorizontalAlignment="Center">
-                <TextBlock Text="✓" FontSize="34" FontWeight="Bold" Foreground="{DynamicResource LoginPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-
-              <StackPanel Spacing="8" HorizontalAlignment="Center">
-                <TextBlock Text="Sign in" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource LoginText}" HorizontalAlignment="Center" />
-                <TextBlock Text="Use your workspace credentials to continue." FontSize="14" Foreground="{DynamicResource LoginMuted}" TextAlignment="Center" TextWrapping="Wrap" />
-              </StackPanel>
-
-              <Border MinHeight="42">
-                <Border Background="{DynamicResource LoginErrorBack}"
-                        BorderBrush="{DynamicResource LoginErrorBorder}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="12,10"
-                        IsVisible="{Binding Message, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}">
-                  <TextBlock Text="{Binding Message}" Foreground="Firebrick" FontSize="13" TextWrapping="Wrap" />
-                </Border>
-              </Border>
-
-              <StackPanel Spacing="7">
-                <TextBlock Text="Username" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource LoginMuted}" />
-                <TextBox x:Name="UsernameInput" Classes="login-input" PlaceholderText="Username"
-                         Text="{Binding Username.Value, Mode=TwoWay}" AutomationProperties.Name="Username" />
-                <TextBlock Text="{Binding Username.Error}" FontSize="12" Foreground="Firebrick"
-                           IsVisible="{Binding Username.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
-              </StackPanel>
-
-              <StackPanel Spacing="7">
-                <TextBlock Text="Password" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource LoginMuted}" />
-                <TextBox Classes="login-input" PlaceholderText="Password"
-                         PasswordChar="●"
-                         Text="{Binding Password.Value, Mode=TwoWay}" AutomationProperties.Name="Password" />
-                <TextBlock Text="{Binding Password.Error}" FontSize="12" Foreground="Firebrick"
-                           IsVisible="{Binding Password.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
-              </StackPanel>
-
-              <Button Content="Login" Classes="login-primary" Command="{Binding LoginCommand}" />
-
-              <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Text="First time? Use admin / admin" FontSize="12" Foreground="{DynamicResource LoginMuted}" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Content="Forgot password?" Classes="login-link" Command="{Binding ForgotPasswordCommand}" />
+          <Grid ColumnDefinitions="380,500">
+            <Border Background="{StaticResource LoginHeroGradient}" Padding="38">
+              <Grid RowDefinitions="*,Auto">
+                <StackPanel VerticalAlignment="Center" Spacing="22">
+                  <Border Width="72" Height="72" CornerRadius="24" Background="#26FFFFFF" HorizontalAlignment="Left">
+                    <TextBlock Text="✓" FontSize="38" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </Border>
+                  <TextBlock Text="Welcome back" FontSize="34" FontWeight="Bold" Foreground="White" TextWrapping="Wrap" />
+                  <TextBlock Text="Open your secure workspace and continue managing invoices, payments, customers, and reports."
+                             FontSize="16" LineHeight="24" Foreground="#E7F2FF" TextWrapping="Wrap" />
+                  <WrapPanel Margin="0,8,0,0">
+                    <Border Background="#1AFFFFFF" CornerRadius="18" Padding="12,8" Margin="0,0,8,8">
+                      <TextBlock Text="Offline ready" Foreground="White" FontSize="13" />
+                    </Border>
+                    <Border Background="#1AFFFFFF" CornerRadius="18" Padding="12,8" Margin="0,0,8,8">
+                      <TextBlock Text="Local data" Foreground="White" FontSize="13" />
+                    </Border>
+                  </WrapPanel>
+                </StackPanel>
+                <TextBlock Grid.Row="1" Text="Secure desktop access" Foreground="#CFE8FF" FontSize="12" />
               </Grid>
+            </Border>
 
-              <Border Background="{DynamicResource LoginPrimaryLight}" CornerRadius="14" Padding="14">
-                <TextBlock Text="{Binding FirstTimeHelp}" FontSize="12" Foreground="{DynamicResource LoginPrimary}" TextWrapping="Wrap" />
+            <Border Grid.Column="1" Padding="50,42">
+              <Border Width="400" MinHeight="420" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent">
+                <StackPanel Spacing="20">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="Sign in" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource LoginText}" />
+                    <TextBlock Text="Use your workspace credentials to continue." FontSize="14" Foreground="{DynamicResource LoginMuted}" TextWrapping="Wrap" />
+                  </StackPanel>
+
+                  <Border MinHeight="42">
+                    <Border Background="{DynamicResource LoginErrorBack}"
+                            BorderBrush="{DynamicResource LoginErrorBorder}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="12,10"
+                            IsVisible="{Binding Message, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}">
+                      <TextBlock Text="{Binding Message}" Foreground="Firebrick" FontSize="13" TextWrapping="Wrap" />
+                    </Border>
+                  </Border>
+
+                  <StackPanel Spacing="7">
+                    <TextBlock Text="Username" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource LoginMuted}" />
+                    <TextBox x:Name="UsernameInput" Classes="login-input" PlaceholderText="Username"
+                             Text="{Binding Username.Value, Mode=TwoWay}" AutomationProperties.Name="Username" />
+                    <TextBlock Text="{Binding Username.Error}" FontSize="12" Foreground="Firebrick"
+                               IsVisible="{Binding Username.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+                  </StackPanel>
+
+                  <StackPanel Spacing="7">
+                    <TextBlock Text="Password" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource LoginMuted}" />
+                    <TextBox Classes="login-input" PlaceholderText="Password"
+                             PasswordChar="●"
+                             Text="{Binding Password.Value, Mode=TwoWay}" AutomationProperties.Name="Password" />
+                    <TextBlock Text="{Binding Password.Error}" FontSize="12" Foreground="Firebrick"
+                               IsVisible="{Binding Password.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+                  </StackPanel>
+
+                  <Button Content="Login" Classes="login-primary" Command="{Binding LoginCommand}" />
+
+                  <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="First time? Use admin / admin" FontSize="12" Foreground="{DynamicResource LoginMuted}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Content="Forgot password?" Classes="login-link" Command="{Binding ForgotPasswordCommand}" />
+                  </Grid>
+
+                  <Border Background="{DynamicResource LoginPrimaryLight}" CornerRadius="14" Padding="14">
+                    <TextBlock Text="{Binding FirstTimeHelp}" FontSize="12" Foreground="{DynamicResource LoginPrimary}" TextWrapping="Wrap" />
+                  </Border>
+                </StackPanel>
               </Border>
-            </StackPanel>
-          </Border>
+            </Border>
+          </Grid>
         </Border>
       </Grid>
     </Viewbox>
