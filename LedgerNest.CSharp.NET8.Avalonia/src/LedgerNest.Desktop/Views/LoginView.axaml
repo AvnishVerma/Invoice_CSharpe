@@ -75,13 +75,13 @@
   </UserControl.Styles>
 
   <Border Background="{StaticResource LoginBackdrop}">
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-      <Grid MinHeight="620">
+    <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Center" VerticalAlignment="Center" Width="{Binding Bounds.Width, RelativeSource={RelativeSource AncestorType=UserControl}}" Height="{Binding Bounds.Height, RelativeSource={RelativeSource AncestorType=UserControl}}">
+      <Grid Width="466" MinHeight="620">
         <Border Width="420"
                 MaxWidth="420"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                Margin="24"
+                Margin="23"
                 Padding="34"
                 CornerRadius="24"
                 Background="{DynamicResource LoginCardSurface}"
@@ -136,6 +136,6 @@
           </StackPanel>
         </Border>
       </Grid>
-    </ScrollViewer>
+    </Viewbox>
   </Border>
 </UserControl>
