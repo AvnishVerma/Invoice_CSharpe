@@ -54,11 +54,9 @@
       <Setter Property="Foreground" Value="{DynamicResource LoginText}" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
-    <Style Selector="Button.login-primary">
-      <Setter Property="Height" Value="48" />
-      <Setter Property="MinHeight" Value="48" />
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="CornerRadius" Value="12" />
+    <Style Selector="Button.login-primary"> 
+      <Setter Property="Padding" Value="10" />
+      <Setter Property="CornerRadius" Value="4" />
       <Setter Property="FontSize" Value="15" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Background" Value="{DynamicResource LoginPrimary}" />
@@ -156,11 +154,9 @@
                                IsVisible="{Binding Password.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
                   </StackPanel>
 
-                  <Button Content="Login" Classes="login-primary" Command="{Binding LoginCommand}" />
-
                   <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Text="First time? Use admin / admin" FontSize="12" Foreground="{DynamicResource LoginMuted}" VerticalAlignment="Center" />
-                    <Button Grid.Column="1" Content="Forgot password?" Classes="login-link" Command="{Binding ForgotPasswordCommand}" />
+                      <Button Content="Login" Classes="login-primary" Command="{Binding LoginCommand}" />
+                      <Button Grid.Column="1" Content="Forgot password?" Classes="login-link" Command="{Binding ForgotPasswordCommand}" />
                   </Grid>
 
                   <Border Background="{DynamicResource LoginPrimaryLight}" CornerRadius="14" Padding="14">
