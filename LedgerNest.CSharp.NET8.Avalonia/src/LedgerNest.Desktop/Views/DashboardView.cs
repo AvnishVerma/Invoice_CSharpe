@@ -36,17 +36,17 @@ public partial class MainWindow
         var greeting = new Border { Padding = new Thickness(28, 24), MinHeight = 104, CornerRadius = new CornerRadius(16), Background = new LinearGradientBrush { StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative), GradientStops = [new GradientStop(Color.Parse("#1E293B"), 0), new GradientStop(Color.Parse("#334155"), 1)] }, Child = Ui.Stack(6, Ui.Text("Welcome back, admin", 22, true, Brushes.White), Ui.Text("Here's your business at a glance", 13, color: Brush.Parse("#B8C0CB"))) };
         (string Label, string Value, string Icon, string Color)[] kpis =
         [
-            ("Revenue", "Rs. " + paid.ToString("0.00"), "account_balance_wallet", "#8A2BE2"),
-            ("Outstanding", "Rs. " + outstanding.ToString("0.0K"), "hourglass_top", "#D32F2F"),
-            ("Invoices", invoices.Length.ToString(), "receipt_long", "#F97316"),
             ("Customers", Model.Customers.Count.ToString(), "people", "#1976D2"),
-            ("Products", Model.Products.Count.ToString(), "inventory_2", "#2E7D32")
+            ("Products", Model.Products.Count.ToString(), "inventory_2", "#2E7D32"),
+            ("Invoices", invoices.Length.ToString(), "receipt_long", "#F97316"),
+            ("Revenue Collected", "Rs. " + paid.ToString("0.00"), "account_balance_wallet", "#8A2BE2"),
+            ("Outstanding", "Rs. " + outstanding.ToString("0.00"), "hourglass_top", "#D32F2F")
         ];
         Control KpiCard((string Label, string Value, string Icon, string Color) item, string? alert = null)
         {
             var badge = new Border { Width = 37, Height = 37, CornerRadius = new CornerRadius(9), Background = new SolidColorBrush(Color.Parse(item.Color), .12), Child = Ui.Icon(item.Icon, 19, Brush.Parse(item.Color)) };
             Control header = alert == null ? Ui.Text(item.Label, 11, color: Ui.Muted) : Ui.Columns("*,Auto", Ui.Text(item.Label, 11, color: Ui.Muted), Ui.Text(alert, 11, color: Brushes.Red));
-            return new Border { Padding = new Thickness(20), MinHeight = 78, CornerRadius = new CornerRadius(12), Background = Ui.CardSurface, BoxShadow = BoxShadows.Parse("0 8 22 0 #10000000"), Child = Ui.Columns("40,14,*", badge, new Border(), Ui.Stack(5, header, Ui.Text(item.Value, 16, true))) };
+            return new Border { Padding = new Thickness(20), MinHeight = 78, CornerRadius = new CornerRadius(12), Background = Ui.Canvas, BoxShadow = BoxShadows.Parse("0 8 22 0 #10000000"), Child = Ui.Columns("40,14,*", badge, new Border(), Ui.Stack(5, header, Ui.Text(item.Value, 16, true))) };
         }
         Control KpiGrid(IEnumerable<(string Label, string Value, string Icon, string Color)> items)
         {
@@ -80,16 +80,65 @@ public partial class MainWindow
         }
         Control RecentFeed()
         {
-            var stack = Ui.Stack(22, Ui.Columns("*,Auto", Ui.Columns("4,12,*", new Border { Height = 30, Background = Ui.Primary, CornerRadius = new CornerRadius(3) }, new Border(), Ui.Text("Recent Invoices", 22, true)), Ui.Text("Last 5 invoices", 13, color: Ui.Muted)));
+            var stack = Ui.Stack(18, Ui.Columns("*,Auto", Ui.Columns("4,12,*", new Border { Height = 30, Background = Ui.Primary, CornerRadius = new CornerRadius(3) }, new Border(), Ui.Text("Recent Invoices", 22, true)), Ui.Text("Last 5 invoices", 13, color: Ui.Muted)));
             var index = 1;
             foreach (var inv in invoices.Take(5))
             {
-                var row = new Border { Padding = new Thickness(20), CornerRadius = new CornerRadius(10), Background = Brush.Parse("#FBF5FF"), Child = Ui.Columns("52,16,*,Auto", new Border { Width = 48, Height = 48, CornerRadius = new CornerRadius(10), Background = Ui.Primary, Child = Ui.Text((index++).ToString(), 20, true, Brushes.White) }, new Border(), Ui.Stack(8, Ui.Wrap(Ui.Text("Invoice #" + inv.Name, 20, true), Ui.Text("Invoice", 12, color: Ui.Primary), Ui.Text(inv["Status"], 12, color: Brushes.Red)), Ui.Text(inv["Customer"], 14, color: Ui.Muted), Ui.Text(inv["Date"], 14, color: Ui.Muted)), Ui.Stack(12, new Border { Padding = new Thickness(20, 12), CornerRadius = new CornerRadius(8), Background = Brush.Parse("#F3DDFB"), Child = Ui.Text("Rs. " + inv["Total"], 20, true, Brush.Parse("#A21CAF")) }, Ui.Wrap(Ui.Button("View", () => ShowDocumentPreview(inv)), Ui.Button("✎", () => Model.LoadDocumentForEditing(inv)), Ui.Button("↓", async () => await DownloadDocumentPdf(inv)), Ui.Button("🖨", async () => await PrintDocumentPdf(inv)), Ui.Button("Delete", () => DeleteDocumentFromDashboard(inv))))) };
+                var typeBadge = Pill("Invoice", Ui.Primary, "#EAF2FF");
+                var status = inv["Status"];
+                var statusBadge = Pill(status, StatusColor(status), StatusBackground(status));
+                var row = new Border
+                {
+                    Padding = new Thickness(16),
+                    CornerRadius = new CornerRadius(8),
+                    Background = Brush.Parse("#FCF6FF"),
+                    Child = Ui.Columns("54,16,*,Auto",
+                        new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(9), Background = Ui.Primary, VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text((index++).ToString(), 20, true, Brushes.White) },
+                        new Border(),
+                        Ui.Stack(7,
+                            Ui.Wrap(Ui.Text("Invoice #" + inv.Name, 18, true), typeBadge, statusBadge),
+                            Ui.Columns("22,*", Ui.Icon("person", 15, Ui.Muted), Ui.Text(inv["Customer"], 14)),
+                            Ui.Columns("22,*", Ui.Icon("calendar_today", 15, Ui.Muted), Ui.Text(inv["Date"], 14))),
+                        Ui.Stack(10,
+                            new Border { Padding = new Thickness(18, 10), CornerRadius = new CornerRadius(7), Background = Brush.Parse("#F3DDFB"), HorizontalAlignment = HorizontalAlignment.Right, Child = Ui.Text("Rs. " + inv["Total"], 20, true, Brush.Parse("#A21CAF")) },
+                            DashboardActions(inv)))
+                };
                 stack.Children.Add(row);
             }
             if (invoices.Length == 0) stack.Children.Add(Ui.Empty("No invoices yet", "Create your first invoice to see it here"));
             return stack;
         }
+
+        Control DashboardActions(UiRecord inv)
+        {
+            var panel = Ui.Wrap(
+                DashboardIcon("visibility", "View", () => { ShowDocumentPreview(inv); return Task.CompletedTask; }, "#4CAF50"),
+                DashboardIcon("edit", "Edit", () => { Model.LoadDocumentForEditing(inv); return Task.CompletedTask; }, "#2196F3"),
+                DashboardIcon("receipt_long", "Duplicate", () => { Model.Status = "Duplicate invoice is not yet migrated."; return Task.CompletedTask; }, "#0097A7"),
+                DashboardIcon("picture_as_pdf", "PDF", async () => await DownloadDocumentPdf(inv), "#FF9800"),
+                DashboardIcon("download", "Download", async () => await DownloadDocumentPdf(inv), "#673AB7"),
+                DashboardIcon("print", "Print", async () => await PrintDocumentPdf(inv), "#607D8B"),
+                DashboardIcon("account_balance_wallet", "Payment", () => { ShowPayment(inv); return Task.CompletedTask; }, "#9C27B0"),
+                DashboardIcon("delete", "Delete", () => { DeleteDocumentFromDashboard(inv); return Task.CompletedTask; }, "#F44336"));
+            foreach (var child in panel.Children) child.Margin = new Thickness(0, 0, 6, 0);
+            return panel;
+        }
+
+        Button DashboardIcon(string icon, string label, Func<Task> action, string color)
+        {
+            var button = Ui.Button(label, async () => await action());
+            button.Content = Ui.Icon(icon, 17, Brush.Parse(color));
+            button.Width = 42; button.Height = 42; button.MinWidth = 42; button.MinHeight = 42;
+            button.Padding = new Thickness(0);
+            button.Background = new SolidColorBrush(Color.Parse(color), .12);
+            button.BorderBrush = new SolidColorBrush(Color.Parse(color), .32);
+            button.Tag = label;
+            return button;
+        }
+
+        static Border Pill(string text, IBrush color, string background) => new() { Padding = new Thickness(9, 4), CornerRadius = new CornerRadius(4), Background = Brush.Parse(background), BorderBrush = color, BorderThickness = new Thickness(1), Child = Ui.Text(text, 12, false, color) };
+        static IBrush StatusColor(string status) => status switch { "Paid" => Brush.Parse("#4CAF50"), "Partial" => Brush.Parse("#FF9800"), "Unpaid" => Brush.Parse("#F44336"), _ => Brush.Parse("#D32F2F") };
+        static string StatusBackground(string status) => status switch { "Paid" => "#E8F5E9", "Partial" => "#FFF3E0", "Unpaid" => "#FFEBEE", _ => "#FFEBEE" };
         Control TopList(string title, IEnumerable<UiRecord> records, string metric)
         {
             var rows = records.Take(3).Select(r => Ui.Columns("28,*,Auto", new Border { Width = 24, Height = 24, CornerRadius = new CornerRadius(7), Background = Brush.Parse("#E8F2FF"), Child = Ui.Text(r.Name[..Math.Min(1, r.Name.Length)].ToUpperInvariant(), 11, true, Ui.Primary) }, Ui.Text(r.Name, 12), Ui.Text(metric, 12))).ToArray();
@@ -113,7 +162,6 @@ public partial class MainWindow
                 break;
             default:
                 body.Children.Add(KpiGrid(kpis));
-                body.Children.Add(OutOfStockCard(true));
                 body.Children.Add(RecentFeed());
                 break;
         }
