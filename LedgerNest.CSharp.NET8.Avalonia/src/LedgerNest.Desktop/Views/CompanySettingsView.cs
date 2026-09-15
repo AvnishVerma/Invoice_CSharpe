@@ -107,28 +107,14 @@ public partial class MainWindow
         }
         var templates = Ui.Card(Ui.Rows("Auto,Auto,*", Ui.Stack(8, Ui.Text("PAGE SIZE", 12, true, Ui.Muted), Ui.Field(pageSize)), new Border { Padding = new Thickness(0, 16, 0, 10), Child = Ui.Text("TEMPLATES", 12, true, Ui.Muted) }, Ui.Scroll(templateList, 0)), 12);
         var settings = Ui.Card(options, 0); var previewCard = Ui.Card(Ui.Rows("Auto,*,Auto", new Border { Padding = new Thickness(16, 10), Child = Ui.Text("Preview", 13, true) }, preview, new Border { Padding = new Thickness(16, 10), Child = Ui.Text("Preview may slightly differ in the final PDF.", 12, color: Ui.Muted) }), 0);
-        var layout = Ui.Columns("260,12,320,12,*", templates, new Border(), settings, new Border(), previewCard); layout.Margin = new Thickness(12);
-        var host = new ContentControl { Content = layout }; bool? previousNarrow = null;
-        host.SizeChanged += (_, e) =>
-        {
-            var narrow = e.NewSize.Width < 900; if (previousNarrow == narrow) return; previousNarrow = narrow;
-            host.Content = null; layout.Children.Clear();
-            if (narrow)
-            { templates.Height = 400; settings.Height = 520; previewCard.Height = 520; host.Content = Ui.Scroll(Ui.Stack(12, templates, settings, previewCard), 12); }
-            else
-            {
-                foreach (var item in new[] { templates, settings, previewCard }) { if (item.Parent is Panel p) p.Children.Remove(item); item.Height = double.NaN; }
-                Grid.SetColumn(templates, 0); Grid.SetColumn(settings, 2); Grid.SetColumn(previewCard, 4); layout.Children.Add(templates); layout.Children.Add(settings); layout.Children.Add(previewCard); host.Content = layout;
-            }
-        };
         System.ComponentModel.PropertyChangedEventHandler pageSizeChanged = (_, e) =>
         {
             if (e.PropertyName != nameof(FormField.Value)) return;
             selectedTemplate.Value = pageSize.Value switch { "A5" => "Grid Classic", "A6" => "Compact", "Thermal 80mm" or "Thermal 58mm" => "Thermal", _ => "Classic" }; Display();
         };
         Display();
-        var header = new Border { Background = Ui.Surface, Padding = new Thickness(16, 12), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Child = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true)) };
-        var view = Ui.Rows("Auto,*", header, host);
+        var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true));
+        var view = new PdfSettingsShellView(header, templates, settings, previewCard);
         view.AttachedToVisualTree += (_, _) => pageSize.PropertyChanged += pageSizeChanged;
         view.DetachedFromVisualTree += (_, _) => pageSize.PropertyChanged -= pageSizeChanged;
         return view;
