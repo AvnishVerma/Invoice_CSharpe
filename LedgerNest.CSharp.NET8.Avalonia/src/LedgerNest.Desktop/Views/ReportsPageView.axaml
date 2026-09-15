@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ReportsPageView"
+             x:CompileBindings="False">
+  <Grid RowDefinitions="Auto,*">
+    <Border Background="#003B87" Padding="18,10">
+      <Grid ColumnDefinitions="*,Auto" MinHeight="38">
+        <TextBlock Text="Reports" Foreground="White" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh reports" Background="Transparent" BorderThickness="0" Padding="8">
+          <TextBlock Text="↻" Foreground="White" FontSize="22" />
+        </Button>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="200,*">
+      <Border Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Margin="16" Spacing="8">
+            <ItemsControl ItemsSource="{Binding ReportTabs}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Button Content="{Binding}"
+                          Command="{Binding DataContext.SelectReportCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                          CommandParameter="{Binding}"
+                          HorizontalAlignment="Stretch"
+                          HorizontalContentAlignment="Left"
+                          Classes="nav"
+                          Margin="0,0,0,4"
+                          Padding="10,8" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Separator Margin="0,8" />
+
+            <TextBlock Text="CURRENCY" FontSize="11" FontWeight="Bold" Foreground="#777777" />
+            <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch">
+              <ComboBoxItem Content="Current selected currency (INR)" />
+              <ComboBoxItem Content="All currencies" />
+            </ComboBox>
+
+            <Separator Margin="0,8" />
+
+            <TextBlock Text="PERIOD" FontSize="11" FontWeight="Bold" Foreground="#777777" />
+            <ListBox SelectedIndex="0" Background="Transparent" BorderThickness="0">
+              <ListBoxItem Content="Last 30 days" />
+              <ListBoxItem Content="Last 3 months" />
+              <ListBoxItem Content="Last 6 months" />
+              <ListBoxItem Content="This year" />
+              <ListBoxItem Content="This FY" />
+              <ListBoxItem Content="Last FY" />
+              <ListBoxItem Content="Custom…" />
+            </ListBox>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <ContentControl Grid.Column="1" Content="{Binding CurrentContent}" />
+    </Grid>
+  </Grid>
+</UserControl>

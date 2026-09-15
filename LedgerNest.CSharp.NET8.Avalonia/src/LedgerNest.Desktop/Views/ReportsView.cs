@@ -11,29 +11,11 @@ namespace LedgerNest.Desktop;
 public partial class MainWindow
 {
     private string reportTab = "Revenue";
-    // Performs the reports action for this screen or workflow.
+    // Performs the reports action by preparing report navigation data and loading the XAML reports view.
     private Control Reports()
     {
         string[] names = ["Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report"];
-        var host = new ContentControl();
-        var nav = Ui.Stack(4);
-        var buttons = new List<Button>();
-        void Select(string name)
-        {
-            reportTab = name;
-            foreach (var b in buttons) b.Classes.Set("selected", (string?)b.Content == name);
-            host.Content = ReportContent(name);
-        }
-        foreach (var name in names) { var b = Ui.Button(name, () => Select(name)); b.Classes.Clear(); b.Classes.Add("nav"); buttons.Add(b); nav.Children.Add(b); }
-        nav.Children.Add(new Separator()); nav.Children.Add(Ui.Text("CURRENCY", 11, true, Ui.Muted));
-        nav.Children.Add(Ui.Field(new("Currency", "Current selected currency (INR)", "choice", ["Current selected currency (INR)", "All currencies"])));
-        nav.Children.Add(Ui.Text("PERIOD", 11, true, Ui.Muted));
-        var period = new ListBox { ItemsSource = new[] { "Last 30 days", "Last 3 months", "Last 6 months", "This year", "This FY", "Last FY", "Custom…" }, SelectedIndex = 0 };
-        var dates = Ui.Fields([new("From Date", DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd"), "date"), new("To Date", DateTime.Today.ToString("yyyy-MM-dd"), "date")]); dates.IsVisible = false;
-        period.SelectionChanged += (_, _) => dates.IsVisible = period.SelectedItem?.ToString() == "Custom…";
-        nav.Children.Add(period); nav.Children.Add(dates); Select(reportTab);
-        var content = Ui.Columns("200,*", new Border { Background = Ui.Surface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Scroll(nav, 16) }, host);
-        return Ui.Rows("Auto,*", Ui.AppBar("Reports", Ui.Button("↻", () => host.Content = ReportContent(reportTab))), content);
+        return new ReportsPageView(new ReportsPageModel(names, reportTab, ReportContent, selected => reportTab = selected));
     }
     // Performs the report content action for this screen or workflow.
     private Control ReportContent(string name)
