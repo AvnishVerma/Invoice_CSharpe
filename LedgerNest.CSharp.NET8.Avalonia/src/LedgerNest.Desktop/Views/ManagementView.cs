@@ -535,7 +535,35 @@ internal sealed partial class ManagementView : UserControl
     }
 
     // Performs the view action for this screen or workflow.
-    private void View(UiRecord record) => window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
+    private void View(UiRecord record)
+    {
+        if (kind == "Customer")
+        {
+            ShowCustomerView(record);
+            return;
+        }
+
+        window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
+    }
+
+    // Performs the customer read-only view dialog action for this screen or workflow.
+    private void ShowCustomerView(UiRecord record)
+    {
+        var view = new CustomerViewDialogModel();
+        void Add(string label, string icon, string key, int maxLength)
+        {
+            var value = record[key].Length == 0 ? "—" : record[key];
+            view.Fields.Add(new CustomerViewFieldModel(label, icon, value, maxLength > 0 && value != "—" ? $"{value.Length}/{maxLength}" : ""));
+        }
+
+        view.Fields.Add(new CustomerViewFieldModel("Name", "👤", record.Name.Length == 0 ? "—" : record.Name, ""));
+        Add("Business Name", "▣", "Business Name", 100);
+        Add("Email", "✉", "Email", 0);
+        Add("Phone", "☎", "Phone", 12);
+        Add("GST / VAT Number", "▣", "GST / VAT Number", 50);
+        Add("Address", "●", "Address", 100);
+        window.ShowOverlay("", new CustomerViewDialog(view), Ui.Button("Close", window.CloseOverlay, true), width: 600);
+    }
     // Performs the more menu action for this screen or workflow.
     private Button MoreMenu()
     {

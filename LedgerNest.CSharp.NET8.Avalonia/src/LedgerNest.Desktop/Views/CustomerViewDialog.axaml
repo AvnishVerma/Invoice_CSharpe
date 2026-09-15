@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.CustomerViewDialog"
+             x:CompileBindings="False">
+  <StackPanel Spacing="14">
+    <StackPanel Orientation="Horizontal" Spacing="10">
+      <TextBlock Text="●" FontSize="18" Foreground="#003B87" VerticalAlignment="Center" />
+      <TextBlock Text="View Customer" FontSize="24" Foreground="#1F1F29" VerticalAlignment="Center" />
+    </StackPanel>
+
+    <ItemsControl ItemsSource="{Binding Fields}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <StackPanel Margin="0,0,0,8">
+            <TextBlock Text="{Binding Label}" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
+            <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="48" Padding="10,8">
+              <Grid ColumnDefinitions="28,*">
+                <TextBlock Text="{Binding Icon}" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="15" Foreground="#1F1F29" TextWrapping="Wrap" VerticalAlignment="Center" />
+              </Grid>
+            </Border>
+            <TextBlock Text="{Binding Counter}" FontSize="12" Foreground="#777777" HorizontalAlignment="Right" IsVisible="{Binding HasCounter}" Margin="0,3,10,0" />
+          </StackPanel>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>
