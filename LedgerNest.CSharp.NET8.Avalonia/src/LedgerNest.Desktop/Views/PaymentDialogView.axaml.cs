@@ -20,6 +20,7 @@ public sealed partial class PaymentDialogView : UserControl
     }
 }
 
+// Provides payment summary, history, and optional form content for the AXAML payment dialog.
 public sealed class PaymentDialogModel
 {
     public string InvoiceLine { get; init; } = "";
@@ -37,4 +38,5 @@ public sealed class PaymentDialogModel
     public Control? PaymentForm { get; init; }
 }
 
+// Describes one payment history row rendered in the AXAML payment dialog.
 public sealed record PaymentHistoryRowModel(string Receipt, string Date, string Amount, string TaxCovered, string Method);

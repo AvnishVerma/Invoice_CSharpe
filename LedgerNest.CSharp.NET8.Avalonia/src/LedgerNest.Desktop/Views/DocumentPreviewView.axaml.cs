@@ -19,6 +19,7 @@ public sealed partial class DocumentPreviewView : UserControl
     }
 }
 
+// Provides document preview text and item rows for the AXAML document preview dialog.
 public sealed class DocumentPreviewModel
 {
     public string Title { get; init; } = "";
@@ -33,4 +34,5 @@ public sealed class DocumentPreviewModel
     public bool HasNoItems => Items.Count == 0;
 }
 
+// Describes one document preview item row rendered by the AXAML preview template.
 public sealed record DocumentPreviewItemModel(string Description, string Amount);

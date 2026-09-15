@@ -22,6 +22,7 @@ public sealed partial class DashboardPageView : UserControl
     }
 }
 
+// Provides the dashboard data and commands consumed by the AXAML dashboard view.
 public sealed class DashboardPageModel
 {
     public ObservableCollection<DashboardTileModel> Tiles { get; } = [];
@@ -38,8 +39,10 @@ public sealed class DashboardPageModel
     }
 }
 
+// Describes one dashboard KPI tile rendered by the dashboard AXAML template.
 public sealed record DashboardTileModel(string Label, string Value, string Icon, IBrush Accent, IBrush IconBackground);
 
+// Describes one recent invoice row and its action commands for the dashboard AXAML template.
 public sealed class DashboardInvoiceModel
 {
     public int Number { get; init; }

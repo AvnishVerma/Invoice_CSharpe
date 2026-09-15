@@ -23,8 +23,10 @@ public sealed partial class SettingsPageView : UserControl
     }
 }
 
+// Describes one settings rail item rendered by the AXAML settings shell.
 public sealed record SettingsTabModel(string Label, string Icon);
 
+// Provides settings navigation state and content loading for the AXAML settings shell.
 public sealed class SettingsPageModel : INotifyPropertyChanged
 {
     private readonly Func<string, Control> contentFactory;
@@ -36,6 +38,7 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
     public ObservableCollection<SettingsTabModel> Tabs { get; }
     public ICommand SelectTabCommand { get; }
 
+    // Gets or changes the selected settings tab and refreshes the hosted settings content.
     public string SelectedTab
     {
         get => selectedTab;
@@ -49,6 +52,7 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
         }
     }
 
+    // Gets the currently rendered settings page hosted by the AXAML content area.
     public Control CurrentContent
     {
         get => currentContent;

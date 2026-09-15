@@ -23,6 +23,7 @@ public sealed partial class ReportsPageView : UserControl
     }
 }
 
+// Provides report navigation state and content loading for the AXAML reports shell.
 public sealed class ReportsPageModel : INotifyPropertyChanged
 {
     private readonly Func<string, Control> contentFactory;
@@ -35,6 +36,7 @@ public sealed class ReportsPageModel : INotifyPropertyChanged
     public ICommand RefreshCommand { get; }
     public ICommand SelectReportCommand { get; }
 
+    // Gets or changes the selected report tab and refreshes the hosted report content.
     public string SelectedReport
     {
         get => selectedReport;
@@ -48,6 +50,7 @@ public sealed class ReportsPageModel : INotifyPropertyChanged
         }
     }
 
+    // Gets the currently rendered report body hosted by the AXAML content area.
     public Control CurrentContent
     {
         get => currentContent;

@@ -25,6 +25,7 @@ public sealed partial class InvoiceEditorShellView : UserControl
     }
 }
 
+// Provides changing header text for the AXAML invoice editor shell.
 public sealed class InvoiceEditorShellModel : INotifyPropertyChanged
 {
     private string title = "";
@@ -33,18 +34,21 @@ public sealed class InvoiceEditorShellModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    // Gets or changes the invoice editor title shown in the shell header.
     public string Title
     {
         get => title;
         set => SetField(ref title, value);
     }
 
+    // Gets or changes the invoice editor date shown in the shell header.
     public string DateText
     {
         get => dateText;
         set => SetField(ref dateText, value);
     }
 
+    // Gets or changes the invoice or quotation number text shown in the shell header.
     public string NumberText
     {
         get => numberText;
