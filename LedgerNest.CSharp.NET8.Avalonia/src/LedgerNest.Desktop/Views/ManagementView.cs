@@ -163,7 +163,7 @@ internal sealed partial class ManagementView : UserControl
             : Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
         body.Children.Add(new Border { Padding = Documents ? new Thickness(20, 10, 20, 0) : new Thickness(16, 8), Child = pager });
         results.Content = Documents
-            ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 980, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
+            ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 1040, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
             : Ui.Card(new ScrollViewer { Content = new Border { MinWidth = kind is "Product" or "Customer" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
 
@@ -212,7 +212,7 @@ internal sealed partial class ManagementView : UserControl
     private string DocumentColumns()
     {
         var widths = new Dictionary<string, string> { ["Invoice / Customer"] = "1.45*", ["Title"] = ".65*", ["Date"] = ".75*", ["Items"] = ".55*", ["Total"] = ".9*", ["Status"] = ".85*", ["Outstanding"] = ".9*" };
-        return string.Join(",", new[] { "40", "70" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("210"));
+        return string.Join(",", new[] { "40", "70" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("270"));
     }
 
 
@@ -470,9 +470,30 @@ internal sealed partial class ManagementView : UserControl
     // Performs the document actions action for this screen or workflow.
     private Control DocumentActions(UiRecord record)
     {
-        if (trash) return Ui.Wrap(Ui.Button("Restore", () => { model.SetDocumentTrash(record, false); Refresh(); }), DocumentOverflowMenu(record));
-        var actions = Ui.Wrap(IconAction("visibility", "View", () => window.ShowDocumentPreview(record), "#4CAF50"), IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"), IconAction("receipt_long", "Clone", () => { if (model.CloneDocumentForEditing(record)) window.CloseOverlay(); }, "#00A6A6"), IconAction("picture_as_pdf", "PDF", () => window.ShowPdfPreview(record), "#FF9800"), IconAction("print", "Print", async () => await window.PrintDocumentPdf(record), "#607D8B"), IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"), DocumentOverflowMenu(record));
-        foreach (var child in actions.Children) child.Margin = new Thickness(0, 0, 5, 0);
+        var actions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 5,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        if (trash)
+        {
+            actions.Children.Add(Ui.Button("Restore", () => { model.SetDocumentTrash(record, false); Refresh(); }));
+            actions.Children.Add(DocumentOverflowMenu(record));
+            return actions;
+        }
+
+        foreach (var button in new Control[]
+        {
+            IconAction("visibility", "View", () => window.ShowDocumentPreview(record), "#4CAF50"),
+            IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"),
+            IconAction("receipt_long", "Clone", () => { if (model.CloneDocumentForEditing(record)) window.CloseOverlay(); }, "#00A6A6"),
+            IconAction("picture_as_pdf", "PDF", () => window.ShowPdfPreview(record), "#FF9800"),
+            IconAction("print", "Print", async () => await window.PrintDocumentPdf(record), "#607D8B"),
+            IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"),
+            DocumentOverflowMenu(record)
+        }) actions.Children.Add(button);
         return actions;
     }
 
