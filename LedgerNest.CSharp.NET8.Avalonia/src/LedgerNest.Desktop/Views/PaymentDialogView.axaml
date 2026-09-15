@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.PaymentDialogView"
+             x:CompileBindings="False">
+  <StackPanel Spacing="20">
+    <TextBlock Text="{Binding InvoiceLine}" FontSize="13" Foreground="#777777" />
+
+    <Grid ColumnDefinitions="*,12,*,12,*">
+      <Border Padding="16,12" CornerRadius="6" BorderBrush="#590A84FF" BorderThickness="1" Background="#EEF5FF">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Invoice Total" FontSize="12" Foreground="#777777" />
+          <TextBlock Text="{Binding TotalText}" FontSize="16" FontWeight="Bold" Foreground="#0A84FF" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="2" Padding="16,12" CornerRadius="6" BorderBrush="#5916A34A" BorderThickness="1" Background="#EEF8F0">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Amount Paid" FontSize="12" Foreground="#777777" />
+          <TextBlock Text="{Binding PaidText}" FontSize="16" FontWeight="Bold" Foreground="#16A34A" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="4" Padding="16,12" CornerRadius="6" BorderBrush="{Binding OutstandingBorder}" BorderThickness="1" Background="{Binding OutstandingBackground}">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Outstanding" FontSize="12" Foreground="#777777" />
+          <TextBlock Text="{Binding OutstandingText}" FontSize="16" FontWeight="Bold" Foreground="{Binding OutstandingBrush}" />
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <TextBlock Text="Payment History" FontSize="14" FontWeight="Bold" Foreground="#777777" />
+
+    <Border IsVisible="{Binding HasNoPayments}" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="7" Padding="18">
+      <TextBlock Text="No payments recorded yet" HorizontalAlignment="Center" FontSize="13" Foreground="#777777" />
+    </Border>
+
+    <Border IsVisible="{Binding HasPayments}" Background="#FBF5FF" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="7">
+      <StackPanel>
+        <Grid ColumnDefinitions="1.2*,.8*,.9*,1*,1*" Background="White">
+          <TextBlock Text="Receipt #" FontSize="12" Padding="14,10" />
+          <TextBlock Grid.Column="1" Text="Date" FontSize="12" Padding="14,10" />
+          <TextBlock Grid.Column="2" Text="Amount" FontSize="12" Padding="14,10" />
+          <TextBlock Grid.Column="3" Text="Tax Covered" FontSize="12" Padding="14,10" />
+          <TextBlock Grid.Column="4" Text="Method" FontSize="12" Padding="14,10" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Payments}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="14,11">
+                <Grid ColumnDefinitions="1.2*,.8*,.9*,1*,1*">
+                  <TextBlock Text="{Binding Receipt}" FontSize="12" Foreground="#003B87" />
+                  <TextBlock Grid.Column="1" Text="{Binding Date}" FontSize="12" />
+                  <TextBlock Grid.Column="2" Text="{Binding Amount}" FontSize="12" FontWeight="Bold" Foreground="#16A34A" />
+                  <TextBlock Grid.Column="3" Text="{Binding TaxCovered}" FontSize="12" Foreground="#777777" />
+                  <TextBlock Grid.Column="4" Text="{Binding Method}" FontSize="12" Foreground="#777777" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
+    <Border IsVisible="{Binding IsFullyPaid}" BorderBrush="#5916A34A" BorderThickness="1" Background="#1416A34A" CornerRadius="7" Padding="16,14">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+        <TextBlock Text="✓" FontSize="18" FontWeight="Bold" Foreground="#16A34A" />
+        <TextBlock Text="Invoice fully paid" FontSize="14" Foreground="#16A34A" VerticalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
+    <Border IsVisible="{Binding CanRecordPayment}" Height="1" Background="#E0E0E0" />
+
+    <StackPanel IsVisible="{Binding CanRecordPayment}" Spacing="12">
+      <TextBlock Text="New Payment" FontSize="14" FontWeight="Bold" />
+      <ContentControl Content="{Binding PaymentForm}" />
+    </StackPanel>
+  </StackPanel>
+</UserControl>
