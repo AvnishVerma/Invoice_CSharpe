@@ -9,6 +9,7 @@ public partial class MainWindow
     private MainWindowViewModel? shellModel;
     private System.ComponentModel.PropertyChangedEventHandler? shellChanged;
 
+    // Performs the initialize shell action for this screen or workflow.
     private void InitializeShell(MainWindowViewModel vm)
     {
         if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
@@ -30,10 +31,12 @@ public partial class MainWindow
         vm.PropertyChanged += shellChanged;
         RefreshWorkspaceAccess();
     }
+    // Performs the build sidebar action for this screen or workflow.
     private void BuildSidebar()
     {
         sidebar.Content = new SidebarView(Model, route => Model.NavigateCommand.Execute(route), () => Model.ToggleSidebarCommand.Execute(null), () => { Model.SignOut(); ShowLogin(); });
     }
+    // Performs the show page action for this screen or workflow.
     private void ShowPage()
     {
         invoiceCompletionVisible = false;

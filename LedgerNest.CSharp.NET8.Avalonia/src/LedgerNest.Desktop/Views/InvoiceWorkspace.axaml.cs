@@ -31,6 +31,7 @@ public sealed partial class InvoiceWorkspace : UserControl
         AttachedToVisualTree += (_, _) => ArrangeForWidth(Bounds.Width);
     }
 
+    // Performs the configure columns action for this screen or workflow.
     private void ConfigureColumns()
     {
         WideRoot.ColumnDefinitions[0].MinWidth = 550;
@@ -38,6 +39,7 @@ public sealed partial class InvoiceWorkspace : UserControl
         WideRoot.ColumnDefinitions[2].MaxWidth = 550;
     }
 
+    // Performs the arrange for width action for this screen or workflow.
     private void ArrangeForWidth(double width)
     {
         if (left == null || right == null || items == null || options == null)

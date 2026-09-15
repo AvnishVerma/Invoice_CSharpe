@@ -4,6 +4,7 @@ namespace LedgerNest.Application;
 
 public sealed class InvoiceService
 {
+    // Performs the calculate totals action for this screen or workflow.
     public InvoiceTotals CalculateTotals(IEnumerable<InvoiceItem> items)
     {
         var totals = InvoiceTotalsCalculator.Calculate(items.Select(item => new InvoiceLineInput(

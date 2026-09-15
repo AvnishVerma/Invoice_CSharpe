@@ -45,6 +45,7 @@ public partial class MainWindow : Window
         };
     }
 
+    // Performs the on dismiss status action for this screen or workflow.
     private void OnDismissStatus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (DataContext is MainWindowViewModel vm)

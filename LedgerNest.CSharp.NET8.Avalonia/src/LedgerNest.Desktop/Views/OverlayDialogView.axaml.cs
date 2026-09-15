@@ -31,7 +31,9 @@ public sealed partial class OverlayDialogView : UserControl
         Panel.VerticalAlignment = side ? VerticalAlignment.Stretch : VerticalAlignment.Center;
     }
 
+    // Performs the on close pressed action for this screen or workflow.
     private void OnClosePressed(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => close();
 
+    // Performs the on scrim pressed action for this screen or workflow.
     private void OnScrimPressed(object? sender, PointerPressedEventArgs e) => close();
 }

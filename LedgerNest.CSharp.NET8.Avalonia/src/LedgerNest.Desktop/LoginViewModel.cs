@@ -28,6 +28,7 @@ public sealed partial class LoginViewModel : ObservableObject
     public string FirstTimeHelp => "First time here? Log in with username admin and password admin, then set your own password when prompted.";
 
     [RelayCommand]
+    // Performs the login action for this screen or workflow.
     public void Login()
     {
         if (model.SignIn(Username.Value, Password.Value))
@@ -43,5 +44,6 @@ public sealed partial class LoginViewModel : ObservableObject
     }
 
     [RelayCommand]
+    // Performs the forgot password action for this screen or workflow.
     private void ForgotPassword() => forgotPassword();
 }

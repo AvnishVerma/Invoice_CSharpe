@@ -11,6 +11,7 @@ public partial class MainWindow
 {
     private string dashboardLayout = "Default";
     private readonly HashSet<string> dismissedBanners = [];
+    // Performs the dashboard action for this screen or workflow.
     private Control Dashboard()
     {
         var invoices = Model.ActiveInvoices.OrderByDescending(i => i["Date"]).ThenByDescending(i => i.SourceId).ToArray();
@@ -42,6 +43,7 @@ public partial class MainWindow
             ("Revenue Collected", "Rs. " + paid.ToString("0.00"), "account_balance_wallet", "#8A2BE2"),
             ("Outstanding", "Rs. " + outstanding.ToString("0.00"), "hourglass_top", "#D32F2F")
         ];
+        // Performs the has unlimited stock action for this screen or workflow.
         static bool HasUnlimitedStock(UiRecord product) => bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited;
 
         Control KpiCard((string Label, string Value, string Icon, string Color) item, string? alert = null)
@@ -138,8 +140,11 @@ public partial class MainWindow
             return button;
         }
 
+        // Performs the pill action for this screen or workflow.
         static Border Pill(string text, IBrush color, string background) => new() { Padding = new Thickness(9, 4), CornerRadius = new CornerRadius(4), Background = Brush.Parse(background), BorderBrush = color, BorderThickness = new Thickness(1), Child = Ui.Text(text, 12, false, color) };
+        // Performs the status color action for this screen or workflow.
         static IBrush StatusColor(string status) => status switch { "Paid" => Brush.Parse("#4CAF50"), "Partial" => Brush.Parse("#FF9800"), "Unpaid" => Brush.Parse("#F44336"), _ => Brush.Parse("#D32F2F") };
+        // Performs the status background action for this screen or workflow.
         static string StatusBackground(string status) => status switch { "Paid" => "#E8F5E9", "Partial" => "#FFF3E0", "Unpaid" => "#FFEBEE", _ => "#FFEBEE" };
         Control TopList(string title, IEnumerable<UiRecord> records, string metric)
         {
@@ -169,7 +174,9 @@ public partial class MainWindow
         }
         return new DashboardPageView(appbar, body);
     }
+    // Performs the shortcuts action for this screen or workflow.
     private void Shortcuts() => ShowOverlay("Keyboard Shortcuts", Ui.Stack(16,
         Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print PDF")));
+    // Performs the shortcut action for this screen or workflow.
     private static Control Shortcut(string key, string description) => Ui.Columns("160,*", Ui.Card(Ui.Text(key, 13, true), 10), Ui.Text(description));
 }

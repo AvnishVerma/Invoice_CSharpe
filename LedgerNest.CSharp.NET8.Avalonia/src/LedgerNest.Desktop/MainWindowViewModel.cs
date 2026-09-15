@@ -66,9 +66,11 @@ public partial class MainWindowViewModel : ObservableObject
         LoadLanguage();
         ApplyDefaultCustomer();
     }
+    // Performs the line changed action for this screen or workflow.
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();
     [RelayCommand] private void Navigate(string route) { if (Routes.Contains(route)) { Title = route; Status = ""; } }
     [RelayCommand] private void ToggleSidebar() => SidebarExpanded = !SidebarExpanded;
+    // Performs the save record action for this screen or workflow.
     public bool SaveRecord(string kind, FormField[] fields, UiRecord? original = null)
     {
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
@@ -96,6 +98,7 @@ public partial class MainWindowViewModel : ObservableObject
         Status = $"{kind} saved.";
         return true;
     }
+    // Performs the delete record action for this screen or workflow.
     public bool DeleteRecord(string kind, UiRecord record)
     {
         var records = kind switch { "Customer" => Customers, "Product" => Products, "User" => Users, _ => null };
@@ -146,6 +149,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the set document trash action for this screen or workflow.
     public bool SetDocumentTrash(UiRecord record, bool trashed)
     {
         if (!Invoices.Contains(record)) return false;
@@ -163,6 +167,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the delete document permanently action for this screen or workflow.
     public bool DeleteDocumentPermanently(UiRecord record)
     {
         if (!Invoices.Contains(record) || !DeletedRecords.Contains(record.Id)) return false;
@@ -186,6 +191,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the peek next document number action for this screen or workflow.
     public string PeekNextDocumentNumber(string type)
     {
         ValidateDocumentType(type);
@@ -196,18 +202,21 @@ public partial class MainWindowViewModel : ObservableObject
         return NextDocumentNumber(db, type);
     }
 
+    // Performs the validate document type action for this screen or workflow.
     private static void ValidateDocumentType(string type)
     {
         if (type is not ("Invoice" or "Quotation" or "Receipt"))
             throw new ArgumentException("Unknown document type.", nameof(type));
     }
 
+    // Performs the invoice starting number action for this screen or workflow.
     private long InvoiceStartingNumber()
     {
         var field = Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Starting Number");
         return long.TryParse(field.Value, out var start) && start > 0 ? start : 1;
     }
 
+    // Performs the next document number action for this screen or workflow.
     private string NextDocumentNumber(LedgerNestDbContext db, string type)
     {
         var key = SettingKey("Invoice Settings", "General", "Starting Number");
@@ -216,6 +225,7 @@ public partial class MainWindowViewModel : ObservableObject
         return NextDocumentNumber(type, db.Invoices.AsNoTracking().Where(i => i.Type == type).Select(i => i.InvoiceNumber).ToArray(), start);
     }
 
+    // Performs the next document number action for this screen or workflow.
     private static string NextDocumentNumber(string type, IEnumerable<string> existing, long start)
     {
         // Earlier C# records used INV-0001; keep their numeric suffix in the sequence.
@@ -236,9 +246,11 @@ public partial class MainWindowViewModel : ObservableObject
     public string EditorDocumentNumber => editingDocument?.Name ?? PeekNextDocumentNumber(InvoiceDetails[0].Value);
     public UiRecord? LastSavedDocument { get; private set; }
 
+    // Performs the fingerprint action for this screen or workflow.
     private static string Fingerprint(Invoice invoice) =>
         JsonSerializer.Serialize(new { Invoice = invoice, Items = invoice.Items.OrderBy(i => i.Id).ToArray() });
 
+    // Performs the clone document for editing action for this screen or workflow.
     public bool CloneDocumentForEditing(UiRecord record)
     {
         if (dbFactory == null) { Status = "Cloning requires saved document storage."; return false; }
@@ -282,6 +294,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the load document for editing action for this screen or workflow.
     public bool LoadDocumentForEditing(UiRecord record)
     {
         if (dbFactory == null) { Status = "Editing requires saved document storage."; return false; }
@@ -325,6 +338,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the save invoice action for this screen or workflow.
     public bool SaveInvoice()
     {
         if (Lines.Count == 0) { Status = "Add at least one item before creating an invoice."; return false; }
@@ -356,6 +370,7 @@ public partial class MainWindowViewModel : ObservableObject
 
 
 
+    // Performs the set language action for this screen or workflow.
     public void SetLanguage(string value)
     {
         Language = string.IsNullOrWhiteSpace(value) ? "English" : value;
@@ -369,6 +384,7 @@ public partial class MainWindowViewModel : ObservableObject
         Status = $"Language set to {Language}.";
     }
 
+    // Performs the load language action for this screen or workflow.
     private void LoadLanguage()
     {
         if (dbFactory == null) return;
@@ -377,6 +393,7 @@ public partial class MainWindowViewModel : ObservableObject
         Language = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == "appearance.language")?.Value ?? "English";
     }
 
+    // Performs the set theme mode action for this screen or workflow.
     public void SetThemeMode(string mode)
     {
         ThemeMode = mode is "Dark" or "System" ? mode : "Light";
@@ -390,6 +407,7 @@ public partial class MainWindowViewModel : ObservableObject
         Status = $"Theme set to {ThemeMode}.";
     }
 
+    // Performs the load theme mode action for this screen or workflow.
     private void LoadThemeMode()
     {
         if (dbFactory == null) return;
@@ -403,6 +421,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public long SessionVersion { get; private set; }
 
+    // Performs the can continue workspace operation action for this screen or workflow.
     public bool CanContinueWorkspaceOperation(long version) => ValidateSession() && CanAccessWorkspace && SessionVersion == version;
 
     public bool CanAccessWorkspace => dbFactory == null || (CurrentUsername != null && !RequiresPasswordChange);
@@ -410,6 +429,7 @@ public partial class MainWindowViewModel : ObservableObject
     public string CurrentRole { get; private set; } = "";
     public bool RequiresPasswordChange { get; private set; }
 
+    // Performs the set session action for this screen or workflow.
     private void SetSession(string? username, string role, bool requiresPasswordChange)
     {
         SessionVersion++;
@@ -423,12 +443,14 @@ public partial class MainWindowViewModel : ObservableObject
         OnPropertyChanged(nameof(CanAccessWorkspace));
     }
 
+    // Performs the sign out action for this screen or workflow.
     public void SignOut()
     {
         SetSession(null, "", false);
         Status = "Signed out.";
     }
 
+    // Performs the sign in action for this screen or workflow.
     public bool SignIn(string username, string password)
     {
         var user = AuthenticateUser(username, password);
@@ -442,6 +464,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the validate session action for this screen or workflow.
     public bool ValidateSession()
     {
         if (dbFactory == null) return true;
@@ -465,6 +488,7 @@ public partial class MainWindowViewModel : ObservableObject
         return false;
     }
 
+    // Performs the change current password action for this screen or workflow.
     public bool ChangeCurrentPassword(FormField[] fields)
     {
         if (!ValidateSession() || CurrentUsername == null)
@@ -479,8 +503,10 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the add product line action for this screen or workflow.
     public void AddProductLine(UiRecord product) => Lines.Add(CreateProductLine(product));
 
+    // Performs the create product line action for this screen or workflow.
     public static InvoiceLineViewModel CreateProductLine(UiRecord product) => new()
     {
         Unit = product["Unit"] == "Custom…" ? product["Custom unit"] : product["Unit"],
@@ -492,6 +518,7 @@ public partial class MainWindowViewModel : ObservableObject
         PriceIncludesTax = bool.TryParse(product["Price includes tax"], out var inclusive) && inclusive
     };
 
+    // Performs the start document action for this screen or workflow.
     public void StartDocument(string type)
     {
         if (type is not ("Invoice" or "Quotation" or "Receipt"))
@@ -511,8 +538,10 @@ public partial class MainWindowViewModel : ObservableObject
         NavigateCommand.Execute("New Invoice");
     }
 
+    // Performs the verify user action for this screen or workflow.
     public bool VerifyUser(string username, string password) => AuthenticateUser(username, password) != null;
 
+    // Performs the authenticate user action for this screen or workflow.
     private AppUser? AuthenticateUser(string username, string password)
     {
         if (dbFactory == null)
@@ -540,6 +569,7 @@ public partial class MainWindowViewModel : ObservableObject
         return user;
     }
 
+    // Performs the change password action for this screen or workflow.
     public bool ChangePassword(string username, FormField[] fields)
     {
         if (dbFactory == null)
@@ -587,6 +617,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    // Performs the set default customer action for this screen or workflow.
     public void SetDefaultCustomer(UiRecord? customer)
     {
         if (customer != null && !Customers.Contains(customer)) return;
@@ -600,6 +631,7 @@ public partial class MainWindowViewModel : ObservableObject
         Status = customer == null ? "Default customer cleared." : $"Default customer: {customer.Name}.";
     }
     private int? defaultCustomerId;
+    // Performs the apply default customer action for this screen or workflow.
     private void ApplyDefaultCustomer()
     {
         if (dbFactory != null)
@@ -612,6 +644,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (customer != null) foreach (var field in InvoiceCustomer) field.Value = customer[field.Label];
     }
 
+    // Performs the create onboarding fields action for this screen or workflow.
     public FormField[][] CreateOnboardingFields()
     {
         FormField Copy(string category, string label)
@@ -627,6 +660,7 @@ public partial class MainWindowViewModel : ObservableObject
         ];
     }
 
+    // Performs the complete onboarding action for this screen or workflow.
     public bool CompleteOnboarding(FormField[][] groups)
     {
         if (groups.Length != 3) return false;
@@ -669,6 +703,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the save settings action for this screen or workflow.
     public bool SaveSettings(string name)
     {
         if (!Settings.TryGetValue(name, out var sections)) return false;
@@ -697,6 +732,7 @@ public partial class MainWindowViewModel : ObservableObject
 
 
 
+    // Performs the build report action for this screen or workflow.
     public ReportSnapshot BuildReport(string name)
     {
         var invoices = ActiveInvoices.ToArray();
@@ -725,6 +761,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
 
+    // Performs the product report rows action for this screen or workflow.
     private string[][] ProductReportRows()
     {
         IEnumerable<ProductReportLine> lines;
@@ -752,6 +789,7 @@ public partial class MainWindowViewModel : ObservableObject
     private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount, decimal PurchasePrice);
 
 
+    // Performs the export document pdf action for this screen or workflow.
     public byte[] ExportDocumentPdf(UiRecord document)
     {
         Invoice invoice;
@@ -806,8 +844,10 @@ public partial class MainWindowViewModel : ObservableObject
         return bytes;
     }
 
+    // Performs the preview items for action for this screen or workflow.
     public InvoiceItem[] PreviewItemsFor(UiRecord document) => InvoiceItemsFor(document);
 
+    // Performs the invoice items for action for this screen or workflow.
     private InvoiceItem[] InvoiceItemsFor(UiRecord document)
     {
         if (dbFactory == null || document.SourceId <= 0) return [];
@@ -817,6 +857,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
 
+    // Performs the export report pdf action for this screen or workflow.
     public byte[] ExportReportPdf(string name)
     {
         var report = BuildReport(name);
@@ -836,6 +877,7 @@ public partial class MainWindowViewModel : ObservableObject
         return SimplePdf.Create(lines);
     }
 
+    // Performs the export report csv action for this screen or workflow.
     public string ExportReportCsv(string name)
     {
         var rows = BuildReport(name).Rows;
@@ -843,6 +885,7 @@ public partial class MainWindowViewModel : ObservableObject
         return string.Join(Environment.NewLine, rows.Select(row => string.Join(",", row.Select(EscapeCsv)))) + Environment.NewLine;
     }
 
+    // Performs the export csv action for this screen or workflow.
     public string ExportCsv(string kind, IEnumerable<UiRecord>? records = null)
     {
         var headers = CsvHeaders(kind);
@@ -854,6 +897,7 @@ public partial class MainWindowViewModel : ObservableObject
         return builder.ToString();
     }
 
+    // Performs the import csv action for this screen or workflow.
     public int ImportCsv(string kind, string csvText)
     {
         if (kind is not ("Customer" or "Product"))
@@ -970,6 +1014,7 @@ public partial class MainWindowViewModel : ObservableObject
     private static readonly string[] CustomerCsvHeaders = ["name", "email", "phone", "address", "business_name", "tax_number", "gstin", "gst", "gst_vat_number"];
     private static readonly string[] ProductCsvHeaders = ["name", "hsn_code", "hsncode", "hsn", "hsn_sac", "description", "price", "tax_rate", "stock", "type", "default_discount", "purchase_price", "alias_name", "unit", "unlimited_stock", "price_includes_tax", "storage_location", "container_number", "batch_number", "expiry_date", "manufacture_date", "manufacture_name", "supplier_name", "sku_code", "notes"];
 
+    // Performs the find customer duplicate action for this screen or workflow.
     private UiRecord? FindCustomerDuplicate(string email, string phone, string name)
     {
         return Customers.FirstOrDefault(c =>
@@ -978,6 +1023,7 @@ public partial class MainWindowViewModel : ObservableObject
             || c.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
+    // Performs the set import field action for this screen or workflow.
     private static void SetImportField(Dictionary<string, FormField> fields, string label, string value)
     {
         if (!fields.TryGetValue(label, out var field) || string.IsNullOrWhiteSpace(value)) return;
@@ -985,6 +1031,7 @@ public partial class MainWindowViewModel : ObservableObject
         field.IsChecked = ParseCsvBool(field.Value);
     }
 
+    // Performs the set import toggle action for this screen or workflow.
     private static void SetImportToggle(Dictionary<string, FormField> fields, string label, string value)
     {
         if (!fields.TryGetValue(label, out var field) || string.IsNullOrWhiteSpace(value)) return;
@@ -992,16 +1039,23 @@ public partial class MainWindowViewModel : ObservableObject
         field.Value = field.IsChecked ? "true" : "false";
     }
 
+    // Performs the parse csv bool action for this screen or workflow.
     private static bool ParseCsvBool(string value) => value.Trim().Equals("1", StringComparison.OrdinalIgnoreCase) || value.Trim().Equals("true", StringComparison.OrdinalIgnoreCase) || value.Trim().Equals("yes", StringComparison.OrdinalIgnoreCase);
+    // Performs the parse decimal invariant action for this screen or workflow.
     private static decimal ParseDecimalInvariant(string value) => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount) ? amount : 0m;
+    // Performs the clamp decimal action for this screen or workflow.
     private static decimal ClampDecimal(string value, decimal min, decimal max) => Math.Min(max, Math.Max(min, ParseDecimalInvariant(value)));
+    // Performs the normalize product type action for this screen or workflow.
     private static string NormalizeProductType(string value) => value.Trim().Equals("service", StringComparison.OrdinalIgnoreCase) ? "Service" : "Product";
+    // Performs the first non empty action for this screen or workflow.
     private static string FirstNonEmpty(params string[] values) => values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? "";
+    // Performs the join notes action for this screen or workflow.
     private static string JoinNotes(string notes, string manufactureName) => string.IsNullOrWhiteSpace(manufactureName) ? notes : string.IsNullOrWhiteSpace(notes) ? $"Manufacturer: {manufactureName}" : notes + Environment.NewLine + $"Manufacturer: {manufactureName}";
 
 
 
 
+    // Performs the create database backup action for this screen or workflow.
     public byte[] CreateDatabaseBackup()
     {
         if (string.IsNullOrWhiteSpace(databasePath) || !File.Exists(databasePath))
@@ -1033,6 +1087,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    // Performs the restore database backup action for this screen or workflow.
     public bool RestoreDatabaseBackup(byte[] bytes)
     {
         if (string.IsNullOrWhiteSpace(databasePath) || bytes.Length == 0)
@@ -1067,6 +1122,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the create json backup action for this screen or workflow.
     public string CreateJsonBackup()
     {
         if (dbFactory == null)
@@ -1099,6 +1155,7 @@ public partial class MainWindowViewModel : ObservableObject
         return backup.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
     }
 
+    // Performs the restore json backup action for this screen or workflow.
     public bool RestoreJsonBackup(string json)
     {
         if (dbFactory == null)
@@ -1187,6 +1244,7 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the reload from database action for this screen or workflow.
     private void ReloadFromDatabase()
     {
         Customers.Clear(); Products.Clear(); Users.Clear(); Invoices.Clear(); Payments.Clear(); DeletedRecords.Clear();
@@ -1196,6 +1254,7 @@ public partial class MainWindowViewModel : ObservableObject
         LoadLanguage();
     }
 
+    // Performs the load persisted records action for this screen or workflow.
     private void LoadPersistedRecords()
     {
         if (dbFactory == null) return;
@@ -1311,6 +1370,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    // Performs the load persisted settings action for this screen or workflow.
     private void LoadPersistedSettings()
     {
         if (dbFactory == null) return;
@@ -1343,6 +1403,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    // Performs the save record to database action for this screen or workflow.
     private int SaveRecordToDatabase(string kind, Dictionary<string, string> values, int sourceId)
     {
         if (dbFactory == null) return sourceId;
@@ -1422,6 +1483,7 @@ public partial class MainWindowViewModel : ObservableObject
         return sourceId;
     }
 
+    // Performs the capture invoice snapshot action for this screen or workflow.
     private InvoiceSnapshot CaptureInvoiceSnapshot()
     {
         string Setting(string label) => Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == label).Value;
@@ -1439,6 +1501,7 @@ public partial class MainWindowViewModel : ObservableObject
         { LineUnits = Lines.Select(line => line.Unit).ToArray() };
     }
 
+    // Performs the save invoice to database action for this screen or workflow.
     private int SaveInvoiceToDatabase(Dictionary<string, string> values)
     {
         if (dbFactory == null) return 0;
@@ -1512,6 +1575,7 @@ public partial class MainWindowViewModel : ObservableObject
         return invoice.Id;
     }
 
+    // Performs the apply payment action for this screen or workflow.
     public bool ApplyPayment(UiRecord invoiceRecord, FormField[] fields)
     {
         if (dbFactory == null)
@@ -1585,8 +1649,10 @@ public partial class MainWindowViewModel : ObservableObject
         return true;
     }
 
+    // Performs the payments for action for this screen or workflow.
     public IEnumerable<UiRecord> PaymentsFor(UiRecord invoice) => Payments.Where(p => p["InvoiceId"] == invoice.SourceId.ToString());
 
+    // Performs the next receipt number action for this screen or workflow.
     private static string NextReceiptNumber(string invoiceNumber, IEnumerable<string?> existingReceiptNumbers)
     {
         var maxSuffix = 0;
@@ -1604,6 +1670,7 @@ public partial class MainWindowViewModel : ObservableObject
 
 
 
+    // Performs the ensure default admin action for this screen or workflow.
     private static void EnsureDefaultAdmin(LedgerNestDbContext db)
     {
         if (db.Settings.Any(s => s.Key == "auth.initialized")) return;
@@ -1621,11 +1688,13 @@ public partial class MainWindowViewModel : ObservableObject
         db.SaveChanges();
     }
 
+    // Performs the hash password action for this screen or workflow.
     private static string HashPassword(string password, string salt)
     {
         return PasswordCredentials.Hash(password, salt);
     }
 
+    // Performs the money action for this screen or workflow.
     private static string Money(decimal value) => $"₹ {value:0.00}";
 
     private static void AddRange<T>(DbSet<T> set, JsonObject backup, string table) where T : class
@@ -1642,6 +1711,7 @@ public partial class MainWindowViewModel : ObservableObject
         return result;
     }
 
+    // Performs the validate json backup action for this screen or workflow.
     private static void ValidateJsonBackup(JsonObject backup)
     {
         var customers = ReadRows<Customer>(backup, "customers");
@@ -1651,6 +1721,7 @@ public partial class MainWindowViewModel : ObservableObject
         var invoices = ReadRows<InvoiceBackupRow>(backup, "invoices");
         var items = ReadRows<InvoiceItem>(backup, "invoice_items");
         var payments = ReadRows<Payment>(backup, "invoice_payments");
+        // Performs the ids action for this screen or workflow.
         static HashSet<int> Ids(IEnumerable<int> values)
         {
             var ids = new HashSet<int>();
@@ -1672,6 +1743,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private sealed record InvoiceBackupRow(int Id, string InvoiceNumber, DateTime InvoiceDate, int? CustomerId, string Status, decimal SubTotal, decimal TaxTotal, decimal DiscountTotal, decimal GrandTotal, decimal PaidAmount, string? Type = "Invoice", DateTime? DeletedAt = null, string? CustomerName = null, InvoiceSnapshot? Snapshot = null);
 
+    // Performs the records for kind action for this screen or workflow.
     private IEnumerable<UiRecord> RecordsForKind(string kind) => kind switch
     {
         "Customer" => Customers,
@@ -1681,6 +1753,7 @@ public partial class MainWindowViewModel : ObservableObject
         _ => []
     };
 
+    // Performs the csv headers action for this screen or workflow.
     private static string[] CsvHeaders(string kind) => kind switch
     {
         "Customer" => ["name", "phone", "business_name", "email", "gstin", "address"],
@@ -1689,6 +1762,7 @@ public partial class MainWindowViewModel : ObservableObject
         _ => ["name", "customer", "date", "items", "total", "status"]
     };
 
+    // Performs the csv value action for this screen or workflow.
     private static string CsvValue(string kind, UiRecord record, string header) => (kind, header) switch
     {
         ("Customer", "name") => record.Name,
@@ -1714,13 +1788,16 @@ public partial class MainWindowViewModel : ObservableObject
         _ => ""
     };
 
+    // Performs the normalize csv header action for this screen or workflow.
     private static string NormalizeCsvHeader(string value) => value.Trim().ToLowerInvariant().Replace(" ", "_").Replace("/", "_").Replace(".", "");
 
+    // Performs the escape csv action for this screen or workflow.
     private static string EscapeCsv(string value)
     {
         return "\"" + value.Replace("\"", "\"\"") + "\"";
     }
 
+    // Performs the parse csv action for this screen or workflow.
     private static IReadOnlyList<string[]> ParseCsv(string text)
     {
         var rows = new List<string[]>();
@@ -1747,11 +1824,14 @@ public partial class MainWindowViewModel : ObservableObject
         return rows;
     }
 
+    // Performs the parse decimal action for this screen or workflow.
     private static decimal ParseDecimal(string? value) => decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var number) ? number : 0m;
 
+    // Performs the setting key action for this screen or workflow.
     private static string SettingKey(string page, string section, string label) =>
         string.Join(".", page, section, label).ToLowerInvariant().Replace(" ", "_").Replace("/", "_").Replace("%", "percent");
 
+    // Performs the set setting action for this screen or workflow.
     private static void SetSetting(LedgerNestDbContext db, string key, string value)
     {
         var setting = db.Settings.Find(key);
@@ -1759,6 +1839,7 @@ public partial class MainWindowViewModel : ObservableObject
         else setting.Value = value;
     }
 
+    // Performs the save company info action for this screen or workflow.
     private static void SaveCompanyInfo(LedgerNestDbContext db, FormSection[] sections)
     {
         var fields = sections[1].Fields.ToDictionary(f => f.Label);
@@ -1771,6 +1852,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (company.Id == 0) db.CompanyInfos.Add(company);
     }
 
+    // Performs the set field action for this screen or workflow.
     private static void SetField(Dictionary<string, FormField> fields, string label, string? value)
     {
         if (!fields.TryGetValue(label, out var field)) return;
@@ -1783,6 +1865,7 @@ public sealed record ReportSnapshot(string Name, int InvoiceCount, decimal Bille
 
 internal static class SimplePdf
 {
+    // Performs the create action for this screen or workflow.
     public static byte[] Create(IEnumerable<string> lines)
     {
         var content = new StringBuilder();
@@ -1830,5 +1913,6 @@ internal static class SimplePdf
         return Encoding.ASCII.GetBytes(pdf.ToString());
     }
 
+    // Performs the escape action for this screen or workflow.
     private static string Escape(string value) => value.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
 }

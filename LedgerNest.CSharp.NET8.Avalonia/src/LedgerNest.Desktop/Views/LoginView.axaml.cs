@@ -16,6 +16,7 @@ public partial class LoginView : UserControl
         }, DispatcherPriority.Loaded);
     }
 
+    // Performs the on key down action for this screen or workflow.
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key != Key.Enter || DataContext is not LoginViewModel model)

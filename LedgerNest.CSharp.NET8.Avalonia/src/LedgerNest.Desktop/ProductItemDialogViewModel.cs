@@ -36,6 +36,7 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
     }
 
     [RelayCommand]
+    // Performs the add action for this screen or workflow.
     private void Add()
     {
         if (completed) return;
@@ -53,6 +54,7 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
     }
 
     [RelayCommand]
+    // Performs the cancel action for this screen or workflow.
     private void Cancel()
     {
         if (completed) return;

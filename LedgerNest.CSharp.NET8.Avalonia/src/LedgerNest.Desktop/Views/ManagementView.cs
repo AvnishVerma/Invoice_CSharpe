@@ -69,8 +69,11 @@ internal sealed partial class ManagementView : UserControl
         }
         Refresh();
     }
+    // Performs the subtitle action for this screen or workflow.
     private string Subtitle() => kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : Documents ? $"Manage {kind.ToLowerInvariant()}s and payment status" : "Manage users and access permissions";
+    // Performs the filter options action for this screen or workflow.
     private string[] FilterOptions() => Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "Without GST", "With Outstanding"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
+    // Performs the menu button action for this screen or workflow.
     private Button MenuButton(string title, IEnumerable<string> options, Action<string> select)
     {
         var button = Ui.Button(title, () => { });
@@ -84,6 +87,7 @@ internal sealed partial class ManagementView : UserControl
         button.Flyout = menu;
         return button;
     }
+    // Performs the customer menu action for this screen or workflow.
     private Button CustomerMenu()
     {
         var button = Ui.Button("Customer ▾", () => { });
@@ -98,6 +102,7 @@ internal sealed partial class ManagementView : UserControl
         button.Flyout = menu;
         return button;
     }
+    // Performs the filtered action for this screen or workflow.
     private IEnumerable<UiRecord> Filtered()
     {
         var query = Records.Where(r => r.Values.Values.Any(v => v.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)));
@@ -111,11 +116,13 @@ internal sealed partial class ManagementView : UserControl
     }
     private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Expiry Date"] : ["Username", "Role"];
     private readonly HashSet<string> hidden = [];
+    // Performs the columns action for this screen or workflow.
     private void Columns()
     {
         var checks = Headers.Select(h => new CheckBox { Content = h, IsChecked = !hidden.Contains(h) }).ToArray();
         window.ShowOverlay("Show Columns", Ui.Stack(10, checks), Ui.Wrap(Ui.Button("Cancel", window.CloseOverlay), Ui.Button("Apply", () => { hidden.Clear(); foreach (var c in checks.Where(c => c.IsChecked != true)) hidden.Add(c.Content!.ToString()!); Refresh(); window.CloseOverlay(); }, true)));
     }
+    // Performs the refresh action for this screen or workflow.
     private void Refresh()
     {
         var total = Records.Count();
@@ -161,6 +168,7 @@ internal sealed partial class ManagementView : UserControl
     }
 
 
+    // Performs the document table row action for this screen or workflow.
     private Control DocumentTableRow(UiRecord? record, int index)
     {
         var controls = new List<Control>();
@@ -186,9 +194,11 @@ internal sealed partial class ManagementView : UserControl
         };
     }
 
+    // Performs the document header or cell action for this screen or workflow.
     private static Control DocumentHeaderOrCell(string text, bool header)
         => Ui.Text(text, header ? 12 : 13, header, header ? Brushes.White : Ui.TextColor);
 
+    // Performs the document stats action for this screen or workflow.
     private Control DocumentStats(int total)
     {
         var paid = Records.Count(r => r["Status"] == "Paid");
@@ -198,6 +208,7 @@ internal sealed partial class ManagementView : UserControl
         return Ui.Stats(($"Total {kind}s", total.ToString(), $"All {kind.ToLowerInvariant()}s", "#002E78"), ("Paid", paid.ToString(), "Fully settled", "#4CAF50"), ("Partial", partial.ToString(), "Part paid", "#FF9800"), ("Unpaid", unpaid.ToString(), "Awaiting payment", "#F44336"), ("Overdue", overdue.ToString(), "Needs attention", "#D32F2F"));
     }
 
+    // Performs the document columns action for this screen or workflow.
     private string DocumentColumns()
     {
         var widths = new Dictionary<string, string> { ["Invoice / Customer"] = "2*", ["Title"] = "*", ["Date"] = "*", ["Items"] = ".6*", ["Total"] = "*", ["Status"] = "*", ["Outstanding"] = "*" };
@@ -205,6 +216,7 @@ internal sealed partial class ManagementView : UserControl
     }
 
 
+    // Performs the customer columns action for this screen or workflow.
     private string CustomerColumns()
     {
         var widths = new Dictionary<string, string>
@@ -219,6 +231,7 @@ internal sealed partial class ManagementView : UserControl
         return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("164"));
     }
 
+    // Performs the customer table row action for this screen or workflow.
     private Control CustomerTableRow(UiRecord? record, int index)
     {
         var controls = new List<Control> { HeaderOrCell(record == null ? "SL. NO." : (index + 1).ToString(), record == null, false, record == null ? null : Ui.Muted) };
@@ -239,6 +252,7 @@ internal sealed partial class ManagementView : UserControl
         };
     }
 
+    // Performs the customer cell action for this screen or workflow.
     private Control CustomerCell(UiRecord? record, string header, string value)
     {
         if (record == null) return HeaderOrCell(value.ToUpperInvariant(), true);
@@ -250,6 +264,7 @@ internal sealed partial class ManagementView : UserControl
         };
     }
 
+    // Performs the customer name cell action for this screen or workflow.
     private static Control CustomerNameCell(UiRecord record)
     {
         var business = record["Business Name"];
@@ -266,6 +281,7 @@ internal sealed partial class ManagementView : UserControl
             Ui.Stack(2, Ui.Text(record.Name, 13, true), Ui.Text(string.IsNullOrWhiteSpace(business) ? record.Name : business, 11, color: Ui.Muted)));
     }
 
+    // Performs the customer actions action for this screen or workflow.
     private Control CustomerActions(UiRecord record) => new StackPanel
     {
         Orientation = Orientation.Horizontal,
@@ -282,22 +298,27 @@ internal sealed partial class ManagementView : UserControl
         }
     };
 
+    // Performs the initials action for this screen or workflow.
     private static string Initials(string name)
     {
         var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return parts.Length == 0 ? "?" : string.Concat(parts.Take(2).Select(p => char.ToUpperInvariant(p[0])));
     }
 
+    // Performs the trim long action for this screen or workflow.
     private static string TrimLong(string value)
     {
         if (string.IsNullOrWhiteSpace(value)) return "—";
         return value.Length > 24 ? value[..21] + "…" : value;
     }
 
+    // Performs the outstanding text action for this screen or workflow.
     private static string OutstandingText(string value) => decimal.TryParse(value, out var amount) && amount != 0 ? $"Rs. {amount:0.00}" : "—";
+    // Performs the outstanding brush action for this screen or workflow.
     private static IBrush OutstandingBrush(string value) => decimal.TryParse(value, out var amount) && amount > 0 ? Brush.Parse("#F57C00") : Ui.Muted;
 
 
+    // Performs the product columns action for this screen or workflow.
     private string ProductColumns()
     {
         var widths = new Dictionary<string, string>
@@ -313,6 +334,7 @@ internal sealed partial class ManagementView : UserControl
         return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("122"));
     }
 
+    // Performs the product table row action for this screen or workflow.
     private Control ProductTableRow(UiRecord? record, int index)
     {
         var controls = new List<Control> { HeaderOrCell(record == null ? "SL. NO." : (index + 1).ToString(), record == null, false) };
@@ -333,6 +355,7 @@ internal sealed partial class ManagementView : UserControl
         };
     }
 
+    // Performs the header or cell action for this screen or workflow.
     private static Control HeaderOrCell(string text, bool header, bool strong = false, IBrush? color = null, HorizontalAlignment alignment = HorizontalAlignment.Left)
     {
         var block = Ui.Text(text.Length == 0 ? "—" : text, header ? 11 : 13, header || strong, color ?? (header ? Ui.Muted : Ui.TextColor));
@@ -341,6 +364,7 @@ internal sealed partial class ManagementView : UserControl
         return block;
     }
 
+    // Performs the product cell action for this screen or workflow.
     private Control ProductCell(UiRecord? record, string header, string value)
     {
         if (record == null) return HeaderOrCell(value.ToUpperInvariant(), true);
@@ -356,6 +380,7 @@ internal sealed partial class ManagementView : UserControl
         };
     }
 
+    // Performs the product name cell action for this screen or workflow.
     private static Control ProductNameCell(UiRecord record)
     {
         var type = record["Type"].Length == 0 ? "Product" : record["Type"];
@@ -367,10 +392,13 @@ internal sealed partial class ManagementView : UserControl
         return Ui.Stack(4, children.ToArray());
     }
 
+    // Performs the has unlimited stock action for this screen or workflow.
     private static bool HasUnlimitedStock(UiRecord record) => bool.TryParse(record["Unlimited stock"], out var unlimited) && unlimited;
 
+    // Performs the product stock action for this screen or workflow.
     private static string ProductStock(UiRecord record) => HasUnlimitedStock(record) ? "∞" : record["Stock"];
 
+    // Performs the product money action for this screen or workflow.
     private static string ProductMoney(string value, bool dashWhenZero = false)
     {
         if (!decimal.TryParse(value, out var amount)) return string.IsNullOrWhiteSpace(value) ? "—" : value;
@@ -378,6 +406,7 @@ internal sealed partial class ManagementView : UserControl
         return $"Rs.{amount:0.00}";
     }
 
+    // Performs the product actions action for this screen or workflow.
     private Control ProductActions(UiRecord record) => new StackPanel
     {
         Orientation = Orientation.Horizontal,
@@ -392,6 +421,7 @@ internal sealed partial class ManagementView : UserControl
         }
     };
 
+    // Performs the plain icon action action for this screen or workflow.
     private static Button PlainIconAction(string icon, string label, Action action, string color)
     {
         var button = Ui.Button(label, action);
@@ -407,8 +437,10 @@ internal sealed partial class ManagementView : UserControl
         return button;
     }
 
+    // Performs the format money action for this screen or workflow.
     private static string FormatMoney(string value) => decimal.TryParse(value, out var amount) ? $"Rs. {amount:0.00}" : value;
 
+    // Performs the document cell action for this screen or workflow.
     private Control DocumentCell(UiRecord? record, string value, int index)
     {
         var header = Headers[index];
@@ -424,6 +456,7 @@ internal sealed partial class ManagementView : UserControl
         };
     }
 
+    // Performs the status badge action for this screen or workflow.
     private static Control StatusBadge(string status)
     {
         var color = StatusBrush(status);
@@ -431,8 +464,10 @@ internal sealed partial class ManagementView : UserControl
         return new Border { Background = Brush.Parse(background), BorderBrush = color, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(status, 11, false, color) };
     }
 
+    // Performs the status brush action for this screen or workflow.
     private static IBrush StatusBrush(string status) => status switch { "Paid" => Brush.Parse("#4CAF50"), "Partial" => Brush.Parse("#FF9800"), "Unpaid" => Brush.Parse("#F44336"), "Overdue" => Brush.Parse("#D32F2F"), _ => Ui.TextColor };
 
+    // Performs the document actions action for this screen or workflow.
     private Control DocumentActions(UiRecord record)
     {
         if (trash) return Ui.Wrap(Ui.Button("Restore", () => { model.SetDocumentTrash(record, false); Refresh(); }), DocumentOverflowMenu(record));
@@ -441,6 +476,7 @@ internal sealed partial class ManagementView : UserControl
         return actions;
     }
 
+    // Performs the icon action action for this screen or workflow.
     private static Button IconAction(string icon, string label, Action action, string color)
     {
         var button = Ui.Button(label, action);
@@ -455,6 +491,7 @@ internal sealed partial class ManagementView : UserControl
         return button;
     }
 
+    // Performs the icon action action for this screen or workflow.
     private static Button IconAction(string icon, string label, Func<Task> action, string color)
     {
         var button = Ui.Button(label, async () => await action());
@@ -469,6 +506,7 @@ internal sealed partial class ManagementView : UserControl
         return button;
     }
 
+    // Performs the top icon action action for this screen or workflow.
     private static Button TopIconAction(string icon, string label, Action action)
     {
         var button = Ui.Button(label, action);
@@ -482,6 +520,7 @@ internal sealed partial class ManagementView : UserControl
         return button;
     }
 
+    // Performs the top icon action action for this screen or workflow.
     private static Button TopIconAction(string icon, string label, Func<Task> action)
     {
         var button = Ui.Button(label, async () => await action());
@@ -495,7 +534,9 @@ internal sealed partial class ManagementView : UserControl
         return button;
     }
 
+    // Performs the view action for this screen or workflow.
     private void View(UiRecord record) => window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
+    // Performs the more menu action for this screen or workflow.
     private Button MoreMenu()
     {
         var button = Ui.Button(Documents ? "⋯" : "⋯ More", () => { });
@@ -514,6 +555,7 @@ internal sealed partial class ManagementView : UserControl
     }
 
 
+    // Performs the document overflow menu action for this screen or workflow.
     private Button DocumentOverflowMenu(UiRecord record)
     {
         var button = Ui.Button("⋯", () => { });
@@ -531,6 +573,7 @@ internal sealed partial class ManagementView : UserControl
         return button;
     }
 
+    // Performs the action menu action for this screen or workflow.
     private Button ActionMenu(UiRecord record)
     {
         var button = Ui.Button("⋯", () => { });
@@ -548,13 +591,16 @@ internal sealed partial class ManagementView : UserControl
         button.Flyout = menu;
         return button;
     }
+    // Performs the delete action for this screen or workflow.
     private void Delete(UiRecord record)
     {
         if (!Documents) model.DeleteRecord(kind, record);
         else if (trash) model.DeleteDocumentPermanently(record);
         else model.SetDocumentTrash(record, true);
     }
+    // Performs the delete selected action for this screen or workflow.
     private void DeleteSelected() => window.Confirm("Delete Selected", $"{(trash && Documents ? "Permanently delete" : "Delete")} {selected.Count} selected records?", () => { foreach (var record in Records.Where(r => selected.Contains(r.Id)).ToArray()) Delete(record); selected.Clear(); Refresh(); });
+    // Performs the import action for this screen or workflow.
     private void Import()
     {
         var columns = kind == "Customer"
@@ -563,6 +609,7 @@ internal sealed partial class ManagementView : UserControl
         window.ShowOverlay($"Import {kind}s from CSV", Ui.Stack(16, Ui.Text("CSV columns", 16, true), Ui.Text(columns), Ui.Button("Download Sample CSV", async () => await DownloadSampleCsv()), Ui.Button("Choose File", async () => await ChooseCsvFile())));
     }
 
+    // Performs the export action for this screen or workflow.
     private void Export()
     {
         var currentPage = new RadioButton { Content = "Current Page", IsChecked = true, GroupName = "export" };
@@ -571,6 +618,7 @@ internal sealed partial class ManagementView : UserControl
     }
 
 
+    // Performs the export document pdf action for this screen or workflow.
     private async Task ExportDocumentPdf(UiRecord record)
     {
         try
@@ -595,6 +643,7 @@ internal sealed partial class ManagementView : UserControl
         }
     }
 
+    // Performs the export documents pdf action for this screen or workflow.
     private async Task ExportDocumentsPdf()
     {
         var first = Filtered().FirstOrDefault();
@@ -602,6 +651,7 @@ internal sealed partial class ManagementView : UserControl
         await ExportDocumentPdf(first);
     }
 
+    // Performs the download sample csv action for this screen or workflow.
     private async Task DownloadSampleCsv()
     {
         var sample = kind == "Customer"
@@ -610,6 +660,7 @@ internal sealed partial class ManagementView : UserControl
         await SaveTextFile($"ledgernest-{kind.ToLowerInvariant()}-sample.csv", sample);
     }
 
+    // Performs the choose csv file action for this screen or workflow.
     private async Task ChooseCsvFile()
     {
         var files = await window.StorageProvider.OpenFilePickerAsync(new()
@@ -626,12 +677,14 @@ internal sealed partial class ManagementView : UserControl
         window.ShowOverlay("Import Complete", Ui.Stack(8, Ui.Text(imported == 0 ? model.Status : $"{model.Status} The table has been refreshed.")), Ui.Button("Close", window.CloseOverlay, true));
     }
 
+    // Performs the export csv action for this screen or workflow.
     private async Task ExportCsv(bool currentPageOnly)
     {
         var records = currentPageOnly ? Filtered().Skip(page * pageSize).Take(pageSize) : Records;
         await SaveTextFile($"ledgernest-{kind.ToLowerInvariant()}s.csv", model.ExportCsv(kind, records));
     }
 
+    // Performs the save text file action for this screen or workflow.
     private async Task SaveTextFile(string suggestedName, string content)
     {
         try

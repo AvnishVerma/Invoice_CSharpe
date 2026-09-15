@@ -5,6 +5,7 @@ namespace LedgerNest.Infrastructure;
 
 public static class DatabaseBackupRestore
 {
+    // Performs the restore action for this screen or workflow.
     public static string? Restore(byte[] bytes, string destinationPath)
     {
         if (bytes.Length == 0) throw new InvalidDataException("Database backup is empty.");

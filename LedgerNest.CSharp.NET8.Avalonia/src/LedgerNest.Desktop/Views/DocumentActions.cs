@@ -15,8 +15,10 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
+    // Performs the show document preview action for this screen or workflow.
     internal void ShowDocumentPreview(UiRecord document)
     {
+        // Performs the money action for this screen or workflow.
         static string Money(string value) => decimal.TryParse(value, out var amount) ? $"Rs. {amount:0.00}" : string.IsNullOrWhiteSpace(value) ? "Rs. 0.00" : value;
         var items = Model.PreviewItemsFor(document);
         Control itemRows = items.Length == 0
@@ -34,6 +36,7 @@ public partial class MainWindow
         ShowOverlay("", content, Ui.Button("Close", CloseOverlay, true), width: 650);
     }
 
+    // Performs the show pdf preview action for this screen or workflow.
     internal async void ShowPdfPreview(UiRecord document)
     {
         string? path = null;
@@ -61,6 +64,7 @@ public partial class MainWindow
         }
     }
 
+    // Performs the render pdf preview pages action for this screen or workflow.
     private static List<Image> RenderPdfPreviewPages(byte[] bytes)
     {
         var pages = new List<Image>();
@@ -77,6 +81,7 @@ public partial class MainWindow
         return pages.Count == 0 ? [new Image { Height = 1 }] : pages;
     }
 
+    // Performs the create bitmap from bgra action for this screen or workflow.
     private static WriteableBitmap CreateBitmapFromBgra(byte[] pixels, int width, int height)
     {
         var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
@@ -88,6 +93,7 @@ public partial class MainWindow
         return bitmap;
     }
 
+    // Performs the tax label action for this screen or workflow.
     private static string TaxLabel(UiRecord document)
     {
         var total = decimal.TryParse(document["Total"], out var totalValue) ? totalValue : 0m;
@@ -97,6 +103,7 @@ public partial class MainWindow
         return Math.Round(tax * 100m / beforeTax).ToString("0") + "%";
     }
 
+    // Performs the download document pdf action for this screen or workflow.
     private async Task DownloadDocumentPdf(UiRecord document)
     {
         try
@@ -122,6 +129,7 @@ public partial class MainWindow
         }
     }
 
+    // Performs the print document pdf action for this screen or workflow.
     internal async Task PrintDocumentPdf(UiRecord document)
     {
         string? path = null;
@@ -140,6 +148,7 @@ public partial class MainWindow
         }
     }
 
+    // Performs the open pdf file action for this screen or workflow.
     private static void OpenPdfFile(string path)
     {
         if (OperatingSystem.IsWindows())
@@ -153,6 +162,7 @@ public partial class MainWindow
         if (process == null) throw new InvalidOperationException("The system PDF preview command could not be started.");
     }
 
+    // Performs the send pdf to printer action for this screen or workflow.
     private static async Task SendPdfToPrinter(string path)
     {
         if (OperatingSystem.IsWindows())
@@ -180,6 +190,7 @@ public partial class MainWindow
         }
     }
 
+    // Performs the delete document from dashboard action for this screen or workflow.
     private void DeleteDocumentFromDashboard(UiRecord document)
     {
         Confirm("Confirm Delete", $"Move {document.Name} to trash?", () =>
@@ -189,6 +200,7 @@ public partial class MainWindow
         });
     }
 
+    // Performs the try export document pdf action for this screen or workflow.
     private byte[]? TryExportDocumentPdf(UiRecord document)
     {
         try
@@ -202,6 +214,7 @@ public partial class MainWindow
         }
     }
 
+    // Performs the notify error action for this screen or workflow.
     private void NotifyError(string message, Exception exception, string context)
     {
         AppErrorLog.Write(exception, context);

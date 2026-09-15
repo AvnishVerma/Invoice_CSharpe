@@ -9,6 +9,7 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
+    // Performs the edit record action for this screen or workflow.
     internal void EditRecord(string kind, Action refresh, UiRecord? record = null)
     {
         var fields = kind == "Customer" ? FormCatalog.Customer() : kind == "Product" ? FormCatalog.Product() : FormCatalog.User();
@@ -31,9 +32,12 @@ public partial class MainWindow
         ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, Ui.Stack(16, useDefault, another, Ui.Columns("*,12,2*", cancel, new Border(), save)), true, kind == "Product" ? 550 : 520, kind == "Product" ? Ui.Segments(fields[0]) : null);
     }
 
+    // Performs the show payment action for this screen or workflow.
     internal void ShowPayment(UiRecord invoice)
     {
+        // Performs the amount action for this screen or workflow.
         static decimal Amount(string value) => decimal.TryParse(value, out var amount) ? amount : 0m;
+        // Performs the money action for this screen or workflow.
         static string Money(decimal amount) => $"Rs. {amount:0.00}";
 
         var total = Amount(invoice["Total"]);
@@ -94,6 +98,7 @@ public partial class MainWindow
 
         ShowOverlay("Record Payment", content, footer, width: 700);
     }
+    // Performs the show custom item action for this screen or workflow.
     private void ShowCustomItem()
     {
         var fields = FormCatalog.CustomItem();

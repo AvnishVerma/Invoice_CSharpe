@@ -9,6 +9,7 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
+    // Performs the invoice editor action for this screen or workflow.
     private Control InvoiceEditor()
     {
         invoiceCompletionVisible = false;
@@ -137,6 +138,7 @@ public partial class MainWindow
         body.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.F && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control)) { productSearch.Focus(); e.Handled = true; } };
         RefreshLines(); return body;
     }
+    // Performs the show product item action for this screen or workflow.
     private void ShowProductItem(UiRecord product, TextBox search)
     {
         var dialog = new ProductItemDialogViewModel(product, line => Model.Lines.Add(line), () =>
@@ -149,7 +151,9 @@ public partial class MainWindow
         overlay.IsVisible = true;
         overlay.Children.Add(new ProductItemDialogView { DataContext = dialog });
     }
+    // Performs the total row action for this screen or workflow.
     private static Control TotalRow(string label, decimal value, bool bold = false) => Ui.Columns("*,Auto", Ui.Text(label, bold ? 18 : 13, bold), Ui.Text($"Rs.{value:0.00}", bold ? 22 : 14, bold, bold ? Brush.Parse("#4CAF50") : null));
+    // Performs the select customer action for this screen or workflow.
     private void SelectCustomer()
     {
         var list = new ListBox { ItemsSource = Model.Customers.Select(c => c.Name).ToArray(), MinHeight = 180 };
@@ -158,6 +162,7 @@ public partial class MainWindow
         var useDefault = new CheckBox { Content = "Use as default for new invoices" };
         ShowOverlay("Select Customer", Ui.Stack(12, search, list, useDefault, Ui.Button("Clear default customer", () => Model.SetDefaultCustomer(null))), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Select", () => { var c = Model.Customers.FirstOrDefault(c => c.Name == list.SelectedItem?.ToString()); if (c == null) return; foreach (var f in Model.InvoiceCustomer) f.Value = c[f.Label]; if (useDefault.IsChecked == true) Model.SetDefaultCustomer(c); CloseOverlay(); }, true)));
     }
+    // Performs the show invoice success action for this screen or workflow.
     private void ShowInvoiceSuccess()
     {
         invoiceCompletionVisible = true;
@@ -169,6 +174,7 @@ public partial class MainWindow
         page.Content = InvoiceCreatedScreen(document, applyPayment);
     }
 
+    // Performs the invoice created screen action for this screen or workflow.
     private Control InvoiceCreatedScreen(UiRecord document, Button applyPayment)
     {
         var invoiceId = document.Name.TrimStart('#').Replace("[", "").Replace("]", "");

@@ -12,6 +12,7 @@ namespace LedgerNest.Desktop;
 public partial class MainWindow
 {
     private string settingsTab = "Company Info";
+    // Performs the settings view action for this screen or workflow.
     private Control SettingsView()
     {
         string[] tabs = ["Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info"];
@@ -40,6 +41,7 @@ public partial class MainWindow
         Select(settingsTab);
         return Ui.Columns("110,*", new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Scroll(rail, 0) }, content);
     }
+    // Performs the settings form action for this screen or workflow.
     private Control SettingsForm(string name)
     {
         if (name == "Invoice Settings") return InvoiceSettingsView();
@@ -50,6 +52,7 @@ public partial class MainWindow
         stack.Children.Add(Ui.Button("Save Settings", () => Model.SaveSettings(name), true));
         stack.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar(name), Ui.Scroll(stack, 28));
     }
+    // Performs the invoice settings view action for this screen or workflow.
     private Control InvoiceSettingsView()
     {
         var sections = Model.Settings["Invoice Settings"];
@@ -88,8 +91,10 @@ public partial class MainWindow
         };
         Select(0); return Ui.Rows("Auto,*", Ui.AppBar("Invoice Settings"), layout);
     }
+    // Performs the backup view action for this screen or workflow.
     private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create JSON Backup", async () => await RunBackupFileAction(CreateBackupFile)), Ui.Button("＋ Create DB Backup", async () => await RunBackupFileAction(CreateDatabaseBackupFile)), Ui.Button("↑ Restore JSON", async () => await RunBackupFileAction(RestoreBackupFile)), Ui.Button("↑ Restore DB", async () => await RunBackupFileAction(RestoreDatabaseBackupFile))), Ui.Card(Ui.Stack(8, Ui.Text("Backup modes", 18, true), Ui.Text("JSON backups export business data and exclude user credentials. DB backups copy the full SQLite database file for local restore, matching the legacy backup manager modes."))), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
 
+    // Performs the run backup file action action for this screen or workflow.
     private async Task RunBackupFileAction(Func<Task> action)
     {
         var operationModel = Model;
@@ -103,9 +108,11 @@ public partial class MainWindow
         }
     }
 
+    // Performs the can continue backup operation action for this screen or workflow.
     private bool CanContinueBackupOperation(MainWindowViewModel model, long version) =>
         ReferenceEquals(DataContext, model) && model.CanContinueWorkspaceOperation(version);
 
+    // Performs the create backup file action for this screen or workflow.
     private async Task CreateBackupFile()
     {
         var operationModel = Model;
@@ -131,6 +138,7 @@ public partial class MainWindow
     }
 
 
+    // Performs the create database backup file action for this screen or workflow.
     private async Task CreateDatabaseBackupFile()
     {
         var operationModel = Model;
@@ -155,6 +163,7 @@ public partial class MainWindow
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
 
+    // Performs the restore database backup file action for this screen or workflow.
     private async Task RestoreDatabaseBackupFile()
     {
         var operationModel = Model;
@@ -176,6 +185,7 @@ public partial class MainWindow
         page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
 
+    // Performs the restore backup file action for this screen or workflow.
     private async Task RestoreBackupFile()
     {
         var operationModel = Model;
@@ -196,11 +206,13 @@ public partial class MainWindow
         ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
         page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
+    // Performs the customization view action for this screen or workflow.
     private Control CustomizationView()
     {
         var cards = Ui.Stack(20, Ui.Text("MADE FOR YOUR BUSINESS", 12, true, Ui.Primary), Ui.Text($"Customize {Branding.Name}", 28, true));
         foreach (var (title, description) in new[] { ("Custom PDF Template", "An invoice design tailored to your business and branding."), ("Custom Fields", "Capture the additional details your business needs."), ("White Label", "Your brand, logo and identity throughout the application."), ("Industry Build", "A tailored workflow for your industry.") }) cards.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text(title, 20, true), Ui.Text(description, 14, color: Ui.Muted), Ui.Button("Request Customization")), 24));
         cards.MaxWidth = 900; return Ui.Scroll(cards, 28);
     }
+    // Performs the software info action for this screen or workflow.
     private Control SoftwareInfo() => Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(Ui.Stack(24, Ui.Logo(), Ui.Card(Ui.Stack(18, Ui.Text("App Details", 18, true), Ui.Text($"App Name       {Branding.Name}"), Ui.Text("Platform          Desktop"), Ui.Text("License           See legacy LICENSE"))), Ui.Card(Ui.Stack(18, Ui.Text("Developer", 18, true), Ui.Text(Branding.Tagline), Ui.Button("Check for Updates"))), Ui.Button("Change Password", ShowChangePassword), Ui.Button("First-time Setup", ShowOnboarding)), 28));
 }

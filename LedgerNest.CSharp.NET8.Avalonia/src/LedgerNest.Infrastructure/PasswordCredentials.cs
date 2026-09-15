@@ -7,12 +7,15 @@ public static class PasswordCredentials
 {
     // Strict version parsing also prevents imported records from requesting unbounded work.
     private const string Prefix = "pbkdf2-sha256$v1$600000$";
+    // Performs the create salt action for this screen or workflow.
     public static string CreateSalt() => Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
 
+    // Performs the hash action for this screen or workflow.
     public static string Hash(string password, string salt) => Prefix + Convert.ToHexString(
         Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes(password), Encoding.UTF8.GetBytes(salt),
             600_000, HashAlgorithmName.SHA256, 32));
 
+    // Performs the verify action for this screen or workflow.
     public static bool Verify(string password, string salt, string hash, out bool needsUpgrade)
     {
         needsUpgrade = false;

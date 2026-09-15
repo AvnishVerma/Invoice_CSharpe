@@ -28,8 +28,10 @@ public partial class App : Avalonia.Application
         };
     }
 
+    // Performs the initialize action for this screen or workflow.
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
+    // Performs the on framework initialization completed action for this screen or workflow.
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

@@ -10,6 +10,7 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
+    // Performs the company settings view action for this screen or workflow.
     private Control CompanySettingsView()
     {
         var sections = Model.Settings["Company Info"];
@@ -57,6 +58,7 @@ public partial class MainWindow
         return new CompanySettingsInfoView(Ui.AppBar("Company Information", language, theme), logo, Ui.Field(sections[0].Fields[1]), previewName, save, details);
     }
 
+    // Performs the apply theme action for this screen or workflow.
     private void ApplyTheme(string mode)
     {
         Model.SetThemeMode(mode);
@@ -71,6 +73,7 @@ public partial class MainWindow
         }
     }
 
+    // Performs the pdf settings view action for this screen or workflow.
     private Control PdfSettingsView()
     {
         var sections = Model.Settings["PDF Settings"];
@@ -130,6 +133,7 @@ public partial class MainWindow
         view.DetachedFromVisualTree += (_, _) => pageSize.PropertyChanged -= pageSizeChanged;
         return view;
     }
+    // Performs the template description action for this screen or workflow.
     private static string TemplateDescription(string template) => template switch
     {
         "Modern" => "Bold header with contemporary styling", "Minimal" => "Simple and distraction-free",
@@ -137,6 +141,7 @@ public partial class MainWindow
         "Thermal" => "Narrow receipt layout for 80mm and 58mm thermal printers", "Grid Classic" => "Old-style bordered tabular bill, for A4, A5 and A6",
         _ => "Traditional layout with clean structure"
     };
+    // Performs the invoice preview action for this screen or workflow.
     private static Control InvoicePreview(string template, string hex)
     {
         var accent = Color.TryParse(hex, out var c) ? new SolidColorBrush(c) : Ui.Primary;

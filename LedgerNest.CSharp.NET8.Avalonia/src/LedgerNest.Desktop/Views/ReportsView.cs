@@ -11,6 +11,7 @@ namespace LedgerNest.Desktop;
 public partial class MainWindow
 {
     private string reportTab = "Revenue";
+    // Performs the reports action for this screen or workflow.
     private Control Reports()
     {
         string[] names = ["Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report"];
@@ -34,6 +35,7 @@ public partial class MainWindow
         var content = Ui.Columns("200,*", new Border { Background = Ui.Surface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Scroll(nav, 16) }, host);
         return Ui.Rows("Auto,*", Ui.AppBar("Reports", Ui.Button("↻", () => host.Content = ReportContent(reportTab))), content);
     }
+    // Performs the report content action for this screen or workflow.
     private Control ReportContent(string name)
     {
         var report = Model.BuildReport(name);
@@ -88,6 +90,7 @@ public partial class MainWindow
         return Ui.Scroll(body, 18);
     }
 
+    // Performs the export report csv action for this screen or workflow.
     private async Task ExportReportCsv(string name)
     {
         try
@@ -113,6 +116,7 @@ public partial class MainWindow
     }
 
 
+    // Performs the export report pdf action for this screen or workflow.
     private async Task ExportReportPdf(string name)
     {
         try
@@ -137,8 +141,10 @@ public partial class MainWindow
         }
     }
 
+    // Performs the money action for this screen or workflow.
     private static string Money(decimal value) => $"Rs. {value:0.00}";
 
+    // Performs the report stats action for this screen or workflow.
     private static Control ReportStats(params (string Label, string Value, string Icon, string Color)[] stats)
     {
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions(string.Join(",", stats.Select(_ => "*"))) };
@@ -161,6 +167,7 @@ public partial class MainWindow
         return grid;
     }
 
+    // Performs the chart card action for this screen or workflow.
     private Control ChartCard(string reportName, string title, string subtitle, decimal billed, decimal collected, decimal profit)
     {
         var chart = new ScottPlot.Avalonia.AvaPlot { Height = 300 };
@@ -176,6 +183,7 @@ public partial class MainWindow
         return Ui.Card(Ui.Stack(10, Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(title, 16, true), Ui.Text(subtitle, 12, color: Ui.Muted)), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv(reportName)), Ui.Button("↓ Export PDF", async () => await ExportReportPdf(reportName)))), chart), 20);
     }
 
+    // Performs the donut card action for this screen or workflow.
     private static Control DonutCard()
     {
         var chart = new ScottPlot.Avalonia.AvaPlot { Width = 260, Height = 240 };
@@ -193,6 +201,7 @@ public partial class MainWindow
         return Ui.Card(Ui.Stack(10, Ui.Text("Payment Status Breakdown", 16, true), Ui.Columns("300,30,*", chart, new Border(), legend)), 20);
     }
 
+    // Performs the customer revenue card action for this screen or workflow.
     private Control CustomerRevenueCard(string[][] rows)
     {
         var name = rows.Length > 1 && rows[1].Length > 0 ? rows[1][0] : "Cash";
@@ -200,6 +209,7 @@ public partial class MainWindow
         return Ui.Card(Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Top 1 Customers by Revenue", 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Customers")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Customers")))), Ui.Columns("130,*,110", Ui.Text(name, 13), new Border { Height = 22, CornerRadius = new CornerRadius(4), Background = Brush.Parse("#3B82F6") }, Ui.Text(amount, 13, true, Ui.Primary)), ReportTable("", rows, false, "Customers")), 20);
     }
 
+    // Performs the product revenue card action for this screen or workflow.
     private Control ProductRevenueCard(string[][] rows)
     {
         var list = Ui.Stack(8);
@@ -214,13 +224,16 @@ public partial class MainWindow
         return Ui.Card(Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Top 2 Products / Services by Revenue", 16, true), Ui.Wrap(Ui.Text("▣ Rank: Revenue", 12, true, Ui.Muted), Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Products")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Products")))), list, ReportTable("", rows, false, "Products")), 20);
     }
 
+    // Performs the daily report card action for this screen or workflow.
     private Control DailyReportCard(string[][] rows)
     {
         return Ui.Card(Ui.Stack(14, Ui.Columns("*,Auto", Ui.Text("Daily Sales & Profit", 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Daily Report")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Daily Report")))), Ui.Wrap(Ui.Button("Today", () => { }, true), Ui.Button("Last 30 days", () => { }), Ui.Button("Month & Year", () => { }), Ui.Button("Custom Range", () => { })), ReportTable("", rows, false, "Daily Report")), 20);
     }
 
+    // Performs the legend action for this screen or workflow.
     private static Control Legend(string color, string text) => Ui.Columns("Auto,8,*", new Border { Width = 13, Height = 13, CornerRadius = new CornerRadius(3), Background = Brush.Parse(color), VerticalAlignment = VerticalAlignment.Center }, new Border(), Ui.Text(text, 13, true));
 
+    // Performs the report table action for this screen or workflow.
     private Control ReportTable(string title, string[][] rows, bool wrapInCard, string reportName = "")
     {
         var table = Ui.Stack(0);
@@ -242,6 +255,7 @@ public partial class MainWindow
         var scroll = new ScrollViewer { Content = table, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto };
         return wrapInCard ? Ui.Card(scroll, 20) : scroll;
     }
+    // Performs the empty chart action for this screen or workflow.
     private static Control EmptyChart()
     {
         var rows = Ui.Stack(0);

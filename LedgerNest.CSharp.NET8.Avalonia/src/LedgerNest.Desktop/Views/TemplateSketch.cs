@@ -7,6 +7,7 @@ namespace LedgerNest.Desktop.Views;
 // Native drawing port of TemplatePreviewSketch in widgets/template_list_tile.dart.
 internal sealed class TemplateSketch(string template, IBrush accent, bool details = true) : Control
 {
+    // Performs the render action for this screen or workflow.
     public override void Render(DrawingContext context)
     {
         base.Render(context);

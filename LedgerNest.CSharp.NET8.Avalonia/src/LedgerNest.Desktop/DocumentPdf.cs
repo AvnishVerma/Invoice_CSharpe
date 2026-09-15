@@ -28,6 +28,7 @@ internal static class DocumentPdf
         bool ShowTotal,
         bool ShowTotalQuantity);
 
+    // Performs the create action for this screen or workflow.
     public static byte[] Create(Invoice invoice, InvoiceItem[] items, Business business, string pageSize, bool landscape, string template = "Classic", string themeColor = "#0F766E", PdfExportOptions? options = null)
     {
         options ??= new PdfExportOptions("dd MMM yyyy", "24 hour", false, "Qty", true, false, true, true, true, true, true, true, true, true, true, true, true, true, true);
@@ -60,6 +61,7 @@ internal static class DocumentPdf
         SKCanvas canvas = null!;
         var page = 0; float y = 0;
         var ink = SKColor.Parse("#172B3A"); var muted = SKColor.Parse("#52616B"); var ruleColor = SKColor.Parse("#DDE5E7"); var soft = SKColor.Parse("#F7F2FA"); var accent = ParseColor(themeColor, "#0F766E");
+        // Performs the parse color action for this screen or workflow.
         static SKColor ParseColor(string value, string fallback)
         {
             try { return SKColor.Parse(string.IsNullOrWhiteSpace(value) ? fallback : value); }

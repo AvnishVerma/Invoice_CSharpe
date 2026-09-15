@@ -12,12 +12,14 @@ internal static class AppErrorLog
         .WriteTo.File(Path, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 14, shared: true)
         .CreateLogger());
 
+    // Performs the write action for this screen or workflow.
     public static void Write(Exception exception, string context)
     {
         try { Logger.Value.Error(exception, "{Context}", context); }
         catch { }
     }
 
+    // Performs the build path action for this screen or workflow.
     private static string BuildPath()
     {
         var root = OperatingSystem.IsMacOS()

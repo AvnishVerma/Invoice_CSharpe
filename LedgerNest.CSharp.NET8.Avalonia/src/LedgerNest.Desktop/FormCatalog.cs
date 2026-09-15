@@ -2,15 +2,25 @@ namespace LedgerNest.Desktop;
 
 public static class FormCatalog
 {
+    // Performs the text action for this screen or workflow.
     private static FormField Text(string label, string value = "", bool required = false) => new(label, value, required: required);
+    // Performs the number action for this screen or workflow.
     private static FormField Number(string label, string value = "0") => new(label, value, "number");
+    // Performs the toggle action for this screen or workflow.
     private static FormField Toggle(string label, bool value = false, string help = "") => new(label, value ? "true" : "false", "toggle") { Help = help };
+    // Performs the choice action for this screen or workflow.
     private static FormField Choice(string label, params string[] options) => new(label, options[0], "choice", options);
+    // Performs the customer action for this screen or workflow.
     public static FormField[] Customer() => [new("Name", required: true) { MaxLength = 50, Icon = "person" }, new("Business Name") { MaxLength = 100, Icon = "business" }, new("Phone", required: true) { MaxLength = 12, Icon = "phone" }, new("Email") { MaxLength = 100, Icon = "email" }, new("GST / VAT Number") { MaxLength = 50, Icon = "receipt_long" }, new("Address", kind: "multiline") { MaxLength = 500, Icon = "location_on" }];
+    // Performs the product action for this screen or workflow.
     public static FormField[] Product() => [Choice("Type", "Product", "Service"), Text("Name", required: true), Text("Alias Name (for invoice PDF)"), new("Description", kind: "multiline"), Text("HSN/SAC"), Number("Sale Price"), Number("Purchase Price"), Number("Default Discount"), Number("Tax (%)"), Toggle("Price includes tax"), Number("Stock"), Toggle("Unlimited stock"), Choice("Unit", "None", "pcs", "kg", "g", "l", "m", "box", "Custom…"), Text("Custom unit"), Text("Storage Location"), Text("Container Number"), Text("Batch Number"), new("Expiry Date", kind: "date"), new("Manufacture Date", kind: "date"), Text("Supplier Name"), Text("SKU Code"), new("Notes", kind: "multiline")];
+    // Performs the user action for this screen or workflow.
     public static FormField[] User() => [Text("Username", required: true), new("Password", kind: "password", required: true), Choice("Role", "User", "Admin")];
+    // Performs the payment action for this screen or workflow.
     public static FormField[] Payment() => [Number("Amount"), new("Date", DateTime.Today.ToString("yyyy-MM-dd"), "date"), Choice("Payment Method", "Cash", "UPI", "Bank Transfer", "Card", "Cheque", "Other"), Number("Tax covered"), new("Notes / Reference", kind: "multiline")];
+    // Performs the custom item action for this screen or workflow.
     public static FormField[] CustomItem() => [Text("Name", required: true), new("Description", kind: "multiline"), Number("Quantity", "1"), Number("Price"), Number("Tax (%)"), Number("Discount"), Choice("Unit", "None", "pcs", "kg", "Custom…"), Text("Custom unit")];
+    // Performs the settings action for this screen or workflow.
     public static Dictionary<string, FormSection[]> Settings() => new()
     {
         ["Company Info"] = [

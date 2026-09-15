@@ -17,6 +17,7 @@ public partial class ProductItemDialogView : UserControl
         });
     }
 
+    // Performs the on key down action for this screen or workflow.
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         if (DataContext is not ProductItemDialogViewModel model) return;

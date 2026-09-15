@@ -3,6 +3,7 @@ namespace LedgerNest.Application;
 public enum InvoiceTaxMode { PerItem, Global, None }
 public enum InvoiceDiscountKind { None, Amount, Percent }
 public readonly record struct InvoiceLineInput(decimal Price, decimal Quantity, decimal Discount = 0, bool DiscountPerUnit = false, decimal ExtraCost = 0, decimal TaxRatePercent = 0, bool PriceIncludesTax = false);
+// Performs the calculated invoice totals action for this screen or workflow.
 public readonly record struct CalculatedInvoiceTotals(decimal Subtotal, decimal GrossSubtotal, decimal ItemDiscount, decimal Tax, decimal AdditionalCosts, decimal InvoiceDiscount)
 {
     public decimal Total => Math.Max(0, Subtotal + Tax + AdditionalCosts - InvoiceDiscount);
@@ -11,6 +12,7 @@ public readonly record struct CalculatedInvoiceTotals(decimal Subtotal, decimal 
 /// <summary>Decimal port of the legacy invoice_totals_calculator.dart rules. Round only for display.</summary>
 public static class InvoiceTotalsCalculator
 {
+    // Performs the calculate action for this screen or workflow.
     public static CalculatedInvoiceTotals Calculate(IEnumerable<InvoiceLineInput> lines, InvoiceTaxMode mode = InvoiceTaxMode.PerItem, decimal globalTaxPercent = 0, decimal additionalCosts = 0, InvoiceDiscountKind discountKind = InvoiceDiscountKind.None, decimal discountValue = 0)
     {
         decimal subtotal = 0, gross = 0, discounts = 0, itemTax = 0;

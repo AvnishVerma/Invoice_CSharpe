@@ -18,6 +18,7 @@ public sealed partial class FormField : ObservableObject
     [ObservableProperty] private string error = "";
     public FormField(string label, string value = "", string kind = "text", string[]? options = null, bool required = false)
     { Label = label; this.value = value; Kind = kind; Options = options ?? []; Required = required; isChecked = value == "true"; }
+    // Performs the validate action for this screen or workflow.
     public bool Validate()
     {
         Error = Required && string.IsNullOrWhiteSpace(Value) ? $"{Label} is required." : "";
@@ -51,10 +52,16 @@ public sealed partial class InvoiceLineViewModel : ObservableObject
     [ObservableProperty] private bool discountPerUnit;
     [ObservableProperty] private decimal extraCost;
     public decimal Total => Quantity * Price - (DiscountPerUnit ? Discount * Quantity : Discount) + ExtraCost;
+    // Performs the on discount per unit changed action for this screen or workflow.
     partial void OnDiscountPerUnitChanged(bool value) => OnPropertyChanged(nameof(Total));
+    // Performs the on extra cost changed action for this screen or workflow.
     partial void OnExtraCostChanged(decimal value) => OnPropertyChanged(nameof(Total));
+    // Performs the on quantity changed action for this screen or workflow.
     partial void OnQuantityChanged(decimal value) => OnPropertyChanged(nameof(Total));
+    // Performs the on price changed action for this screen or workflow.
     partial void OnPriceChanged(decimal value) => OnPropertyChanged(nameof(Total));
+    // Performs the on tax rate changed action for this screen or workflow.
     partial void OnTaxRateChanged(decimal value) => OnPropertyChanged(nameof(Total));
+    // Performs the on discount changed action for this screen or workflow.
     partial void OnDiscountChanged(decimal value) => OnPropertyChanged(nameof(Total));
 }

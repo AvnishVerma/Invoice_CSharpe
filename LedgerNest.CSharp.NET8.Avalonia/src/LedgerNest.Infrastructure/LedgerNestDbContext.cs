@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace LedgerNest.Infrastructure;
 
+// Performs the ledger nest db context action for this screen or workflow.
 public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> options) : DbContext(options)
 {
     public DbSet<Customer> Customers => Set<Customer>();
@@ -73,6 +74,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         }
     }
 
+    // Performs the on model creating action for this screen or workflow.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Customer>().ToTable("customers");

@@ -14,6 +14,7 @@ namespace LedgerNest.Desktop.Views;
 
 internal static class Ui
 {
+    // Performs the icon action for this screen or workflow.
     public static TextBlock Icon(string name, double size = 20, IBrush? color = null) => new() { Text = Icons.GetValueOrDefault(name, "\ue88f"), FontFamily = new FontFamily("avares://LedgerNest.Desktop/Assets#Material Icons"), FontSize = size, Foreground = color ?? Muted, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
     private static readonly Dictionary<string, string> Icons = new()
     {
@@ -66,6 +67,7 @@ internal static class Ui
     };
     private static readonly Dictionary<(string Light, string Dark), SolidColorBrush> palette = [];
     private static bool darkTheme;
+    // Performs the palette action for this screen or workflow.
     public static IBrush Palette(string light, string dark)
     {
         var key = (light, dark);
@@ -73,6 +75,7 @@ internal static class Ui
             palette[key] = brush = new SolidColorBrush(Color.Parse(darkTheme ? dark : light));
         return brush;
     }
+    // Performs the update theme action for this screen or workflow.
     public static void UpdateTheme(bool dark)
     {
         darkTheme = dark;
@@ -88,17 +91,25 @@ internal static class Ui
     public static IBrush MaterialPrimary => Primary;
     public static IBrush Muted => Palette("#666666", "#BBC5D0");
     public static IBrush Outline => Palette("#E0E0E0", "#526171");
+    // Performs the text action for this screen or workflow.
     public static TextBlock Text(string text, double size = 14, bool bold = false, IBrush? color = null) => new() { Text = text, FontSize = size, FontWeight = bold ? FontWeight.Bold : FontWeight.Normal, Foreground = color ?? TextColor, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+    // Performs the stack action for this screen or workflow.
     public static StackPanel Stack(double spacing, params Control[] children)
     { var p = new StackPanel { Spacing = spacing }; foreach (var c in children) p.Children.Add(c); return p; }
+    // Performs the wrap action for this screen or workflow.
     public static WrapPanel Wrap(params Control[] children)
     { var p = new WrapPanel(); foreach (var c in children) { c.Margin = new Thickness(0, 0, 8, 8); p.Children.Add(c); } return p; }
+    // Performs the columns action for this screen or workflow.
     public static Grid Columns(string definitions, params Control[] children)
     { var g = new Grid { ColumnDefinitions = new ColumnDefinitions(definitions) }; for (var i = 0; i < children.Length; i++) { Grid.SetColumn(children[i], i); g.Children.Add(children[i]); } return g; }
+    // Performs the rows action for this screen or workflow.
     public static Grid Rows(string definitions, params Control[] children)
     { var g = new Grid { RowDefinitions = new RowDefinitions(definitions) }; for (var i = 0; i < children.Length; i++) { Grid.SetRow(children[i], i); g.Children.Add(children[i]); } return g; }
+    // Performs the card action for this screen or workflow.
     public static Border Card(Control content, double padding = 16) => new() { Background = CardSurface, BorderBrush = Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(padding), Child = content };
+    // Performs the scroll action for this screen or workflow.
     public static ScrollViewer Scroll(Control child, double padding = 16) => new() { Content = new Border { Padding = new Thickness(padding), Child = child }, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+    // Performs the load logo action for this screen or workflow.
     public static Avalonia.Media.Imaging.Bitmap? LoadLogo(string value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
@@ -111,6 +122,7 @@ internal static class Ui
         catch (Exception ex) when (ex is IOException or ArgumentException or FormatException) { return null; }
     }
 
+    // Performs the button action for this screen or workflow.
     public static Button Button(string label, Action? action = null, bool primary = false)
     {
         var button = new Button { Content = label, Tag = label, Command = action == null ? null : new RelayCommand(action), IsEnabled = action != null, VerticalAlignment = VerticalAlignment.Center };
@@ -128,6 +140,7 @@ internal static class Ui
         if (action == null) ToolTip.SetTip(button, "This service has not yet been migrated.");
         return button;
     }
+    // Performs the field action for this screen or workflow.
     public static Control Field(FormField field, string? labelText = null, bool singleLine = false)
     {
         var withIcon = labelText == null && field.Icon.Length > 0;
@@ -215,6 +228,7 @@ internal static class Ui
         UpdateLabel();
         return Stack(4, fieldGrid, error);
     }
+    // Performs the segments action for this screen or workflow.
     public static Control Segments(FormField field)
     {
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
@@ -226,6 +240,7 @@ internal static class Ui
         }
         Update(); return new Border { CornerRadius = new CornerRadius(20), ClipToBounds = true, Child = panel };
     }
+    // Performs the fields action for this screen or workflow.
     public static Control Fields(IEnumerable<FormField> fields, int columns = 1)
     {
         var g = new Grid { ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Repeat("*", columns))) };
@@ -238,13 +253,18 @@ internal static class Ui
         }
         return g;
     }
+    // Performs the logo action for this screen or workflow.
     public static Control Logo(bool compact = false) => new BrandLogo(compact);
+    // Performs the asset action for this screen or workflow.
     public static Image Asset(string name, double width, double height)
     { using var stream = AssetLoader.Open(new Uri($"avares://LedgerNest.Desktop/Assets/{name}")); return new Image { Source = new Bitmap(stream), Width = width, Height = height, Stretch = Stretch.Uniform }; }
+    // Performs the empty action for this screen or workflow.
     public static Control Empty(string title, string subtitle = "", string icon = "▤")
     { var p = Stack(12, Icon(icon == "✓" ? "check_circle" : icon == "cart" ? "shopping_cart" : title.Contains("customers") ? "person_off" : "receipt_long", icon == "cart" ? 48 : 64, Outline), Text(title, 18, color: Muted), Text(subtitle, 14, color: Muted)); p.HorizontalAlignment = HorizontalAlignment.Center; p.VerticalAlignment = VerticalAlignment.Center; foreach (var c in p.Children) c.HorizontalAlignment = HorizontalAlignment.Center; return new Border { MinHeight = 240, Padding = new Thickness(24), Child = p }; }
+    // Performs the header action for this screen or workflow.
     public static Control Header(string title, string subtitle, params Control[] actions)
     { var a = Wrap(actions); a.HorizontalAlignment = HorizontalAlignment.Right; return Columns("*,Auto", Stack(2, Text(title, 22, true), Text(subtitle, 13, color: Muted)), a); }
+    // Performs the app bar action for this screen or workflow.
     public static Control AppBar(string title, params Control[] actions)
     {
         var a = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
@@ -264,6 +284,7 @@ internal static class Ui
         var heading = Text(title, 20, color: Brushes.White); heading.TextWrapping = TextWrapping.NoWrap; heading.TextTrimming = TextTrimming.CharacterEllipsis;
         return new Border { Background = Primary, Padding = new Thickness(20, 0), Height = 56, Child = Columns("*,Auto", heading, a) };
     }
+    // Performs the stats action for this screen or workflow.
     public static Control Stats(params (string Label, string Value, string Subtitle, string Color)[] stats)
     {
         var grid = new Grid();
