@@ -20,20 +20,21 @@ public partial class MainWindow
     {
         // Performs the money action for this screen or workflow.
         static string Money(string value) => decimal.TryParse(value, out var amount) ? $"Rs. {amount:0.00}" : string.IsNullOrWhiteSpace(value) ? "Rs. 0.00" : value;
-        var items = Model.PreviewItemsFor(document);
-        Control itemRows = items.Length == 0
-            ? Ui.Text("No items available", 13, color: Ui.Muted)
-            : Ui.Stack(6, items.Select(item => Ui.Columns("*,Auto", Ui.Text($"{item.Description} x{item.Quantity:0.###}", 13), Ui.Text($"Rs. {item.LineTotal:0.00}", 13))).ToArray());
-        var content = Ui.Stack(18,
-            Ui.Text($"Invoice #{document.Name}", 24),
-            Ui.Stack(4, Ui.Text($"Customer: {document["Customer"]}", 13), Ui.Text($"Date: {document["Date"]}", 13)),
-            Ui.Stack(10, Ui.Text("Items:", 14, true), itemRows),
-            new Border { Height = 1, Background = Ui.Outline },
-            Ui.Stack(6,
-                Ui.Columns("*,Auto", Ui.Text("Subtotal:", 13, true), Ui.Text(Money(document["Subtotal"].Length == 0 ? document["Total"] : document["Subtotal"]), 13)),
-                Ui.Columns("*,Auto", Ui.Text($"Tax ({TaxLabel(document)}):", 13, true), Ui.Text(Money(document["Tax"]), 13)),
-                Ui.Columns("*,Auto", Ui.Text("Total:", 14, true), Ui.Text(Money(document["Total"]), 14, true))));
-        ShowOverlay("", content, Ui.Button("Close", CloseOverlay, true), width: 650);
+        var preview = new DocumentPreviewModel
+        {
+            Title = $"Invoice #{document.Name}",
+            CustomerText = $"Customer: {document["Customer"]}",
+            DateText = $"Date: {document["Date"]}",
+            SubtotalText = Money(document["Subtotal"].Length == 0 ? document["Total"] : document["Subtotal"]),
+            TaxLabelText = $"Tax ({TaxLabel(document)}):",
+            TaxText = Money(document["Tax"]),
+            TotalText = Money(document["Total"])
+        };
+        foreach (var item in Model.PreviewItemsFor(document))
+        {
+            preview.Items.Add(new DocumentPreviewItemModel($"{item.Description} x{item.Quantity:0.###}", $"Rs. {item.LineTotal:0.00}"));
+        }
+        ShowOverlay("", new DocumentPreviewView(preview), Ui.Button("Close", CloseOverlay, true), width: 650);
     }
 
     // Performs the show pdf preview action for this screen or workflow.

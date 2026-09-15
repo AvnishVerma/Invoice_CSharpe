@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.DocumentPreviewView"
+             x:CompileBindings="False">
+  <StackPanel Spacing="18">
+    <TextBlock Text="{Binding Title}" FontSize="24" />
+
+    <StackPanel Spacing="4">
+      <TextBlock Text="{Binding CustomerText}" FontSize="13" />
+      <TextBlock Text="{Binding DateText}" FontSize="13" />
+    </StackPanel>
+
+    <StackPanel Spacing="10">
+      <TextBlock Text="Items:" FontSize="14" FontWeight="Bold" />
+      <TextBlock Text="No items available" FontSize="13" Foreground="#777777" IsVisible="{Binding HasNoItems}" />
+      <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding HasItems}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+              <TextBlock Text="{Binding Description}" FontSize="13" />
+              <TextBlock Grid.Column="1" Text="{Binding Amount}" FontSize="13" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+
+    <Border Height="1" Background="#E0E0E0" />
+
+    <StackPanel Spacing="6">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="Subtotal:" FontSize="13" FontWeight="Bold" />
+        <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" FontSize="13" />
+      </Grid>
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding TaxLabelText}" FontSize="13" FontWeight="Bold" />
+        <TextBlock Grid.Column="1" Text="{Binding TaxText}" FontSize="13" />
+      </Grid>
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="Total:" FontSize="14" FontWeight="Bold" />
+        <TextBlock Grid.Column="1" Text="{Binding TotalText}" FontSize="14" FontWeight="Bold" />
+      </Grid>
+    </StackPanel>
+  </StackPanel>
+</UserControl>
