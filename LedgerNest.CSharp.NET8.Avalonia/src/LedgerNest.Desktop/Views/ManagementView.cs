@@ -221,14 +221,14 @@ internal sealed partial class ManagementView : UserControl
     {
         var widths = new Dictionary<string, string>
         {
-            ["Name / Business"] = "2.1*",
-            ["Phone"] = "1.2*",
-            ["Email"] = "1.8*",
-            ["GST / VAT No."] = "1.35*",
-            ["Address"] = "2.1*",
-            ["Outstanding"] = "1.2*"
+            ["Name / Business"] = "2.0*",
+            ["Phone"] = "1.15*",
+            ["Email"] = "1.65*",
+            ["GST / VAT No."] = "1.5*",
+            ["Address"] = "2.15*",
+            ["Outstanding"] = "1.05*"
         };
-        return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("164"));
+        return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("190"));
     }
 
     // Performs the customer table row action for this screen or workflow.
@@ -268,17 +268,27 @@ internal sealed partial class ManagementView : UserControl
     private static Control CustomerNameCell(UiRecord record)
     {
         var business = record["Business Name"];
-        return Ui.Columns("40,*",
-            new Border
-            {
-                Width = 36,
-                Height = 36,
-                CornerRadius = new CornerRadius(18),
-                Background = Brush.Parse("#FFE5CC"),
-                VerticalAlignment = VerticalAlignment.Center,
-                Child = Ui.Text(Initials(record.Name), 12, true, Brush.Parse("#FF7A00"))
-            },
-            Ui.Stack(2, Ui.Text(record.Name, 13, true), Ui.Text(string.IsNullOrWhiteSpace(business) ? record.Name : business, 11, color: Ui.Muted)));
+        var name = Ui.Text(record.Name, 13, true);
+        name.TextWrapping = TextWrapping.NoWrap;
+        name.TextTrimming = TextTrimming.CharacterEllipsis;
+        var subtitle = Ui.Text(string.IsNullOrWhiteSpace(business) ? record.Name : business, 11, color: Ui.Muted);
+        subtitle.TextWrapping = TextWrapping.NoWrap;
+        subtitle.TextTrimming = TextTrimming.CharacterEllipsis;
+        return new Border
+        {
+            ClipToBounds = true,
+            Child = Ui.Columns("40,*",
+                new Border
+                {
+                    Width = 36,
+                    Height = 36,
+                    CornerRadius = new CornerRadius(18),
+                    Background = Brush.Parse("#FFE5CC"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = Ui.Text(Initials(record.Name), 12, true, Brush.Parse("#FF7A00"))
+                },
+                Ui.Stack(2, name, subtitle))
+        };
     }
 
     // Performs the customer actions action for this screen or workflow.
@@ -361,7 +371,9 @@ internal sealed partial class ManagementView : UserControl
         var block = Ui.Text(text.Length == 0 ? "—" : text, header ? 11 : 13, header || strong, color ?? (header ? Ui.Muted : Ui.TextColor));
         block.VerticalAlignment = VerticalAlignment.Center;
         block.HorizontalAlignment = alignment;
-        return block;
+        block.TextWrapping = TextWrapping.NoWrap;
+        block.TextTrimming = TextTrimming.CharacterEllipsis;
+        return new Border { ClipToBounds = true, Child = block };
     }
 
     // Performs the product cell action for this screen or workflow.
