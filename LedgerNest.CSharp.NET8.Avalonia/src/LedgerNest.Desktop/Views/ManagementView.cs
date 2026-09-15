@@ -163,7 +163,7 @@ internal sealed partial class ManagementView : UserControl
             : Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
         body.Children.Add(new Border { Padding = Documents ? new Thickness(20, 10, 20, 0) : new Thickness(16, 8), Child = pager });
         results.Content = Documents
-            ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 1040, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
+            ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 1120, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
             : Ui.Card(new ScrollViewer { Content = new Border { MinWidth = kind is "Product" or "Customer" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
 
@@ -212,7 +212,7 @@ internal sealed partial class ManagementView : UserControl
     private string DocumentColumns()
     {
         var widths = new Dictionary<string, string> { ["Invoice / Customer"] = "1.45*", ["Title"] = ".65*", ["Date"] = ".75*", ["Items"] = ".55*", ["Total"] = ".9*", ["Status"] = ".85*", ["Outstanding"] = ".9*" };
-        return string.Join(",", new[] { "40", "70" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("270"));
+        return string.Join(",", new[] { "40", "70" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("250"));
     }
 
 
@@ -473,7 +473,8 @@ internal sealed partial class ManagementView : UserControl
         var actions = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 5,
+            Spacing = 4,
+            MinWidth = 220,
             HorizontalAlignment = HorizontalAlignment.Left,
             VerticalAlignment = VerticalAlignment.Center
         };
@@ -502,8 +503,8 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, action);
         button.Content = Ui.Icon(icon, 16, Brush.Parse(color));
-        button.Width = 30; button.Height = 30;
-        button.MinWidth = 30; button.MinHeight = 30;
+        button.Width = 28; button.Height = 28;
+        button.MinWidth = 28; button.MinHeight = 28;
         button.Padding = new Thickness(0);
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
         button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
@@ -517,8 +518,8 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, async () => await action());
         button.Content = Ui.Icon(icon, 16, Brush.Parse(color));
-        button.Width = 30; button.Height = 30;
-        button.MinWidth = 30; button.MinHeight = 30;
+        button.Width = 28; button.Height = 28;
+        button.MinWidth = 28; button.MinHeight = 28;
         button.Padding = new Thickness(0);
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
         button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
@@ -608,6 +609,9 @@ internal sealed partial class ManagementView : UserControl
     private Button DocumentOverflowMenu(UiRecord record)
     {
         var button = Ui.Button("⋯", () => { });
+        button.Width = 28; button.Height = 28;
+        button.MinWidth = 28; button.MinHeight = 28;
+        button.Padding = new Thickness(0);
         var menu = new MenuFlyout();
         void Add(string title, string icon, Action? action)
         {
