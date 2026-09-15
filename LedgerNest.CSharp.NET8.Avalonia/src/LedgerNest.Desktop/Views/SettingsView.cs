@@ -12,35 +12,29 @@ namespace LedgerNest.Desktop;
 public partial class MainWindow
 {
     private string settingsTab = "Company Info";
-    // Performs the settings view action for this screen or workflow.
+    // Performs the settings view action by preparing settings navigation data and loading the XAML settings view.
     private Control SettingsView()
     {
-        string[] tabs = ["Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info"];
-        string[] icons = ["business", "backup", "people", "settings", "receipt_long", "view_column", "tune", "accessibility_new", "info_outline"];
-        var rail = Ui.Stack(4);
-        var content = new ContentControl();
-        var buttons = new List<Button>();
-        void Select(string name)
-        {
-            settingsTab = name;
-            foreach (var b in buttons) b.Classes.Set("selected", (string?)b.Tag == name);
-            content.Content = name switch {
-                "Company Info" => CompanySettingsView(), "PDF Settings" => PdfSettingsView(),
-                "Users" => new ManagementView(Model, "User", this), "Backup" => BackupView(), "Customize" => CustomizationView(), "Software Info" => SoftwareInfo(),
-                _ => SettingsForm(name)
-            };
-        }
-        for (var i = 0; i < tabs.Length; i++)
-        {
-            var tab = tabs[i]; var button = Ui.Button("", () => Select(tab));
-            button.Content = Ui.Stack(4, Ui.Icon(icons[i], 24), Ui.Text(tab, 11));
-            foreach (var child in ((StackPanel)button.Content).Children) child.HorizontalAlignment = HorizontalAlignment.Center;
-            button.Tag = tab; button.Classes.Clear(); button.Classes.Add("nav"); button.HorizontalContentAlignment = HorizontalAlignment.Center;
-            button.Margin = new Thickness(4, 0); button.Padding = new Thickness(8); button.MinHeight = 64; buttons.Add(button); rail.Children.Add(button);
-        }
-        Select(settingsTab);
-        return Ui.Columns("110,*", new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0), Child = Ui.Scroll(rail, 0) }, content);
+        SettingsTabModel[] tabs =
+        [
+            new("Company Info", "business"), new("Backup", "backup"), new("Users", "people"),
+            new("PDF Settings", "settings"), new("Invoice Settings", "receipt_long"), new("Product Details", "view_column"),
+            new("Customize", "tune"), new("Accessibility", "accessibility_new"), new("Software Info", "info_outline")
+        ];
+        return new SettingsPageView(new SettingsPageModel(tabs, settingsTab, SettingsContent, selected => settingsTab = selected));
     }
+
+    // Performs the settings content selection action for this screen or workflow.
+    private Control SettingsContent(string name) => name switch
+    {
+        "Company Info" => CompanySettingsView(),
+        "PDF Settings" => PdfSettingsView(),
+        "Users" => new ManagementView(Model, "User", this),
+        "Backup" => BackupView(),
+        "Customize" => CustomizationView(),
+        "Software Info" => SoftwareInfo(),
+        _ => SettingsForm(name)
+    };
     // Performs the settings form action for this screen or workflow.
     private Control SettingsForm(string name)
     {
