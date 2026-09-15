@@ -26,13 +26,13 @@
 
     <Grid Grid.Row="1"
           Background="{DynamicResource CanvasBrush}">
-      <Border Padding="0,210,0,0">
+      <Border Padding="0">
         <Border Width="480"
-                MinHeight="520"
+                MinHeight="500"
                 CornerRadius="22"
-                Padding="42"
+                Padding="34"
                 HorizontalAlignment="Center"
-                VerticalAlignment="Top"
+                VerticalAlignment="Center"
                 BoxShadow="0 6 18 0 #37000000">
           <Border.Background>
             <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
@@ -41,22 +41,22 @@
             </LinearGradientBrush>
           </Border.Background>
 
-          <StackPanel Spacing="24"
+          <StackPanel Spacing="20"
                       HorizontalAlignment="Center">
-            <Border Width="128"
-                    Height="128"
-                    CornerRadius="64"
+            <Border Width="112"
+                    Height="112"
+                    CornerRadius="56"
                     Background="#C8EBCB"
                     HorizontalAlignment="Center">
-              <Border Width="72"
-                      Height="72"
-                      CornerRadius="36"
+              <Border Width="64"
+                      Height="64"
+                      CornerRadius="32"
                       Background="#338E3C"
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center">
                 <TextBlock Text=""
                            FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
-                           FontSize="66"
+                           FontSize="58"
                            Foreground="White"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center" />
@@ -64,7 +64,7 @@
             </Border>
 
             <TextBlock Text="Invoice Created Successfully!"
-                       FontSize="26"
+                       FontSize="24"
                        FontWeight="Bold"
                        HorizontalAlignment="Center" />
 
