@@ -578,8 +578,53 @@ internal sealed partial class ManagementView : UserControl
             return;
         }
 
+        if (kind == "Product")
+        {
+            ShowProductView(record);
+            return;
+        }
+
         window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
     }
+
+
+    // Performs the product read-only view dialog action for this screen or workflow.
+    private void ShowProductView(UiRecord record)
+    {
+        var view = new ProductViewDialogModel
+        {
+            ProductName = ValueOrDash(record.Name),
+            AliasName = ValueOrDash(record["Alias Name (for invoice PDF)"]),
+            Description = ValueOrDash(record["Description"]),
+            HsnSac = ValueOrDash(record["HSN/SAC"]),
+            Price = ProductMoney(record["Sale Price"]),
+            PurchasePrice = ProductMoney(record["Purchase Price"]),
+            DefaultDiscount = ProductMoney(record["Default Discount"]),
+            TaxRate = ValueOrDash(record["Tax (%)"]),
+            PriceIncludesTax = bool.TryParse(record["Price includes tax"], out var includesTax) && includesTax,
+            Type = string.IsNullOrWhiteSpace(record["Type"]) ? "Product" : record["Type"]
+        };
+
+        var badge = Ui.Button($"⚒  {view.Type}", () => { });
+        badge.IsEnabled = false;
+        badge.Classes.Add("outline");
+
+        var footer = new Grid { Width = 698, ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
+        var delete = Ui.Button("🗑  Delete Product", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }));
+        delete.Foreground = Brush.Parse("#F44336");
+        delete.BorderBrush = Brush.Parse("#F44336");
+        delete.Background = Brushes.Transparent;
+        delete.Classes.Add("outline");
+        var actions = Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button("✎  Edit", () => { window.CloseOverlay(); window.EditRecord(kind, Refresh, record); }, true));
+        Grid.SetColumn(actions, 2);
+        footer.Children.Add(delete);
+        footer.Children.Add(actions);
+
+        window.ShowOverlay("View Product", new ProductViewDialog(view), footer, width: 760, headerAccessory: badge);
+    }
+
+    // Performs the empty product value formatting action for this screen or workflow.
+    private static string ValueOrDash(string value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
 
     // Performs the customer read-only view dialog action for this screen or workflow.
     private void ShowCustomerView(UiRecord record)
