@@ -1,15 +1,27 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.InvoiceEditorShellView">
+             x:Class="LedgerNest.Desktop.Views.InvoiceEditorShellView"
+             x:CompileBindings="False">
   <Grid RowDefinitions="Auto,*,Auto">
-    <ContentControl x:Name="HeaderHost" />
+    <Border Background="#003B87" Padding="18,10">
+      <Grid ColumnDefinitions="*,Auto,*" MinHeight="38">
+        <TextBlock Text="{Binding Title}" Foreground="White" FontSize="20" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding DateText}" Foreground="White" FontSize="20" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="2" Text="{Binding NumberText}" Foreground="White" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
     <ContentControl x:Name="WorkspaceHost" Grid.Row="1" />
+
     <Border x:Name="FooterFrame"
             Grid.Row="2"
             BorderBrush="#E0E0E0"
             BorderThickness="0,1,0,0"
             Padding="64,10">
-      <ContentControl x:Name="FooterHost" />
+      <Grid ColumnDefinitions="*,Auto,*">
+        <ContentControl x:Name="ActionsHost" HorizontalAlignment="Left" />
+        <ContentControl x:Name="CreateHost" Grid.Column="1" HorizontalAlignment="Center" />
+      </Grid>
     </Border>
   </Grid>
 </UserControl>

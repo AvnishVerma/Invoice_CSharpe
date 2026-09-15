@@ -122,15 +122,19 @@ public partial class MainWindow
             button.Content = Ui.Icon(icon, 24); button.Width = 48; button.Height = 48;
             var action = Ui.Stack(4, button, Ui.Text(label, 12, true, Ui.Muted)); foreach (var c in action.Children) c.HorizontalAlignment = HorizontalAlignment.Center; actions.Children.Add(action);
         }
-        var footer = Ui.Columns("*,Auto,*", actions, create, new Border());
-        var header = new ContentControl();
-        void UpdateHeader() => header.Content = Ui.AppBar($"{(editorModel.IsEditingDocument ? "Edit" : "Create New")} {editorModel.InvoiceDetails[0].Value}", Ui.Text(DateTime.Today.ToString("dd/MM/yyyy"), 20, color: Brushes.White), Ui.Text($"{editorModel.InvoiceDetails[0].Value} Number : #[{editorModel.EditorDocumentNumber}]", 16, color: Brushes.White));
+        var shellModel = new InvoiceEditorShellModel();
+        void UpdateHeader()
+        {
+            shellModel.Title = $"{(editorModel.IsEditingDocument ? "Edit" : "Create New")} {editorModel.InvoiceDetails[0].Value}";
+            shellModel.DateText = DateTime.Today.ToString("dd/MM/yyyy");
+            shellModel.NumberText = $"{editorModel.InvoiceDetails[0].Value} Number : #[{editorModel.EditorDocumentNumber}]";
+        }
         System.ComponentModel.PropertyChangedEventHandler headerChanged = (_, _) => UpdateHeader();
         editorModel.InvoiceDetails[0].PropertyChanged += headerChanged;
         System.Collections.Specialized.NotifyCollectionChangedEventHandler documentsChanged = (_, _) => UpdateHeader();
         editorModel.Invoices.CollectionChanged += documentsChanged;
         UpdateHeader();
-        var body = new InvoiceEditorShellView(header, viewport, footer);
+        var body = new InvoiceEditorShellView(shellModel, viewport, actions, create);
         body.DetachedFromVisualTree += (_, _) => { editorModel.InvoiceDetails[0].PropertyChanged -= headerChanged; editorModel.Invoices.CollectionChanged -= documentsChanged; };
         editorModel.InvoiceChanged += UpdateTotals;
         System.Collections.Specialized.NotifyCollectionChangedEventHandler collectionChanged = (_, _) => RefreshLines(); editorModel.Lines.CollectionChanged += collectionChanged;
