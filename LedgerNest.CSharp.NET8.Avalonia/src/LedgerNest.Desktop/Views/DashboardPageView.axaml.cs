@@ -33,11 +33,22 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<DashboardTileModel> Tiles { get; } = [];
     public ObservableCollection<DashboardInvoiceModel> RecentInvoices { get; } = [];
+    public ObservableCollection<DashboardQuickActionModel> QuickActions { get; } = [];
+    public ObservableCollection<DashboardSummaryLineModel> TopCustomers { get; } = [];
+    public ObservableCollection<DashboardSummaryLineModel> TopProducts { get; } = [];
     public bool HasNoInvoices => RecentInvoices.Count == 0;
-    public bool ShowHero => Layout is not "Simple Feed" and not "Bento";
-    public bool ShowTiles => Layout != "Simple Feed";
-    public bool ShowFeedInvoices => Layout != "Classic";
-    public bool ShowCompactInvoices => Layout == "Classic";
+    public bool ShowHero => Layout != "Default";
+    public bool ShowKpiRow => Layout is "Classic" or "Simple Feed";
+    public bool ShowChartGrid => Layout == "Classic";
+    public bool ShowClassicLowerGrid => Layout == "Classic";
+    public bool ShowBentoGrid => Layout == "Bento";
+    public bool ShowSimpleFeedGrid => Layout == "Simple Feed";
+    public bool ShowDefaultFeed => Layout == "Default";
+    public string RecentCaption => Layout == "Simple Feed" ? "Last 10" : Layout == "Bento" ? "Last 8" : "Last 7";
+    public string CollectedText { get; }
+    public string OutstandingText { get; }
+    public string OutOfStockCount { get; }
+    public string OutOfStockProduct { get; }
     public bool IsDefaultLayout => Layout == "Default";
     public bool IsClassicLayout => Layout == "Classic";
     public bool IsBentoLayout => Layout == "Bento";
@@ -55,9 +66,13 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
             layout = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(ShowHero));
-            OnPropertyChanged(nameof(ShowTiles));
-            OnPropertyChanged(nameof(ShowFeedInvoices));
-            OnPropertyChanged(nameof(ShowCompactInvoices));
+            OnPropertyChanged(nameof(ShowKpiRow));
+            OnPropertyChanged(nameof(ShowChartGrid));
+            OnPropertyChanged(nameof(ShowClassicLowerGrid));
+            OnPropertyChanged(nameof(ShowBentoGrid));
+            OnPropertyChanged(nameof(ShowSimpleFeedGrid));
+            OnPropertyChanged(nameof(ShowDefaultFeed));
+            OnPropertyChanged(nameof(RecentCaption));
             OnPropertyChanged(nameof(IsDefaultLayout));
             OnPropertyChanged(nameof(IsClassicLayout));
             OnPropertyChanged(nameof(IsBentoLayout));
@@ -67,11 +82,30 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
     }
 
     // Performs the dashboard page model initialization action for this screen or workflow.
-    public DashboardPageModel(IEnumerable<DashboardTileModel> tiles, IEnumerable<DashboardInvoiceModel> recentInvoices, Action refresh, string initialLayout = "Default", Action<string>? layoutChanged = null)
+    public DashboardPageModel(
+        IEnumerable<DashboardTileModel> tiles,
+        IEnumerable<DashboardInvoiceModel> recentInvoices,
+        IEnumerable<DashboardQuickActionModel> quickActions,
+        IEnumerable<DashboardSummaryLineModel> topCustomers,
+        IEnumerable<DashboardSummaryLineModel> topProducts,
+        string collectedText,
+        string outstandingText,
+        string outOfStockCount,
+        string outOfStockProduct,
+        Action refresh,
+        string initialLayout = "Default",
+        Action<string>? layoutChanged = null)
     {
         this.layoutChanged = layoutChanged ?? (_ => { });
         foreach (var tile in tiles) Tiles.Add(tile);
         foreach (var invoice in recentInvoices) RecentInvoices.Add(invoice);
+        foreach (var action in quickActions) QuickActions.Add(action);
+        foreach (var customer in topCustomers) TopCustomers.Add(customer);
+        foreach (var product in topProducts) TopProducts.Add(product);
+        CollectedText = collectedText;
+        OutstandingText = outstandingText;
+        OutOfStockCount = outOfStockCount;
+        OutOfStockProduct = outOfStockProduct;
         RefreshCommand = new RelayCommand(refresh);
         SelectLayoutCommand = new RelayCommand<string>(SelectLayout);
         layout = initialLayout;
@@ -91,6 +125,12 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
 
 // Describes one dashboard KPI tile rendered by the dashboard AXAML template.
 public sealed record DashboardTileModel(string Label, string Value, string Icon, IBrush Accent, IBrush IconBackground);
+
+// Describes one quick action row rendered by the dashboard AXAML template.
+public sealed record DashboardQuickActionModel(string Label, string Icon, IBrush Accent, IBrush IconBackground, ICommand Command);
+
+// Describes one compact summary line rendered by dashboard top customer/product cards.
+public sealed record DashboardSummaryLineModel(string Name, string Value, string Initial);
 
 // Describes one recent invoice row and its action commands for the dashboard AXAML template.
 public sealed class DashboardInvoiceModel

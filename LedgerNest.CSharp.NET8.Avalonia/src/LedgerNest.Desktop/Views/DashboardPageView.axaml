@@ -20,6 +20,118 @@
           <SolidColorBrush x:Key="DashboardRecent">#272033</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+
+      <DataTemplate x:Key="RecentInvoiceTableTemplate">
+        <Border Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="Recent Invoices" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+              <TextBlock Grid.Column="1" Text="{Binding RecentCaption}" FontSize="11" Foreground="{DynamicResource DashboardMuted}" />
+            </Grid>
+            <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="0,0,0,8">
+              <Grid ColumnDefinitions="1.6*,1.5*,1*,Auto">
+                <TextBlock Text="Invoice" FontSize="12" Foreground="{DynamicResource DashboardMuted}" />
+                <TextBlock Grid.Column="1" Text="Customer" FontSize="12" Foreground="{DynamicResource DashboardMuted}" />
+                <TextBlock Grid.Column="2" Text="Amount" FontSize="12" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Right" />
+              </Grid>
+            </Border>
+            <ItemsControl ItemsSource="{Binding RecentInvoices}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="1.6*,1.5*,1*,24,24" MinHeight="36">
+                    <TextBlock Text="{Binding InvoiceTitle}" FontSize="12" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{Binding CustomerName}" FontSize="12" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding TotalText}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                      <Border Padding="8,3" CornerRadius="6" Background="{Binding StatusBackground}">
+                        <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="Bold" Foreground="{Binding StatusBrush}" />
+                      </Border>
+                    </StackPanel>
+                    <Button Grid.Column="3" Command="{Binding EditCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Edit invoice"><TextBlock Text="✎" FontSize="13" Foreground="#6E6E6E" /></Button>
+                    <Button Grid.Column="4" Command="{Binding PdfCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Preview PDF"><TextBlock Text="⌄" FontSize="15" Foreground="#6E6E6E" /></Button>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </DataTemplate>
+
+      <DataTemplate x:Key="QuickActionsTemplate">
+        <Border Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+          <StackPanel Spacing="14">
+            <TextBlock Text="Quick Actions" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+            <ItemsControl ItemsSource="{Binding QuickActions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Button Command="{Binding Command}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Stretch" MinHeight="42">
+                    <Grid ColumnDefinitions="42,*,Auto">
+                      <Border Width="28" Height="28" CornerRadius="8" Background="{Binding IconBackground}" VerticalAlignment="Center"><TextBlock Text="{Binding Icon}" FontSize="15" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                      <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Text="›" FontSize="24" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </DataTemplate>
+
+      <DataTemplate x:Key="OutOfStockTemplate">
+        <Border Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BorderBrush="#FFCDD2" BorderThickness="1" BoxShadow="0 8 22 0 #10000000">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="34,*,Auto">
+              <Border Width="28" Height="28" CornerRadius="8" Background="#FFEBEE"><TextBlock Text="▣" FontSize="15" Foreground="#F44336" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+              <TextBlock Grid.Column="1" Text="Out of Stock" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+              <Border Grid.Column="2" Width="22" Height="22" CornerRadius="11" Background="#FFEBEE"><TextBlock Text="{Binding OutOfStockCount}" FontSize="11" Foreground="#F44336" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto,8,Auto">
+              <TextBlock Text="{Binding OutOfStockProduct}" FontSize="12" Foreground="{DynamicResource DashboardText}" />
+              <TextBlock Grid.Column="1" Text="0 left" FontSize="12" Foreground="#F44336" />
+              <Border Grid.Column="3" Padding="9,4" CornerRadius="7" Background="#E8F5E9"><TextBlock Text="⊞ Stock" FontSize="11" Foreground="#2E7D32" /></Border>
+            </Grid>
+          </StackPanel>
+        </Border>
+      </DataTemplate>
+
+      <DataTemplate x:Key="TopCustomersTemplate">
+        <Border Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="34,*"><Border Width="28" Height="28" CornerRadius="8" Background="#E3F2FD"><TextBlock Text="♕" FontSize="14" Foreground="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><TextBlock Grid.Column="1" Text="Top Customers" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" /></Grid>
+            <ItemsControl ItemsSource="{Binding TopCustomers}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="34,*,Auto" MinHeight="32">
+                    <Border Width="24" Height="24" CornerRadius="12" Background="#E3F2FD"><TextBlock Text="{Binding Initial}" FontSize="11" Foreground="#083B88" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </DataTemplate>
+
+      <DataTemplate x:Key="TopProductsTemplate">
+        <Border Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="34,*"><Border Width="28" Height="28" CornerRadius="8" Background="#E8F5E9"><TextBlock Text="⌁" FontSize="14" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><TextBlock Grid.Column="1" Text="Top Products" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" /></Grid>
+            <ItemsControl ItemsSource="{Binding TopProducts}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="34,*,Auto" MinHeight="32">
+                    <Border Width="24" Height="24" CornerRadius="7" Background="#E8F5E9"><TextBlock Text="▣" FontSize="12" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </DataTemplate>
     </ResourceDictionary>
   </UserControl.Resources>
 
@@ -92,8 +204,8 @@
 
     <Border Grid.Row="1" Background="{DynamicResource DashboardSurface}">
       <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="28" Spacing="22" MaxWidth="1500">
-          <Border CornerRadius="16" Padding="28,24" MinHeight="104" IsVisible="{Binding ShowHero}">
+        <StackPanel Margin="24" Spacing="20" MaxWidth="1500">
+          <Border CornerRadius="16" Padding="28,24" MinHeight="104" IsVisible="{Binding ShowHero}" BoxShadow="0 8 22 0 #16000000">
             <Border.Background>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
                 <GradientStop Color="#1E293B" Offset="0" />
@@ -102,19 +214,17 @@
             </Border.Background>
             <StackPanel Spacing="6">
               <TextBlock Text="Welcome back, admin" FontSize="22" FontWeight="Bold" Foreground="White" />
-              <TextBlock Text="Here's your business at a glance" FontSize="13" Foreground="#B8C0CB" />
+              <TextBlock Text="Here's your business at a glance" FontSize="13" Foreground="#D6E3F3" />
             </StackPanel>
           </Border>
 
-          <ItemsControl ItemsSource="{Binding Tiles}" IsVisible="{Binding ShowTiles}">
+          <ItemsControl ItemsSource="{Binding Tiles}" IsVisible="{Binding ShowKpiRow}">
             <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <WrapPanel />
-              </ItemsPanelTemplate>
+              <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border Width="206" MinHeight="78" Margin="0,0,14,14" Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+                <Border Width="214" MinHeight="78" Margin="0,0,12,12" Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
                   <Grid ColumnDefinitions="42,14,*">
                     <Border Width="37" Height="37" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Icon}" FontSize="18" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -129,85 +239,124 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
 
-          <Grid ColumnDefinitions="4,12,*,Auto" IsVisible="{Binding ShowFeedInvoices}">
-            <Border Background="#0B4A9A" CornerRadius="3" Height="30" />
-            <TextBlock Grid.Column="2" Text="Recent Invoices" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="3" Text="Last 5 invoices" FontSize="13" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
+          <Grid ColumnDefinitions="3*,16,2*" IsVisible="{Binding ShowChartGrid}">
+            <Border Padding="22" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000" MinHeight="282">
+              <StackPanel Spacing="18">
+                <TextBlock Text="Revenue — Last 6 Months" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                <Grid Height="210" RowDefinitions="*,Auto">
+                  <Grid RowDefinitions="*,*,*,*">
+                    <Border BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
+                    <Border Grid.Row="1" BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
+                    <Border Grid.Row="2" BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
+                    <Rectangle Width="28" Height="136" RadiusX="7" RadiusY="7" Fill="#0B4A9A" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                  </Grid>
+                  <TextBlock Grid.Row="1" Text="Sep" FontSize="11" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Center" Margin="0,8,0,0" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Padding="22" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000" MinHeight="282">
+              <StackPanel Spacing="10">
+                <TextBlock Text="Financial Overview" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                <Grid Height="176">
+                  <Ellipse Width="152" Height="152" Stroke="#2E7D32" StrokeThickness="38" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <Rectangle Width="42" Height="6" Fill="#D32F2F" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,56,0" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="8">
+                  <StackPanel Orientation="Horizontal" Spacing="8"><Ellipse Width="10" Height="10" Fill="#2E7D32" /><TextBlock Text="Collected" FontSize="12" Foreground="{DynamicResource DashboardMuted}" /></StackPanel>
+                  <TextBlock Grid.Column="1" Text="{Binding CollectedText}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                  <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8"><Ellipse Width="10" Height="10" Fill="#D32F2F" /><TextBlock Text="Outstanding" FontSize="12" Foreground="{DynamicResource DashboardMuted}" /></StackPanel>
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding OutstandingText}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                </Grid>
+              </StackPanel>
+            </Border>
           </Grid>
 
-          <ItemsControl ItemsSource="{Binding RecentInvoices}" IsVisible="{Binding ShowFeedInvoices}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Border Margin="0,0,0,18" Padding="16" CornerRadius="8" Background="{DynamicResource DashboardRecent}">
-                  <Grid ColumnDefinitions="54,16,*,Auto">
-                    <Border Width="38" Height="38" CornerRadius="9" Background="#0B4A9A" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Number}" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
-                    <StackPanel Grid.Column="2" Spacing="7">
-                      <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding InvoiceTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
-                        <Border Padding="9,4" CornerRadius="4" Background="#EAF2FF" BorderBrush="#0B4A9A" BorderThickness="1">
-                          <TextBlock Text="Invoice" FontSize="12" Foreground="#0B4A9A" />
-                        </Border>
-                        <Border Padding="9,4" CornerRadius="4" Background="{Binding StatusBackground}" BorderBrush="{Binding StatusBrush}" BorderThickness="1">
-                          <TextBlock Text="{Binding Status}" FontSize="12" Foreground="{Binding StatusBrush}" />
-                        </Border>
-                      </StackPanel>
-                      <TextBlock Text="{Binding CustomerLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
-                      <TextBlock Text="{Binding DateLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="3" Spacing="10" HorizontalAlignment="Right">
-                      <Border Padding="18,10" CornerRadius="7" Background="#F3DDFB" HorizontalAlignment="Right">
-                        <TextBlock Text="{Binding TotalText}" FontSize="20" FontWeight="Bold" Foreground="#A21CAF" />
-                      </Border>
-                      <WrapPanel>
-                        <Button Command="{Binding ViewCommand}" Tag="View" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="View invoice"><TextBlock Text="👁" /></Button>
-                        <Button Command="{Binding EditCommand}" Tag="Edit" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Edit invoice"><TextBlock Text="✎" /></Button>
-                        <Button Command="{Binding CloneCommand}" Tag="Clone" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Clone invoice"><TextBlock Text="⧉" /></Button>
-                        <Button Command="{Binding PdfCommand}" Tag="PDF" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Preview PDF"><TextBlock Text="▣" /></Button>
-                        <Button Command="{Binding PrintCommand}" Tag="Print" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Print PDF"><TextBlock Text="⎙" /></Button>
-                        <Button Command="{Binding PaymentCommand}" Tag="Payment" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Record payment"><TextBlock Text="▣" /></Button>
-                        <Button Command="{Binding DeleteCommand}" Tag="Delete" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Delete invoice"><TextBlock Text="🗑" /></Button>
-                      </WrapPanel>
-                    </StackPanel>
+          <Grid ColumnDefinitions="3*,16,2*" IsVisible="{Binding ShowBentoGrid}">
+            <StackPanel Spacing="14">
+              <Border Padding="22" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000" MinHeight="282">
+                <StackPanel Spacing="18">
+                  <TextBlock Text="Revenue — Last 6 Months" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                  <Grid Height="210" RowDefinitions="*,Auto">
+                    <Grid RowDefinitions="*,*,*,*">
+                      <Border BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
+                      <Border Grid.Row="1" BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
+                      <Border Grid.Row="2" BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
+                      <Rectangle Width="28" Height="136" RadiusX="7" RadiusY="7" Fill="#0B4A9A" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                    </Grid>
+                    <TextBlock Grid.Row="1" Text="Sep" FontSize="11" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Center" Margin="0,8,0,0" />
                   </Grid>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-
-
-          <Border IsVisible="{Binding ShowCompactInvoices}" Padding="16" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
-            <StackPanel Spacing="12">
-              <Grid ColumnDefinitions="4,12,*,Auto">
-                <Border Background="#0B4A9A" CornerRadius="3" Height="28" />
-                <TextBlock Grid.Column="2" Text="Recent Invoices" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="3" Text="Classic table" FontSize="12" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
-              </Grid>
-              <Grid ColumnDefinitions="60,2*,*,*,Auto" Margin="0,6,0,0">
-                <TextBlock Text="#" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
-                <TextBlock Grid.Column="1" Text="INVOICE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
-                <TextBlock Grid.Column="2" Text="CUSTOMER" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
-                <TextBlock Grid.Column="3" Text="DATE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
-                <TextBlock Grid.Column="4" Text="TOTAL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
-              </Grid>
-              <ItemsControl ItemsSource="{Binding RecentInvoices}">
+                </StackPanel>
+              </Border>
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RecentInvoiceTableTemplate}" />
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource TopProductsTemplate}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="14">
+              <ItemsControl ItemsSource="{Binding Tiles}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
-                    <Border BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="0,10">
-                      <Grid ColumnDefinitions="60,2*,*,*,Auto">
-                        <TextBlock Text="{Binding Number}" FontSize="12" Foreground="{DynamicResource DashboardMuted}" />
-                        <TextBlock Grid.Column="1" Text="{Binding InvoiceTitle}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
-                        <TextBlock Grid.Column="2" Text="{Binding CustomerName}" FontSize="13" Foreground="{DynamicResource DashboardText}" />
-                        <TextBlock Grid.Column="3" Text="{Binding RawDate}" FontSize="13" Foreground="{DynamicResource DashboardMuted}" />
-                        <TextBlock Grid.Column="4" Text="{Binding TotalText}" FontSize="13" FontWeight="Bold" Foreground="#A21CAF" />
+                    <Border Width="210" MinHeight="78" Margin="0,0,12,12" Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+                      <Grid ColumnDefinitions="42,10,*">
+                        <Border Width="37" Height="37" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center"><TextBlock Text="{Binding Icon}" FontSize="17" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                        <StackPanel Grid.Column="2" Spacing="5"><TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource DashboardMuted}" /><TextBlock Text="{Binding Value}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" /></StackPanel>
                       </Grid>
                     </Border>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource QuickActionsTemplate}" />
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OutOfStockTemplate}" />
             </StackPanel>
-          </Border>
+          </Grid>
+
+          <Grid ColumnDefinitions="3*,16,2*" IsVisible="{Binding ShowClassicLowerGrid}">
+            <StackPanel Spacing="14">
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RecentInvoiceTableTemplate}" />
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource TopProductsTemplate}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="14">
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OutOfStockTemplate}" />
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource QuickActionsTemplate}" />
+            </StackPanel>
+          </Grid>
+
+          <Grid ColumnDefinitions="3*,16,2*" IsVisible="{Binding ShowSimpleFeedGrid}">
+            <StackPanel Spacing="14">
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RecentInvoiceTableTemplate}" />
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource TopCustomersTemplate}" />
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource TopProductsTemplate}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="14">
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource QuickActionsTemplate}" />
+              <ContentControl Content="{Binding}" ContentTemplate="{StaticResource OutOfStockTemplate}" />
+            </StackPanel>
+          </Grid>
+
+          <StackPanel IsVisible="{Binding ShowDefaultFeed}">
+            <Grid ColumnDefinitions="4,12,*,Auto">
+              <Border Background="#0B4A9A" CornerRadius="3" Height="30" />
+              <TextBlock Grid.Column="2" Text="Recent Invoices" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="3" Text="Last 5 invoices" FontSize="13" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding RecentInvoices}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Margin="0,18,0,0" Padding="16" CornerRadius="8" Background="{DynamicResource DashboardRecent}">
+                    <Grid ColumnDefinitions="54,16,*,Auto">
+                      <Border Width="38" Height="38" CornerRadius="9" Background="#0B4A9A" VerticalAlignment="Center"><TextBlock Text="{Binding Number}" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                      <StackPanel Grid.Column="2" Spacing="7">
+                        <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{Binding InvoiceTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" /><Border Padding="9,4" CornerRadius="4" Background="#EAF2FF" BorderBrush="#0B4A9A" BorderThickness="1"><TextBlock Text="Invoice" FontSize="12" Foreground="#0B4A9A" /></Border><Border Padding="9,4" CornerRadius="4" Background="{Binding StatusBackground}" BorderBrush="{Binding StatusBrush}" BorderThickness="1"><TextBlock Text="{Binding Status}" FontSize="12" Foreground="{Binding StatusBrush}" /></Border></StackPanel>
+                        <TextBlock Text="{Binding CustomerLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
+                        <TextBlock Text="{Binding DateLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
+                      </StackPanel>
+                      <StackPanel Grid.Column="3" Spacing="10" HorizontalAlignment="Right"><Border Padding="18,10" CornerRadius="7" Background="#F3DDFB" HorizontalAlignment="Right"><TextBlock Text="{Binding TotalText}" FontSize="20" FontWeight="Bold" Foreground="#A21CAF" /></Border></StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
 
           <TextBlock Text="No invoices yet" IsVisible="{Binding HasNoInvoices}" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Center" FontSize="14" />
         </StackPanel>

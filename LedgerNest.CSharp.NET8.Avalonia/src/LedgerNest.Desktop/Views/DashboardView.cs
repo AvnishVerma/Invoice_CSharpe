@@ -16,11 +16,11 @@ public partial class MainWindow
         var outstanding = Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Outstanding"], out var n) ? n : decimal.TryParse(i["Total"], out var total) ? total : 0);
         var tiles = new[]
         {
+            Tile("Revenue Collected", ShortMoney(paid), "▣", "#8A2BE2"),
+            Tile("Outstanding", "Rs. " + outstanding.ToString("0.00"), "⌛", "#D32F2F"),
+            Tile("Total Invoices", invoices.Length.ToString(), "▤", "#F97316"),
             Tile("Customers", Model.Customers.Count.ToString(), "👥", "#1976D2"),
-            Tile("Products", Model.Products.Count.ToString(), "▣", "#2E7D32"),
-            Tile("Invoices", invoices.Length.ToString(), "▤", "#F97316"),
-            Tile("Revenue Collected", "Rs. " + paid.ToString("0.00"), "▣", "#8A2BE2"),
-            Tile("Outstanding", "Rs. " + outstanding.ToString("0.00"), "⌛", "#D32F2F")
+            Tile("Products", Model.Products.Count.ToString(), "▣", "#2E7D32")
         };
 
         var recent = invoices.Take(5).Select((invoice, index) => new DashboardInvoiceModel
@@ -44,7 +44,35 @@ public partial class MainWindow
             DeleteCommand = new RelayCommand(() => DeleteDocumentFromDashboard(invoice))
         });
 
-        return new DashboardPageView(new DashboardPageModel(tiles, recent, () => page.Content = Dashboard(), dashboardLayout, selected => dashboardLayout = selected));
+        var quickActions = new[]
+        {
+            QuickAction("New Invoice", "⊕", "#0B4A9A", () => Model.NavigateCommand.Execute("New Invoice")),
+            QuickAction("Customers", "♚", "#1976D2", () => Model.NavigateCommand.Execute("Customers")),
+            QuickAction("Reports", "▮", "#2E7D32", () => Model.NavigateCommand.Execute("Reports"))
+        };
+        var topCustomers = Model.ActiveInvoices
+            .GroupBy(i => string.IsNullOrWhiteSpace(i["Customer"]) ? "Cash" : i["Customer"])
+            .Select(g => new DashboardSummaryLineModel(g.Key, ShortMoney(g.Sum(i => decimal.TryParse(i["Total"], out var n) ? n : 0m)), Initial(g.Key)))
+            .OrderByDescending(x => x.Value)
+            .Take(3)
+            .DefaultIfEmpty(new DashboardSummaryLineModel("No customers yet", "Rs. 0.00", "—"))
+            .ToArray();
+        var topProducts = Model.Products
+            .Take(3)
+            .Select(p => new DashboardSummaryLineModel(p.Name, ProductUnits(p), Initial(p.Name)))
+            .DefaultIfEmpty(new DashboardSummaryLineModel("No products yet", "0 units", "—"))
+            .ToArray();
+        var outOfStock = Model.Products.FirstOrDefault(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
+        var outOfStockCount = Model.Products.Count(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
+
+        return new DashboardPageView(new DashboardPageModel(tiles, recent, quickActions, topCustomers, topProducts, ShortMoney(paid), "Rs. " + outstanding.ToString("0.00"), outOfStockCount.ToString(), outOfStock?.Name ?? "No product", () => page.Content = Dashboard(), dashboardLayout, selected => dashboardLayout = selected));
+    }
+
+    // Performs the quick action creation action for dashboard shortcut cards.
+    private static DashboardQuickActionModel QuickAction(string label, string icon, string color, Action action)
+    {
+        var accent = Brush.Parse(color);
+        return new DashboardQuickActionModel(label, icon, accent, new SolidColorBrush(Color.Parse(color), .12), new RelayCommand(action));
     }
 
     // Performs the tile creation action for dashboard KPI cards.
@@ -53,6 +81,18 @@ public partial class MainWindow
         var accent = Brush.Parse(color);
         return new DashboardTileModel(label, value, icon, accent, new SolidColorBrush(Color.Parse(color), .12));
     }
+
+    // Performs the compact money formatting action for dashboard values.
+    private static string ShortMoney(decimal value) => value >= 1000m ? "Rs. " + (value / 1000m).ToString("0.#") + "K" : "Rs. " + value.ToString("0.00");
+
+    // Performs the product unit summary action for dashboard values.
+    private static string ProductUnits(UiRecord product) => HasUnlimitedStock(product) ? "∞ units" : (decimal.TryParse(product["Stock"], out var stock) ? stock.ToString("0.###") : "0") + " units";
+
+    // Performs the product unlimited stock check action for dashboard values.
+    private static bool HasUnlimitedStock(UiRecord product) => bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited;
+
+    // Performs the dashboard initials action for compact summary avatars.
+    private static string Initial(string value) => string.IsNullOrWhiteSpace(value) ? "—" : char.ToUpperInvariant(value.Trim()[0]).ToString();
 
     // Performs the status color selection action for dashboard invoice badges.
     private static IBrush StatusColor(string status) => status switch { "Paid" => Brush.Parse("#4CAF50"), "Partial" => Brush.Parse("#FF9800"), "Unpaid" => Brush.Parse("#F44336"), _ => Brush.Parse("#D32F2F") };
