@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ProductRecordFormView">
+  <StackPanel Spacing="20">
+    <TextBlock Text="GENERAL" FontSize="11" FontWeight="Bold" Foreground="#777777" />
+    <ContentControl x:Name="GeneralHost" />
+
+    <TextBlock Text="PRICING" FontSize="11" FontWeight="Bold" Foreground="#777777" />
+    <ContentControl x:Name="PricingHost" />
+
+    <TextBlock Text="STOCK &amp; UNIT" FontSize="11" FontWeight="Bold" Foreground="#777777" />
+    <ContentControl x:Name="StockHost" />
+
+    <Expander Header="Advanced Information" HorizontalAlignment="Stretch">
+      <ContentControl x:Name="AdvancedHost" />
+    </Expander>
+  </StackPanel>
+</UserControl>

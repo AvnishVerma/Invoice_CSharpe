@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.RecordDialogFooterView">
+  <StackPanel Spacing="16">
+    <ContentControl x:Name="UseDefaultHost" />
+    <ContentControl x:Name="AddAnotherHost" />
+    <Grid ColumnDefinitions="*,12,2*">
+      <ContentControl x:Name="CancelHost" />
+      <ContentControl x:Name="SaveHost" Grid.Column="2" />
+    </Grid>
+  </StackPanel>
+</UserControl>
