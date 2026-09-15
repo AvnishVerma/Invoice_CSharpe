@@ -7,6 +7,7 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
+    private string dashboardLayout = "Default";
     // Performs the dashboard action by preparing dashboard data and loading the XAML dashboard view.
     private Control Dashboard()
     {
@@ -27,7 +28,9 @@ public partial class MainWindow
             Number = index + 1,
             InvoiceTitle = "Invoice #" + invoice.Name,
             CustomerLine = "☉ " + invoice["Customer"],
+            CustomerName = invoice["Customer"],
             DateLine = "▣ " + invoice["Date"],
+            RawDate = invoice["Date"],
             TotalText = "Rs. " + invoice["Total"],
             Status = invoice["Status"],
             StatusBrush = StatusColor(invoice["Status"]),
@@ -41,7 +44,7 @@ public partial class MainWindow
             DeleteCommand = new RelayCommand(() => DeleteDocumentFromDashboard(invoice))
         });
 
-        return new DashboardPageView(new DashboardPageModel(tiles, recent, () => page.Content = Dashboard()));
+        return new DashboardPageView(new DashboardPageModel(tiles, recent, () => page.Content = Dashboard(), dashboardLayout, selected => dashboardLayout = selected));
     }
 
     // Performs the tile creation action for dashboard KPI cards.

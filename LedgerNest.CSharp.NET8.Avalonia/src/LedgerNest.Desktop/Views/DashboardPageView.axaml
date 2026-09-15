@@ -32,10 +32,10 @@
             <TextBlock Text="▦" Foreground="White" FontSize="20" />
             <Button.Flyout>
               <MenuFlyout>
-                <MenuItem Header="Default" Tag="Default" />
-                <MenuItem Header="Classic" Tag="Classic" />
-                <MenuItem Header="Bento" Tag="Bento" />
-                <MenuItem Header="Simple Feed" Tag="Simple Feed" />
+                <MenuItem Header="Default" Tag="Default" Command="{Binding SelectLayoutCommand}" CommandParameter="Default" />
+                <MenuItem Header="Classic" Tag="Classic" Command="{Binding SelectLayoutCommand}" CommandParameter="Classic" />
+                <MenuItem Header="Bento" Tag="Bento" Command="{Binding SelectLayoutCommand}" CommandParameter="Bento" />
+                <MenuItem Header="Simple Feed" Tag="Simple Feed" Command="{Binding SelectLayoutCommand}" CommandParameter="Simple Feed" />
               </MenuFlyout>
             </Button.Flyout>
           </Button>
@@ -49,7 +49,7 @@
     <Border Grid.Row="1" Background="{DynamicResource DashboardSurface}">
       <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="28" Spacing="22" MaxWidth="1500">
-          <Border CornerRadius="16" Padding="28,24" MinHeight="104">
+          <Border CornerRadius="16" Padding="28,24" MinHeight="104" IsVisible="{Binding ShowHero}">
             <Border.Background>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
                 <GradientStop Color="#1E293B" Offset="0" />
@@ -59,10 +59,11 @@
             <StackPanel Spacing="6">
               <TextBlock Text="Welcome back, admin" FontSize="22" FontWeight="Bold" Foreground="White" />
               <TextBlock Text="Here's your business at a glance" FontSize="13" Foreground="#B8C0CB" />
+              <TextBlock Text="{Binding LayoutTitle}" FontSize="12" Foreground="#D6E3F3" />
             </StackPanel>
           </Border>
 
-          <ItemsControl ItemsSource="{Binding Tiles}">
+          <ItemsControl ItemsSource="{Binding Tiles}" IsVisible="{Binding ShowTiles}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
                 <WrapPanel />
@@ -85,13 +86,13 @@
             </ItemsControl.ItemTemplate>
           </ItemsControl>
 
-          <Grid ColumnDefinitions="4,12,*,Auto">
+          <Grid ColumnDefinitions="4,12,*,Auto" IsVisible="{Binding ShowFeedInvoices}">
             <Border Background="#0B4A9A" CornerRadius="3" Height="30" />
             <TextBlock Grid.Column="2" Text="Recent Invoices" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
             <TextBlock Grid.Column="3" Text="Last 5 invoices" FontSize="13" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
           </Grid>
 
-          <ItemsControl ItemsSource="{Binding RecentInvoices}">
+          <ItemsControl ItemsSource="{Binding RecentInvoices}" IsVisible="{Binding ShowFeedInvoices}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
                 <Border Margin="0,0,0,18" Padding="16" CornerRadius="8" Background="{DynamicResource DashboardRecent}">
@@ -131,6 +132,39 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
+
+
+          <Border IsVisible="{Binding ShowCompactInvoices}" Padding="16" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+            <StackPanel Spacing="12">
+              <Grid ColumnDefinitions="4,12,*,Auto">
+                <Border Background="#0B4A9A" CornerRadius="3" Height="28" />
+                <TextBlock Grid.Column="2" Text="Recent Invoices" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="Classic table" FontSize="12" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
+              </Grid>
+              <Grid ColumnDefinitions="60,2*,*,*,Auto" Margin="0,6,0,0">
+                <TextBlock Text="#" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
+                <TextBlock Grid.Column="1" Text="INVOICE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
+                <TextBlock Grid.Column="2" Text="CUSTOMER" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
+                <TextBlock Grid.Column="3" Text="DATE" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
+                <TextBlock Grid.Column="4" Text="TOTAL" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource DashboardMuted}" />
+              </Grid>
+              <ItemsControl ItemsSource="{Binding RecentInvoices}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="0,10">
+                      <Grid ColumnDefinitions="60,2*,*,*,Auto">
+                        <TextBlock Text="{Binding Number}" FontSize="12" Foreground="{DynamicResource DashboardMuted}" />
+                        <TextBlock Grid.Column="1" Text="{Binding InvoiceTitle}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                        <TextBlock Grid.Column="2" Text="{Binding CustomerName}" FontSize="13" Foreground="{DynamicResource DashboardText}" />
+                        <TextBlock Grid.Column="3" Text="{Binding RawDate}" FontSize="13" Foreground="{DynamicResource DashboardMuted}" />
+                        <TextBlock Grid.Column="4" Text="{Binding TotalText}" FontSize="13" FontWeight="Bold" Foreground="#A21CAF" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
 
           <TextBlock Text="No invoices yet" IsVisible="{Binding HasNoInvoices}" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Center" FontSize="14" />
         </StackPanel>
