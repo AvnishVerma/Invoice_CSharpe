@@ -1,25 +1,139 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.DashboardPageView">
+             x:Class="LedgerNest.Desktop.Views.DashboardPageView"
+             x:CompileBindings="False">
   <UserControl.Resources>
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="DashboardSurface">#FAFAFA</SolidColorBrush>
+          <SolidColorBrush x:Key="DashboardCard">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="DashboardText">#1F1F29</SolidColorBrush>
+          <SolidColorBrush x:Key="DashboardMuted">#6E6E78</SolidColorBrush>
+          <SolidColorBrush x:Key="DashboardRecent">#FCF6FF</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="DashboardSurface">#18212B</SolidColorBrush>
+          <SolidColorBrush x:Key="DashboardCard">#202B36</SolidColorBrush>
+          <SolidColorBrush x:Key="DashboardText">#F4F7FB</SolidColorBrush>
+          <SolidColorBrush x:Key="DashboardMuted">#A8B3BF</SolidColorBrush>
+          <SolidColorBrush x:Key="DashboardRecent">#272033</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
   </UserControl.Resources>
+
   <Grid RowDefinitions="Auto,*">
-    <ContentControl x:Name="AppBarHost" />
+    <Border Background="#003B87" Padding="18,10">
+      <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="38">
+        <TextBlock Grid.Column="1" Text="Dashboard Overview" Foreground="White" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+          <Button ToolTip.Tip="Dashboard layout" Background="Transparent" BorderThickness="0" Padding="8">
+            <TextBlock Text="▦" Foreground="White" FontSize="20" />
+            <Button.Flyout>
+              <MenuFlyout>
+                <MenuItem Header="Default" Tag="Default" />
+                <MenuItem Header="Classic" Tag="Classic" />
+                <MenuItem Header="Bento" Tag="Bento" />
+                <MenuItem Header="Simple Feed" Tag="Simple Feed" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+          <Button Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh dashboard" Background="Transparent" BorderThickness="0" Padding="8">
+            <TextBlock Text="↻" Foreground="White" FontSize="22" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
     <Border Grid.Row="1" Background="{DynamicResource DashboardSurface}">
       <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Border Padding="28">
-          <ContentControl x:Name="BodyHost" MaxWidth="1600" />
-        </Border>
+        <StackPanel Margin="28" Spacing="22" MaxWidth="1500">
+          <Border CornerRadius="16" Padding="28,24" MinHeight="104">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#1E293B" Offset="0" />
+                <GradientStop Color="#334155" Offset="1" />
+              </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel Spacing="6">
+              <TextBlock Text="Welcome back, admin" FontSize="22" FontWeight="Bold" Foreground="White" />
+              <TextBlock Text="Here's your business at a glance" FontSize="13" Foreground="#B8C0CB" />
+            </StackPanel>
+          </Border>
+
+          <ItemsControl ItemsSource="{Binding Tiles}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Width="206" MinHeight="78" Margin="0,0,14,14" Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+                  <Grid ColumnDefinitions="42,14,*">
+                    <Border Width="37" Height="37" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Icon}" FontSize="18" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="2" Spacing="5">
+                      <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource DashboardMuted}" />
+                      <TextBlock Text="{Binding Value}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Grid ColumnDefinitions="4,12,*,Auto">
+            <Border Background="#0B4A9A" CornerRadius="3" Height="30" />
+            <TextBlock Grid.Column="2" Text="Recent Invoices" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="3" Text="Last 5 invoices" FontSize="13" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
+          </Grid>
+
+          <ItemsControl ItemsSource="{Binding RecentInvoices}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Margin="0,0,0,18" Padding="16" CornerRadius="8" Background="{DynamicResource DashboardRecent}">
+                  <Grid ColumnDefinitions="54,16,*,Auto">
+                    <Border Width="38" Height="38" CornerRadius="9" Background="#0B4A9A" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Number}" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel Grid.Column="2" Spacing="7">
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding InvoiceTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
+                        <Border Padding="9,4" CornerRadius="4" Background="#EAF2FF" BorderBrush="#0B4A9A" BorderThickness="1">
+                          <TextBlock Text="Invoice" FontSize="12" Foreground="#0B4A9A" />
+                        </Border>
+                        <Border Padding="9,4" CornerRadius="4" Background="{Binding StatusBackground}" BorderBrush="{Binding StatusBrush}" BorderThickness="1">
+                          <TextBlock Text="{Binding Status}" FontSize="12" Foreground="{Binding StatusBrush}" />
+                        </Border>
+                      </StackPanel>
+                      <TextBlock Text="{Binding CustomerLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
+                      <TextBlock Text="{Binding DateLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="3" Spacing="10" HorizontalAlignment="Right">
+                      <Border Padding="18,10" CornerRadius="7" Background="#F3DDFB" HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding TotalText}" FontSize="20" FontWeight="Bold" Foreground="#A21CAF" />
+                      </Border>
+                      <WrapPanel>
+                        <Button Command="{Binding ViewCommand}" Tag="View" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="View invoice"><TextBlock Text="👁" /></Button>
+                        <Button Command="{Binding EditCommand}" Tag="Edit" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Edit invoice"><TextBlock Text="✎" /></Button>
+                        <Button Command="{Binding CloneCommand}" Tag="Clone" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Clone invoice"><TextBlock Text="⧉" /></Button>
+                        <Button Command="{Binding PdfCommand}" Tag="PDF" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Preview PDF"><TextBlock Text="▣" /></Button>
+                        <Button Command="{Binding PrintCommand}" Tag="Print" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Print PDF"><TextBlock Text="⎙" /></Button>
+                        <Button Command="{Binding PaymentCommand}" Tag="Payment" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Record payment"><TextBlock Text="▣" /></Button>
+                        <Button Command="{Binding DeleteCommand}" Tag="Delete" Width="42" Height="42" Margin="0,0,6,0" ToolTip.Tip="Delete invoice"><TextBlock Text="🗑" /></Button>
+                      </WrapPanel>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <TextBlock Text="No invoices yet" IsVisible="{Binding HasNoInvoices}" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Center" FontSize="14" />
+        </StackPanel>
       </ScrollViewer>
     </Border>
   </Grid>
