@@ -163,7 +163,7 @@ internal sealed partial class ManagementView : UserControl
             : Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
         body.Children.Add(new Border { Padding = Documents ? new Thickness(20, 10, 20, 0) : new Thickness(16, 8), Child = pager });
         results.Content = Documents
-            ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 1110, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
+            ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 980, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
             : Ui.Card(new ScrollViewer { Content = new Border { MinWidth = kind is "Product" or "Customer" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
 
@@ -211,7 +211,7 @@ internal sealed partial class ManagementView : UserControl
     // Performs the document columns action for this screen or workflow.
     private string DocumentColumns()
     {
-        var widths = new Dictionary<string, string> { ["Invoice / Customer"] = "2*", ["Title"] = "*", ["Date"] = "*", ["Items"] = ".6*", ["Total"] = "*", ["Status"] = "*", ["Outstanding"] = "*" };
+        var widths = new Dictionary<string, string> { ["Invoice / Customer"] = "1.45*", ["Title"] = ".65*", ["Date"] = ".75*", ["Items"] = ".55*", ["Total"] = ".9*", ["Status"] = ".85*", ["Outstanding"] = ".9*" };
         return string.Join(",", new[] { "40", "70" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("210"));
     }
 
