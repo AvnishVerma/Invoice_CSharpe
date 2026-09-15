@@ -48,14 +48,15 @@ public partial class MainWindow
             path = Path.Combine(Path.GetTempPath(), $"ledgernest-preview-{FilePickerHelpers.SanitizeFileName(document.Name)}-{Guid.NewGuid():N}.pdf");
             await File.WriteAllBytesAsync(path, bytes);
             var pages = RenderPdfPreviewPages(bytes);
-            var pageCountText = pages.Count == 1 ? "1 page" : $"{pages.Count} pages";
-            var pageStack = Ui.Stack(18, pages.Select(page => new Border { Background = Brushes.White, BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8), Child = page }).ToArray());
-            var previewPanel = new Border { Background = Brush.Parse("#ECEFF4"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(14), MaxHeight = Math.Max(360, Bounds.Height * .72), Child = Ui.Scroll(pageStack, 0) };
+            var previewModel = new PdfPreviewModel
+            {
+                Title = $"{document.Name} PDF",
+                PageCountText = pages.Count == 1 ? "1 page" : $"{pages.Count} pages",
+                MaxPreviewHeight = Math.Max(360, Bounds.Height * .72)
+            };
+            foreach (var page in pages) previewModel.Pages.Add(page);
             Model.Status = $"Rendered PDF preview for {document.Name}.";
-            ShowOverlay("PDF Preview", Ui.Stack(12,
-                Ui.Columns("*,Auto", Ui.Text($"{document.Name} PDF", 16, true), Ui.Text(pageCountText, 12, color: Ui.Muted)),
-                previewPanel,
-                Ui.Text("Preview rendered with Docnet.Core. Use Download PDF to save the file.", 12, color: Ui.Muted)),
+            ShowOverlay("PDF Preview", new PdfPreviewView(previewModel),
                 Ui.Wrap(Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)), Ui.Button("Open Externally", () => { if (path != null) OpenPdfFile(path); }), Ui.Button("Close", CloseOverlay, true)),
                 width: 860);
         }
