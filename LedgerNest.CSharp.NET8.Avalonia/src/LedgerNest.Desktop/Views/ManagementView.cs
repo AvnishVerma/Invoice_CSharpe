@@ -285,7 +285,8 @@ internal sealed partial class ManagementView : UserControl
                     CornerRadius = new CornerRadius(18),
                     Background = Brush.Parse("#FFE5CC"),
                     VerticalAlignment = VerticalAlignment.Center,
-                    Child = Ui.Text(Initials(record.Name), 12, true, Brush.Parse("#FF7A00"))
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Child = Ui.Text("    "+Initials(record.Name), 12, true, Brush.Parse("#FF7A00"))
                 },
                 Ui.Stack(2, name, subtitle))
         };
