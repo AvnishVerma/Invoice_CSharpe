@@ -38,6 +38,10 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
     public bool ShowTiles => Layout != "Simple Feed";
     public bool ShowFeedInvoices => Layout != "Classic";
     public bool ShowCompactInvoices => Layout == "Classic";
+    public bool IsDefaultLayout => Layout == "Default";
+    public bool IsClassicLayout => Layout == "Classic";
+    public bool IsBentoLayout => Layout == "Bento";
+    public bool IsSimpleFeedLayout => Layout == "Simple Feed";
     public string LayoutTitle => $"Layout: {Layout}";
     public ICommand RefreshCommand { get; }
     public ICommand SelectLayoutCommand { get; }
@@ -54,6 +58,10 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(ShowTiles));
             OnPropertyChanged(nameof(ShowFeedInvoices));
             OnPropertyChanged(nameof(ShowCompactInvoices));
+            OnPropertyChanged(nameof(IsDefaultLayout));
+            OnPropertyChanged(nameof(IsClassicLayout));
+            OnPropertyChanged(nameof(IsBentoLayout));
+            OnPropertyChanged(nameof(IsSimpleFeedLayout));
             OnPropertyChanged(nameof(LayoutTitle));
         }
     }
