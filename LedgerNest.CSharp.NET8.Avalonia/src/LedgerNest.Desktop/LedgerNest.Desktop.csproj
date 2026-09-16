@@ -2,8 +2,8 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
-    <AssemblyTitle>invoiso</AssemblyTitle>
-    <Product>invoiso</Product>
+    <AssemblyTitle>LadgerNest</AssemblyTitle>
+    <Product>LadgerNest</Product>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>

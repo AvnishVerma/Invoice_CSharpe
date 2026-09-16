@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="LedgerNest.Desktop.MainWindow"
         Width="1440" Height="900" MinWidth="640" MinHeight="480"
-        Title="invoiso" Background="White">
+        Title="LadgerNest" Background="White">
   <Grid x:Name="Root">
     <Grid RowDefinitions="*,Auto">
       <Grid x:Name="Body" ColumnDefinitions="Auto,*">
