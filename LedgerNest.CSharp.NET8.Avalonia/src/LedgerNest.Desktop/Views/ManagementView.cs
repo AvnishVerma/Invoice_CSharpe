@@ -67,6 +67,11 @@ internal sealed partial class ManagementView : UserControl
             TabsHost.Content = tabs;
             RecordResultsHost.Content = results;
         }
+        if (Documents && kind == "Invoice")
+        {
+            var pendingCustomer = model.ConsumePendingInvoiceCustomerFilter();
+            if (!string.IsNullOrWhiteSpace(pendingCustomer)) search.Text = pendingCustomer;
+        }
         Refresh();
     }
     // Performs the subtitle action for this screen or workflow.
@@ -302,8 +307,8 @@ internal sealed partial class ManagementView : UserControl
         Children =
         {
             PlainIconAction("visibility", "View", () => View(record), "#6E6E6E"),
-            PlainIconAction("receipt_long", "Invoices", () => { search.Text = record.Name; model.NavigateCommand.Execute("Invoices"); }, "#6E6E6E"),
-            PlainIconAction("account_balance_wallet", "Payment", () => model.Status = "Customer payment workflow is not yet migrated.", "#6E6E6E"),
+            PlainIconAction("receipt_long", "Invoices", () => model.OpenInvoicesForCustomer(record.Name), "#6E6E6E"),
+            PlainIconAction("account_balance_wallet", "Payment", () => model.OpenCustomerReport(record.Name), "#6E6E6E"),
             PlainIconAction("edit", "Edit", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
             PlainIconAction("delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F")
         }

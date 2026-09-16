@@ -11,11 +11,18 @@ namespace LedgerNest.Desktop;
 public partial class MainWindow
 {
     private string reportTab = "Revenue";
+    private string reportCustomerFilter = "";
     // Performs the reports action by preparing report navigation data and loading the XAML reports view.
     private Control Reports()
     {
+        var pendingCustomer = Model.ConsumePendingReportCustomerFilter();
+        if (!string.IsNullOrWhiteSpace(pendingCustomer))
+        {
+            reportTab = "Customers";
+            reportCustomerFilter = pendingCustomer;
+        }
         string[] names = ["Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report"];
-        return new ReportsPageView(new ReportsPageModel(names, reportTab, ReportContent, selected => reportTab = selected));
+        return new ReportsPageView(new ReportsPageModel(names, reportTab, ReportContent, selected => { reportTab = selected; if (selected != "Customers") reportCustomerFilter = ""; }));
     }
     // Performs the report content action for this screen or workflow.
     private Control ReportContent(string name)
@@ -40,8 +47,11 @@ public partial class MainWindow
         }
         else if (name == "Customers")
         {
-            var statement = new ContentControl { Content = CustomerRevenueCard(report.Rows) };
-            body.Children.Add(Ui.Wrap(Ui.Button("✓  Overview", () => statement.Content = CustomerRevenueCard(Model.BuildReport("Customers").Rows), true), Ui.Button("Statements", () => statement.Content = Ui.Stack(16, Ui.Field(new("Customer", "Select customer", "choice", new[] { "Select customer" }.Concat(Model.Customers.Select(c => c.Name)).ToArray())), ReportTable("Customer Statement", Model.BuildReport("Invoice Status").Rows, true, "Customers")))));
+            var hasCustomerFilter = !string.IsNullOrWhiteSpace(reportCustomerFilter);
+            var statement = new ContentControl { Content = hasCustomerFilter ? CustomerStatementCard(reportCustomerFilter) : CustomerRevenueCard(report.Rows) };
+            body.Children.Add(Ui.Wrap(
+                Ui.Button("✓  Overview", () => { reportCustomerFilter = ""; statement.Content = CustomerRevenueCard(Model.BuildReport("Customers").Rows); }, !hasCustomerFilter),
+                Ui.Button("Statements", () => statement.Content = CustomerStatementCard(reportCustomerFilter), hasCustomerFilter)));
             body.Children.Add(statement);
         }
         else if (name == "Products")
@@ -189,6 +199,21 @@ public partial class MainWindow
         var name = rows.Length > 1 && rows[1].Length > 0 ? rows[1][0] : "Cash";
         var amount = rows.Length > 1 && rows[1].Length > 3 ? rows[1][3] : "Rs. 0.00";
         return Ui.Card(Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Top 1 Customers by Revenue", 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Customers")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Customers")))), Ui.Columns("130,*,110", Ui.Text(name, 13), new Border { Height = 22, CornerRadius = new CornerRadius(4), Background = Brush.Parse("#3B82F6") }, Ui.Text(amount, 13, true, Ui.Primary)), ReportTable("", rows, false, "Customers")), 20);
+    }
+
+    // Performs the customer statement card action for the selected customer report workflow.
+    private Control CustomerStatementCard(string customerName)
+    {
+        var header = new[] { "Invoice", "Customer", "Date", "Total", "Status", "Outstanding" };
+        var rows = Model.BuildReport("Invoice Status").Rows
+            .Skip(1)
+            .Where(row => row.Length > 1 && (string.IsNullOrWhiteSpace(customerName) || row[1].Equals(customerName, StringComparison.OrdinalIgnoreCase)))
+            .Prepend(header)
+            .ToArray();
+        var title = string.IsNullOrWhiteSpace(customerName) ? "Customer Statement" : $"Customer Statement — {customerName}";
+        return Ui.Stack(16,
+            Ui.Field(new("Customer", string.IsNullOrWhiteSpace(customerName) ? "Select customer" : customerName, "choice", new[] { "Select customer" }.Concat(Model.Customers.Select(c => c.Name)).ToArray())),
+            ReportTable(title, rows, true, "Customers"));
     }
 
     // Performs the product revenue card action for this screen or workflow.

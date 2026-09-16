@@ -30,6 +30,8 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<UiRecord> Invoices { get; } = [];
     public IEnumerable<UiRecord> ActiveInvoices => Invoices.Where(i => i["Type"] == "Invoice" && !DeletedRecords.Contains(i.Id));
     public ObservableCollection<UiRecord> Payments { get; } = [];
+    public string PendingInvoiceCustomerFilter { get; private set; } = "";
+    public string PendingReportCustomerFilter { get; private set; } = "";
     public ObservableCollection<InvoiceLineViewModel> Lines { get; } = [];
     public Dictionary<string, FormSection[]> Settings { get; } = FormCatalog.Settings();
     public FormField[] InvoiceCustomer { get; } = FormCatalog.Customer();
@@ -70,6 +72,36 @@ public partial class MainWindowViewModel : ObservableObject
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();
     [RelayCommand] private void Navigate(string route) { if (Routes.Contains(route)) { Title = route; Status = ""; } }
     [RelayCommand] private void ToggleSidebar() => SidebarExpanded = !SidebarExpanded;
+
+    // Performs the customer invoice navigation action for customer management row actions.
+    public void OpenInvoicesForCustomer(string customerName)
+    {
+        PendingInvoiceCustomerFilter = customerName;
+        NavigateCommand.Execute("Invoices");
+    }
+
+    // Performs the customer report navigation action for customer management payment actions.
+    public void OpenCustomerReport(string customerName)
+    {
+        PendingReportCustomerFilter = customerName;
+        NavigateCommand.Execute("Reports");
+    }
+
+    // Performs the pending invoice customer filter consumption action for invoice management.
+    public string ConsumePendingInvoiceCustomerFilter()
+    {
+        var value = PendingInvoiceCustomerFilter;
+        PendingInvoiceCustomerFilter = "";
+        return value;
+    }
+
+    // Performs the pending report customer filter consumption action for customer reports.
+    public string ConsumePendingReportCustomerFilter()
+    {
+        var value = PendingReportCustomerFilter;
+        PendingReportCustomerFilter = "";
+        return value;
+    }
     // Performs the save record action for this screen or workflow.
     public bool SaveRecord(string kind, FormField[] fields, UiRecord? original = null)
     {
