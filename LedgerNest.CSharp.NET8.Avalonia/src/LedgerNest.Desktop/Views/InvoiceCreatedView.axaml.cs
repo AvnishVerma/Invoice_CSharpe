@@ -29,13 +29,13 @@ public sealed partial class InvoiceCreatedView : UserControl
         ToolTip.SetTip(DownloadButton, "Download PDF");
         ToolTip.SetTip(PrintButton, "Print PDF directly");
         ToolTip.SetTip(CreateNewButton, "Create new invoice");
-        ToolTip.SetTip(ApplyPaymentButton, "Record payment");
+        ToolTip.SetTip(ApplyPaymentButton, "Accept payment");
         ViewButton.Click += (_, _) => view();
         PreviewButton.Click += (_, _) => preview();
         DownloadButton.Click += async (_, _) => await download();
         PrintButton.Click += async (_, _) => await print();
         CreateNewButton.Click += (_, _) => createNew();
-        ApplyPaymentButton.IsVisible = canApplyPayment;
+        PaymentActionPanel.IsVisible = canApplyPayment;
         ApplyPaymentButton.Click += (_, _) => applyPayment();
     }
 }
