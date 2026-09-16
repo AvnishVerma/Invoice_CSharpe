@@ -224,7 +224,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border Width="214" MinHeight="78" Margin="0,0,12,12" Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
+                <Border Width="204" MinHeight="78" Margin="0,0,10,12" Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
                   <Grid ColumnDefinitions="42,14,*">
                     <Border Width="37" Height="37" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center">
                       <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -244,11 +244,11 @@
               <StackPanel Spacing="18">
                 <TextBlock Text="Revenue — Last 6 Months" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
                 <Grid Height="210" RowDefinitions="*,Auto">
-                  <Grid RowDefinitions="*,*,*,*">
+                  <Grid RowDefinitions="*,*,*,*" ClipToBounds="True">
                     <Border BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
                     <Border Grid.Row="1" BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
                     <Border Grid.Row="2" BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
-                    <Rectangle Width="28" Height="136" RadiusX="7" RadiusY="7" Fill="#0B4A9A" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                    <Rectangle Grid.RowSpan="4" Width="28" Height="136" RadiusX="7" RadiusY="7" Fill="#0B4A9A" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                   </Grid>
                   <TextBlock Grid.Row="1" Text="Sep" FontSize="11" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Center" Margin="0,8,0,0" />
                 </Grid>
@@ -278,11 +278,11 @@
                 <StackPanel Spacing="18">
                   <TextBlock Text="Revenue — Last 6 Months" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" />
                   <Grid Height="210" RowDefinitions="*,Auto">
-                    <Grid RowDefinitions="*,*,*,*">
+                    <Grid RowDefinitions="*,*,*,*" ClipToBounds="True">
                       <Border BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
                       <Border Grid.Row="1" BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
                       <Border Grid.Row="2" BorderBrush="#E9E9EF" BorderThickness="0,0,0,1" />
-                      <Rectangle Width="28" Height="136" RadiusX="7" RadiusY="7" Fill="#0B4A9A" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
+                      <Rectangle Grid.RowSpan="4" Width="28" Height="136" RadiusX="7" RadiusY="7" Fill="#0B4A9A" VerticalAlignment="Bottom" HorizontalAlignment="Center" />
                     </Grid>
                     <TextBlock Grid.Row="1" Text="Sep" FontSize="11" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Center" Margin="0,8,0,0" />
                   </Grid>
