@@ -47,8 +47,8 @@
                         <TextBlock Text="{Binding Status}" FontSize="10" FontWeight="Bold" Foreground="{Binding StatusBrush}" />
                       </Border>
                     </StackPanel>
-                    <Button Grid.Column="3" Command="{Binding EditCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Edit invoice"><TextBlock Text="✎" FontSize="13" Foreground="#6E6E6E" /></Button>
-                    <Button Grid.Column="4" Command="{Binding PdfCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Preview PDF"><TextBlock Text="⌄" FontSize="15" Foreground="#6E6E6E" /></Button>
+                    <Button Grid.Column="3" Command="{Binding EditCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Edit invoice"><TextBlock Text="edit" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" /></Button>
+                    <Button Grid.Column="4" Command="{Binding PdfCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Preview PDF"><TextBlock Text="picture_as_pdf" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" /></Button>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -66,7 +66,7 @@
                 <DataTemplate>
                   <Button Command="{Binding Command}" Background="Transparent" BorderThickness="0" Padding="0" HorizontalContentAlignment="Stretch" MinHeight="42">
                     <Grid ColumnDefinitions="42,*,Auto">
-                      <Border Width="28" Height="28" CornerRadius="8" Background="{Binding IconBackground}" VerticalAlignment="Center"><TextBlock Text="{Binding Icon}" FontSize="15" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                      <Border Width="28" Height="28" CornerRadius="8" Background="{Binding IconBackground}" VerticalAlignment="Center"><TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="15" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
                       <TextBlock Grid.Column="1" Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
                       <TextBlock Grid.Column="2" Text="›" FontSize="24" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
                     </Grid>
@@ -82,14 +82,14 @@
         <Border Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BorderBrush="#FFCDD2" BorderThickness="1" BoxShadow="0 8 22 0 #10000000">
           <StackPanel Spacing="14">
             <Grid ColumnDefinitions="34,*,Auto">
-              <Border Width="28" Height="28" CornerRadius="8" Background="#FFEBEE"><TextBlock Text="▣" FontSize="15" Foreground="#F44336" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+              <Border Width="28" Height="28" CornerRadius="8" Background="#FFEBEE"><TextBlock Text="inventory_2" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="15" Foreground="#F44336" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
               <TextBlock Grid.Column="1" Text="Out of Stock" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
               <Border Grid.Column="2" Width="22" Height="22" CornerRadius="11" Background="#FFEBEE"><TextBlock Text="{Binding OutOfStockCount}" FontSize="11" Foreground="#F44336" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
             </Grid>
             <Grid ColumnDefinitions="*,Auto,8,Auto">
               <TextBlock Text="{Binding OutOfStockProduct}" FontSize="12" Foreground="{DynamicResource DashboardText}" />
               <TextBlock Grid.Column="1" Text="0 left" FontSize="12" Foreground="#F44336" />
-              <Border Grid.Column="3" Padding="9,4" CornerRadius="7" Background="#E8F5E9"><TextBlock Text="⊞ Stock" FontSize="11" Foreground="#2E7D32" /></Border>
+              <Border Grid.Column="3" Padding="9,4" CornerRadius="7" Background="#E8F5E9"><TextBlock Text="+ Stock" FontSize="11" Foreground="#2E7D32" /></Border>
             </Grid>
           </StackPanel>
         </Border>
@@ -98,7 +98,7 @@
       <DataTemplate x:Key="TopCustomersTemplate">
         <Border Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
           <StackPanel Spacing="14">
-            <Grid ColumnDefinitions="34,*"><Border Width="28" Height="28" CornerRadius="8" Background="#E3F2FD"><TextBlock Text="♕" FontSize="14" Foreground="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><TextBlock Grid.Column="1" Text="Top Customers" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" /></Grid>
+            <Grid ColumnDefinitions="34,*"><Border Width="28" Height="28" CornerRadius="8" Background="#E3F2FD"><TextBlock Text="emoji_events" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="14" Foreground="#1976D2" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><TextBlock Grid.Column="1" Text="Top Customers" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" /></Grid>
             <ItemsControl ItemsSource="{Binding TopCustomers}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
@@ -117,12 +117,12 @@
       <DataTemplate x:Key="TopProductsTemplate">
         <Border Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
           <StackPanel Spacing="14">
-            <Grid ColumnDefinitions="34,*"><Border Width="28" Height="28" CornerRadius="8" Background="#E8F5E9"><TextBlock Text="⌁" FontSize="14" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><TextBlock Grid.Column="1" Text="Top Products" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" /></Grid>
+            <Grid ColumnDefinitions="34,*"><Border Width="28" Height="28" CornerRadius="8" Background="#E8F5E9"><TextBlock Text="trending_up" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="14" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border><TextBlock Grid.Column="1" Text="Top Products" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" /></Grid>
             <ItemsControl ItemsSource="{Binding TopProducts}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
                   <Grid ColumnDefinitions="34,*,Auto" MinHeight="32">
-                    <Border Width="24" Height="24" CornerRadius="7" Background="#E8F5E9"><TextBlock Text="▣" FontSize="12" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                    <Border Width="24" Height="24" CornerRadius="7" Background="#E8F5E9"><TextBlock Text="inventory_2" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="12" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
                     <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
                     <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
                   </Grid>
@@ -141,13 +141,13 @@
         <TextBlock Grid.Column="1" Text="Dashboard Overview" Foreground="White" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
           <Button ToolTip.Tip="Dashboard layout" Background="Transparent" BorderThickness="0" Padding="8">
-            <TextBlock Text="▦" Foreground="White" FontSize="20" />
+            <TextBlock Text="dashboard_customize" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" Foreground="White" FontSize="20" />
             <Button.Flyout>
               <MenuFlyout>
                 <MenuItem Tag="Default" Command="{Binding SelectLayoutCommand}" CommandParameter="Default">
                   <MenuItem.Header>
                     <Grid ColumnDefinitions="22,*,24" Width="170" Margin="2,4">
-                      <TextBlock Text="▭" FontSize="16" Foreground="#6E6E6E" VerticalAlignment="Center" />
+                      <TextBlock Text="view_agenda" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" VerticalAlignment="Center" />
                       <StackPanel Grid.Column="1" Spacing="1">
                         <TextBlock Text="Default" FontSize="13" Foreground="#1F1F29" />
                         <TextBlock Text="Original layout" FontSize="11" Foreground="#6E6E78" />
@@ -159,7 +159,7 @@
                 <MenuItem Tag="Classic" Command="{Binding SelectLayoutCommand}" CommandParameter="Classic">
                   <MenuItem.Header>
                     <Grid ColumnDefinitions="22,*,24" Width="170" Margin="2,4">
-                      <TextBlock Text="▦" FontSize="16" Foreground="#083B88" VerticalAlignment="Center" />
+                      <TextBlock Text="dashboard" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#083B88" VerticalAlignment="Center" />
                       <StackPanel Grid.Column="1" Spacing="1">
                         <TextBlock Text="Classic" FontSize="13" FontWeight="Bold" Foreground="#083B88" />
                         <TextBlock Text="Charts + KPI grid" FontSize="11" Foreground="#6E6E78" />
@@ -171,7 +171,7 @@
                 <MenuItem Tag="Bento" Command="{Binding SelectLayoutCommand}" CommandParameter="Bento">
                   <MenuItem.Header>
                     <Grid ColumnDefinitions="22,*,24" Width="170" Margin="2,4">
-                      <TextBlock Text="▥" FontSize="16" Foreground="#6E6E6E" VerticalAlignment="Center" />
+                      <TextBlock Text="dashboard_customize" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" VerticalAlignment="Center" />
                       <StackPanel Grid.Column="1" Spacing="1">
                         <TextBlock Text="Bento" FontSize="13" FontWeight="Bold" Foreground="#083B88" />
                         <TextBlock Text="Hero chart + card grid" FontSize="11" Foreground="#6E6E78" />
@@ -183,7 +183,7 @@
                 <MenuItem Tag="Simple Feed" Command="{Binding SelectLayoutCommand}" CommandParameter="Simple Feed">
                   <MenuItem.Header>
                     <Grid ColumnDefinitions="22,*,24" Width="170" Margin="2,4">
-                      <TextBlock Text="▤" FontSize="16" Foreground="#6E6E6E" VerticalAlignment="Center" />
+                      <TextBlock Text="view_list" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" VerticalAlignment="Center" />
                       <StackPanel Grid.Column="1" Spacing="1">
                         <TextBlock Text="Simple Feed" FontSize="13" Foreground="#1F1F29" />
                         <TextBlock Text="Clean list view" FontSize="11" Foreground="#6E6E78" />
@@ -196,7 +196,7 @@
             </Button.Flyout>
           </Button>
           <Button Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh dashboard" Background="Transparent" BorderThickness="0" Padding="8">
-            <TextBlock Text="↻" Foreground="White" FontSize="22" />
+            <TextBlock Text="refresh" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" Foreground="White" FontSize="22" />
           </Button>
         </StackPanel>
       </Grid>
@@ -227,7 +227,7 @@
                 <Border Width="214" MinHeight="78" Margin="0,0,12,12" Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
                   <Grid ColumnDefinitions="42,14,*">
                     <Border Width="37" Height="37" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Icon}" FontSize="18" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Grid.Column="2" Spacing="5">
                       <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource DashboardMuted}" />
@@ -298,7 +298,7 @@
                   <DataTemplate>
                     <Border Width="210" MinHeight="78" Margin="0,0,12,12" Padding="18" CornerRadius="12" Background="{DynamicResource DashboardCard}" BoxShadow="0 8 22 0 #10000000">
                       <Grid ColumnDefinitions="42,10,*">
-                        <Border Width="37" Height="37" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center"><TextBlock Text="{Binding Icon}" FontSize="17" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                        <Border Width="37" Height="37" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center"><TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="17" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
                         <StackPanel Grid.Column="2" Spacing="5"><TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource DashboardMuted}" /><TextBlock Text="{Binding Value}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" /></StackPanel>
                       </Grid>
                     </Border>
@@ -350,7 +350,34 @@
                         <TextBlock Text="{Binding CustomerLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
                         <TextBlock Text="{Binding DateLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
                       </StackPanel>
-                      <StackPanel Grid.Column="3" Spacing="10" HorizontalAlignment="Right"><Border Padding="18,10" CornerRadius="7" Background="#F3DDFB" HorizontalAlignment="Right"><TextBlock Text="{Binding TotalText}" FontSize="20" FontWeight="Bold" Foreground="#A21CAF" /></Border></StackPanel>
+                      <StackPanel Grid.Column="3" Spacing="10" HorizontalAlignment="Right">
+                        <Border Padding="18,10" CornerRadius="7" Background="#F3DDFB" HorizontalAlignment="Right">
+                          <TextBlock Text="{Binding TotalText}" FontSize="20" FontWeight="Bold" Foreground="#A21CAF" />
+                        </Border>
+                        <StackPanel Orientation="Horizontal" Spacing="7" HorizontalAlignment="Right">
+                          <Button Command="{Binding ViewCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#E8F5E9" BorderBrush="#A5D6A7" ToolTip.Tip="View Details">
+                            <TextBlock Text="visibility" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#4CAF50" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Button>
+                          <Button Command="{Binding EditCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#E3F2FD" BorderBrush="#90CAF9" ToolTip.Tip="Edit Invoice">
+                            <TextBlock Text="edit" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#1E88E5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Button>
+                          <Button Command="{Binding CloneCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#E0F7FA" BorderBrush="#80DEEA" ToolTip.Tip="Clone Invoice">
+                            <TextBlock Text="content_copy" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#0097A7" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Button>
+                          <Button Command="{Binding PdfCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#FFF3E0" BorderBrush="#FFCC80" ToolTip.Tip="Preview / Download PDF">
+                            <TextBlock Text="picture_as_pdf" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#FB8C00" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Button>
+                          <Button Command="{Binding PrintCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#ECEFF1" BorderBrush="#CFD8DC" ToolTip.Tip="Print PDF">
+                            <TextBlock Text="print" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#607D8B" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Button>
+                          <Button Command="{Binding PaymentCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#F3E5F5" BorderBrush="#CE93D8" ToolTip.Tip="Record Payment">
+                            <TextBlock Text="account_balance_wallet" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#9C27B0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Button>
+                          <Button Command="{Binding DeleteCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#FFEBEE" BorderBrush="#EF9A9A" ToolTip.Tip="Move to Trash">
+                            <TextBlock Text="delete" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#F44336" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Button>
+                        </StackPanel>
+                      </StackPanel>
                     </Grid>
                   </Border>
                 </DataTemplate>

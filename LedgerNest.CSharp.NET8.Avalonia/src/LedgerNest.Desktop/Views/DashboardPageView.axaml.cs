@@ -38,7 +38,7 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
     public ObservableCollection<DashboardSummaryLineModel> TopProducts { get; } = [];
     public bool HasNoInvoices => RecentInvoices.Count == 0;
     public bool ShowHero => Layout != "Default";
-    public bool ShowKpiRow => Layout is "Classic" or "Simple Feed";
+    public bool ShowKpiRow => Layout is "Default" or "Classic" or "Simple Feed";
     public bool ShowChartGrid => Layout == "Classic";
     public bool ShowClassicLowerGrid => Layout == "Classic";
     public bool ShowBentoGrid => Layout == "Bento";

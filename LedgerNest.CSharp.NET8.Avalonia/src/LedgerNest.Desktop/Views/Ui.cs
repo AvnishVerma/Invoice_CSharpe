@@ -257,7 +257,10 @@ internal static class Ui
     public static Control Logo(bool compact = false) => new BrandLogo(compact);
     // Performs the asset action for this screen or workflow.
     public static Image Asset(string name, double width, double height)
-    { using var stream = AssetLoader.Open(new Uri($"avares://LedgerNest.Desktop/Assets/{name}")); return new Image { Source = new Bitmap(stream), Width = width, Height = height, Stretch = Stretch.Uniform }; }
+    { return new Image { Source = AssetBitmap(name), Width = width, Height = height, Stretch = Stretch.Uniform }; }
+    // Performs the asset bitmap load action for reusable image-backed controls.
+    public static Bitmap AssetBitmap(string name)
+    { using var stream = AssetLoader.Open(new Uri($"avares://LedgerNest.Desktop/Assets/{name}")); return new Bitmap(stream); }
     // Performs the empty action for this screen or workflow.
     public static Control Empty(string title, string subtitle = "", string icon = "▤")
     { var p = Stack(12, Icon(icon == "✓" ? "check_circle" : icon == "cart" ? "shopping_cart" : title.Contains("customers") ? "person_off" : "receipt_long", icon == "cart" ? 48 : 64, Outline), Text(title, 18, color: Muted), Text(subtitle, 14, color: Muted)); p.HorizontalAlignment = HorizontalAlignment.Center; p.VerticalAlignment = VerticalAlignment.Center; foreach (var c in p.Children) c.HorizontalAlignment = HorizontalAlignment.Center; return new Border { MinHeight = 240, Padding = new Thickness(24), Child = p }; }

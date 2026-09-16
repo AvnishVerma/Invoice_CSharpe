@@ -16,11 +16,11 @@ public partial class MainWindow
         var outstanding = Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Outstanding"], out var n) ? n : decimal.TryParse(i["Total"], out var total) ? total : 0);
         var tiles = new[]
         {
-            Tile("Revenue Collected", ShortMoney(paid), "▣", "#8A2BE2"),
-            Tile("Outstanding", "Rs. " + outstanding.ToString("0.00"), "⌛", "#D32F2F"),
-            Tile("Total Invoices", invoices.Length.ToString(), "▤", "#F97316"),
-            Tile("Customers", Model.Customers.Count.ToString(), "👥", "#1976D2"),
-            Tile("Products", Model.Products.Count.ToString(), "▣", "#2E7D32")
+            Tile("Revenue Collected", ShortMoney(paid), "account_balance_wallet", "#8A2BE2"),
+            Tile("Outstanding", "Rs. " + outstanding.ToString("0.00"), "hourglass_top", "#D32F2F"),
+            Tile("Total Invoices", invoices.Length.ToString(), "receipt_long", "#F97316"),
+            Tile("Customers", Model.Customers.Count.ToString(), "people", "#1976D2"),
+            Tile("Products", Model.Products.Count.ToString(), "inventory_2", "#2E7D32")
         };
 
         var recent = invoices.Take(5).Select((invoice, index) => new DashboardInvoiceModel
@@ -46,9 +46,9 @@ public partial class MainWindow
 
         var quickActions = new[]
         {
-            QuickAction("New Invoice", "⊕", "#0B4A9A", () => Model.NavigateCommand.Execute("New Invoice")),
-            QuickAction("Customers", "♚", "#1976D2", () => Model.NavigateCommand.Execute("Customers")),
-            QuickAction("Reports", "▮", "#2E7D32", () => Model.NavigateCommand.Execute("Reports"))
+            QuickAction("New Invoice", "add_circle_outline", "#0B4A9A", () => Model.NavigateCommand.Execute("New Invoice")),
+            QuickAction("Customers", "group_add", "#1976D2", () => Model.NavigateCommand.Execute("Customers")),
+            QuickAction("Reports", "bar_chart", "#2E7D32", () => Model.NavigateCommand.Execute("Reports"))
         };
         var topCustomers = Model.ActiveInvoices
             .GroupBy(i => string.IsNullOrWhiteSpace(i["Customer"]) ? "Cash" : i["Customer"])
