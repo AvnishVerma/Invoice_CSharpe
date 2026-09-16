@@ -73,17 +73,23 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand] private void Navigate(string route) { if (Routes.Contains(route)) { Title = route; Status = ""; } }
     [RelayCommand] private void ToggleSidebar() => SidebarExpanded = !SidebarExpanded;
 
+    // Performs the customer invoice filter queue action for customer management row actions.
+    public void QueueInvoiceCustomerFilter(string customerName) => PendingInvoiceCustomerFilter = customerName;
+
+    // Performs the customer report filter queue action for customer management payment actions.
+    public void QueueCustomerReportFilter(string customerName) => PendingReportCustomerFilter = customerName;
+
     // Performs the customer invoice navigation action for customer management row actions.
     public void OpenInvoicesForCustomer(string customerName)
     {
-        PendingInvoiceCustomerFilter = customerName;
+        QueueInvoiceCustomerFilter(customerName);
         NavigateCommand.Execute("Invoices");
     }
 
     // Performs the customer report navigation action for customer management payment actions.
     public void OpenCustomerReport(string customerName)
     {
-        PendingReportCustomerFilter = customerName;
+        QueueCustomerReportFilter(customerName);
         NavigateCommand.Execute("Reports");
     }
 

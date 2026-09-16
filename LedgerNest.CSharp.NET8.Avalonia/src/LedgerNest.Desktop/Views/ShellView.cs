@@ -36,6 +36,21 @@ public partial class MainWindow
     {
         sidebar.Content = new SidebarView(Model, route => Model.NavigateCommand.Execute(route), () => Model.ToggleSidebarCommand.Execute(null), () => { Model.SignOut(); ShowLogin(); });
     }
+
+    // Performs direct invoice navigation from a customer row with the customer search applied.
+    internal void OpenInvoicesForCustomer(string customerName)
+    {
+        Model.QueueInvoiceCustomerFilter(customerName);
+        if (Model.Title == "Invoices") ShowPage(); else Model.NavigateCommand.Execute("Invoices");
+    }
+
+    // Performs direct customer report navigation from a customer row with the statement filter applied.
+    internal void OpenCustomerReport(string customerName)
+    {
+        Model.QueueCustomerReportFilter(customerName);
+        if (Model.Title == "Reports") ShowPage(); else Model.NavigateCommand.Execute("Reports");
+    }
+
     // Performs the show page action for this screen or workflow.
     private void ShowPage()
     {

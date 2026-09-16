@@ -99,6 +99,14 @@ internal static class Program
         var name = window.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText == "Name"); name.Text = "Test Customer";
         var phone = window.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText == "Phone"); phone.Text = "1234567890";
         Click("Save Customer"); Check(model.Customers.Count == 1, "Save customer must update the list");
+        Click("Invoices");
+        Check(model.Title == "Invoices", "Customer invoice action must navigate to invoice management");
+        Check(window.GetVisualDescendants().OfType<TextBox>().Any(t => t.PlaceholderText == "Search by Invoice ID or Customer Name…" && t.Text == "Test Customer"), "Customer invoice action must filter invoice management by customer name");
+        model.NavigateCommand.Execute("Customers"); Settle();
+        Click("Payment");
+        Check(model.Title == "Reports", "Customer payment action must navigate to reports");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text != null && t.Text.Contains("Customer Statement — Test Customer")), "Customer payment action must open the customer statement filtered by customer name");
+        model.NavigateCommand.Execute("Customers"); Settle();
         var user = FormCatalog.User(); user[0].Value = "review-user"; user[1].Value = "temporary-secret";
         Check(model.SaveRecord("User", user), "User form must validate");
         Check(!model.Users.Single().Values.ContainsKey("Password"), "User table must not retain or expose password text"); Capture("customers-populated");

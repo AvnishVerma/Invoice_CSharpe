@@ -307,8 +307,8 @@ internal sealed partial class ManagementView : UserControl
         Children =
         {
             PlainIconAction("visibility", "View", () => View(record), "#6E6E6E"),
-            PlainIconAction("receipt_long", "Invoices", () => model.OpenInvoicesForCustomer(record.Name), "#6E6E6E"),
-            PlainIconAction("account_balance_wallet", "Payment", () => model.OpenCustomerReport(record.Name), "#6E6E6E"),
+            PlainIconAction("receipt_long", "Invoices", () => window.OpenInvoicesForCustomer(record.Name), "#6E6E6E"),
+            PlainIconAction("account_balance_wallet", "Payment", () => window.OpenCustomerReport(record.Name), "#6E6E6E"),
             PlainIconAction("edit", "Edit", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
             PlainIconAction("delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F")
         }
