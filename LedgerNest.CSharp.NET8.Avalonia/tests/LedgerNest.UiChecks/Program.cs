@@ -47,6 +47,7 @@ internal static class Program
         CheckRecordDeletion();
         CheckTaxReport();
         CheckRevenueReport();
+        CheckChromiumPrinterValidation();
         CheckReceivablesLifecycle();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
@@ -1004,6 +1005,19 @@ internal static class Program
         Check(report.InvoiceCount == 2 && report.Billed == 168 && report.Collected == 118 && report.Outstanding == 50, "Revenue KPIs must use saved invoice and payment totals");
         Check(report.TotalProfit == 110 && report.RealizedProfit == 60 && report.MissingCostItemCount == 1, "Revenue profit KPIs must use item purchase-price snapshots and paid status");
         Check(report.Months.Length == 1 && report.Months[0].Cogs == 40 && report.Months[0].Profit == 110 && Math.Abs(report.Months[0].MarginPercent - 110m / 150m * 100m) < .001m, "Monthly revenue breakdown must include COGS, profit, and margin");
+    }
+
+    private static void CheckChromiumPrinterValidation()
+    {
+        try
+        {
+            ChromiumInvoicePrinter.PrintPdfAsync(Path.Combine(Path.GetTempPath(), $"missing-invoice-{Guid.NewGuid():N}.pdf")).GetAwaiter().GetResult();
+            Check(false, "Chromium printing must reject a missing invoice PDF before downloading or launching the browser");
+        }
+        catch (FileNotFoundException)
+        {
+            Check(true, "Chromium printing validates the invoice PDF path before browser startup");
+        }
     }
 
     private static void CheckRecordDeletion()
