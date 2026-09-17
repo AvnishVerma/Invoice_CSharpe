@@ -798,6 +798,82 @@ public partial class MainWindowViewModel : ObservableObject
         return new ReportSnapshot(name, invoices.Length, billed, paid, outstanding, rows);
     }
 
+    // Builds the six-month revenue summary, profit metrics, and monthly chart/table data.
+    public RevenueReportSnapshot BuildRevenueReport(int monthCount = 6)
+    {
+        monthCount = Math.Max(1, monthCount);
+        var start = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1 - monthCount);
+        var end = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1);
+
+        if (dbFactory == null)
+        {
+            var records = ActiveInvoices
+                .Select(record => new { Record = record, Date = DateTime.TryParse(record["Date"], out var date) ? date : DateTime.Today })
+                .Where(entry => entry.Date >= start && entry.Date < end)
+                .ToArray();
+            var months = records.GroupBy(entry => new DateTime(entry.Date.Year, entry.Date.Month, 1))
+                .OrderBy(group => group.Key)
+                .Select(group =>
+                {
+                    var billed = group.Sum(entry => ParseDecimal(entry.Record["Total"]));
+                    var collected = group.Sum(entry => ParseDecimal(entry.Record["Paid"]));
+                    var outstanding = group.Sum(entry => ParseDecimal(entry.Record["Outstanding"]));
+                    var cogs = group.Sum(entry => ParseDecimal(entry.Record["COGS"]));
+                    var profit = group.Sum(entry => ParseDecimal(entry.Record["Profit"]));
+                    return new RevenueMonthSnapshot(group.Key, group.Count(), billed, collected, outstanding, cogs, profit);
+                })
+                .ToArray();
+            var totalBilled = records.Sum(entry => ParseDecimal(entry.Record["Total"]));
+            var totalCollected = records.Sum(entry => ParseDecimal(entry.Record["Paid"]));
+            var totalOutstanding = records.Sum(entry => ParseDecimal(entry.Record["Outstanding"]));
+            var totalProfit = months.Sum(month => month.Profit);
+            var realizedProfit = records.Where(entry => ParseDecimal(entry.Record["Outstanding"]) <= .005m).Sum(entry => ParseDecimal(entry.Record["Profit"]));
+            return new RevenueReportSnapshot(records.Length, totalBilled, totalCollected, totalOutstanding,
+                records.Length == 0 ? 0 : totalBilled / records.Length, totalProfit, realizedProfit, 0, months);
+        }
+
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var invoices = db.Invoices.AsNoTracking()
+            .Include(invoice => invoice.Items)
+            .Where(invoice => invoice.DeletedAt == null && invoice.Type == "Invoice" && invoice.InvoiceDate >= start && invoice.InvoiceDate < end)
+            .ToArray();
+        var calculated = invoices.Select(invoice =>
+        {
+            var revenue = invoice.Items.Sum(item => RevenueItemNet(invoice, item));
+            var cogs = invoice.Items.Sum(item => item.Quantity * item.PurchasePrice);
+            return new RevenueInvoiceCalculation(invoice, revenue, cogs, revenue - cogs);
+        }).ToArray();
+        var monthly = calculated.GroupBy(entry => new DateTime(entry.Invoice.InvoiceDate.Year, entry.Invoice.InvoiceDate.Month, 1))
+            .OrderBy(group => group.Key)
+            .Select(group => new RevenueMonthSnapshot(
+                group.Key,
+                group.Count(),
+                group.Sum(entry => entry.Invoice.GrandTotal),
+                group.Sum(entry => entry.Invoice.PaidAmount),
+                group.Sum(entry => entry.Invoice.BalanceAmount),
+                group.Sum(entry => entry.Cogs),
+                group.Sum(entry => entry.Profit)))
+            .ToArray();
+        var billed = invoices.Sum(invoice => invoice.GrandTotal);
+        var collected = invoices.Sum(invoice => invoice.PaidAmount);
+        var outstanding = invoices.Sum(invoice => invoice.BalanceAmount);
+        var profit = calculated.Sum(entry => entry.Profit);
+        var realized = calculated.Where(entry => entry.Invoice.BalanceAmount <= .005m).Sum(entry => entry.Profit);
+        var missingCostItems = invoices.SelectMany(invoice => invoice.Items).Count(item => item.PurchasePrice <= 0);
+        return new RevenueReportSnapshot(invoices.Length, billed, collected, outstanding,
+            invoices.Length == 0 ? 0 : billed / invoices.Length, profit, realized, missingCostItems, monthly);
+    }
+
+    // Calculates tax-exclusive item revenue using the invoice's saved tax mode.
+    private static decimal RevenueItemNet(Invoice invoice, InvoiceItem item)
+    {
+        var discount = item.DiscountPerUnit ? item.Discount * item.Quantity : item.Discount;
+        var net = item.UnitPrice * item.Quantity - discount + item.ExtraCost;
+        var perItemTax = invoice.Snapshot == null || invoice.Snapshot.TaxMode.Equals("Per Item", StringComparison.OrdinalIgnoreCase);
+        return perItemTax && item.PriceIncludesTax && item.TaxRate > 0 ? net / (1 + item.TaxRate / 100) : net;
+    }
+
 
     // Performs the product report rows action for this screen or workflow.
     private string[][] ProductReportRows()
@@ -825,6 +901,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount, decimal PurchasePrice);
+    private sealed record RevenueInvoiceCalculation(Invoice Invoice, decimal Revenue, decimal Cogs, decimal Profit);
 
 
     // Performs the export document pdf action for this screen or workflow.
@@ -1900,6 +1977,31 @@ public partial class MainWindowViewModel : ObservableObject
 }
 
 public sealed record ReportSnapshot(string Name, int InvoiceCount, decimal Billed, decimal Collected, decimal Outstanding, string[][] Rows);
+
+// Provides calculated values rendered by the revenue report.
+public sealed record RevenueReportSnapshot(
+    int InvoiceCount,
+    decimal Billed,
+    decimal Collected,
+    decimal Outstanding,
+    decimal AverageInvoiceValue,
+    decimal TotalProfit,
+    decimal RealizedProfit,
+    int MissingCostItemCount,
+    RevenueMonthSnapshot[] Months);
+
+// Provides one monthly revenue, collection, cost, and profit breakdown row.
+public sealed record RevenueMonthSnapshot(
+    DateTime Month,
+    int InvoiceCount,
+    decimal Billed,
+    decimal Collected,
+    decimal Outstanding,
+    decimal Cogs,
+    decimal Profit)
+{
+    public decimal MarginPercent => Profit + Cogs == 0 ? 0 : Profit * 100 / (Profit + Cogs);
+}
 
 internal static class SimplePdf
 {

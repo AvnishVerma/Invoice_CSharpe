@@ -28,12 +28,15 @@ public partial class MainWindow
     private Control ReportContent(string name)
     {
         var report = Model.BuildReport(name);
-        var body = Ui.Stack(20);
+        var body = Ui.Stack(name == "Revenue" ? 12 : 20);
 
         if (name == "Revenue")
         {
-            body.Children.Add(ReportStats(("Total Billed", Money(report.Billed), "receipt_long", "#0D47A1"), ("Total Collected", Money(report.Collected), "check_circle", "#16A34A"), ("Outstanding", Money(report.Outstanding), "hourglass_top", "#E53935"), ("Avg Invoice Value", Money(report.InvoiceCount == 0 ? 0 : report.Billed / report.InvoiceCount), "bar_chart", "#7C3AED"), ("Total Profit", Money(Model.Invoices.Sum(i => decimal.TryParse(i["Profit"], out var p) ? p : 0m)), "account_balance_wallet", "#16A34A")));
-            body.Children.Add(ChartCard("Revenue", "Monthly Revenue Trend", $"{report.InvoiceCount} invoices in period · INR", report.Billed, report.Collected, Model.Invoices.Sum(i => decimal.TryParse(i["Profit"], out var p) ? p : 0m)));
+            var revenue = Model.BuildRevenueReport();
+            body.Children.Add(RevenueStats(revenue));
+            if (revenue.MissingCostItemCount > 0) body.Children.Add(MissingCostBanner(revenue.MissingCostItemCount));
+            body.Children.Add(RevenueChartCard(revenue));
+            body.Children.Add(RevenueBreakdownCard(revenue));
         }
         else if (name == "Receivables")
         {
@@ -136,6 +139,60 @@ public partial class MainWindow
     // Performs the money action for this screen or workflow.
     private static string Money(decimal value) => $"Rs. {value:0.00}";
 
+    // Builds the six KPI tiles shown at the top of the revenue report.
+    private static Control RevenueStats(RevenueReportSnapshot report)
+    {
+        var stats = new[]
+        {
+            ("Total Billed", Money(report.Billed), "receipt_long", "#0D47A1"),
+            ("Total Collected", Money(report.Collected), "check_circle", "#16A34A"),
+            ("Outstanding", Money(report.Outstanding), "schedule", "#E53935"),
+            ("Avg Invoice Value", Money(report.AverageInvoiceValue), "trending_up", "#7C3AED"),
+            ("Total Profit", Money(report.TotalProfit), "savings", report.TotalProfit < 0 ? "#E53935" : "#16A34A"),
+            ("Realized Profit", Money(report.RealizedProfit), "payments", report.RealizedProfit < 0 ? "#E53935" : "#16A34A")
+        };
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*"),
+            RowDefinitions = new RowDefinitions("Auto,12,Auto")
+        };
+        for (var i = 0; i < stats.Length; i++)
+        {
+            var stat = stats[i];
+            var tile = Ui.Card(Ui.Columns("Auto,12,*", new Border
+            {
+                Width = 36,
+                Height = 36,
+                CornerRadius = new CornerRadius(9),
+                Background = new SolidColorBrush(Color.Parse(stat.Item4), .12),
+                Child = Ui.Icon(stat.Item3, 18, Brush.Parse(stat.Item4))
+            }, new Border(), Ui.Stack(7, Ui.Text(stat.Item1, 12, color: Ui.Muted), Ui.Text(stat.Item2, 18, true, Brush.Parse(stat.Item4)))), 16);
+            tile.Background = Brush.Parse("#FBF5FF");
+            Grid.SetColumn(tile, i % 3 * 2);
+            Grid.SetRow(tile, i / 3 * 2);
+            grid.Children.Add(tile);
+        }
+        return grid;
+    }
+
+    // Builds the purchase-price warning shown when profit is based on incomplete cost data.
+    private static Control MissingCostBanner(int itemCount)
+    {
+        var noun = itemCount == 1 ? "item" : "items";
+        var verb = itemCount == 1 ? "has" : "have";
+        var pronoun = itemCount == 1 ? "that item" : "those items";
+        return new Border
+        {
+            Background = Brush.Parse("#FFFBEB"),
+            BorderBrush = Brush.Parse("#FDE68A"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(12, 10),
+            Child = Ui.Columns("Auto,8,*", Ui.Icon("warning_amber", 18, Brush.Parse("#D97706")), new Border(),
+                Ui.Text($"{itemCount} {noun} sold in this period {verb} no purchase price set — profit/margin is understated for {pronoun} until a purchase price is added to the product.", 12, color: Brush.Parse("#92400E")))
+        };
+    }
+
     // Performs the report stats action for this screen or workflow.
     private static Control ReportStats(params (string Label, string Value, string Icon, string Color)[] stats)
     {
@@ -143,14 +200,14 @@ public partial class MainWindow
         for (var i = 0; i < stats.Length; i++)
         {
             var s = stats[i];
-            var tile = Ui.Card(Ui.Columns("Auto,14,*", new Border
+            var tile = Ui.Card(Ui.Columns("Auto,8,*", new Border
             {
-                Width = 42,
-                Height = 42,
-                CornerRadius = new CornerRadius(10),
+                Width = 36,
+                Height = 36,
+                CornerRadius = new CornerRadius(9),
                 Background = new SolidColorBrush(Color.Parse(s.Color), .12),
-                Child = Ui.Icon(s.Icon, 22, Brush.Parse(s.Color))
-            }, new Border(), Ui.Stack(8, Ui.Text(s.Label, 13, true, Ui.Muted), Ui.Text(s.Value, 22, true, Brush.Parse(s.Color)))), 18);
+                Child = Ui.Icon(s.Icon, 18, Brush.Parse(s.Color))
+            }, new Border(), Ui.Stack(5, Ui.Text(s.Label, 11, true, Ui.Muted), Ui.Text(s.Value, 15, true, Brush.Parse(s.Color)))), 12);
             tile.Background = Brush.Parse("#FBF5FF");
             tile.Margin = new Thickness(i == 0 ? 0 : 10, 0, i == stats.Length - 1 ? 0 : 10, 0);
             Grid.SetColumn(tile, i);
@@ -159,20 +216,100 @@ public partial class MainWindow
         return grid;
     }
 
-    // Performs the chart card action for this screen or workflow.
-    private Control ChartCard(string reportName, string title, string subtitle, decimal billed, decimal collected, decimal profit)
+    // Builds the grouped monthly chart using the ScottPlot Avalonia NuGet control.
+    private Control RevenueChartCard(RevenueReportSnapshot report)
     {
-        var chart = new ScottPlot.Avalonia.AvaPlot { Height = 300 };
-        var billedBar = chart.Plot.Add.Bar(1, (double)billed); billedBar.Color = ScottPlot.Color.FromHex("#3B82F6"); billedBar.LegendText = "Billed";
-        var collectedBar = chart.Plot.Add.Bar(2, (double)collected); collectedBar.Color = ScottPlot.Color.FromHex("#22C55E"); collectedBar.LegendText = "Collected";
-        var profitBar = chart.Plot.Add.Bar(3, (double)profit); profitBar.Color = ScottPlot.Color.FromHex("#7C3AED"); profitBar.LegendText = "Profit";
-        chart.Plot.Axes.Left.Min = 0;
-        chart.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericManual([1, 2, 3], ["Billed", "Collected", "Profit"]);
-        chart.Plot.Legend.IsVisible = true;
-        chart.Plot.HideGrid();
-        chart.Refresh();
+        Control chartContent;
+        if (report.Months.Length == 0)
+        {
+            chartContent = Ui.Empty("No invoice data for this period", "Create an invoice to populate the revenue trend.", "bar_chart");
+        }
+        else
+        {
+            var chart = new ScottPlot.Avalonia.AvaPlot { Height = 250 };
+            for (var i = 0; i < report.Months.Length; i++)
+            {
+                var x = i + 1d;
+                var billed = chart.Plot.Add.Bar(x - .018, (double)report.Months[i].Billed);
+                billed.Color = ScottPlot.Color.FromHex("#3B82F6");
+                billed.Bars[0].Size = .014;
+                var collected = chart.Plot.Add.Bar(x, (double)report.Months[i].Collected);
+                collected.Color = ScottPlot.Color.FromHex("#22C55E");
+                collected.Bars[0].Size = .014;
+                var profit = chart.Plot.Add.Bar(x + .018, (double)report.Months[i].Profit);
+                profit.Color = ScottPlot.Color.FromHex("#7C3AED");
+                profit.Bars[0].Size = .014;
+            }
+            chart.Plot.Axes.Bottom.TickGenerator = new ScottPlot.TickGenerators.NumericManual(
+                Enumerable.Range(1, report.Months.Length).Select(value => (double)value).ToArray(),
+                report.Months.Select(month => month.Month.ToString("MMM yy")).ToArray());
+            chart.Plot.Axes.SetLimitsX(.4, Math.Max(1, report.Months.Length) + .6);
+            chart.Plot.Axes.Left.Min = Math.Min(0, (double)report.Months.Min(month => month.Profit) * 1.15);
+            chart.Plot.Grid.XAxisStyle.IsVisible = false;
+            chart.Plot.Legend.IsVisible = false;
+            chart.Plot.FigureBackground.Color = ScottPlot.Color.FromHex("#FBF5FF");
+            chart.Plot.DataBackground.Color = ScottPlot.Color.FromHex("#FBF5FF");
+            chart.Refresh();
+            chartContent = chart;
+        }
 
-        return Ui.Card(Ui.Stack(10, Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text(title, 16, true), Ui.Text(subtitle, 12, color: Ui.Muted)), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv(reportName)), Ui.Button("↓ Export PDF", async () => await ExportReportPdf(reportName)))), chart), 20);
+        var legend = Ui.Wrap(Legend("#3B82F6", "Billed"), Legend("#22C55E", "Collected"), Legend("#7C3AED", "Profit"));
+        legend.HorizontalAlignment = HorizontalAlignment.Center;
+        var card = Ui.Card(Ui.Stack(10,
+            Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text("Monthly Revenue Trend", 16, true), Ui.Text($"{report.InvoiceCount} invoices in period · INR", 12, color: Ui.Muted)),
+                Ui.Wrap(Ui.Button("↓  Export CSV", async () => await ExportReportCsv("Revenue")), Ui.Button("↓  Export PDF", async () => await ExportReportPdf("Revenue")))),
+            chartContent,
+            legend), 20);
+        card.Background = Brush.Parse("#FBF5FF");
+        return card;
+    }
+
+    // Builds the monthly revenue breakdown and totals table beneath the chart.
+    private static Control RevenueBreakdownCard(RevenueReportSnapshot report)
+    {
+        var table = Ui.Stack(0);
+        string[] headers = ["Month", "Invoices", "Billed", "Collected", "Outstanding", "COGS", "Profit", "Margin"];
+        table.Children.Add(RevenueBreakdownRow(headers, true));
+        foreach (var month in report.Months)
+        {
+            table.Children.Add(RevenueBreakdownRow([
+                month.Month.ToString("MMM yyyy"), month.InvoiceCount.ToString(), Money(month.Billed), Money(month.Collected),
+                Money(month.Outstanding), Money(month.Cogs), Money(month.Profit), $"{month.MarginPercent:0.#}%"]));
+        }
+        if (report.Months.Length == 0)
+            table.Children.Add(new Border { Padding = new Thickness(14, 18), Child = Ui.Text("No monthly revenue data for this period.", 13, color: Ui.Muted) });
+        else
+        {
+            var revenue = report.Months.Sum(month => month.Profit + month.Cogs);
+            var totalMargin = revenue == 0 ? 0 : report.Months.Sum(month => month.Profit) * 100 / revenue;
+            table.Children.Add(RevenueBreakdownRow([
+                "Total", report.Months.Sum(month => month.InvoiceCount).ToString(), Money(report.Months.Sum(month => month.Billed)),
+                Money(report.Months.Sum(month => month.Collected)), Money(report.Months.Sum(month => month.Outstanding)),
+                Money(report.Months.Sum(month => month.Cogs)), Money(report.Months.Sum(month => month.Profit)), $"{totalMargin:0.#}%"], false, true));
+        }
+        var scroll = new ScrollViewer { Content = table, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto };
+        var card = Ui.Card(Ui.Stack(12, Ui.Text("Monthly Breakdown", 16, true), scroll), 20);
+        card.Background = Brush.Parse("#FBF5FF");
+        return card;
+    }
+
+    // Builds one aligned header, detail, or total row for the monthly breakdown.
+    private static Control RevenueBreakdownRow(string[] values, bool header = false, bool total = false)
+    {
+        var columns = values.Select((value, index) => (Control)Ui.Text(
+            header ? value.ToUpperInvariant() : value,
+            header ? 11 : 13,
+            header || total || index == 0,
+            header ? Ui.Muted : index == 6 ? Brush.Parse("#16A34A") : index == 2 ? Brush.Parse("#2563EB") : null)).ToArray();
+        return new Border
+        {
+            MinWidth = 820,
+            Background = header || total ? Brushes.White : Brush.Parse("#FBF5FF"),
+            BorderBrush = Ui.Outline,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(14, header ? 10 : 13),
+            Child = Ui.Columns("1.05*,.65*,*,*,*,*,*,.65*", columns)
+        };
     }
 
     // Performs the donut card action for this screen or workflow.

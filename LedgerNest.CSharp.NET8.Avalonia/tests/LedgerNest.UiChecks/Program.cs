@@ -46,6 +46,7 @@ internal static class Program
         CheckDocumentTrash();
         CheckRecordDeletion();
         CheckTaxReport();
+        CheckRevenueReport();
         CheckReceivablesLifecycle();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
@@ -171,6 +172,9 @@ internal static class Program
         Click("Trash"); Capture("invoice-trash");
         Click("Restore");
         Check(model.ActiveInvoices.Count() == 1, "Restore action must return the invoice to active records");
+        model.NavigateCommand.Execute("Reports"); Click("Revenue");
+        Check(window.GetVisualDescendants().OfType<ScottPlot.Avalonia.AvaPlot>().Any(plot => plot.IsVisible), "Populated revenue report must render its chart with ScottPlot");
+        Capture("reports-revenue-populated");
 
         foreach (var width in new[] { 1024, 768, 640 })
         {
@@ -972,6 +976,34 @@ internal static class Program
         Verify(model, "₹ 48.00");
         Check(model.SetDocumentTrash(model.Invoices.Single(i => i.SourceId == mixed.SourceId), true), "Tax test invoice must move to trash");
         Verify(new MainWindowViewModel(factory, path), "₹ 25.00");
+    }
+
+    private static void CheckRevenueReport()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-revenue-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = new MainWindowViewModel(factory, path);
+        var product = FormCatalog.Product();
+        product.First(field => field.Label == "Name").Value = "Costed product";
+        product.First(field => field.Label == "Sale Price").Value = "100";
+        product.First(field => field.Label == "Purchase Price").Value = "40";
+        product.First(field => field.Label == "Stock").Value = "10";
+        Check(model.SaveRecord("Product", product), "Revenue report product fixture must save");
+        model.InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Costed product", Price = 100, Quantity = 1, TaxRate = 18 });
+        Check(model.SaveInvoice(), "Revenue report paid invoice fixture must save");
+        var payment = FormCatalog.Payment();
+        payment[0].Value = "118";
+        Check(model.ApplyPayment(model.Invoices.Single(), payment), "Revenue report full payment fixture must save");
+        model.StartDocument("Invoice");
+        model.InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Uncosted custom item", Price = 50, Quantity = 1 });
+        Check(model.SaveInvoice(), "Revenue report unpaid invoice fixture must save");
+
+        var report = model.BuildRevenueReport();
+        Check(report.InvoiceCount == 2 && report.Billed == 168 && report.Collected == 118 && report.Outstanding == 50, "Revenue KPIs must use saved invoice and payment totals");
+        Check(report.TotalProfit == 110 && report.RealizedProfit == 60 && report.MissingCostItemCount == 1, "Revenue profit KPIs must use item purchase-price snapshots and paid status");
+        Check(report.Months.Length == 1 && report.Months[0].Cogs == 40 && report.Months[0].Profit == 110 && Math.Abs(report.Months[0].MarginPercent - 110m / 150m * 100m) < .001m, "Monthly revenue breakdown must include COGS, profit, and margin");
     }
 
     private static void CheckRecordDeletion()
