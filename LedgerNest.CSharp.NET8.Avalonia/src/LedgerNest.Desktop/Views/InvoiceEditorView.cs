@@ -114,7 +114,7 @@ public partial class MainWindow
             var button = label switch
             {
                 "View" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowDocumentPreview(Model.LastSavedDocument); }),
-                "Preview" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowDocumentPreview(Model.LastSavedDocument); }),
+                "Preview" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowPdfPreview(Model.LastSavedDocument); }),
                 "Download" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await DownloadDocumentPdf(Model.LastSavedDocument); }),
                 "Print" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await PrintDocumentPdf(Model.LastSavedDocument); }),
                 _ => Ui.Button(label)
@@ -139,7 +139,6 @@ public partial class MainWindow
         editorModel.InvoiceChanged += UpdateTotals;
         System.Collections.Specialized.NotifyCollectionChangedEventHandler collectionChanged = (_, _) => RefreshLines(); editorModel.Lines.CollectionChanged += collectionChanged;
         body.DetachedFromVisualTree += (_, _) => { editorModel.InvoiceChanged -= UpdateTotals; editorModel.Lines.CollectionChanged -= collectionChanged; };
-        body.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.F && e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control)) { productSearch.Focus(); e.Handled = true; } };
         RefreshLines(); return body;
     }
     // Performs the show product item action for this screen or workflow.
