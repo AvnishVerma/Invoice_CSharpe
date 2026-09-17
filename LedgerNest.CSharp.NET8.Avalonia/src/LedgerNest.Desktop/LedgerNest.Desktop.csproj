@@ -15,6 +15,7 @@
     <PackageReference Include="Docnet.Core" Version="2.6.0" />
     <PackageReference Include="PuppeteerSharp" Version="25.11.0" />
     <PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
+    <PackageReference Include="System.Text.Json" Version="10.0.0" />
     <ProjectReference Include="..\LedgerNest.Application\LedgerNest.Application.csproj">
       <ReferenceSourceTarget></ReferenceSourceTarget>
     </ProjectReference>

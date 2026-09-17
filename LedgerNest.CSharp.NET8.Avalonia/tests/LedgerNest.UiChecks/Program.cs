@@ -1017,6 +1017,7 @@ internal static class Program
 
     private static void CheckChromiumPrinterValidation()
     {
+        Check(typeof(JsonSerializer).Assembly.GetName().Version?.Major == 10, "Chromium printing must deploy the System.Text.Json major version required by PuppeteerSharp");
         try
         {
             ChromiumInvoicePrinter.PrintPdfAsync(Path.Combine(Path.GetTempPath(), $"missing-invoice-{Guid.NewGuid():N}.pdf")).GetAwaiter().GetResult();
