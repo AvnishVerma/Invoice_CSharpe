@@ -8,6 +8,7 @@ using Docnet.Core;
 using Docnet.Core.Models;
 using System.Runtime.InteropServices;
 using Avalonia.Platform.Storage;
+using System.ComponentModel;
 using System.Diagnostics;
 using LedgerNest.Desktop.Views;
 
@@ -169,8 +170,7 @@ public partial class MainWindow
     {
         if (OperatingSystem.IsWindows())
         {
-            using var process = Process.Start(new ProcessStartInfo(path) { Verb = "print", UseShellExecute = true, CreateNoWindow = true });
-            if (process == null) throw new InvalidOperationException("The system print command could not be started.");
+            await SendPdfToWindowsPrinter(path);
             return;
         }
 
@@ -191,6 +191,60 @@ public partial class MainWindow
             throw new InvalidOperationException(string.IsNullOrWhiteSpace(error) ? $"Print command exited with code {print.ExitCode}." : error.Trim());
         }
     }
+
+    // Performs the Windows PDF print action by using the registered print verb or Edge when no PDF app is associated.
+    private static async Task SendPdfToWindowsPrinter(string path)
+    {
+        try
+        {
+            using var print = Process.Start(new ProcessStartInfo(path)
+            {
+                Verb = "print",
+                UseShellExecute = true,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            });
+            if (print == null) throw new InvalidOperationException("The system PDF print command could not be started.");
+            return;
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1155)
+        {
+            await PrintPdfWithEdge(path, ex);
+        }
+    }
+
+    // Performs the Edge fallback print action for Windows machines without a PDF file association.
+    private static async Task PrintPdfWithEdge(string path, Exception originalException)
+    {
+        var edge = FindMicrosoftEdgeExecutable();
+        if (edge == null)
+            throw new InvalidOperationException("Windows has no PDF print handler for .pdf files, and Microsoft Edge was not found. Install or associate a PDF reader, or install Microsoft Edge to enable direct PDF printing.", originalException);
+
+        using var print = Process.Start(new ProcessStartInfo(edge)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            Arguments = $"--kiosk-printing --disable-print-preview {QuoteArgument(new Uri(path).AbsoluteUri)}"
+        });
+        if (print == null) throw new InvalidOperationException("Microsoft Edge PDF printing could not be started.", originalException);
+
+        await Task.Delay(TimeSpan.FromSeconds(3));
+    }
+
+    // Performs the Microsoft Edge executable discovery action for Windows print fallback.
+    private static string? FindMicrosoftEdgeExecutable()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Microsoft", "Edge", "Application", "msedge.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Microsoft", "Edge", "Application", "msedge.exe"),
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "Edge", "Application", "msedge.exe")
+        };
+        return candidates.FirstOrDefault(File.Exists);
+    }
+
+    // Performs command-line argument quoting for file URLs passed to print helper processes.
+    private static string QuoteArgument(string value) => "\"" + value.Replace("\"", "\\\"") + "\"";
 
     // Performs the delete document from dashboard action for this screen or workflow.
     private void DeleteDocumentFromDashboard(UiRecord document)

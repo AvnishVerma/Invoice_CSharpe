@@ -110,8 +110,22 @@ internal static class Program
         var user = FormCatalog.User(); user[0].Value = "review-user"; user[1].Value = "temporary-secret";
         Check(model.SaveRecord("User", user), "User form must validate");
         Check(!model.Users.Single().Values.ContainsKey("Password"), "User table must not retain or expose password text"); Capture("customers-populated");
+        void Shortcut(Key key)
+        {
+            var binding = window.KeyBindings.Last(k => k.Gesture?.Key == key && k.Gesture.KeyModifiers.HasFlag(KeyModifiers.Control));
+            Check(binding.Command != null, $"Ctrl+{key} must be registered as a command");
+            binding.Command!.Execute(binding.CommandParameter);
+            Settle();
+        }
+        foreach (var key in new[] { Key.Q, Key.S, Key.F, Key.M, Key.O, Key.P })
+            Check(window.KeyBindings.Any(k => k.Gesture?.Key == key && k.Gesture.KeyModifiers.HasFlag(KeyModifiers.Control)), $"Ctrl+{key} must have a window-level key binding");
         model.NavigateCommand.Execute("Products"); Click("＋ New Product"); Capture("product-form"); Click("Cancel");
-        model.NavigateCommand.Execute("New Invoice"); Click("＋ Custom Item"); Capture("custom-item-form"); Click("Cancel");
+        model.NavigateCommand.Execute("New Invoice"); Settle();
+        Shortcut(Key.M);
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Add Custom Item") && window.GetVisualDescendants().OfType<TextBox>().Any(t => t.PlaceholderText == "Name"), "Ctrl+M must open the custom item dialog");
+        Capture("custom-item-form"); Click("Cancel");
+        Shortcut(Key.F);
+        Check(window.GetVisualDescendants().OfType<TextBox>().Any(t => t.PlaceholderText == "Search & add a product or service (Ctrl+F)" && t.IsKeyboardFocusWithin), "Ctrl+F must focus product search");
         var productFields = FormCatalog.Product(); productFields.First(f => f.Label == "Name").Value = "Selection fixture";
         productFields.First(f => f.Label == "Sale Price").Value = "4000";
         productFields.First(f => f.Label == "Stock").Value = "8";

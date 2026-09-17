@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.VisualTree;
+using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Desktop.Views;
 
 namespace LedgerNest.Desktop;
@@ -29,20 +31,75 @@ public partial class MainWindow : Window
         };
         Title = Branding.Name;
         DataContextChanged += (_, _) => { if (DataContext is MainWindowViewModel vm) InitializeShell(vm); };
-        KeyDown += (_, e) =>
+        RegisterShortcut(Key.Q);
+        RegisterShortcut(Key.S);
+        RegisterShortcut(Key.F);
+        RegisterShortcut(Key.M);
+        RegisterShortcut(Key.O);
+        RegisterShortcut(Key.P);
+        RegisterShortcut(Key.Escape, KeyModifiers.None);
+    }
+
+    // Performs shortcut key binding registration for commands shown in the UI.
+    private void RegisterShortcut(Key key, KeyModifiers modifiers = KeyModifiers.Control)
+    {
+        KeyBindings.Add(new KeyBinding
         {
-            if (DataContext is not MainWindowViewModel currentModel) return;
-            if (((e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.Key == Key.Escape) && !currentModel.ValidateSession()) || !currentModel.CanAccessWorkspace)
-            {
-                if (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.Key == Key.Escape) e.Handled = true;
-                return;
-            }
-            if (e.Key == Key.Escape && overlay.IsVisible) { CloseOverlay(); e.Handled = true; }
-            if (!e.KeyModifiers.HasFlag(KeyModifiers.Control)) return;
-            if (e.Key == Key.Q) { Model.StartDocument("Invoice"); ShowPage(); e.Handled = true; }
-            if (e.Key == Key.S && Model.Title == "New Invoice" && !invoiceCompletionVisible && !overlay.IsVisible) { if (Model.SaveInvoice()) ShowInvoiceSuccess(); e.Handled = true; }
-            if (e.Key == Key.M && Model.Title == "New Invoice") { ShowCustomItem(); e.Handled = true; }
-        };
+            Gesture = new KeyGesture(key, modifiers),
+            Command = new RelayCommand(() => ExecuteShortcut(key, modifiers))
+        });
+    }
+
+    // Performs the requested shortcut action when the current page and session allow it.
+    private bool ExecuteShortcut(Key key, KeyModifiers modifiers)
+    {
+        if (DataContext is not MainWindowViewModel currentModel) return false;
+        var isControlShortcut = modifiers.HasFlag(KeyModifiers.Control);
+        if (((isControlShortcut || key == Key.Escape) && !currentModel.ValidateSession()) || !currentModel.CanAccessWorkspace)
+            return isControlShortcut || key == Key.Escape;
+
+        if (key == Key.Escape && overlay.IsVisible)
+        {
+            CloseOverlay();
+            return true;
+        }
+
+        if (!isControlShortcut || overlay.IsVisible) return false;
+
+        switch (key)
+        {
+            case Key.Q:
+                Model.StartDocument("Invoice");
+                ShowPage();
+                return true;
+            case Key.S when Model.Title == "New Invoice" && !invoiceCompletionVisible:
+                if (Model.SaveInvoice()) ShowInvoiceSuccess();
+                return true;
+            case Key.F when Model.Title == "New Invoice":
+                FocusInvoiceProductSearch();
+                return true;
+            case Key.M when Model.Title == "New Invoice":
+                ShowCustomItem();
+                return true;
+            case Key.O when Model.Title == "New Invoice" && Model.LastSavedDocument != null:
+                ShowPdfPreview(Model.LastSavedDocument);
+                return true;
+            case Key.P when Model.Title == "New Invoice" && Model.LastSavedDocument != null:
+                _ = PrintDocumentPdf(Model.LastSavedDocument);
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // Performs focus movement to the product search box used by the invoice editor.
+    private void FocusInvoiceProductSearch()
+    {
+        var search = page.GetVisualDescendants()
+            .OfType<TextBox>()
+            .FirstOrDefault(t => t.PlaceholderText == "Search & add a product or service (Ctrl+F)");
+        search?.Focus();
+        search?.SelectAll();
     }
 
     // Performs the on dismiss status action for this screen or workflow.
