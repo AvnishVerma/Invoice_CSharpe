@@ -385,6 +385,7 @@ public partial class MainWindowViewModel : ObservableObject
         var values = new Dictionary<string, string> {
             ["Name"] = PeekNextDocumentNumber(InvoiceDetails[0].Value), ["Customer"] = InvoiceCustomer[0].Value,
             ["Type"] = InvoiceDetails[0].Value, ["Date"] = InvoiceDetails[1].Value,
+            ["Due Date"] = InvoiceDetails[2].Value,
             ["Tax"] = Totals.Tax.ToString(CultureInfo.InvariantCulture),
             ["Paid"] = "0.00", ["Outstanding"] = Totals.Total.ToString("0.00"),
             ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = "Unpaid"
@@ -796,6 +797,66 @@ public partial class MainWindowViewModel : ObservableObject
         };
 
         return new ReportSnapshot(name, invoices.Length, billed, paid, outstanding, rows);
+    }
+
+    // Builds payment-status counts and customer aging buckets for the receivables report.
+    public ReceivablesReportSnapshot BuildReceivablesReport()
+    {
+        var invoices = ActiveInvoices.ToArray();
+        Dictionary<int, DateTime?> persistedDueDates = [];
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            persistedDueDates = db.Invoices.AsNoTracking()
+                .Where(invoice => invoice.DeletedAt == null && invoice.Type == "Invoice")
+                .ToDictionary(invoice => invoice.Id, invoice => invoice.Snapshot == null ? null : invoice.Snapshot.DueDate);
+        }
+
+        var rows = invoices
+            .Where(invoice => ParseDecimal(invoice["Outstanding"]) > .005m)
+            .Select(invoice =>
+            {
+                var dueDate = persistedDueDates.GetValueOrDefault(invoice.SourceId);
+                if (dueDate == null && DateTime.TryParse(invoice["Due Date"], out var parsedDueDate)) dueDate = parsedDueDate;
+                var outstanding = ParseDecimal(invoice["Outstanding"]);
+                var daysOverdue = dueDate.HasValue ? Math.Max(0, (DateTime.Today - dueDate.Value.Date).Days) : (int?)null;
+                var bucket = dueDate switch
+                {
+                    null => ReceivableAgingBucket.NoDueDate,
+                    _ when dueDate.Value.Date >= DateTime.Today => ReceivableAgingBucket.Current,
+                    _ when daysOverdue <= 30 => ReceivableAgingBucket.Days0To30,
+                    _ when daysOverdue <= 60 => ReceivableAgingBucket.Days31To60,
+                    _ when daysOverdue <= 90 => ReceivableAgingBucket.Days61To90,
+                    _ => ReceivableAgingBucket.Days90Plus
+                };
+                return new AgedReceivableSnapshot(
+                    string.IsNullOrWhiteSpace(invoice["Customer"]) ? "Cash" : invoice["Customer"],
+                    invoice.Name,
+                    outstanding,
+                    daysOverdue,
+                    bucket);
+            })
+            .OrderByDescending(row => row.DaysOverdue ?? -1)
+            .ThenBy(row => row.Customer)
+            .ToArray();
+
+        var summaries = rows.GroupBy(row => row.Customer)
+            .Select(group => new ReceivableAgingSummarySnapshot(
+                group.Key,
+                group.Where(row => row.Bucket == ReceivableAgingBucket.Current).Sum(row => row.Outstanding),
+                group.Where(row => row.Bucket == ReceivableAgingBucket.Days0To30).Sum(row => row.Outstanding),
+                group.Where(row => row.Bucket == ReceivableAgingBucket.Days31To60).Sum(row => row.Outstanding),
+                group.Where(row => row.Bucket == ReceivableAgingBucket.Days61To90).Sum(row => row.Outstanding),
+                group.Where(row => row.Bucket == ReceivableAgingBucket.Days90Plus).Sum(row => row.Outstanding),
+                group.Where(row => row.Bucket == ReceivableAgingBucket.NoDueDate).Sum(row => row.Outstanding)))
+            .OrderBy(row => row.Customer)
+            .ToArray();
+
+        var paid = invoices.Count(invoice => ParseDecimal(invoice["Outstanding"]) <= .005m);
+        var partial = invoices.Count(invoice => ParseDecimal(invoice["Outstanding"]) > .005m && ParseDecimal(invoice["Paid"]) > .005m);
+        var unpaid = invoices.Length - paid - partial;
+        return new ReceivablesReportSnapshot(invoices.Length, paid, partial, unpaid, summaries, rows);
     }
 
     // Builds the six-month revenue summary, profit metrics, and monthly chart/table data.
@@ -1452,6 +1513,7 @@ public partial class MainWindowViewModel : ObservableObject
                     ["Customer"] = string.IsNullOrEmpty(invoice.CustomerName) ? Customers.FirstOrDefault(c => c.SourceId == invoice.CustomerId)?.Name ?? "" : invoice.CustomerName,
                     ["Type"] = invoice.Type,
                     ["Date"] = invoice.InvoiceDate.ToString("yyyy-MM-dd"),
+                    ["Due Date"] = invoice.Snapshot?.DueDate?.ToString("yyyy-MM-dd") ?? "",
                     ["Items"] = invoice.Items.Count.ToString(),
                     ["Total"] = invoice.GrandTotal.ToString("0.00"),
                     ["Tax"] = invoice.TaxTotal.ToString(CultureInfo.InvariantCulture),
@@ -1977,6 +2039,47 @@ public partial class MainWindowViewModel : ObservableObject
 }
 
 public sealed record ReportSnapshot(string Name, int InvoiceCount, decimal Billed, decimal Collected, decimal Outstanding, string[][] Rows);
+
+// Identifies the aging column that contains an outstanding invoice balance.
+public enum ReceivableAgingBucket
+{
+    Current,
+    Days0To30,
+    Days31To60,
+    Days61To90,
+    Days90Plus,
+    NoDueDate
+}
+
+// Provides all payment-status and aging data rendered by the receivables report.
+public sealed record ReceivablesReportSnapshot(
+    int InvoiceCount,
+    int PaidCount,
+    int PartialCount,
+    int UnpaidCount,
+    ReceivableAgingSummarySnapshot[] AgingSummaries,
+    AgedReceivableSnapshot[] AgedReceivables);
+
+// Provides one customer row in the A/R aging summary.
+public sealed record ReceivableAgingSummarySnapshot(
+    string Customer,
+    decimal Current,
+    decimal Days0To30,
+    decimal Days31To60,
+    decimal Days61To90,
+    decimal Days90Plus,
+    decimal NoDueDate)
+{
+    public decimal Total => Current + Days0To30 + Days31To60 + Days61To90 + Days90Plus + NoDueDate;
+}
+
+// Provides one outstanding invoice row in the aged receivables table.
+public sealed record AgedReceivableSnapshot(
+    string Customer,
+    string InvoiceId,
+    decimal Outstanding,
+    int? DaysOverdue,
+    ReceivableAgingBucket Bucket);
 
 // Provides calculated values rendered by the revenue report.
 public sealed record RevenueReportSnapshot(

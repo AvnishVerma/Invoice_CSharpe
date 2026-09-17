@@ -1,0 +1,171 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:scottPlot="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
+             x:Class="LedgerNest.Desktop.Views.ReceivablesReportView"
+             x:CompileBindings="False">
+  <UserControl.Styles>
+    <Style Selector="Border.reportCard">
+      <Setter Property="Background" Value="#FBF5FF" />
+      <Setter Property="BorderBrush" Value="#E4DEE8" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="Button.exportButton">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="#6B6B6B" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+    <Style Selector="TextBlock.tableHeader">
+      <Setter Property="Foreground" Value="#6B6B6B" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.tableCell">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16" Spacing="14">
+      <Border Classes="reportCard" Padding="20,18">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Payment Status Breakdown" FontSize="15" FontWeight="SemiBold" />
+          <Grid ColumnDefinitions="220,26,*" MinHeight="210">
+            <scottPlot:AvaPlot x:Name="PaymentStatusChart" Width="220" Height="210" />
+            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="16">
+              <Grid ColumnDefinitions="14,10,*">
+                <Border Width="13" Height="13" CornerRadius="3" Background="#22C55E" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding PaidLegend}" FontSize="13" FontWeight="SemiBold" />
+              </Grid>
+              <Grid ColumnDefinitions="14,10,*">
+                <Border Width="13" Height="13" CornerRadius="3" Background="#F59E0B" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding PartialLegend}" FontSize="13" FontWeight="SemiBold" />
+              </Grid>
+              <Grid ColumnDefinitions="14,10,*">
+                <Border Width="13" Height="13" CornerRadius="3" Background="#EF4444" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding UnpaidLegend}" FontSize="13" FontWeight="SemiBold" />
+              </Grid>
+              <TextBlock Text="{Binding InvoiceCountText}" Foreground="#777777" FontSize="12" Margin="0,2,0,0" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="reportCard">
+        <StackPanel>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,14">
+            <TextBlock Text="A/R Aging Summary" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+              <Button Classes="exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export aging summary as CSV" Content="↓  Export CSV" />
+              <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export aging summary as PDF" Content="↓  Export PDF" />
+            </StackPanel>
+          </Grid>
+          <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="20,9">
+            <Grid ColumnDefinitions="1.6*,*,*,*,*,*,*,*">
+              <TextBlock Classes="tableHeader" Text="CUSTOMER" />
+              <TextBlock Grid.Column="1" Classes="tableHeader" Text="CURRENT" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="2" Classes="tableHeader" Text="0–30 DAYS" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" Classes="tableHeader" Text="31–60 DAYS" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="4" Classes="tableHeader" Text="61–90 DAYS" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="5" Classes="tableHeader" Text="90+ DAYS" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="6" Classes="tableHeader" Text="NO DUE DATE" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="7" Classes="tableHeader" Text="TOTAL" HorizontalAlignment="Right" />
+            </Grid>
+          </Border>
+          <ItemsControl ItemsSource="{Binding AgingRows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,13">
+                  <Grid ColumnDefinitions="1.6*,*,*,*,*,*,*,*">
+                    <TextBlock Classes="tableCell" Text="{Binding Customer}" />
+                    <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Current}" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding Days0To30}" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Days31To60}" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Days61To90}" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Days90Plus}" HorizontalAlignment="Right" />
+                    <TextBlock Grid.Column="6" Classes="tableCell" Text="{Binding NoDueDate}" HorizontalAlignment="Right" Foreground="#777777" />
+                    <TextBlock Grid.Column="7" Classes="tableCell" Text="{Binding Total}" HorizontalAlignment="Right" Foreground="#EF4444" FontWeight="SemiBold" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Border IsVisible="{Binding HasNoAgingRows}" BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,20">
+            <TextBlock Text="No outstanding receivables for this period." Foreground="#777777" HorizontalAlignment="Center" />
+          </Border>
+          <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,13">
+            <Grid ColumnDefinitions="1.6*,*,*,*,*,*,*,*">
+              <TextBlock Classes="tableCell" Text="Total" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding AgingTotals.Current}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding AgingTotals.Days0To30}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding AgingTotals.Days31To60}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding AgingTotals.Days61To90}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding AgingTotals.Days90Plus}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="6" Classes="tableCell" Text="{Binding AgingTotals.NoDueDate}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="7" Classes="tableCell" Text="{Binding AgingTotals.Total}" HorizontalAlignment="Right" Foreground="#EF4444" FontWeight="Bold" />
+            </Grid>
+          </Border>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,13">
+            <TextBlock Text="{Binding AgingRange}" FontSize="13" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold" />
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="reportCard">
+        <StackPanel>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,14">
+            <TextBlock Text="{Binding AgedTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+              <Button Classes="exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export aged receivables as CSV" Content="↓  Export CSV" />
+              <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export aged receivables as PDF" Content="↓  Export PDF" />
+            </StackPanel>
+          </Grid>
+          <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="20,9">
+            <Grid ColumnDefinitions="1.5*,1.2*,*,*,*">
+              <TextBlock Classes="tableHeader" Text="CUSTOMER" />
+              <TextBlock Grid.Column="1" Classes="tableHeader" Text="INVOICE ID" />
+              <TextBlock Grid.Column="2" Classes="tableHeader" Text="OUTSTANDING" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" Classes="tableHeader" Text="DAYS OVERDUE" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="4" Classes="tableHeader" Text="BUCKET" HorizontalAlignment="Right" />
+            </Grid>
+          </Border>
+          <ItemsControl ItemsSource="{Binding AgedRows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,13">
+                  <Grid ColumnDefinitions="1.5*,1.2*,*,*,*">
+                    <TextBlock Classes="tableCell" Text="{Binding Customer}" />
+                    <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding InvoiceId}" Foreground="#777777" />
+                    <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding Outstanding}" HorizontalAlignment="Right" Foreground="#EF4444" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding DaysOverdue}" HorizontalAlignment="Right" />
+                    <Border Grid.Column="4" Background="#EDE9EE" CornerRadius="5" Padding="9,4" HorizontalAlignment="Right">
+                      <TextBlock Text="{Binding Bucket}" FontSize="11" Foreground="#777777" />
+                    </Border>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Border IsVisible="{Binding HasNoAgedRows}" BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,20">
+            <TextBlock Text="No aged receivables for this period." Foreground="#777777" HorizontalAlignment="Center" />
+          </Border>
+          <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,13">
+            <Grid ColumnDefinitions="1.5*,1.2*,*,*,*">
+              <TextBlock Classes="tableCell" Text="Total" FontWeight="SemiBold" />
+              <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding AgedTotal}" HorizontalAlignment="Right" Foreground="#EF4444" FontWeight="Bold" />
+            </Grid>
+          </Border>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,13">
+            <TextBlock Text="{Binding AgedRange}" FontSize="13" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

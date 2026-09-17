@@ -40,8 +40,10 @@ public partial class MainWindow
         }
         else if (name == "Receivables")
         {
-            body.Children.Add(DonutCard());
-            body.Children.Add(ReportTable("Aged Receivables (1)", report.Rows, true, "Receivables"));
+            return new ReceivablesReportView(new ReceivablesReportViewModel(
+                Model.BuildReceivablesReport(),
+                () => ExportReportCsv("Receivables"),
+                () => ExportReportPdf("Receivables")));
         }
         else if (name == "Tax")
         {
@@ -310,24 +312,6 @@ public partial class MainWindow
             Padding = new Thickness(14, header ? 10 : 13),
             Child = Ui.Columns("1.05*,.65*,*,*,*,*,*,.65*", columns)
         };
-    }
-
-    // Performs the donut card action for this screen or workflow.
-    private static Control DonutCard()
-    {
-        var chart = new ScottPlot.Avalonia.AvaPlot { Width = 260, Height = 240 };
-        var pie = chart.Plot.Add.Pie([
-            new ScottPlot.PieSlice { Value = 1, Label = "Paid", LegendText = "Paid", FillColor = ScottPlot.Color.FromHex("#22C55E") },
-            new ScottPlot.PieSlice { Value = 1, Label = "Unpaid", LegendText = "Unpaid", FillColor = ScottPlot.Color.FromHex("#EF4444") }
-        ]);
-        pie.DonutFraction = .55;
-        pie.SliceLabelDistance = .65;
-        chart.Plot.Axes.Frameless();
-        chart.Plot.Legend.IsVisible = false;
-        chart.Refresh();
-
-        var legend = Ui.Stack(14, Legend("#22C55E", "Paid  1  (50.0%)"), Legend("#F59E0B", "Partial  0  (0.0%)"), Legend("#EF4444", "Unpaid  1  (50.0%)"), Ui.Text("2 total invoices", 13, color: Ui.Muted));
-        return Ui.Card(Ui.Stack(10, Ui.Text("Payment Status Breakdown", 16, true), Ui.Columns("300,30,*", chart, new Border(), legend)), 20);
     }
 
     // Performs the customer revenue card action for this screen or workflow.

@@ -71,8 +71,8 @@
 
             <TextBlock Text="PERIOD" FontSize="11" FontWeight="Bold" Foreground="#777777" />
             <RadioButton GroupName="ReportPeriod" Content="Last 30 days" Margin="0,2" />
-            <RadioButton GroupName="ReportPeriod" Content="Last 3 months" Margin="0,2" />
-            <RadioButton GroupName="ReportPeriod" Content="Last 6 months" IsChecked="True" Margin="0,2" FontWeight="SemiBold" />
+            <RadioButton GroupName="ReportPeriod" Content="Last 3 months" IsChecked="{Binding IsThreeMonthPeriod, Mode=OneWay}" Margin="0,2" />
+            <RadioButton GroupName="ReportPeriod" Content="Last 6 months" IsChecked="{Binding IsSixMonthPeriod, Mode=OneWay}" Margin="0,2" />
             <RadioButton GroupName="ReportPeriod" Content="This year" Margin="0,2" />
             <RadioButton GroupName="ReportPeriod" Content="This FY" Margin="0,2" />
             <RadioButton GroupName="ReportPeriod" Content="Last FY" Margin="0,2" />

@@ -914,6 +914,7 @@ internal static class Program
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = new MainWindowViewModel(factory, path);
         model.InvoiceCustomer[0].Value = "Receivable customer";
+        model.InvoiceDetails[2].Value = DateTime.Today.AddDays(-45).ToString("yyyy-MM-dd");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Service", Price = 100, Quantity = 2, TaxRate = 5 });
         model.InvoiceOptions[0].Value = "Amount";
         model.InvoiceOptions[1].Value = "10";
@@ -925,6 +926,13 @@ internal static class Program
             Check(loaded.BuildReport("Revenue").Outstanding == balance, "Revenue summary must reflect outstanding immediately");
             var report = loaded.BuildReport("Receivables");
             Check(balance > 0 ? report.Rows.Length == 2 && report.Rows[1][3] == $"₹ {balance:0.00}" : report.Rows.Length == 1, "Receivables must include only unpaid balances");
+            var aging = loaded.BuildReceivablesReport();
+            Check(aging.InvoiceCount == 1 && aging.PaidCount == (balance == 0 ? 1 : 0), "Receivables status summary must calculate paid invoices from the remaining balance");
+            Check(aging.PartialCount == (paid == "0.00" || balance == 0 ? 0 : 1) && aging.UnpaidCount == (paid == "0.00" && balance > 0 ? 1 : 0), "Receivables status summary must distinguish partial and unpaid invoices");
+            Check(balance > 0
+                ? aging.AgedReceivables is [{ Bucket: ReceivableAgingBucket.Days31To60 }] && aging.AgingSummaries.Single().Days31To60 == balance
+                : aging.AgedReceivables.Length == 0 && aging.AgingSummaries.Length == 0,
+                "Receivables aging must use the persisted invoice due date and remove fully paid invoices");
         }
         Verify(model, "0.00", "200.00", "Unpaid", 200);
         Verify(new MainWindowViewModel(factory, path), "0.00", "200.00", "Unpaid", 200);
