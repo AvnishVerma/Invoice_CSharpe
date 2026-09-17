@@ -99,8 +99,28 @@
                            FontWeight="Bold"
                            TextAlignment="Center" />
               </StackPanel>
+                <StackPanel x:Name="PaymentActionPanel"
+                            Spacing="8">
+                    <Button x:Name="ApplyPaymentButton"
+                            Tag="Apply Payment"
+                            Width="72"
+                            Height="72"
+                            Background="#1A009688"
+                            BorderBrush="#59009688"
+                            BorderThickness="2">
+                        <TextBlock Text=""
+                                   FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                                   FontSize="34"
+                                   Foreground="#00897B" />
+                    </Button>
+                    <TextBlock Text="Payment"
+                               Foreground="#00897B"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               TextAlignment="Center" />
+                </StackPanel>
 
-              <StackPanel Spacing="8">
+                <StackPanel Spacing="8">
                 <Button x:Name="PreviewButton"
                         Width="72"
                         Height="72"
@@ -114,25 +134,6 @@
                 </Button>
                 <TextBlock Text="Preview PDF"
                            Foreground="#9C27B0"
-                           FontSize="13"
-                           FontWeight="Bold"
-                           TextAlignment="Center" />
-              </StackPanel>
-
-              <StackPanel Spacing="8">
-                <Button x:Name="DownloadButton"
-                        Width="72"
-                        Height="72"
-                        Background="#1A673AB7"
-                        BorderBrush="#59673AB7"
-                        BorderThickness="2">
-                  <TextBlock Text=""
-                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
-                             FontSize="34"
-                             Foreground="#673AB7" />
-                </Button>
-                <TextBlock Text="Download PDF"
-                           Foreground="#673AB7"
                            FontSize="13"
                            FontWeight="Bold"
                            TextAlignment="Center" />
@@ -157,26 +158,6 @@
                            TextAlignment="Center" />
               </StackPanel>
 
-              <StackPanel x:Name="PaymentActionPanel"
-                          Spacing="8">
-                <Button x:Name="ApplyPaymentButton"
-                        Tag="Apply Payment"
-                        Width="72"
-                        Height="72"
-                        Background="#1A009688"
-                        BorderBrush="#59009688"
-                        BorderThickness="2">
-                  <TextBlock Text=""
-                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
-                             FontSize="34"
-                             Foreground="#00897B" />
-                </Button>
-                <TextBlock Text="Payment"
-                           Foreground="#00897B"
-                           FontSize="13"
-                           FontWeight="Bold"
-                           TextAlignment="Center" />
-              </StackPanel>
             </StackPanel>
 
             <Button x:Name="CreateNewButton"

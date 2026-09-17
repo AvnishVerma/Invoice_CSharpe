@@ -27,9 +27,9 @@ public partial class MainWindow
         {
             Number = index + 1,
             InvoiceTitle = "Invoice #" + invoice.Name,
-            CustomerLine = "☉ " + invoice["Customer"],
+            CustomerLine = "👤 " + invoice["Customer"],
             CustomerName = invoice["Customer"],
-            DateLine = "▣ " + invoice["Date"],
+            DateLine = "📅 " + invoice["Date"],
             RawDate = invoice["Date"],
             TotalText = "Rs. " + invoice["Total"],
             Status = invoice["Status"],
