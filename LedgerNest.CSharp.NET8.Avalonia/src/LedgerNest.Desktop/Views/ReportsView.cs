@@ -79,7 +79,10 @@ public partial class MainWindow
         }
         else if (name == "Daily Report")
         {
-            body.Children.Add(DailyReportCard(report.Rows));
+            return new DailyReportView(new DailyReportViewModel(
+                Model.BuildDailySalesReport(),
+                () => ExportReportCsv("Daily Report"),
+                () => ExportReportPdf("Daily Report")));
         }
         else
         {
@@ -314,12 +317,6 @@ public partial class MainWindow
             Padding = new Thickness(14, header ? 10 : 13),
             Child = Ui.Columns("1.05*,.65*,*,*,*,*,*,.65*", columns)
         };
-    }
-
-    // Performs the daily report card action for this screen or workflow.
-    private Control DailyReportCard(string[][] rows)
-    {
-        return Ui.Card(Ui.Stack(14, Ui.Columns("*,Auto", Ui.Text("Daily Sales & Profit", 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Daily Report")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Daily Report")))), Ui.Wrap(Ui.Button("Today", () => { }, true), Ui.Button("Last 30 days", () => { }), Ui.Button("Month & Year", () => { }), Ui.Button("Custom Range", () => { })), ReportTable("", rows, false, "Daily Report")), 20);
     }
 
     // Performs the legend action for this screen or workflow.

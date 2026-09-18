@@ -1030,6 +1030,12 @@ internal static class Program
         var statusViewModel = new InvoiceStatusReportViewModel(invoiceStatuses, () => Task.CompletedTask, () => Task.CompletedTask);
         statusViewModel.SelectStatusCommand.Execute("Paid");
         Check(statusViewModel.VisibleRows.Length == 1 && statusViewModel.VisibleRows[0].Status == "Paid", "Invoice status report chips must filter displayed rows");
+        var daily = model.BuildDailySalesReport();
+        Check(daily.Days.Length == 1 && daily.Days[0].InvoiceCount == 2 && daily.Days[0].Sales == 168, "Daily report must group invoice count and sales by invoice date");
+        Check(daily.Days[0].Cogs == 40 && daily.Days[0].Profit == 110 && daily.Days[0].MissingCostItemCount == 1, "Daily report must calculate COGS, profit, and missing purchase-price warnings");
+        var dailyViewModel = new DailyReportViewModel(daily, () => Task.CompletedTask, () => Task.CompletedTask);
+        dailyViewModel.SelectModeCommand.Execute("Last 30 days");
+        Check(dailyViewModel.Rows.Length == 1 && dailyViewModel.HasMissingCosts, "Daily report period controls must refresh visible rows and warnings");
     }
 
     private static void CheckChromiumPrinterValidation()

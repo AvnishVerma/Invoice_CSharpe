@@ -36,7 +36,7 @@ public partial class MainWindowViewModel
             "Products" => ProductReportRows(),
             "Quotations" => new string[][] { ["Metric", "Value"], ["Quotations Issued", Invoices.Count(i => i["Type"] == "Quotation" && !DeletedRecords.Contains(i.Id)).ToString()], ["Invoices in Period", invoices.Length.ToString()] },
             "Invoice Status" => invoices.Select(i => new[] { i.Name, i["Customer"], i["Date"], Money(ParseDecimal(i["Total"])), i["Status"], Money(ParseDecimal(i["Outstanding"])) }).Prepend(["Invoice", "Customer", "Date", "Total", "Status", "Outstanding"]).ToArray(),
-            "Daily Report" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => r[0]).Prepend(["Date", "Invoices", "Sales", "Collected", "Outstanding"]).ToArray(),
+            "Daily Report" => DailyReportRows(),
             _ => new string[][] { ["Metric", "Value"] }
         };
 
@@ -322,6 +322,61 @@ public partial class MainWindowViewModel
         return new InvoiceStatusReportSnapshot(rows);
     }
 
+    // Builds daily sales, cost, profit, and missing-cost totals from saved invoice snapshots.
+    public DailySalesReportSnapshot BuildDailySalesReport()
+    {
+        if (dbFactory == null)
+        {
+            var days = ActiveInvoices.GroupBy(invoice => DateTime.TryParse(invoice["Date"], out var date) ? date.Date : DateTime.Today)
+                .Select(group => new DailySalesDaySnapshot(
+                    group.Key,
+                    group.Count(),
+                    group.Sum(invoice => ParseDecimal(invoice["Total"])),
+                    group.Sum(invoice => ParseDecimal(invoice["COGS"])),
+                    group.Sum(invoice => ParseDecimal(invoice["Profit"])),
+                    0))
+                .OrderBy(day => day.Date)
+                .ToArray();
+            return new DailySalesReportSnapshot(days);
+        }
+
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var invoices = db.Invoices.AsNoTracking().Include(invoice => invoice.Items)
+            .Where(invoice => invoice.DeletedAt == null && invoice.Type == "Invoice" && invoice.Status != "Draft")
+            .ToArray();
+        var daily = invoices.GroupBy(invoice => invoice.InvoiceDate.Date)
+            .Select(group =>
+            {
+                var revenue = group.Sum(invoice => invoice.Items.Sum(item => RevenueItemNet(invoice, item)));
+                var cogs = group.Sum(invoice => invoice.Items.Sum(item => item.PurchasePrice * item.Quantity));
+                return new DailySalesDaySnapshot(
+                    group.Key,
+                    group.Count(),
+                    group.Sum(invoice => invoice.GrandTotal),
+                    cogs,
+                    revenue - cogs,
+                    group.Sum(invoice => invoice.Items.Count(item => item.PurchasePrice <= 0)));
+            })
+            .OrderBy(day => day.Date)
+            .ToArray();
+        return new DailySalesReportSnapshot(daily);
+    }
+
+    // Formats daily sales calculations for CSV and PDF report exports.
+    private string[][] DailyReportRows() => BuildDailySalesReport().Days
+        .Select(day => new[]
+        {
+            day.Date.ToString("dd/MM/yyyy"),
+            day.InvoiceCount.ToString(),
+            Money(day.Sales),
+            Money(day.Cogs),
+            Money(day.Profit),
+            (day.Sales == 0 ? 0 : day.Profit * 100 / day.Sales).ToString("0.#") + "%"
+        })
+        .Prepend(["Date", "Invoices", "Sales", "COGS", "Profit", "Margin"])
+        .ToArray();
+
     private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount, decimal PurchasePrice);
     private sealed record RevenueInvoiceCalculation(Invoice Invoice, decimal Revenue, decimal Cogs, decimal Profit);
 
@@ -431,6 +486,18 @@ public sealed record InvoiceStatusRowSnapshot(
     decimal Outstanding,
     string Status,
     bool IsOverdue);
+
+// Provides all daily sales rows available to the interactive date filters.
+public sealed record DailySalesReportSnapshot(DailySalesDaySnapshot[] Days);
+
+// Provides one day's invoice, sales, cost, profit, and missing-cost totals.
+public sealed record DailySalesDaySnapshot(
+    DateTime Date,
+    int InvoiceCount,
+    decimal Sales,
+    decimal Cogs,
+    decimal Profit,
+    int MissingCostItemCount);
 
 // Provides revenue totals and ledger activity for one customer.
 public sealed record CustomerReportCustomerSnapshot(

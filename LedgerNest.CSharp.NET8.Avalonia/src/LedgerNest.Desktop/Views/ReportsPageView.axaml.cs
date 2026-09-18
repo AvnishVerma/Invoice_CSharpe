@@ -61,7 +61,7 @@ public sealed class ReportsPageModel : INotifyPropertyChanged
     public ICommand RefreshCommand { get; }
     public ICommand SelectReportCommand { get; }
     public bool IsThreeMonthPeriod => SelectedReport is "Receivables" or "Customers" or "Products";
-    public bool IsSixMonthPeriod => SelectedReport is not ("Receivables" or "Customers" or "Products" or "Invoice Status");
+    public bool IsSixMonthPeriod => SelectedReport is not ("Receivables" or "Customers" or "Products" or "Invoice Status" or "Daily Report");
 
     // Gets or changes the selected report tab and refreshes the hosted report content.
     public string SelectedReport
