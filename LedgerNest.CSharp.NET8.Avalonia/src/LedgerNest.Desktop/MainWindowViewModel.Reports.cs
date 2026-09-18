@@ -34,6 +34,7 @@ public partial class MainWindowViewModel
             "Tax" => invoices.GroupBy(i => i["Date"]).Select(g => new[] { g.Key, Money(g.Sum(i => ParseDecimal(i["Tax"]))) }).OrderBy(r => r[0]).Prepend(["Date", "Tax"]).ToArray(),
             "Customers" => invoices.GroupBy(i => i["Customer"]).Select(g => new[] { string.IsNullOrWhiteSpace(g.Key) ? "Unknown" : g.Key, g.Count().ToString(), Money(g.Sum(i => ParseDecimal(i["Total"]))), Money(g.Sum(i => ParseDecimal(i["Paid"]))), Money(g.Sum(i => ParseDecimal(i["Outstanding"]))) }).OrderByDescending(r => ParseDecimal(r[2].Replace("₹", ""))).Prepend(["Customer", "Invoices", "Billed", "Collected", "Outstanding"]).ToArray(),
             "Products" => ProductReportRows(),
+            "Inventory" => InventoryReportRows(),
             "Quotations" => new string[][] { ["Metric", "Value"], ["Quotations Issued", Invoices.Count(i => i["Type"] == "Quotation" && !DeletedRecords.Contains(i.Id)).ToString()], ["Invoices in Period", invoices.Length.ToString()] },
             "Invoice Status" => invoices.Select(i => new[] { i.Name, i["Customer"], i["Date"], Money(ParseDecimal(i["Total"])), i["Status"], Money(ParseDecimal(i["Outstanding"])) }).Prepend(["Invoice", "Customer", "Date", "Total", "Status", "Outstanding"]).ToArray(),
             "Daily Report" => DailyReportRows(),
@@ -377,6 +378,37 @@ public partial class MainWindowViewModel
         .Prepend(["Date", "Invoices", "Sales", "COGS", "Profit", "Margin"])
         .ToArray();
 
+    // Builds inventory valuation totals from finite-stock product records.
+    public InventoryReportSnapshot BuildInventoryReport()
+    {
+        var included = Products.Where(product => !product["Type"].Equals("Service", StringComparison.OrdinalIgnoreCase)
+                && !(bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited))
+            .Select(product =>
+            {
+                var stock = Math.Max(0, ParseDecimal(product["Stock"]));
+                var purchasePrice = Math.Max(0, ParseDecimal(product["Purchase Price"]));
+                var salePrice = Math.Max(0, ParseDecimal(product["Sale Price"]));
+                return new InventoryProductSnapshot(product.Name, stock, purchasePrice, salePrice, stock * purchasePrice, stock * salePrice);
+            })
+            .OrderByDescending(product => product.StockValue)
+            .ThenBy(product => product.Name)
+            .ToArray();
+        return new InventoryReportSnapshot(
+            included.Sum(product => product.StockValue),
+            included.Sum(product => product.SaleValue),
+            included.Sum(product => product.SaleValue - product.StockValue),
+            included.Sum(product => product.Stock),
+            included.Length,
+            Products.Count - included.Length,
+            included);
+    }
+
+    // Formats inventory valuation rows for CSV and PDF exports.
+    private string[][] InventoryReportRows() => BuildInventoryReport().Products
+        .Select(product => new[] { product.Name, product.Stock.ToString("0.###"), Money(product.PurchasePrice), Money(product.StockValue), Money(product.SaleValue) })
+        .Prepend(["Product", "Stock", "Purchase Price", "Stock Value", "Sale Value"])
+        .ToArray();
+
     private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount, decimal PurchasePrice);
     private sealed record RevenueInvoiceCalculation(Invoice Invoice, decimal Revenue, decimal Cogs, decimal Profit);
 
@@ -498,6 +530,25 @@ public sealed record DailySalesDaySnapshot(
     decimal Cogs,
     decimal Profit,
     int MissingCostItemCount);
+
+// Provides inventory valuation KPIs and finite-stock product rows.
+public sealed record InventoryReportSnapshot(
+    decimal InventoryValue,
+    decimal PotentialSaleValue,
+    decimal ProfitLockedInStock,
+    decimal TotalUnits,
+    int ProductsTracked,
+    int ExcludedItemCount,
+    InventoryProductSnapshot[] Products);
+
+// Provides stock and valuation amounts for one finite-stock product.
+public sealed record InventoryProductSnapshot(
+    string Name,
+    decimal Stock,
+    decimal PurchasePrice,
+    decimal SalePrice,
+    decimal StockValue,
+    decimal SaleValue);
 
 // Provides revenue totals and ledger activity for one customer.
 public sealed record CustomerReportCustomerSnapshot(

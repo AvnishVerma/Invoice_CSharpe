@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InventoryReportView"
+             x:CompileBindings="False">
+  <UserControl.Styles>
+    <Style Selector="Border.metricCard"><Setter Property="Background" Value="#FBF5FF"/><Setter Property="BorderBrush" Value="#E4DEE8"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="11"/><Setter Property="Padding" Value="16"/></Style>
+    <Style Selector="Button.exportButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="#6B6B6B"/><Setter Property="FontSize" Value="12"/><Setter Property="Padding" Value="8,4"/></Style>
+    <Style Selector="TextBlock.tableHeader"><Setter Property="Foreground" Value="#6B6B6B"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    <Style Selector="TextBlock.tableCell"><Setter Property="FontSize" Value="13"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    <Style Selector="Button.pageButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="7"/><Setter Property="FontSize" Value="18"/></Style>
+  </UserControl.Styles>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16" Spacing="14">
+      <Grid ColumnDefinitions="*,14,*,14,*">
+        <Border Grid.Column="0" Classes="metricCard"><StackPanel Spacing="14"><TextBlock Text="▣   Inventory Value Blocked" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding InventoryValue}" Foreground="#0D47A1" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+        <Border Grid.Column="2" Classes="metricCard"><StackPanel Spacing="14"><TextBlock Text="◇   Potential Sale Value" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding PotentialSaleValue}" Foreground="#7C3AED" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+        <Border Grid.Column="4" Classes="metricCard"><StackPanel Spacing="14"><TextBlock Text="▣   Profit Locked in Stock" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding ProfitLockedInStock}" Foreground="#16A34A" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+      </Grid>
+      <Grid ColumnDefinitions="*,14,*">
+        <Border Grid.Column="0" Classes="metricCard"><StackPanel Spacing="14"><TextBlock Text="▤   Total Units" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding TotalUnits}" Foreground="#087E73" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+        <Border Grid.Column="2" Classes="metricCard"><StackPanel Spacing="14"><TextBlock Text="♙   Products Tracked" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding ProductsTracked}" Foreground="#273449" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+      </Grid>
+
+      <Border IsVisible="{Binding HasExcludedItems}" Background="#FFFBEA" BorderBrush="#F4C84A" BorderThickness="1" CornerRadius="8" Padding="14,10">
+        <Grid ColumnDefinitions="Auto,*"><TextBlock Text="⚠" Foreground="#EA8A00" FontSize="16"/><TextBlock Grid.Column="1" Text="{Binding ExclusionMessage}" Foreground="#A85B13" FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0"/></Grid>
+      </Border>
+
+      <Border Background="#FBF5FF" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="12">
+        <StackPanel>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,12"><TextBlock Text="Product Breakdown" FontSize="15" FontWeight="SemiBold"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6"><Button Classes="exportButton" Content="↓  Export CSV" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export inventory report as CSV"/><Button Classes="exportButton" Content="↓  Export PDF" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export inventory report as PDF"/></StackPanel></Grid>
+          <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="20,9">
+            <Grid ColumnDefinitions="2.4*,*,1.25*,1.25*,1.25*"><TextBlock Classes="tableHeader" Text="PRODUCT"/><TextBlock Grid.Column="1" Classes="tableHeader" Text="STOCK" HorizontalAlignment="Right"/><TextBlock Grid.Column="2" Classes="tableHeader" Text="PURCHASE PRICE" HorizontalAlignment="Right"/><TextBlock Grid.Column="3" Classes="tableHeader" Text="STOCK VALUE" HorizontalAlignment="Right"/><TextBlock Grid.Column="4" Classes="tableHeader" Text="SALE VALUE" HorizontalAlignment="Right"/></Grid>
+          </Border>
+          <ItemsControl ItemsSource="{Binding VisibleRows}">
+            <ItemsControl.ItemTemplate><DataTemplate>
+              <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,13"><Grid ColumnDefinitions="2.4*,*,1.25*,1.25*,1.25*"><TextBlock Classes="tableCell" Text="{Binding Name}" TextTrimming="CharacterEllipsis"/><TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Stock}" HorizontalAlignment="Right" Foreground="#777777"/><TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding PurchasePrice}" HorizontalAlignment="Right" Foreground="#777777"/><TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding StockValue}" HorizontalAlignment="Right" Foreground="#0D47A1" FontWeight="SemiBold"/><TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding SaleValue}" HorizontalAlignment="Right" Foreground="#777777"/></Grid></Border>
+            </DataTemplate></ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Border IsVisible="{Binding HasNoRows}" Padding="20,24"><TextBlock Text="No finite-stock products are available for inventory valuation." Foreground="#777777" HorizontalAlignment="Center"/></Border>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,13"><TextBlock Text="{Binding RangeText}" FontSize="13" VerticalAlignment="Center"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5"><Button Classes="pageButton" Content="‹" Command="{Binding PreviousPageCommand}" IsEnabled="{Binding CanPrevious}"/><TextBlock Text="{Binding PageText}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/><Button Classes="pageButton" Content="›" Command="{Binding NextPageCommand}" IsEnabled="{Binding CanNext}"/></StackPanel></Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

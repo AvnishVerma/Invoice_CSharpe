@@ -21,7 +21,7 @@ public partial class MainWindow
             reportTab = "Customers";
             reportCustomerFilter = pendingCustomer;
         }
-        string[] names = ["Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report"];
+        string[] names = ["Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report", "Inventory"];
         return new ReportsPageView(new ReportsPageModel(names, reportTab, ReportContent, selected => { reportTab = selected; if (selected != "Customers") reportCustomerFilter = ""; }));
     }
     // Performs the report content action for this screen or workflow.
@@ -83,6 +83,13 @@ public partial class MainWindow
                 Model.BuildDailySalesReport(),
                 () => ExportReportCsv("Daily Report"),
                 () => ExportReportPdf("Daily Report")));
+        }
+        else if (name == "Inventory")
+        {
+            return new InventoryReportView(new InventoryReportViewModel(
+                Model.BuildInventoryReport(),
+                () => ExportReportCsv("Inventory"),
+                () => ExportReportPdf("Inventory")));
         }
         else
         {

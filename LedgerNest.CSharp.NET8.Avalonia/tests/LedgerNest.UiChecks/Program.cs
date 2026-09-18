@@ -1036,6 +1036,22 @@ internal static class Program
         var dailyViewModel = new DailyReportViewModel(daily, () => Task.CompletedTask, () => Task.CompletedTask);
         dailyViewModel.SelectModeCommand.Execute("Last 30 days");
         Check(dailyViewModel.Rows.Length == 1 && dailyViewModel.HasMissingCosts, "Daily report period controls must refresh visible rows and warnings");
+        var service = FormCatalog.Product();
+        service.First(field => field.Label == "Type").Value = "Service";
+        service.First(field => field.Label == "Name").Value = "Consulting";
+        service.First(field => field.Label == "Sale Price").Value = "500";
+        Check(model.SaveRecord("Product", service), "Inventory report service fixture must save");
+        var unlimited = FormCatalog.Product();
+        unlimited.First(field => field.Label == "Name").Value = "Unlimited product";
+        unlimited.First(field => field.Label == "Sale Price").Value = "20";
+        unlimited.First(field => field.Label == "Purchase Price").Value = "10";
+        unlimited.First(field => field.Label == "Stock").Value = "999";
+        unlimited.First(field => field.Label == "Unlimited stock").IsChecked = true;
+        Check(model.SaveRecord("Product", unlimited), "Inventory report unlimited-stock fixture must save");
+        var inventory = model.BuildInventoryReport();
+        var finiteStock = decimal.Parse(model.Products.Single(saved => saved.Name == "Costed product")["Stock"]);
+        Check(inventory.ProductsTracked == 1 && inventory.ExcludedItemCount == 2 && inventory.TotalUnits == finiteStock, "Inventory report must exclude services and unlimited-stock products from tracked inventory");
+        Check(inventory.InventoryValue == finiteStock * 40 && inventory.PotentialSaleValue == finiteStock * 100 && inventory.ProfitLockedInStock == finiteStock * 60, "Inventory report must calculate purchase, sale, and potential-profit values from finite stock");
     }
 
     private static void CheckChromiumPrinterValidation()

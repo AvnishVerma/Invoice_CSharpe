@@ -21,7 +21,8 @@ public sealed class ReportTabIconConverter : IValueConverter
         ["Products"] = "\ue1a1",
         ["Quotations"] = "\uf1b6",
         ["Invoice Status"] = "\ue8ec",
-        ["Daily Report"] = "\ue935"
+        ["Daily Report"] = "\ue935",
+        ["Inventory"] = "\ue88a"
     };
 
     // Converts a report name into the icon glyph displayed beside it.
@@ -61,7 +62,7 @@ public sealed class ReportsPageModel : INotifyPropertyChanged
     public ICommand RefreshCommand { get; }
     public ICommand SelectReportCommand { get; }
     public bool IsThreeMonthPeriod => SelectedReport is "Receivables" or "Customers" or "Products";
-    public bool IsSixMonthPeriod => SelectedReport is not ("Receivables" or "Customers" or "Products" or "Invoice Status" or "Daily Report");
+    public bool IsSixMonthPeriod => SelectedReport is not ("Receivables" or "Customers" or "Products" or "Invoice Status" or "Daily Report" or "Inventory");
 
     // Gets or changes the selected report tab and refreshes the hosted report content.
     public string SelectedReport
