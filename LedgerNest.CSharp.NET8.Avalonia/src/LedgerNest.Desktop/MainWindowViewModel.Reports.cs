@@ -298,6 +298,30 @@ public partial class MainWindowViewModel
         return new ProductReportSnapshot(products, materialized.Count(line => line.PurchasePrice <= 0));
     }
 
+    // Builds invoice status rows with saved totals, payment balances, and overdue state.
+    public InvoiceStatusReportSnapshot BuildInvoiceStatusReport()
+    {
+        var rows = ActiveInvoices.Select(invoice =>
+        {
+            var date = DateTime.TryParse(invoice["Date"], out var parsedDate) ? parsedDate.Date : DateTime.Today;
+            var dueDate = DateTime.TryParse(invoice["Due Date"], out var parsedDueDate) ? parsedDueDate.Date : (DateTime?)null;
+            var total = ParseDecimal(invoice["Total"]);
+            var paid = ParseDecimal(invoice["Paid"]);
+            var outstanding = ParseDecimal(invoice["Outstanding"]);
+            var status = outstanding <= .005m ? "Paid" : paid > .005m ? "Partial" : "Unpaid";
+            return new InvoiceStatusRowSnapshot(
+                date,
+                invoice.Name,
+                string.IsNullOrWhiteSpace(invoice["Customer"]) ? "Cash" : invoice["Customer"],
+                total,
+                paid,
+                outstanding,
+                status,
+                outstanding > .005m && dueDate.HasValue && dueDate.Value < DateTime.Today);
+        }).OrderByDescending(row => row.Date).ThenByDescending(row => row.InvoiceId).ToArray();
+        return new InvoiceStatusReportSnapshot(rows);
+    }
+
     private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount, decimal PurchasePrice);
     private sealed record RevenueInvoiceCalculation(Invoice Invoice, decimal Revenue, decimal Cogs, decimal Profit);
 
@@ -393,6 +417,20 @@ public sealed record ProductReportProductSnapshot(
     decimal DiscountGiven,
     decimal Profit,
     decimal Margin);
+
+// Provides invoice rows used by date and payment-status filters.
+public sealed record InvoiceStatusReportSnapshot(InvoiceStatusRowSnapshot[] Invoices);
+
+// Provides one invoice's date, customer, amounts, payment status, and overdue state.
+public sealed record InvoiceStatusRowSnapshot(
+    DateTime Date,
+    string InvoiceId,
+    string Customer,
+    decimal Total,
+    decimal Paid,
+    decimal Outstanding,
+    string Status,
+    bool IsOverdue);
 
 // Provides revenue totals and ledger activity for one customer.
 public sealed record CustomerReportCustomerSnapshot(

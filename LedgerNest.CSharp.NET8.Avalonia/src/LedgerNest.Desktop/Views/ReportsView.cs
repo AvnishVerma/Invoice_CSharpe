@@ -72,10 +72,10 @@ public partial class MainWindow
         }
         else if (name == "Invoice Status")
         {
-            body.Children.Add(Ui.Text($"ⓘ Showing invoices dated {DateTime.Today.AddDays(-30):dd/MM/yyyy} - {DateTime.Today:dd/MM/yyyy}", 12, color: Ui.Muted));
-            body.Children.Add(Ui.Wrap(Ui.Button("Last 30 days", () => { }, true), Ui.Button("Month & Year", () => { })));
-            body.Children.Add(ReportStats(("Total Invoices", report.InvoiceCount.ToString(), "receipt_long", "#0D47A1"), ("Paid", report.Rows.Count(r => r.Contains("Paid")).ToString(), "check_circle", "#16A34A"), ("Partial", report.Rows.Count(r => r.Contains("Partial")).ToString(), "hourglass_top", "#F59E0B"), ("Unpaid", report.Rows.Count(r => r.Contains("Unpaid")).ToString(), "info_outline", "#6B7280"), ("Overdue", "0", "info_outline", "#DC2626")));
-            body.Children.Add(ReportTable("", report.Rows, true, name));
+            return new InvoiceStatusReportView(new InvoiceStatusReportViewModel(
+                Model.BuildInvoiceStatusReport(),
+                () => ExportReportCsv("Invoice Status"),
+                () => ExportReportPdf("Invoice Status")));
         }
         else if (name == "Daily Report")
         {

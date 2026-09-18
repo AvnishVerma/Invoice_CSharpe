@@ -8,6 +8,7 @@ using Avalonia.VisualTree;
 using Avalonia.Styling;
 using LedgerNest.Application;
 using LedgerNest.Desktop;
+using LedgerNest.Desktop.Views;
 using LedgerNest.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using SkiaSharp;
@@ -1024,6 +1025,11 @@ internal static class Program
         var products = model.BuildProductReport();
         Check(products.Products.Length == 2 && products.Products[0].Name == "Costed product" && products.Products[0].Revenue == 100, "Product report must rank sold products by revenue");
         Check(products.Products[0].Profit == 60 && products.Products[0].Margin == 60 && products.MissingCostItemCount == 1, "Product report must calculate cost-based profit and flag missing purchase prices");
+        var invoiceStatuses = model.BuildInvoiceStatusReport();
+        Check(invoiceStatuses.Invoices.Length == 2 && invoiceStatuses.Invoices.Count(invoice => invoice.Status == "Paid") == 1 && invoiceStatuses.Invoices.Count(invoice => invoice.Status == "Unpaid") == 1, "Invoice status report must classify saved payment balances");
+        var statusViewModel = new InvoiceStatusReportViewModel(invoiceStatuses, () => Task.CompletedTask, () => Task.CompletedTask);
+        statusViewModel.SelectStatusCommand.Execute("Paid");
+        Check(statusViewModel.VisibleRows.Length == 1 && statusViewModel.VisibleRows[0].Status == "Paid", "Invoice status report chips must filter displayed rows");
     }
 
     private static void CheckChromiumPrinterValidation()
