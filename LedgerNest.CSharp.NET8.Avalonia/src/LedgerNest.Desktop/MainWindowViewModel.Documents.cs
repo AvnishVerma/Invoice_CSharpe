@@ -18,6 +18,22 @@ public partial class MainWindowViewModel
     // Performs the export document pdf action for this screen or workflow.
     public byte[] ExportDocumentPdf(UiRecord document)
     {
+        var context = BuildDocumentExportContext(document);
+        var bytes = DocumentPdf.Create(context.Invoice, context.Items, context.Business, context.PageSize, context.Landscape, context.Template, context.ThemeColor, context.Options);
+        Status = $"Exported {document.Name} PDF.";
+        return bytes;
+    }
+
+    // Creates self-contained invoice HTML for Chromium direct printing.
+    public string ExportDocumentHtml(UiRecord document)
+    {
+        var context = BuildDocumentExportContext(document);
+        return DocumentHtml.Create(context.Invoice, context.Items, context.Business, context.PageSize, context.Landscape, context.Template, context.ThemeColor, context.Options);
+    }
+
+    // Resolves the saved invoice, line items, and configured layout shared by PDF and HTML output.
+    private DocumentExportContext BuildDocumentExportContext(UiRecord document)
+    {
         Invoice invoice;
         if (dbFactory != null && document.SourceId > 0)
         {
@@ -65,9 +81,15 @@ public partial class MainWindowViewModel
             Checked("Invoice Settings", "Show Discount"),
             Checked("Invoice Settings", "Total"),
             Checked("PDF Settings", "Show Total Quantity"));
-        var bytes = DocumentPdf.Create(invoice, InvoiceItemsFor(document), business, Setting("PDF Settings", "Page Size"), Setting("PDF Settings", "Orientation") == "Landscape", Setting("PDF Settings", "Template"), Setting("PDF Settings", "Theme Color"), pdfOptions);
-        Status = $"Exported {document.Name} PDF.";
-        return bytes;
+        return new DocumentExportContext(
+            invoice,
+            InvoiceItemsFor(document),
+            business,
+            Setting("PDF Settings", "Page Size"),
+            Setting("PDF Settings", "Orientation") == "Landscape",
+            Setting("PDF Settings", "Template"),
+            Setting("PDF Settings", "Theme Color"),
+            pdfOptions);
     }
 
     // Performs the preview items for action for this screen or workflow.
@@ -81,6 +103,17 @@ public partial class MainWindowViewModel
         db.EnsureCurrentSchema();
         return db.InvoiceItems.AsNoTracking().Where(i => i.InvoiceId == document.SourceId).OrderBy(i => i.Id).ToArray();
     }
+
+    // Holds the resolved document and presentation settings used by each output renderer.
+    private sealed record DocumentExportContext(
+        Invoice Invoice,
+        InvoiceItem[] Items,
+        DocumentPdf.Business Business,
+        string PageSize,
+        bool Landscape,
+        string Template,
+        string ThemeColor,
+        DocumentPdf.PdfExportOptions Options);
 
 
 }

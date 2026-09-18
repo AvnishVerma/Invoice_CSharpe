@@ -2,18 +2,17 @@ using PuppeteerSharp;
 
 namespace LedgerNest.Desktop;
 
-// Sends generated invoice PDFs to the operating system's default printer through Chromium.
+// Renders invoice HTML in Chromium and sends it to the operating system's default printer.
 public static class ChromiumInvoicePrinter
 {
     private static readonly SemaphoreSlim PrintLock = new(1, 1);
-    internal static readonly TimeSpan PdfViewerReadyDelay = TimeSpan.FromSeconds(2);
+    internal static readonly TimeSpan RenderReadyDelay = TimeSpan.FromMilliseconds(750);
     internal static readonly TimeSpan PrintHandoffDelay = TimeSpan.FromSeconds(15);
 
-    // Downloads or reuses PuppeteerSharp's compatible Chromium and prints the supplied PDF in kiosk mode.
-    public static async Task PrintPdfAsync(string pdfPath)
+    // Loads self-contained invoice HTML and submits Chromium's rendered page in kiosk-printing mode.
+    public static async Task PrintHtmlAsync(string html)
     {
-        if (string.IsNullOrWhiteSpace(pdfPath)) throw new ArgumentException("A PDF path is required.", nameof(pdfPath));
-        if (!File.Exists(pdfPath)) throw new FileNotFoundException("The invoice PDF could not be found.", pdfPath);
+        if (string.IsNullOrWhiteSpace(html)) throw new ArgumentException("Invoice HTML is required.", nameof(html));
 
         await PrintLock.WaitAsync();
         try
@@ -21,16 +20,16 @@ public static class ChromiumInvoicePrinter
             var executablePath = await ResolveChromiumExecutableAsync();
             await using var browser = await Puppeteer.LaunchAsync(CreateLaunchOptions(executablePath));
             await using var page = await browser.NewPageAsync();
-            await page.GoToAsync(new Uri(Path.GetFullPath(pdfPath)).AbsoluteUri, new NavigationOptions
+            await page.SetContentAsync(html, new SetContentOptions
             {
                 WaitUntil = [WaitUntilNavigation.Load],
                 Timeout = 30_000
             });
+            await page.EvaluateExpressionHandleAsync("document.fonts.ready");
             await page.BringToFrontAsync();
-            await Task.Delay(PdfViewerReadyDelay);
+            await Task.Delay(RenderReadyDelay);
             await page.EvaluateExpressionAsync("window.print()");
-            // Chromium's PDF viewer returns before Windows has always finished creating the spool job.
-            // Keep the browser alive long enough for kiosk printing to hand the document to the driver.
+            // window.print() can return before Windows finishes creating the spool job.
             await Task.Delay(PrintHandoffDelay);
         }
         finally
@@ -40,22 +39,33 @@ public static class ChromiumInvoicePrinter
     }
 
     // Creates the visible Chromium process options required for direct default-printer submission.
-    private static LaunchOptions CreateLaunchOptions(string executablePath) => new()
+    private static LaunchOptions CreateLaunchOptions(string executablePath)
     {
-        ExecutablePath = executablePath,
-        Headless = false,
-        Args =
-        [
+        var arguments = new List<string>
+        {
             "--kiosk-printing",
-            "--allow-file-access-from-files",
             "--no-first-run",
             "--no-default-browser-check",
             "--disable-popup-blocking",
             "--disable-backgrounding-occluded-windows",
             "--disable-renderer-backgrounding",
             "--disable-gpu"
-        ]
-    };
+        };
+        if (OperatingSystem.IsWindows())
+        {
+            arguments.Add("--start-minimized");
+            arguments.Add("--window-position=-32000,-32000");
+            arguments.Add("--window-size=800,600");
+        }
+
+        return new LaunchOptions
+        {
+            ExecutablePath = executablePath,
+            // Physical-printer submission is unavailable from Chromium's headless mode.
+            Headless = false,
+            Args = [.. arguments]
+        };
+    }
 
     // Resolves an explicit browser path or caches PuppeteerSharp's compatible Chromium for later prints.
     private static async Task<string> ResolveChromiumExecutableAsync()

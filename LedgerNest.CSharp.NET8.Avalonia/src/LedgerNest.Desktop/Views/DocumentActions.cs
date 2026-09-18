@@ -131,34 +131,19 @@ public partial class MainWindow
         }
     }
 
-    // Performs the print document pdf action for this screen or workflow.
+    // Renders invoice HTML and sends it directly to the operating system's default printer.
     internal async Task PrintDocumentPdf(UiRecord document)
     {
-        string? path = null;
-        var printed = false;
         try
         {
-            var bytes = TryExportDocumentPdf(document);
-            if (bytes == null) return;
-            path = Path.Combine(Path.GetTempPath(), $"ledgernest-{FilePickerHelpers.SanitizeFileName(document.Name)}-{Guid.NewGuid():N}.pdf");
-            await File.WriteAllBytesAsync(path, bytes);
-            Model.Status = "Preparing Chromium for printing…";
-            await ChromiumInvoicePrinter.PrintPdfAsync(path);
-            printed = true;
+            Model.Status = "Rendering invoice for direct printing…";
+            var html = Model.ExportDocumentHtml(document);
+            await ChromiumInvoicePrinter.PrintHtmlAsync(html);
             Model.Status = $"Sent {document.Name} to the default printer.";
         }
         catch (Exception ex)
         {
-            NotifyError(path == null ? "Could not create print PDF. The error has been logged." : $"Could not send PDF to printer. Saved print file: {path}. The error has been logged.", ex, $"Printing invoice PDF {document.Name}");
-        }
-        finally
-        {
-            if (printed && path != null)
-            {
-                try { File.Delete(path); }
-                catch (IOException) { }
-                catch (UnauthorizedAccessException) { }
-            }
+            NotifyError("Could not send the invoice to the default printer. The error has been logged.", ex, $"Direct-printing invoice {document.Name}");
         }
     }
 

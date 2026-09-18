@@ -1028,13 +1028,29 @@ internal static class Program
         Check(typeof(JsonSerializer).Assembly.GetName().Version?.Major == 10, "Chromium printing must deploy the System.Text.Json major version required by PuppeteerSharp");
         try
         {
-            ChromiumInvoicePrinter.PrintPdfAsync(Path.Combine(Path.GetTempPath(), $"missing-invoice-{Guid.NewGuid():N}.pdf")).GetAwaiter().GetResult();
-            Check(false, "Chromium printing must reject a missing invoice PDF before downloading or launching the browser");
+            ChromiumInvoicePrinter.PrintHtmlAsync(" ").GetAwaiter().GetResult();
+            Check(false, "Chromium printing must reject empty invoice HTML before downloading or launching the browser");
         }
-        catch (FileNotFoundException)
+        catch (ArgumentException)
         {
-            Check(true, "Chromium printing validates the invoice PDF path before browser startup");
+            Check(true, "Chromium printing validates invoice HTML before browser startup");
         }
+
+        var model = new MainWindowViewModel();
+        var html = model.ExportDocumentHtml(new UiRecord
+        {
+            Values = new Dictionary<string, string>
+            {
+                ["Name"] = "00000001",
+                ["Type"] = "Invoice",
+                ["Customer"] = "<script>alert('unsafe')</script>",
+                ["Date"] = "2026-09-18",
+                ["Status"] = "Unpaid",
+                ["Total"] = "125.00"
+            }
+        });
+        Check(html.Contains("<!doctype html>", StringComparison.OrdinalIgnoreCase) && html.Contains("@page", StringComparison.Ordinal), "Direct printing must produce a complete printable HTML document");
+        Check(html.Contains("&lt;script&gt;", StringComparison.Ordinal) && !html.Contains("<script>", StringComparison.OrdinalIgnoreCase), "Direct-print HTML must encode invoice data");
     }
 
     private static void CheckRecordDeletion()
