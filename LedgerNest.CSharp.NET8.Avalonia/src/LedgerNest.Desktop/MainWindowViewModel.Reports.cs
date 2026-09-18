@@ -243,6 +243,23 @@ public partial class MainWindowViewModel
     // Performs the product report rows action for this screen or workflow.
     private string[][] ProductReportRows()
     {
+        var report = BuildProductReport();
+        return report.Products.Select(product => new[]
+            {
+                product.Name,
+                product.UnitsSold.ToString("0.###"),
+                Money(product.Revenue),
+                Money(product.DiscountGiven),
+                Money(product.Profit),
+                product.Margin.ToString("0.#") + "%"
+            })
+            .Prepend(["Product / Service", "Units Sold", "Revenue", "Discount Given", "Profit", "Margin"])
+            .ToArray();
+    }
+
+    // Builds ranked product and service sales totals for the last three months.
+    public ProductReportSnapshot BuildProductReport()
+    {
         IEnumerable<ProductReportLine> lines;
         if (dbFactory != null)
         {
@@ -250,7 +267,7 @@ public partial class MainWindowViewModel
             db.EnsureCurrentSchema();
             lines = db.InvoiceItems.AsNoTracking()
                 .Join(db.Invoices.AsNoTracking(), item => item.InvoiceId, invoice => invoice.Id, (item, invoice) => new { item, invoice })
-                .Where(x => x.invoice.Status != "Draft" && x.invoice.Type == "Invoice" && x.invoice.DeletedAt == null)
+                .Where(x => x.invoice.Status != "Draft" && x.invoice.Type == "Invoice" && x.invoice.DeletedAt == null && x.invoice.InvoiceDate >= DateTime.Today.AddMonths(-3))
                 .Select(x => new ProductReportLine(x.item.Description, x.item.Quantity, x.item.UnitPrice, x.item.DiscountPerUnit ? x.item.Discount * x.item.Quantity : x.item.Discount, x.item.PurchasePrice))
                 .ToArray();
         }
@@ -259,10 +276,26 @@ public partial class MainWindowViewModel
             lines = Lines.Select(line => new ProductReportLine(line.Name, line.Quantity, line.Price, line.DiscountPerUnit ? line.Discount * line.Quantity : line.Discount, 0)).ToArray();
         }
 
-        return lines.GroupBy(l => l.Name)
-            .Select(g => { var sales = g.Sum(l => l.UnitPrice * l.Quantity); var cogs = g.Sum(l => l.PurchasePrice * l.Quantity); var profit = sales - g.Sum(l => l.Discount) - cogs; var margin = sales == 0 ? 0 : profit * 100 / sales; return new[] { g.Key, g.Sum(l => l.Quantity).ToString("0.###"), Money(sales), Money(g.Sum(l => l.Discount)), Money(profit), margin.ToString("0.0") + "%" }; })
-            .Prepend(["Product / Service", "Units Sold", "Sales", "Discount Given", "Profit", "Margin"])
+        var materialized = lines.ToArray();
+        var products = materialized.GroupBy(line => line.Name)
+            .Select(group =>
+            {
+                var revenue = group.Sum(line => line.UnitPrice * line.Quantity);
+                var discount = group.Sum(line => line.Discount);
+                var cost = group.Sum(line => line.PurchasePrice * line.Quantity);
+                var profit = revenue - discount - cost;
+                return new ProductReportProductSnapshot(
+                    group.Key,
+                    group.Sum(line => line.Quantity),
+                    revenue,
+                    discount,
+                    profit,
+                    revenue == 0 ? 0 : profit * 100 / revenue);
+            })
+            .OrderByDescending(product => product.Revenue)
+            .ThenBy(product => product.Name)
             .ToArray();
+        return new ProductReportSnapshot(products, materialized.Count(line => line.PurchasePrice <= 0));
     }
 
     private sealed record ProductReportLine(string Name, decimal Quantity, decimal UnitPrice, decimal Discount, decimal PurchasePrice);
@@ -346,6 +379,20 @@ public sealed record AgedReceivableSnapshot(
 public sealed record CustomerReportSnapshot(
     CustomerReportCustomerSnapshot[] RevenueCustomers,
     CustomerReportCustomerSnapshot[] StatementCustomers);
+
+// Provides ranked product sales and the count of sold lines with no purchase cost.
+public sealed record ProductReportSnapshot(
+    ProductReportProductSnapshot[] Products,
+    int MissingCostItemCount);
+
+// Provides calculated revenue, cost, and margin values for one product or service.
+public sealed record ProductReportProductSnapshot(
+    string Name,
+    decimal UnitsSold,
+    decimal Revenue,
+    decimal DiscountGiven,
+    decimal Profit,
+    decimal Margin);
 
 // Provides revenue totals and ledger activity for one customer.
 public sealed record CustomerReportCustomerSnapshot(

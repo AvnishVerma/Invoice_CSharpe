@@ -60,7 +60,7 @@ public sealed class ReportsPageModel : INotifyPropertyChanged
     public ObservableCollection<string> ReportTabs { get; }
     public ICommand RefreshCommand { get; }
     public ICommand SelectReportCommand { get; }
-    public bool IsThreeMonthPeriod => SelectedReport is "Receivables" or "Customers";
+    public bool IsThreeMonthPeriod => SelectedReport is "Receivables" or "Customers" or "Products";
     public bool IsSixMonthPeriod => !IsThreeMonthPeriod;
 
     // Gets or changes the selected report tab and refreshes the hosted report content.

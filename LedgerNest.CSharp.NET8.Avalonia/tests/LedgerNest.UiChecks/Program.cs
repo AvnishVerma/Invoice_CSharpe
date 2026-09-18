@@ -1021,6 +1021,9 @@ internal static class Program
         Check(report.InvoiceCount == 2 && report.Billed == 168 && report.Collected == 118 && report.Outstanding == 50, "Revenue KPIs must use saved invoice and payment totals");
         Check(report.TotalProfit == 110 && report.RealizedProfit == 60 && report.MissingCostItemCount == 1, "Revenue profit KPIs must use item purchase-price snapshots and paid status");
         Check(report.Months.Length == 1 && report.Months[0].Cogs == 40 && report.Months[0].Profit == 110 && Math.Abs(report.Months[0].MarginPercent - 110m / 150m * 100m) < .001m, "Monthly revenue breakdown must include COGS, profit, and margin");
+        var products = model.BuildProductReport();
+        Check(products.Products.Length == 2 && products.Products[0].Name == "Costed product" && products.Products[0].Revenue == 100, "Product report must rank sold products by revenue");
+        Check(products.Products[0].Profit == 60 && products.Products[0].Margin == 60 && products.MissingCostItemCount == 1, "Product report must calculate cost-based profit and flag missing purchase prices");
     }
 
     private static void CheckChromiumPrinterValidation()

@@ -60,7 +60,10 @@ public partial class MainWindow
         }
         else if (name == "Products")
         {
-            body.Children.Add(ProductRevenueCard(report.Rows));
+            return new ProductReportView(new ProductReportViewModel(
+                Model.BuildProductReport(),
+                () => ExportReportCsv("Products"),
+                () => ExportReportPdf("Products")));
         }
         else if (name == "Quotations")
         {
@@ -311,21 +314,6 @@ public partial class MainWindow
             Padding = new Thickness(14, header ? 10 : 13),
             Child = Ui.Columns("1.05*,.65*,*,*,*,*,*,.65*", columns)
         };
-    }
-
-    // Performs the product revenue card action for this screen or workflow.
-    private Control ProductRevenueCard(string[][] rows)
-    {
-        var list = Ui.Stack(8);
-        for (var i = 1; i < rows.Length; i++)
-        {
-            var name = rows[i].Length > 0 ? rows[i][0] : "Product";
-            var amount = rows[i].Length > 2 ? rows[i][2] : "Rs. 0.00";
-            var width = i == 1 ? "*" : "0.3*";
-            list.Children.Add(Ui.Columns("120,*,110", Ui.Text(name, 13), new Border { Height = 22, CornerRadius = new CornerRadius(4), Background = Brush.Parse("#7C3AED"), HorizontalAlignment = HorizontalAlignment.Stretch }, Ui.Text(amount, 13, true, Brush.Parse("#7C3AED"))));
-        }
-        if (rows.Length <= 1) list.Children.Add(Ui.Empty("No product sales for this period"));
-        return Ui.Card(Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text("Top 2 Products / Services by Revenue", 16, true), Ui.Wrap(Ui.Text("▣ Rank: Revenue", 12, true, Ui.Muted), Ui.Button("↓ Export CSV", async () => await ExportReportCsv("Products")), Ui.Button("↓ Export PDF", async () => await ExportReportPdf("Products")))), list, ReportTable("", rows, false, "Products")), 20);
     }
 
     // Performs the daily report card action for this screen or workflow.
