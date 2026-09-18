@@ -8,7 +8,7 @@ public sealed partial class FormField : ObservableObject
 {
     public string Label { get; }
     public string Kind { get; }
-    public string[] Options { get; }
+    public string[] Options { get; set; }
     public bool Required { get; }
     public int MaxLength { get; init; } = 1000;
     public string Icon { get; init; } = "";

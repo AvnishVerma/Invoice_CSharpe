@@ -1270,6 +1270,9 @@ internal static class Program
         pdfSections[0].Fields[0].Value = "A5";
         pdfSections[1].Fields[0].Value = "Grid Classic";
         pdfSections[3].Fields[0].Value = "#0F766E";
+        var printingFields = pdfSections.Single(section => section.Title == "PRINTING").Fields.ToDictionary(field => field.Label);
+        printingFields["Printer"].Value = "Office Printer";
+        printingFields["Show Printer Selection Dialog"].IsChecked = true;
         Check(model.SaveSettings("PDF Settings"), "PDF settings must save to SQLite");
 
         var dbBackup = model.CreateDatabaseBackup();
@@ -1310,6 +1313,8 @@ internal static class Program
         var reloadedInvoiceGeneral = reloaded.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
         Check(reloadedInvoiceGeneral["Invoice Prefix"].Value == "LN-" && reloadedInvoiceGeneral["Starting Number"].Value == "27", "Invoice settings must reload from SQLite");
         Check(reloaded.Settings["PDF Settings"][1].Fields[0].Value == "Grid Classic" && reloaded.Settings["PDF Settings"][3].Fields[0].Value == "#0F766E", "PDF settings must reload from SQLite");
+        var printConfiguration = reloaded.GetPrintConfiguration();
+        Check(printConfiguration.PrinterName == "Office Printer" && printConfiguration.ShowDialog, "Printer selection and dialog preference must reload from SQLite");
     }
 
     private sealed class TestDbContextFactory(DbContextOptions<LedgerNestDbContext> options) : IDbContextFactory<LedgerNestDbContext>

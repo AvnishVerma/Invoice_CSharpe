@@ -10,15 +10,16 @@ public static class ChromiumInvoicePrinter
     internal static readonly TimeSpan PrintHandoffDelay = TimeSpan.FromSeconds(15);
 
     // Loads self-contained invoice HTML and submits Chromium's rendered page in kiosk-printing mode.
-    public static async Task PrintHtmlAsync(string html)
+    public static async Task PrintHtmlAsync(string html, string printerName = WindowsPrinterService.DefaultPrinter, bool showPrinterDialog = false)
     {
         if (string.IsNullOrWhiteSpace(html)) throw new ArgumentException("Invoice HTML is required.", nameof(html));
 
         await PrintLock.WaitAsync();
         try
         {
+            using var printerScope = showPrinterDialog ? null : WindowsPrinterService.UsePrinter(printerName);
             var executablePath = await ResolveChromiumExecutableAsync();
-            await using var browser = await Puppeteer.LaunchAsync(CreateLaunchOptions(executablePath));
+            await using var browser = await Puppeteer.LaunchAsync(CreateLaunchOptions(executablePath, showPrinterDialog));
             await using var page = await browser.NewPageAsync();
             await page.SetContentAsync(html, new SetContentOptions
             {
@@ -39,11 +40,10 @@ public static class ChromiumInvoicePrinter
     }
 
     // Creates the visible Chromium process options required for direct default-printer submission.
-    private static LaunchOptions CreateLaunchOptions(string executablePath)
+    private static LaunchOptions CreateLaunchOptions(string executablePath, bool showPrinterDialog)
     {
         var arguments = new List<string>
         {
-            "--kiosk-printing",
             "--no-first-run",
             "--no-default-browser-check",
             "--disable-popup-blocking",
@@ -51,7 +51,8 @@ public static class ChromiumInvoicePrinter
             "--disable-renderer-backgrounding",
             "--disable-gpu"
         };
-        if (OperatingSystem.IsWindows())
+        if (!showPrinterDialog) arguments.Add("--kiosk-printing");
+        if (OperatingSystem.IsWindows() && !showPrinterDialog)
         {
             arguments.Add("--start-minimized");
             arguments.Add("--window-position=-32000,-32000");

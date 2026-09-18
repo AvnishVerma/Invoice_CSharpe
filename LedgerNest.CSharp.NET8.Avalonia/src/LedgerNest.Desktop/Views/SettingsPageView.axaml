@@ -2,10 +2,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.SettingsPageView"
              x:CompileBindings="False">
-  <Grid ColumnDefinitions="110,*">
-    <Border BorderBrush="#E0E0E0" BorderThickness="0,0,1,0" Background="#FAFAFA">
-      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <ItemsControl ItemsSource="{Binding Tabs}" Margin="4,0">
+  <Grid RowDefinitions="Auto,*">
+    <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Background="#FAFAFA" Padding="8,6">
+      <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding Tabs}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="4" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate>
               <Button Content="{Binding Label}"
@@ -15,9 +20,9 @@
                       Classes="nav"
                       HorizontalAlignment="Stretch"
                       HorizontalContentAlignment="Center"
-                      MinHeight="64"
-                      Margin="4,0"
-                      Padding="8"
+                      MinHeight="42"
+                      Margin="2,0"
+                      Padding="16,8"
                       ToolTip.Tip="{Binding Label}" />
             </DataTemplate>
           </ItemsControl.ItemTemplate>
@@ -25,6 +30,6 @@
       </ScrollViewer>
     </Border>
 
-    <ContentControl Grid.Column="1" Content="{Binding CurrentContent}" />
+    <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" />
   </Grid>
 </UserControl>

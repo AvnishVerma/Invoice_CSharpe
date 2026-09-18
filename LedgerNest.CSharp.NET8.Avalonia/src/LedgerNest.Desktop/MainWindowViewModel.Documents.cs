@@ -31,6 +31,15 @@ public partial class MainWindowViewModel
         return DocumentHtml.Create(context.Invoice, context.Items, context.Business, context.PageSize, context.Landscape, context.Template, context.ThemeColor, context.Options);
     }
 
+    // Returns the saved printer destination and whether Chromium should show its printer dialog.
+    public (string PrinterName, bool ShowDialog) GetPrintConfiguration()
+    {
+        var fields = Settings["PDF Settings"].Single(section => section.Title == "PRINTING").Fields;
+        return (
+            fields.Single(field => field.Label == "Printer").Value,
+            fields.Single(field => field.Label == "Show Printer Selection Dialog").IsChecked);
+    }
+
     // Resolves the saved invoice, line items, and configured layout shared by PDF and HTML output.
     private DocumentExportContext BuildDocumentExportContext(UiRecord document)
     {

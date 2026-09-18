@@ -77,6 +77,9 @@ public partial class MainWindow
     private Control PdfSettingsView()
     {
         var sections = Model.Settings["PDF Settings"];
+        var printer = sections.Single(section => section.Title == "PRINTING").Fields.Single(field => field.Label == "Printer");
+        printer.Options = WindowsPrinterService.GetInstalledPrinters();
+        if (!printer.Options.Contains(printer.Value, StringComparer.OrdinalIgnoreCase)) printer.Value = printer.Options[0];
         var pageSize = sections[0].Fields[0]; var selectedTemplate = sections[1].Fields[0]; var color = sections[3].Fields[0];
         var templateList = Ui.Stack(8); var preview = new ContentControl(); var options = new ContentControl();
         var buttons = new List<Button>();
@@ -95,6 +98,8 @@ public partial class MainWindow
             foreach (var hex in new[] { "#002E78", "#2563EB", "#047857", "#7C2D12", "#6D28D9" })
             { var b = Ui.Button("", () => { color.Value = hex; Display(); }); b.Background = Brush.Parse(hex); b.Width = 30; b.Height = 30; b.MinHeight = 30; b.CornerRadius = new CornerRadius(15); swatches.Children.Add(b); }
             controls.Children.Add(Ui.Card(Ui.Stack(12, swatches, Ui.Field(color), Ui.Button("Template default", () => { color.Value = "#002E78"; Display(); })), 12));
+            controls.Children.Add(Ui.Text("PRINTING", 12, true, Ui.Muted));
+            controls.Children.Add(Ui.Card(Ui.Fields(sections.Single(section => section.Title == "PRINTING").Fields), 12));
             controls.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text("Need a custom template?", 14, true), Ui.Text("Make your invoice look exactly the way you want.", 12, color: Ui.Muted), Ui.Button("Explore Customization", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 14));
             options.Content = Ui.Scroll(controls, 16);
             preview.Content = InvoicePreview(selectedTemplate.Value, color.Value);
@@ -113,7 +118,8 @@ public partial class MainWindow
             selectedTemplate.Value = pageSize.Value switch { "A5" => "Grid Classic", "A6" => "Compact", "Thermal 80mm" or "Thermal 58mm" => "Thermal", _ => "Classic" }; Display();
         };
         Display();
-        var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true));
+        var showPrinterDialog = sections.Single(section => section.Title == "PRINTING").Fields.Single(field => field.Label == "Show Printer Selection Dialog");
+        var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; printer.Value = WindowsPrinterService.DefaultPrinter; showPrinterDialog.IsChecked = false; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true));
         var view = new PdfSettingsShellView(header, templates, settings, previewCard);
         view.AttachedToVisualTree += (_, _) => pageSize.PropertyChanged += pageSizeChanged;
         view.DetachedFromVisualTree += (_, _) => pageSize.PropertyChanged -= pageSizeChanged;
