@@ -107,7 +107,9 @@ internal static class Program
         model.NavigateCommand.Execute("Customers"); Settle();
         Click("Payment");
         Check(model.Title == "Reports", "Customer payment action must navigate to reports");
-        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text != null && t.Text.Contains("Customer Statement — Test Customer")), "Customer payment action must open the customer statement filtered by customer name");
+        var customerReport = window.GetVisualDescendants().OfType<LedgerNest.Desktop.Views.CustomerReportView>().Single().DataContext as LedgerNest.Desktop.Views.CustomerReportViewModel;
+        Check(customerReport is { IsStatement: true, SelectedCustomerName: "Test Customer" }, "Customer payment action must open the Statements tab filtered by customer name");
+        Capture("customer-statement-filtered");
         model.NavigateCommand.Execute("Customers"); Settle();
         var user = FormCatalog.User(); user[0].Value = "review-user"; user[1].Value = "temporary-secret";
         Check(model.SaveRecord("User", user), "User form must validate");
@@ -933,6 +935,12 @@ internal static class Program
                 ? aging.AgedReceivables is [{ Bucket: ReceivableAgingBucket.Days31To60 }] && aging.AgingSummaries.Single().Days31To60 == balance
                 : aging.AgedReceivables.Length == 0 && aging.AgingSummaries.Length == 0,
                 "Receivables aging must use the persisted invoice due date and remove fully paid invoices");
+            var customer = loaded.BuildCustomerReport().RevenueCustomers.Single();
+            Check(customer.Name == "Receivable customer" && customer.Billed == 200 && customer.Collected == decimal.Parse(paid) && customer.Outstanding == balance,
+                "Customer report totals must follow invoice and payment balances");
+            Check(customer.Transactions.Length == (paid == "0.00" ? 1 : balance == 0 ? 3 : 2) && customer.Transactions.Last().Balance == balance,
+                "Customer statement ledger must include invoices and payments with a running balance");
+            Check(customer.Overdue == balance, "Customer statement overdue total must use outstanding invoices past their due date");
         }
         Verify(model, "0.00", "200.00", "Unpaid", 200);
         Verify(new MainWindowViewModel(factory, path), "0.00", "200.00", "Unpaid", 200);

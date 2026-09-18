@@ -6,6 +6,8 @@ namespace LedgerNest.Desktop;
 public static class ChromiumInvoicePrinter
 {
     private static readonly SemaphoreSlim PrintLock = new(1, 1);
+    internal static readonly TimeSpan PdfViewerReadyDelay = TimeSpan.FromSeconds(2);
+    internal static readonly TimeSpan PrintHandoffDelay = TimeSpan.FromSeconds(15);
 
     // Downloads or reuses PuppeteerSharp's compatible Chromium and prints the supplied PDF in kiosk mode.
     public static async Task PrintPdfAsync(string pdfPath)
@@ -24,8 +26,12 @@ public static class ChromiumInvoicePrinter
                 WaitUntil = [WaitUntilNavigation.Load],
                 Timeout = 30_000
             });
+            await page.BringToFrontAsync();
+            await Task.Delay(PdfViewerReadyDelay);
             await page.EvaluateExpressionAsync("window.print()");
-            await Task.Delay(2_000);
+            // Chromium's PDF viewer returns before Windows has always finished creating the spool job.
+            // Keep the browser alive long enough for kiosk printing to hand the document to the driver.
+            await Task.Delay(PrintHandoffDelay);
         }
         finally
         {
@@ -44,7 +50,10 @@ public static class ChromiumInvoicePrinter
             "--allow-file-access-from-files",
             "--no-first-run",
             "--no-default-browser-check",
-            "--disable-popup-blocking"
+            "--disable-popup-blocking",
+            "--disable-backgrounding-occluded-windows",
+            "--disable-renderer-backgrounding",
+            "--disable-gpu"
         ]
     };
 
