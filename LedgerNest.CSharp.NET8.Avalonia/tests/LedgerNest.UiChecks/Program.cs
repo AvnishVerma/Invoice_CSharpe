@@ -87,7 +87,7 @@ internal static class Program
         foreach (var route in MainWindowViewModel.Routes) { model.NavigateCommand.Execute(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
         model.NavigateCommand.Execute("Reports");
-        foreach (var report in new[] { "Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report" }) { Click(report); Capture("reports-" + report.Replace(" ", "-").ToLowerInvariant()); }
+        foreach (var report in new[] { "Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report", "Inventory" }) { Click(report); Capture("reports-" + report.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var type in new[] { "Invoice", "Quotation", "Receipt" })
         {
             model.NavigateCommand.Execute(type == "Invoice" ? "Invoices" : type + "s");
