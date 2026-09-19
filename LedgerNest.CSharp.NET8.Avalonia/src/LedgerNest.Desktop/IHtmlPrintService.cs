@@ -1,6 +1,6 @@
 namespace LedgerNest.Desktop;
 
-// Defines HTML rendering and Windows printer discovery for desktop printing.
+// Defines HTML rendering and native printer discovery for supported desktop operating systems.
 public interface IHtmlPrintService : IAsyncDisposable
 {
     Task PrintHtmlAsync(string html, string? printerName = null, HtmlPrintOptions? options = null, CancellationToken cancellationToken = default);

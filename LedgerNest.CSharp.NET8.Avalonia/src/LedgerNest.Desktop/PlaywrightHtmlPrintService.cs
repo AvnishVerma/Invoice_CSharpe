@@ -13,10 +13,10 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
     private bool disposed;
 
     // Returns installed printers through the Windows printing subsystem.
-    public IReadOnlyList<string> GetInstalledPrinters() => WindowsPrinterService.GetInstalledPrinters();
+    public IReadOnlyList<string> GetInstalledPrinters() => PlatformPrinterService.GetInstalledPrinters();
 
     // Returns the current Windows default printer, or null outside supported Windows versions.
-    public string? GetDefaultPrinter() => WindowsPrinterService.GetDefaultPrinter();
+    public string? GetDefaultPrinter() => PlatformPrinterService.GetDefaultPrinter();
 
     // Renders supplied HTML, waits for deterministic resource readiness, and invokes Chromium printing.
     public async Task PrintHtmlAsync(string html, string? printerName = null, HtmlPrintOptions? options = null, CancellationToken cancellationToken = default)
@@ -30,8 +30,8 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var selectedPrinter = string.IsNullOrWhiteSpace(printerName) || printerName == WindowsPrinterService.DefaultPrinter ? null : printerName;
-            using var printerScope = WindowsPrinterService.UsePrinter(selectedPrinter);
+            var selectedPrinter = PlatformPrinterService.ResolvePrinter(printerName);
+            using var printerScope = PlatformPrinterService.UseWindowsPrinter(selectedPrinter);
             var activeBrowser = await EnsureBrowserAsync(options.Silent, cancellationToken);
             await using var context = await activeBrowser.NewContextAsync().WaitAsync(cancellationToken);
             var page = await context.NewPageAsync().WaitAsync(cancellationToken);
@@ -47,8 +47,13 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
             if (options.WaitForImages)
                 await WaitForImagesAsync(page, cancellationToken);
             await page.EmulateMediaAsync(new PageEmulateMediaOptions { Media = Media.Print }).WaitAsync(cancellationToken);
-            await page.BringToFrontAsync().WaitAsync(cancellationToken);
-            await page.EvaluateAsync("() => window.print()").WaitAsync(cancellationToken);
+            if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && options.Silent)
+                await SubmitCupsPrintAsync(page, selectedPrinter, options, cancellationToken);
+            else
+            {
+                await page.BringToFrontAsync().WaitAsync(cancellationToken);
+                await page.EvaluateAsync("() => window.print()").WaitAsync(cancellationToken);
+            }
         }
         finally
         {
@@ -82,9 +87,32 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
     private static Task<IBrowser> LaunchBrowserAsync(IPlaywright activePlaywright, bool silent, CancellationToken cancellationToken) =>
         activePlaywright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
-            Headless = false,
+            Headless = silent && !OperatingSystem.IsWindows(),
             Args = BuildChromiumArguments(silent)
         }).WaitAsync(cancellationToken);
+
+    // Renders a temporary print spool document and submits it to CUPS on macOS or Linux.
+    private static async Task SubmitCupsPrintAsync(IPage page, string? printerName, HtmlPrintOptions options, CancellationToken cancellationToken)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-print-{Guid.NewGuid():N}.pdf");
+        try
+        {
+            await page.PdfAsync(new PagePdfOptions
+            {
+                Path = path,
+                PrintBackground = options.PrintBackground,
+                PreferCSSPageSize = true,
+                Landscape = options.Landscape
+            }).WaitAsync(cancellationToken);
+            await PlatformPrinterService.SubmitCupsJobAsync(path, printerName, cancellationToken);
+        }
+        finally
+        {
+            try { if (File.Exists(path)) File.Delete(path); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+    }
 
     // Downloads the matching Chromium revision once when Playwright was newly installed or upgraded.
     private static async Task InstallChromiumAsync(CancellationToken cancellationToken)
@@ -112,7 +140,7 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
             "--disable-backgrounding-occluded-windows",
             "--disable-renderer-backgrounding"
         };
-        if (silent)
+        if (silent && OperatingSystem.IsWindows())
         {
             arguments.Add("--kiosk-printing");
             arguments.Add("--start-minimized");

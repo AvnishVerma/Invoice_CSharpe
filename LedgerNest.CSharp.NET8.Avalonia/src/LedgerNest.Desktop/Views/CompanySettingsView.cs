@@ -78,7 +78,7 @@ public partial class MainWindow
     {
         var sections = Model.Settings["PDF Settings"];
         var printer = sections.Single(section => section.Title == "PRINTING").Fields.Single(field => field.Label == "Printer");
-        printer.Options = WindowsPrinterService.GetPrinterChoices();
+        printer.Options = PlatformPrinterService.GetPrinterChoices();
         if (!printer.Options.Contains(printer.Value, StringComparer.OrdinalIgnoreCase)) printer.Value = printer.Options[0];
         var pageSize = sections[0].Fields[0]; var selectedTemplate = sections[1].Fields[0]; var color = sections[3].Fields[0];
         var templateList = Ui.Stack(8); var preview = new ContentControl(); var options = new ContentControl();
@@ -119,7 +119,7 @@ public partial class MainWindow
         };
         Display();
         var showPrinterDialog = sections.Single(section => section.Title == "PRINTING").Fields.Single(field => field.Label == "Show Printer Selection Dialog");
-        var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; printer.Value = WindowsPrinterService.DefaultPrinter; showPrinterDialog.IsChecked = false; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true));
+        var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; printer.Value = PlatformPrinterService.DefaultPrinter; showPrinterDialog.IsChecked = false; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true));
         var view = new PdfSettingsShellView(header, templates, settings, previewCard);
         view.AttachedToVisualTree += (_, _) => pageSize.PropertyChanged += pageSizeChanged;
         view.DetachedFromVisualTree += (_, _) => pageSize.PropertyChanged -= pageSizeChanged;

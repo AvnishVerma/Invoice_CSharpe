@@ -1059,6 +1059,10 @@ internal static class Program
         Check(typeof(Microsoft.Playwright.Playwright).Assembly.GetName().Version?.Major == 1, "HTML printing must deploy Microsoft.Playwright");
         Check(PlaywrightHtmlPrintService.IsMissingBrowserExecutable(new Microsoft.Playwright.PlaywrightException("Executable doesn't exist at test path")), "HTML printing must detect a missing Chromium installation for automatic recovery");
         Check(!PlaywrightHtmlPrintService.IsMissingBrowserExecutable(new Microsoft.Playwright.PlaywrightException("Printer is unavailable")), "HTML printing must not treat unrelated Playwright failures as missing Chromium");
+        var cupsPrinters = PlatformPrinterService.ParseCupsDestinations("Office_Printer accepting requests\nReceipt-80mm accepting requests\nOffice_Printer accepting requests\n");
+        Check(cupsPrinters.SequenceEqual(["Office_Printer", "Receipt-80mm"]), "macOS and Linux printing must parse and de-duplicate CUPS destinations");
+        Check(PlatformPrinterService.ResolvePrinter(PlatformPrinterService.DefaultPrinter) == null, "Cross-platform printing must map the system-default choice to the native default printer");
+        Check(PlatformPrinterService.ResolvePrinter("Windows default printer") == null, "Cross-platform printing must preserve legacy Windows-default settings");
         var printCss = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.Thermal80mm });
         Check(printCss.Contains("size: 80mm auto", StringComparison.Ordinal) && printCss.Contains("margin: 0", StringComparison.Ordinal), "HTML printing must inject centralized thermal page dimensions");
         var a4Css = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.A4, Landscape = true });

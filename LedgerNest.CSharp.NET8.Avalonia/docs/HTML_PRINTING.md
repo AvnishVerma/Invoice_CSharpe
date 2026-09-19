@@ -1,12 +1,14 @@
 # HTML direct printing
 
-LedgerNest prints invoices through this path:
+LedgerNest prints invoices through these platform paths:
 
 ```text
-Invoice data → self-contained HTML/CSS → Microsoft.Playwright Chromium → Windows printer
+Windows: Invoice HTML → Playwright Chromium → Windows print spooler
+macOS/Linux silent: Invoice HTML → headless Chromium spool PDF → CUPS `lp`
+macOS/Linux interactive: Invoice HTML → Chromium system print dialog
 ```
 
-The normal print action does not create a PDF and does not open a PDF viewer. PDF preview and PDF download remain separate user actions.
+Windows direct printing does not create a PDF and does not open a PDF viewer. Silent macOS and Linux printing creates a private temporary spool PDF because CUPS requires printable output; LedgerNest deletes it immediately after `lp` accepts the job. PDF preview and PDF download remain separate user actions.
 
 ## Development setup
 
@@ -22,9 +24,11 @@ For a release build, replace `Debug` with `Release`. On a clean Windows machine,
 
 ## Printer configuration
 
-Open **Settings → PDF Settings → Printing**. Choose **Windows default printer** or a specific installed printer. LedgerNest validates an explicitly selected printer, temporarily makes it the Windows default for the serialized print job, and restores the previous default afterward.
+Open **Settings → PDF Settings → Printing**. Choose **System default printer** or a specific installed printer. On Windows, LedgerNest temporarily makes an explicitly selected printer the Windows default for the serialized Chromium job and restores the previous default afterward. On macOS and Linux, LedgerNest discovers destinations with `lpstat` and passes the selected destination to `lp`.
 
-Enable **Show Printer Selection Dialog** for interactive printing. Leave it disabled for silent kiosk printing. Interactive printing displays Chromium's system print dialog; silent printing launches the reusable Chromium process minimized and off-screen.
+Enable **Show Printer Selection Dialog** for interactive printing. Leave it disabled for silent printing. Windows uses minimized, off-screen Chromium kiosk printing. macOS and Linux use headless Chromium plus CUPS for silent jobs. Interactive printing displays Chromium's system print dialog on all three platforms.
+
+macOS includes CUPS printing tools. Linux installations must provide the `lp` and `lpstat` commands, commonly through the distribution's `cups-client` package, and the CUPS service must be configured.
 
 ## Paper configuration
 
@@ -56,8 +60,8 @@ await printService.PrintHtmlAsync(html, printerName, new HtmlPrintOptions
 
 The service waits for document readiness, `document.fonts.ready`, and all images before printing. It injects centralized print CSS for paper size, margins, background colors, non-printable elements, and table row page breaks. Existing invoice logos are embedded as data URLs.
 
-Chromium is reused across consecutive jobs of the same mode. Print jobs are serialized because selecting a specific printer temporarily changes the process user's Windows default printer. The browser is recreated after a crash or when switching between silent and interactive modes, and it is disposed during application shutdown.
+Chromium is reused across consecutive jobs of the same mode. Print jobs are serialized because Windows printer selection temporarily changes the process user's default printer. The browser is recreated after a crash or when switching between silent and interactive modes, and it is disposed during application shutdown.
 
 ## Platform limitation
 
-Chromium does not submit physical printer jobs from true headless mode. Silent printing therefore uses headed Chromium with kiosk printing while placing its window off-screen and minimized. `window.print()` returns after Chromium completes the print handoff; no arbitrary print delay or temporary PDF is used.
+Chromium does not submit physical printer jobs from true headless mode. Windows silent printing therefore uses headed Chromium with kiosk printing while placing its window off-screen and minimized. On macOS and Linux, Chromium creates the CUPS spool document in headless mode and `lp` performs the native handoff. No arbitrary print delay is used.
