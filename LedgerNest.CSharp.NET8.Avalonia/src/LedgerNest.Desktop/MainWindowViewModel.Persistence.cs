@@ -163,6 +163,15 @@ public partial class MainWindowViewModel
             }
         }
 
+        var businessType = Settings["Company Info"].Single(section => section.Title == "BUSINESS TYPE").Fields[0];
+        businessType.Value = businessType.Value switch
+        {
+            "Products & Services" => "Both",
+            "Products" => "Product",
+            "Services" => "Service",
+            _ => businessType.Value
+        };
+
         var company = db.CompanyInfos.AsNoTracking().OrderBy(c => c.Id).FirstOrDefault();
         if (company != null && Settings.TryGetValue("Company Info", out var companySections))
         {

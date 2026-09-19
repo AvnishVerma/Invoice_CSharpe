@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Avalonia.Controls;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 namespace LedgerNest.Desktop.Views;
@@ -24,7 +25,12 @@ public sealed partial class SettingsPageView : UserControl
 }
 
 // Describes one settings rail item rendered by the AXAML settings shell.
-public sealed record SettingsTabModel(string Label, string Icon);
+public sealed partial class SettingsTabModel(string label, string icon) : ObservableObject
+{
+    public string Label { get; } = label;
+    public string Icon { get; } = icon;
+    [ObservableProperty] private bool isSelected;
+}
 
 // Provides settings navigation state and content loading for the AXAML settings shell.
 public sealed class SettingsPageModel : INotifyPropertyChanged
@@ -46,6 +52,7 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
         {
             if (selectedTab == value || string.IsNullOrWhiteSpace(value)) return;
             selectedTab = value;
+            foreach (var tab in Tabs) tab.IsSelected = tab.Label == value;
             selectedChanged(value);
             CurrentContent = contentFactory(value);
             OnPropertyChanged();
@@ -70,6 +77,7 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
         this.selectedChanged = selectedChanged;
         Tabs = new ObservableCollection<SettingsTabModel>(tabs);
         this.selectedTab = selectedTab;
+        foreach (var tab in Tabs) tab.IsSelected = tab.Label == selectedTab;
         currentContent = contentFactory(selectedTab);
         SelectTabCommand = new RelayCommand<string>(tab =>
         {

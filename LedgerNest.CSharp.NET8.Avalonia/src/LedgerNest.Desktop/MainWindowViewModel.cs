@@ -34,6 +34,8 @@ public partial class MainWindowViewModel : ObservableObject
     public string PendingReportCustomerFilter { get; private set; } = "";
     public ObservableCollection<InvoiceLineViewModel> Lines { get; } = [];
     public Dictionary<string, FormSection[]> Settings { get; } = FormCatalog.Settings();
+    public ObservableCollection<FormField[]> UpiAccounts { get; } = [];
+    public ObservableCollection<FormField[]> BankAccounts { get; } = [];
     public FormField[] InvoiceCustomer { get; } = FormCatalog.Customer();
     public FormField[] InvoiceDetails { get; } = [new("Type", "Invoice", "choice", ["Invoice", "Quotation", "Receipt"]), new("Order Date", DateTime.Today.ToString("yyyy-MM-dd"), "date"), new("Due Date", "", "date"), new("GST title", "Invoice", "choice", ["Invoice", "Tax Invoice", "Bill of Supply", "Invoice-cum-Bill of Supply", "Cash Bill", "Credit Note", "Debit Note", "Revised Invoice"]), new("PDF invoice number")];
     public FormField HideInvoiceNumber { get; } = new("Hide invoice number in PDF", "false", "toggle");
@@ -64,6 +66,7 @@ public partial class MainWindowViewModel : ObservableObject
         };
         LoadPersistedRecords();
         LoadPersistedSettings();
+        LoadPaymentAccounts();
         LoadThemeMode();
         LoadLanguage();
         ApplyDefaultCustomer();

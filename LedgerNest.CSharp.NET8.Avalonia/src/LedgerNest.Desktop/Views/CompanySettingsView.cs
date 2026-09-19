@@ -42,14 +42,56 @@ public partial class MainWindow
             catch (Exception ex) when (ex is IOException or ArgumentException) { Model.Status = "The selected image could not be opened."; }
         };
         var save = Ui.Button("Save", () => Model.SaveSettings("Company Info"), true); save.HorizontalAlignment = HorizontalAlignment.Stretch;
-        var details = Ui.Stack(16, Ui.Text("COMPANY DETAILS", 12, true, Ui.Muted), Ui.Fields([F("Company Name"), F("GSTIN")], 2), Ui.Fields([F("PAN"), F("FSSAI Code")], 2), Ui.Fields([F("Country"), F("Phone"), F("Email")], 3), Ui.Field(F("Website")), Ui.Field(F("Address")), new Border { Height = 8 }, Ui.Text("BUSINESS TYPE", 12, true, Ui.Muted), Ui.Card(Ui.Stack(8, Ui.Text("Business Type", 16), Ui.Text("Controls item type options in the product list and invoices", 12, color: Ui.Muted), Ui.Field(sections[2].Fields[0])), 16), new Border { Height = 8 }, Ui.Text("PAYMENT SETTINGS", 12, true, Ui.Muted));
-        foreach (var field in sections[3].Fields) details.Children.Add(Ui.Card(Ui.Field(field)));
-        foreach (var section in sections.Skip(4))
+        var businessType = sections[2].Fields[0];
+        var details = Ui.Stack(16,
+            Ui.Text("COMPANY DETAILS", 12, true, Ui.Muted),
+            Ui.Fields([F("Company Name"), F("GSTIN")], 2),
+            Ui.Fields([F("PAN"), F("FSSAI Code")], 2),
+            Ui.Fields([F("Country"), F("Phone"), F("Email")], 3),
+            Ui.Field(F("Website")),
+            Ui.Field(F("Address")),
+            new Border { Height = 8 },
+            Ui.Text("BUSINESS TYPE", 12, true, Ui.Muted),
+            Ui.Card(Ui.Stack(8, Ui.Text("Business Type", 16), Ui.Text("Controls item type options in the product list and invoices", 12, color: Ui.Muted), Ui.Segments(businessType)), 16),
+            new Border { Height = 8 },
+            Ui.Text("PAYMENT SETTINGS", 12, true, Ui.Muted),
+            Ui.Card(Ui.Field(sections[3].Fields[0], "Show QR Code on Invoices"), 16),
+            Ui.Text("UPI ACCOUNTS", 12, true, Ui.Muted));
+
+        var upiRows = Ui.Stack(10);
+        var bankRows = Ui.Stack(10);
+        void RenderUpiRows()
         {
-            var accounts = Ui.Stack(12, Ui.Fields(section.Fields, 2));
-            details.Children.Add(Ui.Text(section.Title, 12, true, Ui.Muted)); details.Children.Add(accounts);
-            details.Children.Add(Ui.Button("＋ Add Account", () => accounts.Children.Add(Ui.Card(Ui.Fields(section.Fields.Select(f => new FormField(f.Label, kind: f.Kind)).ToArray(), 2)))));
+            upiRows.Children.Clear();
+            foreach (var account in Model.UpiAccounts)
+            {
+                var remove = Ui.Button("−", () => Model.RemoveUpiAccount(account));
+                ToolTip.SetTip(remove, "Remove UPI account");
+                upiRows.Children.Add(Ui.Columns("*,2*,Auto", Ui.Field(account[0]), Ui.Field(account[1]), remove));
+            }
         }
+        void RenderBankRows()
+        {
+            bankRows.Children.Clear();
+            foreach (var account in Model.BankAccounts)
+            {
+                var remove = Ui.Button("−", () => Model.RemoveBankAccount(account));
+                ToolTip.SetTip(remove, "Remove bank account");
+                bankRows.Children.Add(Ui.Columns("*,*,1.25*,*,Auto", Ui.Field(account[0]), Ui.Field(account[1]), Ui.Field(account[2]), Ui.Field(account[3]), remove));
+            }
+        }
+        RenderUpiRows();
+        RenderBankRows();
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler upiChanged = (_, _) => RenderUpiRows();
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler bankChanged = (_, _) => RenderBankRows();
+        details.AttachedToVisualTree += (_, _) => { Model.UpiAccounts.CollectionChanged += upiChanged; Model.BankAccounts.CollectionChanged += bankChanged; };
+        details.DetachedFromVisualTree += (_, _) => { Model.UpiAccounts.CollectionChanged -= upiChanged; Model.BankAccounts.CollectionChanged -= bankChanged; };
+        details.Children.Add(upiRows);
+        details.Children.Add(Ui.Button("＋ Add UPI Account", Model.AddUpiAccount));
+        details.Children.Add(Ui.Card(Ui.Field(sections[3].Fields[1], "Show Bank Details on Invoices"), 16));
+        details.Children.Add(Ui.Text("BANK ACCOUNTS", 12, true, Ui.Muted));
+        details.Children.Add(bankRows);
+        details.Children.Add(Ui.Button("＋ Add Bank Account", Model.AddBankAccount));
         var language = new ComboBox { ItemsSource = new[] { "English", "हिन्दी", "नेपाली", "བོད་ཡིག", "Español", "Français", "中文" }, SelectedItem = Model.Language, Width = 115 };
         language.SelectionChanged += (_, _) => Model.SetLanguage(language.SelectedItem?.ToString() ?? "English");
         ToolTip.SetTip(language, "Stores the preferred language; full translated desktop strings are still being migrated.");

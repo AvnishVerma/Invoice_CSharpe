@@ -13,17 +13,25 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Button Content="{Binding Label}"
-                      Tag="{Binding Label}"
+              <Button Tag="{Binding Label}"
                       Command="{Binding DataContext.SelectTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                       CommandParameter="{Binding Label}"
                       Classes="nav"
+                      Classes.selected="{Binding IsSelected}"
                       HorizontalAlignment="Stretch"
                       HorizontalContentAlignment="Center"
                       MinHeight="42"
                       Margin="2,0"
-                      Padding="16,8"
-                      ToolTip.Tip="{Binding Label}" />
+                      Padding="14,8"
+                      ToolTip.Tip="{Binding Label}">
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <TextBlock Text="{Binding Icon}"
+                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                             FontSize="17"
+                             VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>

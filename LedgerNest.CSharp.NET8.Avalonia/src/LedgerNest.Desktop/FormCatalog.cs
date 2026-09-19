@@ -26,7 +26,7 @@ public static class FormCatalog
         ["Company Info"] = [
             new("LOGO", [new("Company logo", kind: "file"), Toggle("Show on PDF", true)]),
             new("COMPANY DETAILS", [Text("Company Name", required: true), new("Country", "India", "choice", LegacyChoices.Countries), Text("GSTIN"), Text("PAN"), Text("FSSAI Code"), Text("Phone"), Text("Email"), Text("Website"), new("Address", kind: "multiline")]),
-            new("BUSINESS TYPE", [Choice("Business Type", "Products & Services", "Products", "Services")]),
+            new("BUSINESS TYPE", [Choice("Business Type", "Both", "Product", "Service")]),
             new("PAYMENT SETTINGS", [Toggle("Show QR code on invoice", true), Toggle("Show bank details on invoice", true)]),
             new("UPI ACCOUNTS", [Text("Label", "Primary"), Text("UPI ID"), Toggle("Default account", true)]),
             new("BANK ACCOUNTS", [Text("Label", "Primary"), Text("Bank Name"), Text("Account Number"), Text("IFSC Code"), Toggle("Default account", true)])],

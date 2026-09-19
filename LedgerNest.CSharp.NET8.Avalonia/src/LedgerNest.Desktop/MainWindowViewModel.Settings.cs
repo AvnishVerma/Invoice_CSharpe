@@ -151,10 +151,85 @@ public partial class MainWindowViewModel
             }
 
             if (name == "Company Info") SaveCompanyInfo(db, sections);
+            if (name == "Company Info") SavePaymentAccounts(db);
             db.SaveChanges();
         }
 
         Status = $"{name} saved.";
         return true;
+    }
+
+    // Loads repeatable UPI and bank accounts from settings and seeds one editable row when none have been saved.
+    private void LoadPaymentAccounts()
+    {
+        UpiAccounts.Clear();
+        BankAccounts.Clear();
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            LoadAccounts(db.Settings.AsNoTracking().FirstOrDefault(setting => setting.Key == "company.upi_accounts")?.Value, UpiAccounts, CreateUpiAccount);
+            LoadAccounts(db.Settings.AsNoTracking().FirstOrDefault(setting => setting.Key == "company.bank_accounts")?.Value, BankAccounts, CreateBankAccount);
+        }
+        if (UpiAccounts.Count == 0) UpiAccounts.Add(CreateUpiAccount(Settings["Company Info"][4].Fields.ToDictionary(field => field.Label, field => field.Value)));
+        if (BankAccounts.Count == 0) BankAccounts.Add(CreateBankAccount(Settings["Company Info"][5].Fields.ToDictionary(field => field.Label, field => field.Value)));
+    }
+
+    // Adds a blank UPI account row to the company payment settings.
+    public void AddUpiAccount() => UpiAccounts.Add(CreateUpiAccount());
+
+    // Adds a blank bank account row to the company payment settings.
+    public void AddBankAccount() => BankAccounts.Add(CreateBankAccount());
+
+    // Removes a UPI account while keeping at least one editable row visible.
+    public void RemoveUpiAccount(FormField[] account)
+    {
+        UpiAccounts.Remove(account);
+        if (UpiAccounts.Count == 0) AddUpiAccount();
+    }
+
+    // Removes a bank account while keeping at least one editable row visible.
+    public void RemoveBankAccount(FormField[] account)
+    {
+        BankAccounts.Remove(account);
+        if (BankAccounts.Count == 0) AddBankAccount();
+    }
+
+    // Creates an editable UPI account row from persisted values.
+    private static FormField[] CreateUpiAccount(Dictionary<string, string>? values = null) =>
+    [
+        new("Label", values?.GetValueOrDefault("Label", "") ?? ""),
+        new("UPI ID", values?.GetValueOrDefault("UPI ID", "") ?? "")
+    ];
+
+    // Creates an editable bank account row from persisted values.
+    private static FormField[] CreateBankAccount(Dictionary<string, string>? values = null) =>
+    [
+        new("Label", values?.GetValueOrDefault("Label", "") ?? ""),
+        new("Bank Name", values?.GetValueOrDefault("Bank Name", "") ?? ""),
+        new("Account Number", values?.GetValueOrDefault("Account Number", "") ?? ""),
+        new("IFSC Code", values?.GetValueOrDefault("IFSC Code", "") ?? "")
+    ];
+
+    // Deserializes account rows without preventing Settings from opening when stored data is malformed.
+    private static void LoadAccounts(string? json, ObservableCollection<FormField[]> target, Func<Dictionary<string, string>?, FormField[]> factory)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return;
+        try
+        {
+            foreach (var values in JsonSerializer.Deserialize<List<Dictionary<string, string>>>(json) ?? []) target.Add(factory(values));
+        }
+        catch (JsonException)
+        {
+            target.Clear();
+        }
+    }
+
+    // Persists all repeatable payment account rows as settings JSON in the active database.
+    private void SavePaymentAccounts(LedgerNestDbContext db)
+    {
+        static Dictionary<string, string> Values(FormField[] fields) => fields.ToDictionary(field => field.Label, field => field.Value.Trim());
+        SetSetting(db, "company.upi_accounts", JsonSerializer.Serialize(UpiAccounts.Select(Values)));
+        SetSetting(db, "company.bank_accounts", JsonSerializer.Serialize(BankAccounts.Select(Values)));
     }
 }

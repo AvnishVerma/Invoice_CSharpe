@@ -1299,6 +1299,15 @@ internal static class Program
         companyFields["Phone"].Value = "9998887777";
         companyFields["Email"].Value = "hello@ledgernest.test";
         companyFields["GSTIN"].Value = "GST-123";
+        model.UpiAccounts[0][0].Value = "Primary";
+        model.UpiAccounts[0][1].Value = "billing@upi";
+        model.AddUpiAccount();
+        model.UpiAccounts[1][0].Value = "Secondary";
+        model.UpiAccounts[1][1].Value = "backup@upi";
+        model.BankAccounts[0][0].Value = "Operating";
+        model.BankAccounts[0][1].Value = "LedgerNest Bank";
+        model.BankAccounts[0][2].Value = "1234567890";
+        model.BankAccounts[0][3].Value = "LEDG0001234";
         Check(model.SaveSettings("Company Info"), "Company settings must save to SQLite");
 
         var invoiceGeneral = model.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
@@ -1350,6 +1359,8 @@ internal static class Program
         Check(reloaded.Language == "हिन्दी", "Language preference must persist and reload from SQLite");
         var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);
         Check(reloadedCompanyFields["Company Name"].Value == "LedgerNest Labs" && reloadedCompanyFields["GSTIN"].Value == "GST-123", "Company info must reload from SQLite");
+        Check(reloaded.UpiAccounts.Count == 2 && reloaded.UpiAccounts[1][1].Value == "backup@upi", "Repeatable UPI accounts must reload from SQLite");
+        Check(reloaded.BankAccounts.Count == 1 && reloaded.BankAccounts[0][2].Value == "1234567890", "Bank account details must reload from SQLite");
         var reloadedInvoiceGeneral = reloaded.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
         Check(reloadedInvoiceGeneral["Invoice Prefix"].Value == "LN-" && reloadedInvoiceGeneral["Starting Number"].Value == "27", "Invoice settings must reload from SQLite");
         Check(reloaded.Settings["PDF Settings"][1].Fields[0].Value == "Grid Classic" && reloaded.Settings["PDF Settings"][3].Fields[0].Value == "#0F766E", "PDF settings must reload from SQLite");
