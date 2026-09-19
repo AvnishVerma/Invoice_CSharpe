@@ -30,7 +30,8 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var selectedPrinter = PlatformPrinterService.ResolvePrinter(printerName);
+            var usesUnixPrintDialog = (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && !options.Silent;
+            var selectedPrinter = usesUnixPrintDialog ? null : PlatformPrinterService.ResolvePrinter(printerName);
             using var printerScope = PlatformPrinterService.UseWindowsPrinter(selectedPrinter);
             var activeBrowser = await EnsureBrowserAsync(options.Silent, cancellationToken);
             await using var context = await activeBrowser.NewContextAsync().WaitAsync(cancellationToken);

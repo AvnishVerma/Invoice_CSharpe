@@ -140,7 +140,7 @@ public partial class MainWindow
             var html = Model.ExportDocumentHtml(document);
             var print = Model.GetPrintConfiguration();
             await htmlPrintService.PrintHtmlAsync(html, print.PrinterName, print.Options);
-            Model.Status = $"Sent {document.Name} to the default printer.";
+            Model.Status = $"Sent {document.Name} to the printer.";
         }
         catch (Exception ex)
         {
