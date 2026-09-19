@@ -14,7 +14,6 @@ public sealed partial class InvoiceCreatedView : UserControl
         string invoiceNumber,
         bool canApplyPayment,
         Action view,
-        Action preview,
         Func<Task> download,
         Func<Task> print,
         Action createNew,
@@ -25,13 +24,13 @@ public sealed partial class InvoiceCreatedView : UserControl
         InvoiceNumberText.Text = $"Invoice Number : #[{invoiceNumber}] ⓘ";
         InvoiceIdText.Text = $"Invoice ID: {invoiceId}";
         ToolTip.SetTip(ViewButton, "View invoice summary");
-        ToolTip.SetTip(PreviewButton, "Preview PDF and download file");
+        ToolTip.SetTip(PreviewButton, "Download PDF");
        /// ToolTip.SetTip(DownloadButton, "Download PDF");
         ToolTip.SetTip(PrintButton, "Print invoice directly");
         ToolTip.SetTip(CreateNewButton, "Create new invoice");
         ToolTip.SetTip(ApplyPaymentButton, "Accept payment");
         ViewButton.Click += (_, _) => view();
-        PreviewButton.Click += (_, _) => preview();
+        PreviewButton.Click += async (_, _) => await download();
         //DownloadButton.Click += async (_, _) => await download();
         PrintButton.Click += async (_, _) => await print();
         CreateNewButton.Click += (_, _) => createNew();

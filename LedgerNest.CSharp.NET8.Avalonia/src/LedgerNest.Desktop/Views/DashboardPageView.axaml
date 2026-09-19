@@ -48,7 +48,7 @@
                       </Border>
                     </StackPanel>
                     <Button Grid.Column="3" Command="{Binding EditCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Edit invoice"><TextBlock Text="edit" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" /></Button>
-                    <Button Grid.Column="4" Command="{Binding PdfCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Preview PDF"><TextBlock Text="picture_as_pdf" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" /></Button>
+                    <Button Grid.Column="4" Command="{Binding PdfCommand}" Background="Transparent" BorderThickness="0" Padding="0" MinHeight="24" ToolTip.Tip="Download PDF"><TextBlock Text="picture_as_pdf" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" /></Button>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -364,7 +364,7 @@
                           <Button Command="{Binding CloneCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#E0F7FA" BorderBrush="#80DEEA" ToolTip.Tip="Clone Invoice">
                             <TextBlock Text="content_copy" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#0097A7" HorizontalAlignment="Center" VerticalAlignment="Center" />
                           </Button>
-                          <Button Command="{Binding PdfCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#FFF3E0" BorderBrush="#FFCC80" ToolTip.Tip="Preview / Download PDF">
+                          <Button Command="{Binding PdfCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#FFF3E0" BorderBrush="#FFCC80" ToolTip.Tip="Download PDF">
                             <TextBlock Text="picture_as_pdf" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="#FB8C00" HorizontalAlignment="Center" VerticalAlignment="Center" />
                           </Button>
                           <Button Command="{Binding PrintCommand}" Width="42" Height="42" Padding="0" CornerRadius="7" Background="#ECEFF1" BorderBrush="#CFD8DC" ToolTip.Tip="Print invoice">

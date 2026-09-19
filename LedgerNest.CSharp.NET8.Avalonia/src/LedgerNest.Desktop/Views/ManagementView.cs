@@ -336,6 +336,10 @@ internal sealed partial class ManagementView : UserControl
         var subtitle = Ui.Text(string.IsNullOrWhiteSpace(business) ? record.Name : business, 11, color: Ui.Muted);
         subtitle.TextWrapping = TextWrapping.NoWrap;
         subtitle.TextTrimming = TextTrimming.CharacterEllipsis;
+        var initials = Ui.Text(Initials(record.Name), 12, true, Brush.Parse("#FF7A00"));
+        initials.HorizontalAlignment = HorizontalAlignment.Center;
+        initials.VerticalAlignment = VerticalAlignment.Center;
+        initials.TextAlignment = TextAlignment.Center;
         return new Border
         {
             ClipToBounds = true,
@@ -348,7 +352,7 @@ internal sealed partial class ManagementView : UserControl
                     Background = Brush.Parse("#FFE5CC"),
                     VerticalAlignment = VerticalAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    Child = Ui.Text("    "+Initials(record.Name), 12, true, Brush.Parse("#FF7A00"))
+                    Child = initials
                 },
                 Ui.Stack(2, name, subtitle))
         };
@@ -565,7 +569,7 @@ internal sealed partial class ManagementView : UserControl
             IconAction("visibility", "View", () => window.ShowDocumentPreview(record), "#4CAF50"),
             IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"),
             IconAction("receipt_long", "Clone", () => { if (model.CloneDocumentForEditing(record)) window.CloseOverlay(); }, "#00A6A6"),
-            IconAction("picture_as_pdf", "PDF", () => window.ShowPdfPreview(record), "#FF9800"),
+            IconAction("picture_as_pdf", "Download PDF", async () => await window.DownloadDocumentPdf(record), "#FF9800"),
             IconAction("print", "Print", async () => await window.PrintDocumentAsync(record), "#607D8B"),
             IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"),
             DocumentOverflowMenu(record)

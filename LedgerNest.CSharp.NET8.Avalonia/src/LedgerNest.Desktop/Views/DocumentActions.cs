@@ -2,14 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
-using Avalonia.Platform;
-using Docnet.Core;
-using Docnet.Core.Models;
-using System.Runtime.InteropServices;
 using Avalonia.Platform.Storage;
-using System.Diagnostics;
 using LedgerNest.Desktop.Views;
+using LedgerNest.Desktop.Printing;
 
 namespace LedgerNest.Desktop;
 
@@ -37,64 +32,6 @@ public partial class MainWindow
         ShowOverlay("", new DocumentPreviewView(preview), Ui.Button("Close", CloseOverlay, true), width: 650);
     }
 
-    // Performs the show pdf preview action for this screen or workflow.
-    internal async void ShowPdfPreview(UiRecord document)
-    {
-        string? path = null;
-        try
-        {
-            var bytes = TryExportDocumentPdf(document);
-            if (bytes == null) return;
-            path = Path.Combine(Path.GetTempPath(), $"ledgernest-preview-{FilePickerHelpers.SanitizeFileName(document.Name)}-{Guid.NewGuid():N}.pdf");
-            await File.WriteAllBytesAsync(path, bytes);
-            var pages = RenderPdfPreviewPages(bytes);
-            var previewModel = new PdfPreviewModel
-            {
-                Title = $"{document.Name} PDF",
-                PageCountText = pages.Count == 1 ? "1 page" : $"{pages.Count} pages",
-                MaxPreviewHeight = Math.Max(360, Bounds.Height * .72)
-            };
-            foreach (var page in pages) previewModel.Pages.Add(page);
-            Model.Status = $"Rendered PDF preview for {document.Name}.";
-            ShowOverlay("PDF Preview", new PdfPreviewView(previewModel),
-                Ui.Wrap(Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)), Ui.Button("Open Externally", () => { if (path != null) OpenPdfFile(path); }), Ui.Button("Close", CloseOverlay, true)),
-                width: 860);
-        }
-        catch (Exception ex)
-        {
-            NotifyError(path == null ? "Could not create PDF preview. The error has been logged." : $"Could not render PDF preview. Preview file: {path}. The error has been logged.", ex, $"Previewing invoice PDF {document.Name}");
-        }
-    }
-
-    // Performs the render pdf preview pages action for this screen or workflow.
-    private static List<Image> RenderPdfPreviewPages(byte[] bytes)
-    {
-        var pages = new List<Image>();
-        using var reader = DocLib.Instance.GetDocReader(bytes, new PageDimensions(1.65));
-        for (var pageIndex = 0; pageIndex < reader.GetPageCount(); pageIndex++)
-        {
-            using var pageReader = reader.GetPageReader(pageIndex);
-            var width = pageReader.GetPageWidth();
-            var height = pageReader.GetPageHeight();
-            var pixels = pageReader.GetImage();
-            var source = CreateBitmapFromBgra(pixels, width, height);
-            pages.Add(new Image { Source = source, Stretch = Stretch.Uniform, MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Center });
-        }
-        return pages.Count == 0 ? [new Image { Height = 1 }] : pages;
-    }
-
-    // Performs the create bitmap from bgra action for this screen or workflow.
-    private static WriteableBitmap CreateBitmapFromBgra(byte[] pixels, int width, int height)
-    {
-        var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
-        using var locked = bitmap.Lock();
-        var sourceStride = width * 4;
-        var rows = Math.Min(height, pixels.Length / sourceStride);
-        for (var row = 0; row < rows; row++)
-            Marshal.Copy(pixels, row * sourceStride, IntPtr.Add(locked.Address, row * locked.RowBytes), Math.Min(sourceStride, locked.RowBytes));
-        return bitmap;
-    }
-
     // Performs the tax label action for this screen or workflow.
     private static string TaxLabel(UiRecord document)
     {
@@ -106,7 +43,7 @@ public partial class MainWindow
     }
 
     // Performs the download document pdf action for this screen or workflow.
-    private async Task DownloadDocumentPdf(UiRecord document)
+    internal async Task DownloadDocumentPdf(UiRecord document)
     {
         try
         {
@@ -131,35 +68,92 @@ public partial class MainWindow
         }
     }
 
-    // Renders invoice HTML and sends it directly to the operating system's default printer.
+    // Generates a temporary PDF, sends it to the active native print service, and always removes the temporary file.
     internal async Task PrintDocumentAsync(UiRecord document)
     {
+        string? path = null;
         try
         {
-            Model.Status = "Rendering invoice for direct printing…";
-            var html = Model.ExportDocumentHtml(document);
+            Model.Status = "Generating invoice PDF…";
+            var bytes = Model.ExportDocumentPdf(document);
+            path = await pdfGenerator.GenerateAsync(bytes, document.Name);
             var print = Model.GetPrintConfiguration();
-            await htmlPrintService.PrintHtmlAsync(html, print.PrinterName, print.Options);
+            var printerName = print.PrinterName;
+            var options = print.Options;
+            if (options.ShowPrintDialog)
+            {
+                var selection = await ShowPrinterSelectionDialogAsync(printerName);
+                if (!selection.Confirmed)
+                {
+                    Model.Status = "Printing cancelled.";
+                    return;
+                }
+                printerName = selection.PrinterName;
+                options = new PrintOptions
+                {
+                    Silent = true,
+                    Landscape = options.Landscape,
+                    PaperSize = options.PaperSize,
+                    PaperSource = options.PaperSource,
+                    Copies = options.Copies,
+                    Collate = options.Collate
+                };
+            }
+            await printService.PrintPdfAsync(path, printerName, options);
             Model.Status = $"Sent {document.Name} to the printer.";
         }
         catch (Exception ex)
         {
             NotifyError("Could not send the invoice to the default printer. The error has been logged.", ex, $"Direct-printing invoice {document.Name}");
         }
+        finally
+        {
+            if (path != null)
+            {
+                try { File.Delete(path); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                { AppErrorLog.Write(ex, $"Cleaning temporary print file {path}"); }
+            }
+        }
     }
 
-    // Performs the open pdf file action for this screen or workflow.
-    private static void OpenPdfFile(string path)
+    // Shows a responsive printer chooser when the per-job selection setting is enabled.
+    private async Task<(bool Confirmed, string? PrinterName)> ShowPrinterSelectionDialogAsync(string? configuredPrinter)
     {
-        if (OperatingSystem.IsWindows())
+        var discovered = await printService.GetPrintersAsync();
+        var choices = new[] { PlatformPrinterService.DefaultPrinter }
+            .Concat(discovered.Select(printer => printer.Name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var selected = choices.Contains(configuredPrinter, StringComparer.OrdinalIgnoreCase)
+            ? configuredPrinter
+            : discovered.FirstOrDefault(printer => printer.IsDefault)?.Name ?? choices[0];
+        var picker = new ComboBox
         {
-            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
-            return;
-        }
-
-        var command = OperatingSystem.IsMacOS() ? "open" : "xdg-open";
-        using var process = Process.Start(new ProcessStartInfo(command, path) { UseShellExecute = false, CreateNoWindow = true });
-        if (process == null) throw new InvalidOperationException("The system PDF preview command could not be started.");
+            ItemsSource = choices,
+            SelectedItem = selected,
+            MinWidth = 360,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        var dialog = new Window
+        {
+            Title = "Select Printer",
+            Width = 480,
+            Height = 220,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        var cancel = Ui.Button("Cancel", () => dialog.Close((false, (string?)null)));
+        var print = Ui.Button("Print", () => dialog.Close((true, picker.SelectedItem?.ToString())), true);
+        dialog.Content = new Border
+        {
+            Padding = new Thickness(24),
+            Child = Ui.Rows("Auto,*,Auto",
+                Ui.Text("Choose a printer", 20, true),
+                new StackPanel { Spacing = 8, Margin = new Thickness(0, 20), Children = { Ui.Text("Printer", 12, true, Ui.Muted), picker } },
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, print } })
+        };
+        return await dialog.ShowDialog<(bool Confirmed, string? PrinterName)>(this);
     }
 
     // Performs the delete document from dashboard action for this screen or workflow.

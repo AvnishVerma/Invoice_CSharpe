@@ -182,8 +182,10 @@ public partial class MainWindow
     {
         var sections = Model.Settings["PDF Settings"];
         var printer = sections.Single(section => section.Title == "PRINTING").Fields.Single(field => field.Label == "Printer");
-        printer.Options = PlatformPrinterService.GetPrinterChoices();
-        if (!printer.Options.Contains(printer.Value, StringComparer.OrdinalIgnoreCase)) printer.Value = printer.Options[0];
+        printer.Options = new[] { PlatformPrinterService.DefaultPrinter, printer.Value }
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         var pageSize = sections[0].Fields[0]; var selectedTemplate = sections[1].Fields[0]; var color = sections[3].Fields[0];
         var templateList = Ui.Stack(8); var preview = new ContentControl(); var options = new ContentControl();
         var buttons = new List<Button>();
@@ -225,7 +227,26 @@ public partial class MainWindow
         var showPrinterDialog = sections.Single(section => section.Title == "PRINTING").Fields.Single(field => field.Label == "Show Printer Selection Dialog");
         var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; printer.Value = PlatformPrinterService.DefaultPrinter; showPrinterDialog.IsChecked = false; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true));
         var view = new PdfSettingsShellView(header, templates, settings, previewCard);
-        view.AttachedToVisualTree += (_, _) => pageSize.PropertyChanged += pageSizeChanged;
+        view.AttachedToVisualTree += async (_, _) =>
+        {
+            pageSize.PropertyChanged += pageSizeChanged;
+            try
+            {
+                var discovered = await printService.GetPrintersAsync();
+                printer.Options = new[] { PlatformPrinterService.DefaultPrinter }
+                    .Concat(discovered.Select(item => item.Name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                if (!printer.Options.Contains(printer.Value, StringComparer.OrdinalIgnoreCase))
+                    printer.Value = discovered.FirstOrDefault(item => item.IsDefault)?.Name ?? printer.Options[0];
+                Display();
+            }
+            catch (Exception ex)
+            {
+                AppErrorLog.Write(ex, "Refreshing printer choices");
+                Model.Status = "Printers could not be refreshed. Check the printing service configuration.";
+            }
+        };
         view.DetachedFromVisualTree += (_, _) => pageSize.PropertyChanged -= pageSizeChanged;
         return view;
     }

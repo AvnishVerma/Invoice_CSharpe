@@ -8,6 +8,7 @@ using Avalonia.VisualTree;
 using Avalonia.Styling;
 using LedgerNest.Application;
 using LedgerNest.Desktop;
+using LedgerNest.Desktop.Printing;
 using LedgerNest.Desktop.Views;
 using LedgerNest.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -48,7 +49,7 @@ internal static class Program
         CheckRecordDeletion();
         CheckTaxReport();
         CheckRevenueReport();
-        CheckPlaywrightPrinterValidation();
+        CheckCrossPlatformPrinting();
         CheckReceivablesLifecycle();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
@@ -122,7 +123,7 @@ internal static class Program
             binding.Command!.Execute(binding.CommandParameter);
             Settle();
         }
-        foreach (var key in new[] { Key.Q, Key.S, Key.F, Key.M, Key.O, Key.P })
+        foreach (var key in new[] { Key.Q, Key.S, Key.F, Key.M, Key.P })
             Check(window.KeyBindings.Any(k => k.Gesture?.Key == key && k.Gesture.KeyModifiers.HasFlag(KeyModifiers.Control)), $"Ctrl+{key} must have a window-level key binding");
         model.NavigateCommand.Execute("Products"); Click("＋ New Product"); Capture("product-form"); Click("Cancel");
         model.NavigateCommand.Execute("New Invoice"); Settle();
@@ -1054,30 +1055,37 @@ internal static class Program
         Check(inventory.InventoryValue == finiteStock * 40 && inventory.PotentialSaleValue == finiteStock * 100 && inventory.ProfitLockedInStock == finiteStock * 60, "Inventory report must calculate purchase, sale, and potential-profit values from finite stock");
     }
 
-    private static void CheckPlaywrightPrinterValidation()
+    private static void CheckCrossPlatformPrinting()
     {
-        Check(typeof(Microsoft.Playwright.Playwright).Assembly.GetName().Version?.Major == 1, "HTML printing must deploy Microsoft.Playwright");
-        Check(PlaywrightHtmlPrintService.IsMissingBrowserExecutable(new Microsoft.Playwright.PlaywrightException("Executable doesn't exist at test path")), "HTML printing must detect a missing Chromium installation for automatic recovery");
-        Check(!PlaywrightHtmlPrintService.IsMissingBrowserExecutable(new Microsoft.Playwright.PlaywrightException("Printer is unavailable")), "HTML printing must not treat unrelated Playwright failures as missing Chromium");
         var cupsPrinters = PlatformPrinterService.ParseCupsDestinations("Office_Printer accepting requests\nReceipt-80mm accepting requests\nOffice_Printer accepting requests\n");
         Check(cupsPrinters.SequenceEqual(["Office_Printer", "Receipt-80mm"]), "macOS and Linux printing must parse and de-duplicate CUPS destinations");
-        Check(PlatformPrinterService.ResolvePrinter(PlatformPrinterService.DefaultPrinter) == null, "Cross-platform printing must map the system-default choice to the native default printer");
-        Check(PlatformPrinterService.ResolvePrinter("Windows default printer") == null, "Cross-platform printing must preserve legacy Windows-default settings");
-        var printCss = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.Thermal80mm });
-        Check(printCss.Contains("size: 80mm auto", StringComparison.Ordinal) && printCss.Contains("margin: 0", StringComparison.Ordinal), "HTML printing must inject centralized thermal page dimensions");
-        var a4Css = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.A4, Landscape = true });
-        Check(a4Css.Contains("size: A4 landscape", StringComparison.Ordinal) && a4Css.Contains("break-inside: avoid", StringComparison.Ordinal), "HTML printing must support landscape A4 and multi-page row protection");
-        var a5Css = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.A5 });
-        var thermal58Css = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.Thermal58mm });
-        Check(a5Css.Contains("size: A5", StringComparison.Ordinal) && thermal58Css.Contains("size: 58mm auto", StringComparison.Ordinal), "HTML printing must support A5 and 58mm receipt paper");
-        var customCss = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.Custom, WidthMm = 100, HeightMm = 150 });
-        Check(customCss.Contains("size: 100mm 150mm", StringComparison.Ordinal), "HTML printing must support custom paper dimensions");
-        var resourceHtml = "<html><head></head><body><img src='data:image/png;base64,AA=='><script>document.body.dataset.ready='yes';</script><div class='no-print'>Hidden</div></body></html>";
-        var resourceOutput = PlaywrightHtmlPrintService.ApplyPrintCss(resourceHtml, new HtmlPrintOptions());
-        Check(resourceOutput.Contains("data:image/png;base64,AA==", StringComparison.Ordinal) && resourceOutput.Contains("document.body.dataset.ready", StringComparison.Ordinal) && resourceOutput.Contains(".no-print", StringComparison.Ordinal), "HTML printing must preserve embedded images and JavaScript while adding print-only rules");
+        Check(PlatformPrinterService.NormalizePrinterName(PlatformPrinterService.DefaultPrinter) == null, "Cross-platform printing must map the system-default choice to the native default printer");
+        Check(PlatformPrinterService.NormalizePrinterName("Windows default printer") == null, "Cross-platform printing must preserve legacy Windows-default settings");
+        Check(PlatformPrinterService.NormalizePrinterName("Office Printer") == "Office Printer", "Cross-platform printing must preserve an explicit printer selection");
+
+        var service = new PrintServiceFactory().Create();
+        Check((OperatingSystem.IsWindows() && service is WindowsPrintService) ||
+              (OperatingSystem.IsMacOS() && service is MacPrintService) ||
+              (OperatingSystem.IsLinux() && service is LinuxPrintService),
+            "The print factory must select the implementation for the current operating system");
+
+        var generator = new TemporaryPdfGenerator();
+        var bytes = "%PDF-1.7\n%%EOF"u8.ToArray();
+        var first = generator.GenerateAsync(bytes, "invoice/0001").GetAwaiter().GetResult();
+        var second = generator.GenerateAsync(bytes, "invoice/0001").GetAwaiter().GetResult();
+        try
+        {
+            Check(first != second && File.Exists(first) && File.Exists(second), "Temporary PDF generation must use unique files in the OS temporary directory");
+            Check(File.ReadAllBytes(first).SequenceEqual(bytes), "Temporary PDF generation must preserve the generated PDF bytes");
+        }
+        finally
+        {
+            File.Delete(first);
+            File.Delete(second);
+        }
 
         var model = new MainWindowViewModel();
-        var html = model.ExportDocumentHtml(new UiRecord
+        var pdf = model.ExportDocumentPdf(new UiRecord
         {
             Values = new Dictionary<string, string>
             {
@@ -1089,8 +1097,7 @@ internal static class Program
                 ["Total"] = "125.00"
             }
         });
-        Check(html.Contains("<!doctype html>", StringComparison.OrdinalIgnoreCase) && html.Contains("@page", StringComparison.Ordinal), "Direct printing must produce a complete printable HTML document");
-        Check(html.Contains("&lt;script&gt;", StringComparison.Ordinal) && !html.Contains("<script>", StringComparison.OrdinalIgnoreCase), "Direct-print HTML must encode invoice data");
+        Check(pdf.Length > 500 && System.Text.Encoding.ASCII.GetString(pdf, 0, 8).StartsWith("%PDF-1."), "Direct printing must generate a valid platform-independent PDF");
     }
 
     private static void CheckRecordDeletion()

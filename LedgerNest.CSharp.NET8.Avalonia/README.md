@@ -8,8 +8,8 @@ LedgerNest is a cross-platform invoicing and business-management desktop applica
 - Avalonia UI 12.1
 - CommunityToolkit.Mvvm
 - Entity Framework Core 10 with SQLite
-- Microsoft.Playwright and Chromium for HTML invoice printing
-- Docnet.Core for the current in-app PDF preview
+- SkiaSharp-based PDF generation with embedded fonts
+- Docnet.Core/PDFium for direct Windows printer rendering
 - ScottPlot for report charts
 
 ## Projects
@@ -35,19 +35,17 @@ Run verification checks with:
 dotnet run --project tests/LedgerNest.UiChecks
 ```
 
-## Document preview and printing
+## PDF generation and printing
 
-PDF preview and PDF download remain separate document actions. Direct invoice printing starts from the self-contained HTML invoice template:
+Invoices are generated as PDFs and submitted directly to the selected printer. Printing does not open a browser, PDF viewer, or external application:
 
 ```text
-Windows: HTML → Playwright Chromium → Windows print spooler
-macOS/Linux silent: HTML → Chromium spool document → CUPS
-macOS/Linux interactive: HTML → Chromium system print dialog
+Invoice data → PDF generator → platform print service → printer
 ```
 
-Playwright installs its matching Chromium revision automatically on the first print. Linux requires CUPS and the `lp` and `lpstat` commands. Printer selection is available under **Settings → PDF Settings → Printing**.
+Windows renders the PDF internally and sends pages through the Windows spooler. macOS and Linux submit the PDF through CUPS using `lp`; printer discovery uses `lpstat`. Printer selection and per-job selection are available under **Settings → PDF Settings → Printing**. Temporary print files are removed after submission, including failed or cancelled jobs.
 
-See [HTML_PRINTING.md](docs/HTML_PRINTING.md) for paper sizes, deployment setup, silent printing, and platform limitations.
+See [CrossPlatformPrinting.md](docs/CrossPlatformPrinting.md) for setup, architecture, paper sizes, licensing, and platform limitations.
 
 ## PDF exports
 

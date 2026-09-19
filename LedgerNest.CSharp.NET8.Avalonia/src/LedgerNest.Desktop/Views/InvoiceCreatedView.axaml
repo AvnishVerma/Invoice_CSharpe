@@ -132,7 +132,7 @@
                              FontSize="34"
                              Foreground="#9C27B0" />
                 </Button>
-                <TextBlock Text="Preview PDF"
+                <TextBlock Text="Download PDF"
                            Foreground="#9C27B0"
                            FontSize="13"
                            FontWeight="Bold"

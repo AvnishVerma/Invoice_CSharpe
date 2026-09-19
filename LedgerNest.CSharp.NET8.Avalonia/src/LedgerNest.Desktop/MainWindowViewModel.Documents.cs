@@ -10,6 +10,7 @@ using LedgerNest.Domain;
 using LedgerNest.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
+using LedgerNest.Desktop.Printing;
 
 namespace LedgerNest.Desktop;
 
@@ -24,37 +25,20 @@ public partial class MainWindowViewModel
         return bytes;
     }
 
-    // Creates self-contained invoice HTML for Chromium direct printing.
-    public string ExportDocumentHtml(UiRecord document)
-    {
-        var context = BuildDocumentExportContext(document);
-        return DocumentHtml.Create(context.Invoice, context.Items, context.Business, context.PageSize, context.Landscape, context.Template, context.ThemeColor, context.Options);
-    }
-
-    // Returns the saved printer destination and whether Chromium should show its printer dialog.
-    public (string PrinterName, HtmlPrintOptions Options) GetPrintConfiguration()
+    // Returns the saved printer destination and native PDF print options.
+    public (string PrinterName, PrintOptions Options) GetPrintConfiguration()
     {
         var printingFields = Settings["PDF Settings"].Single(section => section.Title == "PRINTING").Fields;
         var pageFields = Settings["PDF Settings"].Single(section => section.Title == "PAGE SIZE").Fields;
         var pageSize = pageFields.Single(field => field.Label == "Page Size").Value;
         return (
             printingFields.Single(field => field.Label == "Printer").Value,
-            new HtmlPrintOptions
+            new PrintOptions
             {
-                PaperSize = pageSize switch
-                {
-                    "A5" => PaperSizeType.A5,
-                    "A6" => PaperSizeType.A6,
-                    "Thermal 58mm" => PaperSizeType.Thermal58mm,
-                    "Thermal 80mm" => PaperSizeType.Thermal80mm,
-                    _ => PaperSizeType.A4
-                },
+                PaperSize = pageSize,
                 Landscape = pageFields.Single(field => field.Label == "Orientation").Value == "Landscape",
                 Silent = !printingFields.Single(field => field.Label == "Show Printer Selection Dialog").IsChecked,
-                MarginTopMm = 0,
-                MarginBottomMm = 0,
-                MarginLeftMm = 0,
-                MarginRightMm = 0
+                ShowPrintDialog = printingFields.Single(field => field.Label == "Show Printer Selection Dialog").IsChecked
             });
     }
 

@@ -4,6 +4,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using LedgerNest.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using LedgerNest.Desktop.Printing;
 
 namespace LedgerNest.Desktop;
 
@@ -46,18 +47,14 @@ public partial class App : Avalonia.Application
 
             serviceProvider = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
                 .AddInfrastructure(databasePath)
-                .AddSingleton<IHtmlPrintService, PlaywrightHtmlPrintService>()
+                .AddSingleton<IPdfGenerator, TemporaryPdfGenerator>()
+                .AddSingleton<IPrintServiceFactory, PrintServiceFactory>()
                 .BuildServiceProvider();
 
-            var printService = serviceProvider.GetRequiredService<IHtmlPrintService>();
-            desktop.MainWindow = new MainWindow(printService)
+            var printService = serviceProvider.GetRequiredService<IPrintServiceFactory>().Create();
+            desktop.MainWindow = new MainWindow(printService, serviceProvider.GetRequiredService<IPdfGenerator>())
             {
                 DataContext = new MainWindowViewModel(serviceProvider.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(), databasePath)
-            };
-            desktop.MainWindow.Opened += async (_, _) =>
-            {
-                try { await printService.WarmUpAsync(); }
-                catch (Exception ex) { AppErrorLog.Write(ex, "Warming up the HTML print service"); }
             };
             desktop.Exit += async (_, _) =>
             {

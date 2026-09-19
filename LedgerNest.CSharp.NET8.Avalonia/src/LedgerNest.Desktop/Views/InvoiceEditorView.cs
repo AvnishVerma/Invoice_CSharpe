@@ -109,12 +109,11 @@ public partial class MainWindow
         var left = Ui.Rows("Auto,8,*", customer, new Border(), items); var right = Ui.Rows("Auto,8,*", details, new Border(), optionsCard);
         var viewport = new InvoiceWorkspace(left, right, items, optionsCard);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        foreach (var (label, icon) in new[] { ("View", "visibility"), ("Preview", "picture_as_pdf"), ("Download", "download"), ("Print", "print") })
+        foreach (var (label, icon) in new[] { ("View", "visibility"), ("Download", "download"), ("Print", "print") })
         {
             var button = label switch
             {
                 "View" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowDocumentPreview(Model.LastSavedDocument); }),
-                "Preview" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowPdfPreview(Model.LastSavedDocument); }),
                 "Download" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await DownloadDocumentPdf(Model.LastSavedDocument); }),
                 "Print" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await PrintDocumentAsync(Model.LastSavedDocument); }),
                 _ => Ui.Button(label)
@@ -186,7 +185,6 @@ public partial class MainWindow
             Model.EditorDocumentNumber,
             applyPayment.IsEnabled,
             () => ShowDocumentPreview(document),
-            () => ShowPdfPreview(document),
             () => DownloadDocumentPdf(document),
             () => PrintDocumentAsync(document),
             () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); },

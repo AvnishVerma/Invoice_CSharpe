@@ -38,7 +38,7 @@ public partial class MainWindow
             ViewCommand = new RelayCommand(() => ShowDocumentPreview(invoice)),
             EditCommand = new RelayCommand(() => Model.LoadDocumentForEditing(invoice)),
             CloneCommand = new RelayCommand(() => Model.CloneDocumentForEditing(invoice)),
-            PdfCommand = new RelayCommand(() => ShowPdfPreview(invoice)),
+            PdfCommand = new AsyncRelayCommand(async () => await DownloadDocumentPdf(invoice)),
             PrintCommand = new AsyncRelayCommand(async () => await PrintDocumentAsync(invoice)),
             PaymentCommand = new RelayCommand(() => ShowPayment(invoice)),
             DeleteCommand = new RelayCommand(() => DeleteDocumentFromDashboard(invoice))
@@ -102,7 +102,7 @@ public partial class MainWindow
 
     // Performs the shortcuts action for this screen or workflow.
     private void Shortcuts() => ShowOverlay("Keyboard Shortcuts", Ui.Stack(16,
-        Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print invoice")));
+        Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + P", "Print invoice")));
 
     // Performs the shortcut row creation action for the shortcut overlay.
     private static Control Shortcut(string key, string description) => Ui.Columns("160,*", Ui.Card(Ui.Text(key, 13, true), 10), Ui.Text(description));

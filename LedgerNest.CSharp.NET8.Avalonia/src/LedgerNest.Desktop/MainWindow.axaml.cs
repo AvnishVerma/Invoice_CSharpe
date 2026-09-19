@@ -6,29 +6,25 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Desktop.Views;
+using LedgerNest.Desktop.Printing;
 
 namespace LedgerNest.Desktop;
 
 public partial class MainWindow : Window
 {
-    private readonly IHtmlPrintService htmlPrintService;
-    private readonly bool ownsHtmlPrintService;
+    private readonly IPrintService printService;
+    private readonly IPdfGenerator pdfGenerator;
     private MainWindowViewModel Model => (MainWindowViewModel)DataContext!;
     private bool invoiceCompletionVisible;
-    public MainWindow() : this(new PlaywrightHtmlPrintService(), true)
+    public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator())
     {
     }
 
-    // Creates the main window with the application-scoped HTML printing service.
-    public MainWindow(IHtmlPrintService htmlPrintService) : this(htmlPrintService, true)
+    // Creates the main window with application-scoped PDF generation and native printing services.
+    public MainWindow(IPrintService printService, IPdfGenerator pdfGenerator)
     {
-    }
-
-    // Initializes the window and records whether it owns the printing service lifetime.
-    private MainWindow(IHtmlPrintService htmlPrintService, bool ownsHtmlPrintService)
-    {
-        this.htmlPrintService = htmlPrintService;
-        this.ownsHtmlPrintService = ownsHtmlPrintService;
+        this.printService = printService;
+        this.pdfGenerator = pdfGenerator;
         InitializeComponent();
         Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
         Background = Ui.Canvas;
@@ -38,11 +34,10 @@ public partial class MainWindow : Window
                 Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
         };
         Activated += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.ValidateSession(); };
-        Closed += async (_, _) =>
+        Closed += (_, _) =>
         {
             if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
             page.Content = null;
-            if (this.ownsHtmlPrintService) await this.htmlPrintService.DisposeAsync();
         };
         Title = Branding.Name;
         DataContextChanged += (_, _) => { if (DataContext is MainWindowViewModel vm) InitializeShell(vm); };
@@ -50,7 +45,6 @@ public partial class MainWindow : Window
         RegisterShortcut(Key.S);
         RegisterShortcut(Key.F);
         RegisterShortcut(Key.M);
-        RegisterShortcut(Key.O);
         RegisterShortcut(Key.P);
         RegisterShortcut(Key.Escape, KeyModifiers.None);
     }
@@ -95,9 +89,6 @@ public partial class MainWindow : Window
                 return true;
             case Key.M when Model.Title == "New Invoice":
                 ShowCustomItem();
-                return true;
-            case Key.O when Model.Title == "New Invoice" && Model.LastSavedDocument != null:
-                ShowPdfPreview(Model.LastSavedDocument);
                 return true;
             case Key.P when Model.Title == "New Invoice" && Model.LastSavedDocument != null:
                 _ = PrintDocumentAsync(Model.LastSavedDocument);
