@@ -132,7 +132,7 @@ public partial class MainWindow
     }
 
     // Renders invoice HTML and sends it directly to the operating system's default printer.
-    internal async Task PrintDocumentPdf(UiRecord document)
+    internal async Task PrintDocumentAsync(UiRecord document)
     {
         try
         {

@@ -509,7 +509,7 @@ internal sealed partial class ManagementView : UserControl
             IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"),
             IconAction("receipt_long", "Clone", () => { if (model.CloneDocumentForEditing(record)) window.CloseOverlay(); }, "#00A6A6"),
             IconAction("picture_as_pdf", "PDF", () => window.ShowPdfPreview(record), "#FF9800"),
-            IconAction("print", "Print", async () => await window.PrintDocumentPdf(record), "#607D8B"),
+            IconAction("print", "Print", async () => await window.PrintDocumentAsync(record), "#607D8B"),
             IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"),
             DocumentOverflowMenu(record)
         }) actions.Children.Add(button);

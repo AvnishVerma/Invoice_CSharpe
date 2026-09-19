@@ -151,7 +151,7 @@
                              FontSize="34"
                              Foreground="#2196F3" />
                 </Button>
-                <TextBlock Text="Print PDF"
+                <TextBlock Text="Print Invoice"
                            Foreground="#2196F3"
                            FontSize="13"
                            FontWeight="Bold"

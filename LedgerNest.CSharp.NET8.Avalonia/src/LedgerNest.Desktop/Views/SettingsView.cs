@@ -42,7 +42,7 @@ public partial class MainWindow
         if (!Model.Settings.TryGetValue(name, out var sections)) return Ui.Empty("No settings available");
         var stack = Ui.Stack(16);
         foreach (var section in sections) stack.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text(section.Title, 18, true), Ui.Fields(section.Fields)), 24));
-        if (name == "Accessibility") stack.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text("Keyboard Shortcuts", 20, true), Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print PDF"))));
+        if (name == "Accessibility") stack.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text("Keyboard Shortcuts", 20, true), Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print invoice"))));
         stack.Children.Add(Ui.Button("Save Settings", () => Model.SaveSettings(name), true));
         stack.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar(name), Ui.Scroll(stack, 28));
     }

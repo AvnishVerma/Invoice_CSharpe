@@ -27,7 +27,7 @@ public sealed partial class InvoiceCreatedView : UserControl
         ToolTip.SetTip(ViewButton, "View invoice summary");
         ToolTip.SetTip(PreviewButton, "Preview PDF and download file");
        /// ToolTip.SetTip(DownloadButton, "Download PDF");
-        ToolTip.SetTip(PrintButton, "Print PDF directly");
+        ToolTip.SetTip(PrintButton, "Print invoice directly");
         ToolTip.SetTip(CreateNewButton, "Create new invoice");
         ToolTip.SetTip(ApplyPaymentButton, "Accept payment");
         ViewButton.Click += (_, _) => view();

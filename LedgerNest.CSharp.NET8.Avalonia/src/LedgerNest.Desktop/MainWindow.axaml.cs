@@ -100,7 +100,7 @@ public partial class MainWindow : Window
                 ShowPdfPreview(Model.LastSavedDocument);
                 return true;
             case Key.P when Model.Title == "New Invoice" && Model.LastSavedDocument != null:
-                _ = PrintDocumentPdf(Model.LastSavedDocument);
+                _ = PrintDocumentAsync(Model.LastSavedDocument);
                 return true;
             default:
                 return false;

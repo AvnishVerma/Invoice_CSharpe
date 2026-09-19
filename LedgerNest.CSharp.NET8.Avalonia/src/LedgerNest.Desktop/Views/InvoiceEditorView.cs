@@ -116,7 +116,7 @@ public partial class MainWindow
                 "View" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowDocumentPreview(Model.LastSavedDocument); }),
                 "Preview" => Ui.Button(label, () => { if (Model.LastSavedDocument != null) ShowPdfPreview(Model.LastSavedDocument); }),
                 "Download" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await DownloadDocumentPdf(Model.LastSavedDocument); }),
-                "Print" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await PrintDocumentPdf(Model.LastSavedDocument); }),
+                "Print" => Ui.Button(label, async () => { if (Model.LastSavedDocument != null) await PrintDocumentAsync(Model.LastSavedDocument); }),
                 _ => Ui.Button(label)
             };
             button.Content = Ui.Icon(icon, 24); button.Width = 48; button.Height = 48;
@@ -188,7 +188,7 @@ public partial class MainWindow
             () => ShowDocumentPreview(document),
             () => ShowPdfPreview(document),
             () => DownloadDocumentPdf(document),
-            () => PrintDocumentPdf(document),
+            () => PrintDocumentAsync(document),
             () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); },
             () => ShowPayment(document));
     }
