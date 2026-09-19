@@ -37,6 +37,54 @@ public partial class MainWindow
         ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, footer, true, kind == "Product" ? 550 : 520, kind == "Product" ? Ui.Segments(fields[0]) : null);
     }
 
+    // Shows a compact read-only summary for a user account.
+    internal void ShowUserDetails(UiRecord user, Action refresh)
+    {
+        var initial = user.Name.Length == 0 ? "?" : user.Name[..1].ToUpperInvariant();
+        var avatar = new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(19), Background = Brush.Parse("#F0DDF8"), Child = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0")) };
+        var role = new Border { Background = Brush.Parse("#F3E5F5"), CornerRadius = new CornerRadius(6), Padding = new Thickness(9, 4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(user["Role"], 11, false, Brush.Parse("#9C27B0")) };
+        var note = user.Name == Model.CurrentUsername ? "This is your account" : $"{user["Role"]} access";
+        var content = Ui.Stack(14, Ui.Columns("38,10,*", avatar, new Border(), Ui.Text(user.Name, 16, true)), role, Ui.Text(note, 12, color: Ui.Muted));
+        ShowOverlay("User Details", content, Ui.Button("Close", CloseOverlay, true), width: 360);
+    }
+
+    // Opens the user editor and prevents changing the signed-in user's own role.
+    internal void ShowUserEditor(UiRecord user, Action refresh)
+    {
+        var username = new FormField("Username", user.Name, required: true);
+        var role = new FormField("Role", user["Role"], "choice", ["Admin", "User"], required: true);
+        var roleControl = Ui.Field(role);
+        var editingSelf = user.Name == Model.CurrentUsername;
+        roleControl.IsEnabled = !editingSelf;
+        var form = Ui.Stack(16, Ui.Field(username), roleControl);
+        if (editingSelf) form.Children.Add(Ui.Text("You can't change your own role.", 12, color: Ui.Muted));
+        var cancel = Ui.Button("Cancel", CloseOverlay);
+        var save = Ui.Button("✓  Save Changes", () =>
+        {
+            if (!Model.SaveRecord("User", [username, role], user)) return;
+            refresh();
+            CloseOverlay();
+        }, true);
+        ShowOverlay("Edit User", form, Ui.Columns("*,12,2*", cancel, new Border(), save), side: true, width: 520);
+    }
+
+    // Opens the current-password flow for the signed-in user or an administrator reset flow for another user.
+    internal void ShowUserPassword(UiRecord user)
+    {
+        var ownAccount = user.Name == Model.CurrentUsername;
+        FormField[] fields = ownAccount
+            ? [new("Current Password", kind: "password", required: true), new("New Password", kind: "password", required: true), new("Confirm New Password", kind: "password", required: true)]
+            : [new("New Password", kind: "password", required: true), new("Confirm New Password", kind: "password", required: true)];
+        var identity = new Border { Background = Brush.Parse("#E3F2FD"), BorderBrush = Brush.Parse("#64B5F6"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Padding = new Thickness(14, 12), Child = Ui.Text($"User: {user.Name}", 14, false, Brush.Parse("#1976D2")) };
+        var body = Ui.Stack(16, identity, Ui.Fields(fields));
+        var save = Ui.Button("✓  Change Password", () =>
+        {
+            var changed = ownAccount ? Model.ChangePassword(user.Name, fields) : Model.ResetUserPassword(user, fields);
+            if (changed) CloseOverlay();
+        }, true);
+        ShowOverlay("Change Password", body, Ui.Wrap(Ui.Button("Cancel", CloseOverlay), save), width: 450, headerAccessory: Ui.Icon("lock", 22, Brushes.White));
+    }
+
     // Performs the show payment action for this screen or workflow.
     internal void ShowPayment(UiRecord invoice)
     {

@@ -34,7 +34,9 @@ internal sealed partial class ManagementView : UserControl
         var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.StartDocument(kind); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
         var more = MoreMenu();
         var trashButton = Ui.Button("Trash", () => { trash = !trash; Refresh(); });
-        var headerActions = Documents
+        var headerActions = kind == "User"
+            ? new Control[] { Ui.Button("↻", Refresh), add }
+            : Documents
             ? new Control[] { Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, trashButton, Ui.Button("↻", Refresh) }
             : [Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add];
         var header = Ui.Header($"{kind} Management", Subtitle(), headerActions);
@@ -63,8 +65,11 @@ internal sealed partial class ManagementView : UserControl
             HeaderHost.Content = header;
             StatsHost.Content = stats;
             SearchHost.Content = search;
-            ToolbarButtonsHost.Content = Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
+            ToolbarButtonsHost.Content = kind == "User"
+                ? MenuButton("Role: All ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); })
+                : Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
             TabsHost.Content = tabs;
+            TabsHost.IsVisible = kind != "User";
             RecordResultsHost.Content = results;
         }
         if (Documents && kind == "Invoice")
@@ -139,16 +144,17 @@ internal sealed partial class ManagementView : UserControl
             var chip = Ui.Button($"{tab} ({count})", () => { filter = tab; page = 0; Refresh(); }, tab == filter); chips.Children.Add(chip);
         }
         tabs.Content = new ScrollViewer { Content = chips, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
-        stats.Content = Documents ? DocumentStats(total) : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(($"Total {kind}s", total.ToString(), "Total items", "#002E78"), (kind == "Product" ? "Products" : "Admins", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Product" : "Admin")).ToString(), "", "#4CAF50"), (kind == "Product" ? "Services" : "Users", Records.Count(r => r[kind == "Product" ? "Type" : "Role"] == (kind == "Product" ? "Service" : "User")).ToString(), "", "#673AB7"));
+        stats.Content = Documents ? DocumentStats(total) : kind == "User" ? UserStats(total) : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(($"Total {kind}s", total.ToString(), "Total items", "#002E78"), ("Products", Records.Count(r => r["Type"] == "Product").ToString(), "", "#4CAF50"), ("Services", Records.Count(r => r["Type"] == "Service").ToString(), "", "#673AB7"));
         var filtered = Filtered().ToArray();
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)pageSize)); page = Math.Clamp(page, 0, pages - 1);
         if (Documents && DocumentPageSummaryHost != null) DocumentPageSummaryHost.Content = Ui.Text($"Total: {filtered.Length}   ·   Page {page + 1}/{pages}", 12, color: Ui.Muted);
-        var body = Ui.Stack(0); var columns = kind == "Product" ? ProductColumns() : kind == "Customer" ? CustomerColumns() : Documents ? DocumentColumns() : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
+        var body = Ui.Stack(0); var columns = kind == "Product" ? ProductColumns() : kind == "Customer" ? CustomerColumns() : Documents ? DocumentColumns() : kind == "User" ? "44,*,220,160" : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
         Control TableRow(UiRecord? record, int index)
         {
             if (kind == "Product") return ProductTableRow(record, index);
             if (kind == "Customer") return CustomerTableRow(record, index);
             if (Documents) return DocumentTableRow(record, index);
+            if (kind == "User") return UserTableRow(record);
             var controls = new List<Control>();
             var checkbox = new CheckBox { IsChecked = record != null && selected.Contains(record.Id), IsVisible = record != null };
             checkbox.IsCheckedChanged += (_, _) => { if (record == null) return; if (checkbox.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); };
@@ -163,13 +169,61 @@ internal sealed partial class ManagementView : UserControl
         else foreach (var (record, index) in filtered.Skip(page * pageSize).Take(pageSize).Select((r, i) => (r, page * pageSize + i))) body.Children.Add(TableRow(record, index));
         var sizes = new ComboBox { ItemsSource = new[] { 10, 25, 50, 100 }, SelectedItem = pageSize };
         sizes.SelectionChanged += (_, _) => { pageSize = (int)(sizes.SelectedItem ?? 10); page = 0; Refresh(); };
-        var pager = Documents
+        var pager = kind == "User"
+            ? UserPager(filtered.Length, pages)
+            : Documents
             ? Ui.Columns("Auto,*,Auto", Ui.Wrap(Ui.Text("Rows per page:", 12), sizes), new Border(), Ui.Wrap(Ui.Button("‹ Previous", () => { page--; Refresh(); }), Ui.Button($"Page {page + 1} of {pages}", () => { }, true), Ui.Button("› Next", () => { page++; Refresh(); })))
             : Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
         body.Children.Add(new Border { Padding = Documents ? new Thickness(20, 10, 20, 0) : new Thickness(16, 8), Child = pager });
         results.Content = Documents
             ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 1120, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
             : Ui.Card(new ScrollViewer { Content = new Border { MinWidth = kind is "Product" or "Customer" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
+    }
+
+    // Builds the three summary cards shown above the user table.
+    private Control UserStats(int total) => Ui.Stats(
+        ("Total Users", total.ToString(), "All users", "#0D47A1"),
+        ("Admin Users", Records.Count(record => record["Role"] == "Admin").ToString(), "Full access", "#9C27B0"),
+        ("Regular Users", Records.Count(record => record["Role"] == "User").ToString(), "Standard access", "#2196F3"));
+
+    // Builds a user table header or row with user-specific actions.
+    private Control UserTableRow(UiRecord? record)
+    {
+        if (record == null)
+            return new Border { Background = Brush.Parse("#FBF6FC"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, 10), Child = Ui.Columns("44,*,220,160", new CheckBox { IsEnabled = false }, Ui.Text("USER", 11, true, Ui.Muted), Ui.Text("ROLE", 11, true, Ui.Muted), Ui.Text("ACTIONS", 11, true, Ui.Muted)) };
+
+        var check = new CheckBox { IsChecked = selected.Contains(record.Id), VerticalAlignment = VerticalAlignment.Center };
+        check.IsCheckedChanged += (_, _) => { if (check.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); Refresh(); };
+        var initial = record.Name.Length == 0 ? "?" : record.Name[..1].ToUpperInvariant();
+        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = Brush.Parse("#F0DDF8"), Child = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0")) };
+        var nameLine = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
+        nameLine.Children.Add(Ui.Text(record.Name, 14, true));
+        if (record.Name == model.CurrentUsername) nameLine.Children.Add(new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 2), Child = Ui.Text("You", 10, true, Ui.Primary) });
+        var user = Ui.Columns("34,10,*", avatar, new Border(), nameLine);
+        var role = new Border { Background = Brush.Parse(record["Role"] == "Admin" ? "#F3E5F5" : "#E3F2FD"), CornerRadius = new CornerRadius(6), Padding = new Thickness(9, 4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(record["Role"], 11, false, record["Role"] == "Admin" ? Brush.Parse("#9C27B0") : Ui.Primary) };
+        return new Border { Background = Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, 10), Child = Ui.Columns("44,*,220,160", check, user, role, UserActions(record)) };
+    }
+
+    // Builds View, Edit, and Change Password actions for one user.
+    private Control UserActions(UiRecord record)
+    {
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        actions.Children.Add(IconAction("visibility", "View", () => window.ShowUserDetails(record, Refresh), "#4CAF50"));
+        actions.Children.Add(IconAction("edit", "Edit", () => window.ShowUserEditor(record, Refresh), "#2196F3"));
+        actions.Children.Add(IconAction("lock", "Change Password", () => window.ShowUserPassword(record), "#FF9800"));
+        return actions;
+    }
+
+    // Builds selection actions and pagination for the user table.
+    private Control UserPager(int count, int pages)
+    {
+        var bulk = Ui.Button($"☷  Bulk Actions ({selected.Count}) ▾", () => { });
+        var menu = new MenuFlyout();
+        var delete = new MenuItem { Header = "Delete selected", IsEnabled = selected.Count > 0 };
+        delete.Click += (_, _) => window.Confirm("Delete Users", $"Delete {selected.Count} selected user(s)?", () => { foreach (var record in model.Users.Where(item => selected.Contains(item.Id)).ToArray()) model.DeleteRecord("User", record); selected.Clear(); Refresh(); });
+        menu.Items.Add(delete);
+        bulk.Flyout = menu;
+        return Ui.Columns("Auto,*,Auto", bulk, Ui.Text($"Showing {(count == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, count)} of {count} users", 12, color: Ui.Muted), Ui.Wrap(Ui.Button("‹", () => { page--; Refresh(); }), Ui.Button((page + 1).ToString(), () => { }, true), Ui.Text($"of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
     }
 
 

@@ -170,4 +170,39 @@ public partial class MainWindowViewModel
         return true;
     }
 
+    // Lets an administrator replace another user's password without requiring that user's current password.
+    public bool ResetUserPassword(UiRecord record, FormField[] fields)
+    {
+        if (CurrentRole != "Admin" || dbFactory == null || !Users.Contains(record))
+        {
+            Status = "Administrator access is required to reset this password.";
+            return false;
+        }
+        if (!fields.Select(field => field.Validate()).All(valid => valid)) return false;
+        if (fields[0].Value.Length < 8)
+        {
+            fields[0].Error = "Password must be at least 8 characters.";
+            return false;
+        }
+        if (fields[0].Value != fields[1].Value)
+        {
+            fields[1].Error = "Passwords do not match.";
+            return false;
+        }
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var user = db.Users.Find(record.SourceId);
+        if (user == null)
+        {
+            Status = "User no longer exists.";
+            return false;
+        }
+        user.Salt = PasswordCredentials.CreateSalt();
+        user.PasswordHash = HashPassword(fields[0].Value, user.Salt);
+        user.PasswordChanged = true;
+        db.SaveChanges();
+        Status = $"Password changed for {user.Username}.";
+        return true;
+    }
+
 }

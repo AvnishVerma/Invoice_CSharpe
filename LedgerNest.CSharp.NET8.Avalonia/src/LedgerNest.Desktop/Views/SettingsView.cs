@@ -284,17 +284,23 @@ public partial class MainWindow
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
 
-    // Writes a selected backup through its local path when available and falls back to the storage-provider stream.
+    // Writes through the storage-provider stream and retries transient Windows file-picker locks.
     private static async Task WriteBackupFileAsync(IStorageFile file, ReadOnlyMemory<byte> contents)
     {
-        var localPath = file.TryGetLocalPath();
-        if (!string.IsNullOrWhiteSpace(localPath))
+        const int attempts = 3;
+        for (var attempt = 1; attempt <= attempts; attempt++)
         {
-            await File.WriteAllBytesAsync(localPath, contents.ToArray());
-            return;
+            try
+            {
+                await using var stream = await file.OpenWriteAsync();
+                await BackupStreamWriter.WriteAsync(stream, contents);
+                return;
+            }
+            catch (IOException) when (attempt < attempts)
+            {
+                await Task.Delay(150 * attempt);
+            }
         }
-        await using var stream = await file.OpenWriteAsync();
-        await BackupStreamWriter.WriteAsync(stream, contents);
     }
 
     // Imports either a JSON export or a complete database backup selected by the user.
