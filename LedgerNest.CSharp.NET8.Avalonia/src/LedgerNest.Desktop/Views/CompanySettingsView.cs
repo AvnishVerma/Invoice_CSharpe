@@ -43,6 +43,21 @@ public partial class MainWindow
         };
         var save = Ui.Button("Save", () => Model.SaveSettings("Company Info"), true); save.HorizontalAlignment = HorizontalAlignment.Stretch;
         var businessType = sections[2].Fields[0];
+        var businessCard = Ui.Card(Ui.Columns("Auto,16,*",
+            Ui.Icon("account_tree", 25, Brush.Parse("#003B87")),
+            new Border(),
+            Ui.Stack(8,
+                Ui.Text("Business Type", 16),
+                Ui.Text("Controls item type options in the product list and invoices", 12, color: Ui.Muted),
+                Ui.Segments(businessType))), 16);
+        var qrCard = Ui.Card(Ui.Columns("Auto,16,*",
+            Ui.Icon("credit_card", 25, Ui.Muted),
+            new Border(),
+            Ui.Field(sections[3].Fields[0], "Show QR Code on Invoices")), 16);
+        var bankCard = Ui.Card(Ui.Columns("Auto,16,*",
+            Ui.Icon("account_balance", 25, Ui.Muted),
+            new Border(),
+            Ui.Field(sections[3].Fields[1], "Show Bank Details on Invoices")), 16);
         var details = Ui.Stack(16,
             Ui.Text("COMPANY DETAILS", 12, true, Ui.Muted),
             Ui.Fields([F("Company Name"), F("GSTIN")], 2),
@@ -52,10 +67,10 @@ public partial class MainWindow
             Ui.Field(F("Address")),
             new Border { Height = 8 },
             Ui.Text("BUSINESS TYPE", 12, true, Ui.Muted),
-            Ui.Card(Ui.Stack(8, Ui.Text("Business Type", 16), Ui.Text("Controls item type options in the product list and invoices", 12, color: Ui.Muted), Ui.Segments(businessType)), 16),
+            businessCard,
             new Border { Height = 8 },
             Ui.Text("PAYMENT SETTINGS", 12, true, Ui.Muted),
-            Ui.Card(Ui.Field(sections[3].Fields[0], "Show QR Code on Invoices"), 16),
+            qrCard,
             Ui.Text("UPI ACCOUNTS", 12, true, Ui.Muted));
 
         var upiRows = Ui.Stack(10);
@@ -87,11 +102,18 @@ public partial class MainWindow
         details.AttachedToVisualTree += (_, _) => { Model.UpiAccounts.CollectionChanged += upiChanged; Model.BankAccounts.CollectionChanged += bankChanged; };
         details.DetachedFromVisualTree += (_, _) => { Model.UpiAccounts.CollectionChanged -= upiChanged; Model.BankAccounts.CollectionChanged -= bankChanged; };
         details.Children.Add(upiRows);
-        details.Children.Add(Ui.Button("＋ Add UPI Account", Model.AddUpiAccount));
-        details.Children.Add(Ui.Card(Ui.Field(sections[3].Fields[1], "Show Bank Details on Invoices"), 16));
+        var addUpi = Ui.Button("＋ Add UPI Account", Model.AddUpiAccount);
+        addUpi.Classes.Add("text");
+        addUpi.HorizontalAlignment = HorizontalAlignment.Left;
+        details.Children.Add(addUpi);
+        details.Children.Add(new Border { Height = 12 });
+        details.Children.Add(bankCard);
         details.Children.Add(Ui.Text("BANK ACCOUNTS", 12, true, Ui.Muted));
         details.Children.Add(bankRows);
-        details.Children.Add(Ui.Button("＋ Add Bank Account", Model.AddBankAccount));
+        var addBank = Ui.Button("＋ Add Bank Account", Model.AddBankAccount);
+        addBank.Classes.Add("text");
+        addBank.HorizontalAlignment = HorizontalAlignment.Left;
+        details.Children.Add(addBank);
         var language = new ComboBox { ItemsSource = new[] { "English", "हिन्दी", "नेपाली", "བོད་ཡིག", "Español", "Français", "中文" }, SelectedItem = Model.Language, Width = 115 };
         language.SelectionChanged += (_, _) => Model.SetLanguage(language.SelectedItem?.ToString() ?? "English");
         ToolTip.SetTip(language, "Stores the preferred language; full translated desktop strings are still being migrated.");
