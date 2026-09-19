@@ -36,10 +36,23 @@
               <Setter Property="Background" Value="#E2E8F0" />
               <Setter Property="Foreground" Value="#0D47A1" />
             </Style>
+            <Style Selector="Button.report-tab /template/ ContentPresenter#PART_ContentPresenter">
+              <Setter Property="Background" Value="Transparent" />
+              <Setter Property="BorderBrush" Value="Transparent" />
+            </Style>
+            <Style Selector="Button.report-tab:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+              <Setter Property="Background" Value="Transparent" />
+              <Setter Property="BorderBrush" Value="Transparent" />
+            </Style>
+            <Style Selector="Button.report-tab:pressed /template/ ContentPresenter#PART_ContentPresenter">
+              <Setter Property="Background" Value="Transparent" />
+              <Setter Property="BorderBrush" Value="Transparent" />
+            </Style>
           </ListBox.Styles>
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <Button Command="{Binding DataContext.SelectReportCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+              <Button Classes="report-tab"
+                      Command="{Binding DataContext.SelectReportCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                       CommandParameter="{Binding}"
                       Tag="{Binding}"
                       Background="Transparent"
