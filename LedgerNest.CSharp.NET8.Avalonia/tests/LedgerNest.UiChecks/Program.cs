@@ -60,7 +60,7 @@ internal static class Program
         void Capture(string name)
         {
             Settle(); using var frame = window.CaptureRenderedFrame();
-            Check(frame != null, $"No rendered frame for {name}"); frame!.Save(Path.Combine(output, name + ".png"));
+            Check(frame != null, $"No rendered frame for {name}"); frame!.Save(Path.Combine(output, name + ".png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
             Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && !string.IsNullOrWhiteSpace(t.Text)), $"Blank screen: {name}");
         }
         Button FindButton(string text) => window.GetVisualDescendants().OfType<Button>().Last(b => b.IsVisible && (b.Content?.ToString() == text || b.Tag?.ToString() == text));

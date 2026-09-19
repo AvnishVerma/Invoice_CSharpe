@@ -1,39 +1,60 @@
-# LedgerNest.CSharp
+# LedgerNest Desktop
 
-Initial C#/.NET 8 + Avalonia UI + SQLite migration scaffold for the uploaded legacy Flutter application.
+LedgerNest is a cross-platform invoicing and business-management desktop application migrated from the legacy Flutter implementation.
 
-## Target stack
-- .NET 8
-- Avalonia UI 11
-- MVVM
-- Microsoft.Extensions.DependencyInjection / Configuration
-- Microsoft.EntityFrameworkCore.Sqlite
+## Technology
+
+- .NET 10, pinned through `global.json`
+- Avalonia UI 12.1
 - CommunityToolkit.Mvvm
+- Entity Framework Core 10 with SQLite
+- Microsoft.Playwright and Chromium for HTML invoice printing
+- Docnet.Core for the current in-app PDF preview
+- ScottPlot for report charts
 
 ## Projects
-- `src/LedgerNest.Domain` - entities and domain contracts
-- `src/LedgerNest.Application` - use cases/services/DTOs
-- `src/LedgerNest.Infrastructure` - EF Core SQLite persistence
-- `src/LedgerNest.Desktop` - Avalonia desktop application
 
-## Migration approach
-The Flutter/Dart application is not translated mechanically. Its business concepts are mapped into C# domain entities, repositories and ViewModels. Existing SQLite schema/data should be migrated after validating the Dart schema and business rules.
+- `src/LedgerNest.Domain` — entities and domain contracts with no project dependencies
+- `src/LedgerNest.Application` — application services and ViewModels
+- `src/LedgerNest.Infrastructure` — EF Core SQLite persistence and dependency registration
+- `src/LedgerNest.Desktop` — Avalonia views, startup, document rendering, and platform printing
+- `tests/LedgerNest.UiChecks` — headless UI, calculation, persistence, report, and printing checks
+- `invoiso-main` — legacy Flutter application used as the migration reference
 
-## Run
+## Build and run
+
 ```bash
-dotnet restore
-dotnet build
+dotnet restore LedgerNest.CSharp.sln
+dotnet build LedgerNest.CSharp.sln --no-restore
 dotnet run --project src/LedgerNest.Desktop
 ```
 
-## Reported UI fixes
+Run verification checks with:
 
-The September 10 issue review is tracked in [the issue report](migration/REPORTED_ISSUES_REVIEW.md) and an [importable status CSV](migration/REPORTED_ISSUES_STATUS.csv). The Google Sheet has not been updated directly because an authenticated writable connection is unavailable.
+```bash
+dotnet run --project tests/LedgerNest.UiChecks
+```
 
-Usernames are case-insensitive; passwords remain case-sensitive. Press Enter to submit login. Administrators see first-time setup after completing any mandatory password change.
+## Document preview and printing
 
-To use a default customer, select **Use as default for new invoices** when saving a customer or selecting an existing customer in the invoice editor. **Clear default customer** is available in the selection dialog. The default is applied when starting a new document; existing drafts are preserved during navigation.
+PDF preview and PDF download remain separate document actions. Direct invoice printing starts from the self-contained HTML invoice template:
 
-Company logos are saved with company settings and shown again when the screen reopens. Click **Save** after selecting an image. Row and toolbar three-dot actions open dropdown menus; saving a payment closes its dialog.
+```text
+Windows: HTML → Playwright Chromium → Windows print spooler
+macOS/Linux silent: HTML → Chromium spool document → CUPS
+macOS/Linux interactive: HTML → Chromium system print dialog
+```
 
-Document PDF exports use a formatted layout for invoices, quotations and receipts, including company details, item tables, totals, embedded Roboto fonts, A4/A5/A6 and thermal paper sizes, landscape orientation for sheet formats, and multipage receipt pagination. The headless UI checks generate sample receipt PDFs in the output folder passed to `tests/LedgerNest.UiChecks`.
+Playwright installs its matching Chromium revision automatically on the first print. Linux requires CUPS and the `lp` and `lpstat` commands. Printer selection is available under **Settings → PDF Settings → Printing**.
+
+See [HTML_PRINTING.md](docs/HTML_PRINTING.md) for paper sizes, deployment setup, silent printing, and platform limitations.
+
+## PDF exports
+
+Invoice, quotation, receipt, and report exports support embedded Roboto fonts, company details, item tables, totals, A4/A5/A6 and thermal paper sizes, landscape orientation, and multipage output.
+
+## Migration notes
+
+The Flutter/Dart application is not translated mechanically. Its business concepts are mapped into C# domain entities, repositories, and ViewModels. Validate the legacy SQLite schema and business rules before introducing database migrations or claiming compatibility with existing data.
+
+The September 10 issue review is tracked in [REPORTED_ISSUES_REVIEW.md](migration/REPORTED_ISSUES_REVIEW.md) and [REPORTED_ISSUES_STATUS.csv](migration/REPORTED_ISSUES_STATUS.csv).

@@ -17,7 +17,7 @@ Restore and build the solution, then install the Chromium revision required by t
 ```powershell
 dotnet restore LedgerNest.CSharp.sln
 dotnet build LedgerNest.CSharp.sln
-pwsh src/LedgerNest.Desktop/bin/Debug/net9.0/playwright.ps1 install chromium
+pwsh src/LedgerNest.Desktop/bin/Debug/net10.0/playwright.ps1 install chromium
 ```
 
 For a release build, replace `Debug` with `Release`. On a clean Windows machine, the first print automatically installs the matching Chromium build for the application user. The command above can still be used during deployment to install it in advance and avoid the one-time download during the first print.
