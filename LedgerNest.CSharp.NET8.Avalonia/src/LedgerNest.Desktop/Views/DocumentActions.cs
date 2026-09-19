@@ -139,7 +139,7 @@ public partial class MainWindow
             Model.Status = "Rendering invoice for direct printing…";
             var html = Model.ExportDocumentHtml(document);
             var print = Model.GetPrintConfiguration();
-            await ChromiumInvoicePrinter.PrintHtmlAsync(html, print.PrinterName, print.ShowDialog);
+            await htmlPrintService.PrintHtmlAsync(html, print.PrinterName, print.Options);
             Model.Status = $"Sent {document.Name} to the default printer.";
         }
         catch (Exception ex)

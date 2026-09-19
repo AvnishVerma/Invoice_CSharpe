@@ -9,6 +9,7 @@ namespace LedgerNest.Desktop;
 
 public partial class App : Avalonia.Application
 {
+    private ServiceProvider? serviceProvider;
     public App()
     {
         Dispatcher.UIThread.UnhandledException += (_, e) =>
@@ -43,13 +44,19 @@ public partial class App : Avalonia.Application
 
             Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
 
-            var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
+            serviceProvider = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
                 .AddInfrastructure(databasePath)
+                .AddSingleton<IHtmlPrintService, PlaywrightHtmlPrintService>()
                 .BuildServiceProvider();
 
-            desktop.MainWindow = new MainWindow
+            desktop.MainWindow = new MainWindow(serviceProvider.GetRequiredService<IHtmlPrintService>())
             {
-                DataContext = new MainWindowViewModel(services.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(), databasePath)
+                DataContext = new MainWindowViewModel(serviceProvider.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(), databasePath)
+            };
+            desktop.Exit += async (_, _) =>
+            {
+                if (serviceProvider != null) await serviceProvider.DisposeAsync();
+                serviceProvider = null;
             };
         }
 

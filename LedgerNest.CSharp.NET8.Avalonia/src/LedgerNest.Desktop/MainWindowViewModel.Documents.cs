@@ -32,12 +32,30 @@ public partial class MainWindowViewModel
     }
 
     // Returns the saved printer destination and whether Chromium should show its printer dialog.
-    public (string PrinterName, bool ShowDialog) GetPrintConfiguration()
+    public (string PrinterName, HtmlPrintOptions Options) GetPrintConfiguration()
     {
-        var fields = Settings["PDF Settings"].Single(section => section.Title == "PRINTING").Fields;
+        var printingFields = Settings["PDF Settings"].Single(section => section.Title == "PRINTING").Fields;
+        var pageFields = Settings["PDF Settings"].Single(section => section.Title == "PAGE SIZE").Fields;
+        var pageSize = pageFields.Single(field => field.Label == "Page Size").Value;
         return (
-            fields.Single(field => field.Label == "Printer").Value,
-            fields.Single(field => field.Label == "Show Printer Selection Dialog").IsChecked);
+            printingFields.Single(field => field.Label == "Printer").Value,
+            new HtmlPrintOptions
+            {
+                PaperSize = pageSize switch
+                {
+                    "A5" => PaperSizeType.A5,
+                    "A6" => PaperSizeType.A6,
+                    "Thermal 58mm" => PaperSizeType.Thermal58mm,
+                    "Thermal 80mm" => PaperSizeType.Thermal80mm,
+                    _ => PaperSizeType.A4
+                },
+                Landscape = pageFields.Single(field => field.Label == "Orientation").Value == "Landscape",
+                Silent = !printingFields.Single(field => field.Label == "Show Printer Selection Dialog").IsChecked,
+                MarginTopMm = 0,
+                MarginBottomMm = 0,
+                MarginLeftMm = 0,
+                MarginRightMm = 0
+            });
     }
 
     // Resolves the saved invoice, line items, and configured layout shared by PDF and HTML output.

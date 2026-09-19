@@ -13,8 +13,19 @@ internal static class WindowsPrinterService
     // Returns installed Windows printer names with the current default printer first.
     public static string[] GetInstalledPrinters()
     {
-        if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1)) return [DefaultPrinter];
+        if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1)) return [];
         return GetWindowsPrinters();
+    }
+
+    // Returns printer choices for settings, including an explicit Windows-default option.
+    public static string[] GetPrinterChoices() => [DefaultPrinter, .. GetInstalledPrinters()];
+
+    // Returns the active Windows default printer when the platform supports printing.
+    public static string? GetDefaultPrinter()
+    {
+        if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1)) return null;
+        try { return new PrinterSettings().PrinterName; }
+        catch (Exception ex) when (ex is InvalidPrinterException or Win32Exception) { return null; }
     }
 
     // Reads the installed printer collection on supported Windows versions.
@@ -30,19 +41,23 @@ internal static class WindowsPrinterService
                 .OrderBy(name => name.Equals(current, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
                 .ThenBy(name => name, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
-            return names.Length == 0 ? [DefaultPrinter] : [DefaultPrinter, .. names];
+            return names;
         }
         catch (Exception ex) when (ex is InvalidPrinterException or Win32Exception)
         {
-            return [DefaultPrinter];
+            return [];
         }
     }
 
     // Makes the selected printer the Windows default for one direct-print operation.
-    public static IDisposable UsePrinter(string printerName)
+    public static IDisposable UsePrinter(string? printerName)
     {
         if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1) || string.IsNullOrWhiteSpace(printerName) || printerName == DefaultPrinter)
+        {
+            if (OperatingSystem.IsWindowsVersionAtLeast(6, 1) && string.IsNullOrWhiteSpace(GetDefaultPrinter()))
+                throw new InvalidOperationException("Windows has no default printer. Select or install a printer before printing.");
             return EmptyScope.Instance;
+        }
 
         return UseWindowsPrinter(printerName);
     }
@@ -51,9 +66,9 @@ internal static class WindowsPrinterService
     [SupportedOSPlatform("windows6.1")]
     private static IDisposable UseWindowsPrinter(string printerName)
     {
-        var installed = GetInstalledPrinters();
+        var installed = GetWindowsPrinters();
         if (!installed.Contains(printerName, StringComparer.OrdinalIgnoreCase))
-            throw new InvalidPrinterException(new PrinterSettings { PrinterName = printerName });
+            throw new InvalidOperationException($"Printer '{printerName}' is not installed or is unavailable.");
 
         var previous = new PrinterSettings().PrinterName;
         if (printerName.Equals(previous, StringComparison.OrdinalIgnoreCase)) return EmptyScope.Instance;

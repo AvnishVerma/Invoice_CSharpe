@@ -78,7 +78,7 @@ public partial class MainWindow
     {
         var sections = Model.Settings["PDF Settings"];
         var printer = sections.Single(section => section.Title == "PRINTING").Fields.Single(field => field.Label == "Printer");
-        printer.Options = WindowsPrinterService.GetInstalledPrinters();
+        printer.Options = WindowsPrinterService.GetPrinterChoices();
         if (!printer.Options.Contains(printer.Value, StringComparer.OrdinalIgnoreCase)) printer.Value = printer.Options[0];
         var pageSize = sections[0].Fields[0]; var selectedTemplate = sections[1].Fields[0]; var color = sections[3].Fields[0];
         var templateList = Ui.Stack(8); var preview = new ContentControl(); var options = new ContentControl();

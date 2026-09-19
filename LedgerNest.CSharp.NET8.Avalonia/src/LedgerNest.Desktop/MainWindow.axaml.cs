@@ -11,10 +11,24 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow : Window
 {
+    private readonly IHtmlPrintService htmlPrintService;
+    private readonly bool ownsHtmlPrintService;
     private MainWindowViewModel Model => (MainWindowViewModel)DataContext!;
     private bool invoiceCompletionVisible;
-    public MainWindow()
+    public MainWindow() : this(new PlaywrightHtmlPrintService(), true)
     {
+    }
+
+    // Creates the main window with the application-scoped HTML printing service.
+    public MainWindow(IHtmlPrintService htmlPrintService) : this(htmlPrintService, true)
+    {
+    }
+
+    // Initializes the window and records whether it owns the printing service lifetime.
+    private MainWindow(IHtmlPrintService htmlPrintService, bool ownsHtmlPrintService)
+    {
+        this.htmlPrintService = htmlPrintService;
+        this.ownsHtmlPrintService = ownsHtmlPrintService;
         InitializeComponent();
         Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
         Background = Ui.Canvas;
@@ -24,10 +38,11 @@ public partial class MainWindow : Window
                 Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
         };
         Activated += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.ValidateSession(); };
-        Closed += (_, _) =>
+        Closed += async (_, _) =>
         {
             if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
             page.Content = null;
+            if (this.ownsHtmlPrintService) await this.htmlPrintService.DisposeAsync();
         };
         Title = Branding.Name;
         DataContextChanged += (_, _) => { if (DataContext is MainWindowViewModel vm) InitializeShell(vm); };

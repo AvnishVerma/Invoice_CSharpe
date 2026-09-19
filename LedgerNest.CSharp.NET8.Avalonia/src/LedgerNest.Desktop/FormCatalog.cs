@@ -43,7 +43,7 @@ public static class FormCatalog
             new("TEMPLATES", [Choice("Template", "Classic", "Modern", "Minimal", "Executive", "Compact", "Thermal", "Grid Classic")]),
             new("DISPLAY OPTIONS", [Toggle("Show Total Quantity", true), Choice("Item Layout", "Table", "Detailed"), Number("Company Name Size", "18")]),
             new("THEME COLOR", [Text("Theme Color", "#002E78")]),
-            new("PRINTING", [Choice("Printer", WindowsPrinterService.GetInstalledPrinters()), Toggle("Show Printer Selection Dialog", false, "Allow choosing a printer for every print job")])],
+            new("PRINTING", [Choice("Printer", WindowsPrinterService.GetPrinterChoices()), Toggle("Show Printer Selection Dialog", false, "Allow choosing a printer for every print job")])],
         ["Product Details"] = [
             new("Product Fields", [Toggle("Name", true, "Always required"), Toggle("Price", true, "Always required"), Toggle("Stock", true), Toggle("Alias Name", true), Toggle("Tax Rate", true), Toggle("HSN/SAC", true), Toggle("Description", true), Toggle("Purchase Price", true), Toggle("Default Discount", true), Toggle("Unit", true), Toggle("Product / Service Type", true), Toggle("Advanced Information"), Toggle("Extra Cost")]),
             new("Advanced Information", [Toggle("Storage Location"), Toggle("Container Number"), Toggle("Batch Number"), Toggle("Expiry Date"), Toggle("Manufacture Date"), Toggle("Supplier Name"), Toggle("SKU Code"), Toggle("Notes")])],

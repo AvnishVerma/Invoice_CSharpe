@@ -48,7 +48,7 @@ internal static class Program
         CheckRecordDeletion();
         CheckTaxReport();
         CheckRevenueReport();
-        CheckChromiumPrinterValidation();
+        CheckPlaywrightPrinterValidation();
         CheckReceivablesLifecycle();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
@@ -1054,18 +1054,21 @@ internal static class Program
         Check(inventory.InventoryValue == finiteStock * 40 && inventory.PotentialSaleValue == finiteStock * 100 && inventory.ProfitLockedInStock == finiteStock * 60, "Inventory report must calculate purchase, sale, and potential-profit values from finite stock");
     }
 
-    private static void CheckChromiumPrinterValidation()
+    private static void CheckPlaywrightPrinterValidation()
     {
-        Check(typeof(JsonSerializer).Assembly.GetName().Version?.Major == 10, "Chromium printing must deploy the System.Text.Json major version required by PuppeteerSharp");
-        try
-        {
-            ChromiumInvoicePrinter.PrintHtmlAsync(" ").GetAwaiter().GetResult();
-            Check(false, "Chromium printing must reject empty invoice HTML before downloading or launching the browser");
-        }
-        catch (ArgumentException)
-        {
-            Check(true, "Chromium printing validates invoice HTML before browser startup");
-        }
+        Check(typeof(Microsoft.Playwright.Playwright).Assembly.GetName().Version?.Major == 1, "HTML printing must deploy Microsoft.Playwright");
+        var printCss = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.Thermal80mm });
+        Check(printCss.Contains("size: 80mm auto", StringComparison.Ordinal) && printCss.Contains("margin: 0", StringComparison.Ordinal), "HTML printing must inject centralized thermal page dimensions");
+        var a4Css = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.A4, Landscape = true });
+        Check(a4Css.Contains("size: A4 landscape", StringComparison.Ordinal) && a4Css.Contains("break-inside: avoid", StringComparison.Ordinal), "HTML printing must support landscape A4 and multi-page row protection");
+        var a5Css = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.A5 });
+        var thermal58Css = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.Thermal58mm });
+        Check(a5Css.Contains("size: A5", StringComparison.Ordinal) && thermal58Css.Contains("size: 58mm auto", StringComparison.Ordinal), "HTML printing must support A5 and 58mm receipt paper");
+        var customCss = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.Custom, WidthMm = 100, HeightMm = 150 });
+        Check(customCss.Contains("size: 100mm 150mm", StringComparison.Ordinal), "HTML printing must support custom paper dimensions");
+        var resourceHtml = "<html><head></head><body><img src='data:image/png;base64,AA=='><script>document.body.dataset.ready='yes';</script><div class='no-print'>Hidden</div></body></html>";
+        var resourceOutput = PlaywrightHtmlPrintService.ApplyPrintCss(resourceHtml, new HtmlPrintOptions());
+        Check(resourceOutput.Contains("data:image/png;base64,AA==", StringComparison.Ordinal) && resourceOutput.Contains("document.body.dataset.ready", StringComparison.Ordinal) && resourceOutput.Contains(".no-print", StringComparison.Ordinal), "HTML printing must preserve embedded images and JavaScript while adding print-only rules");
 
         var model = new MainWindowViewModel();
         var html = model.ExportDocumentHtml(new UiRecord
@@ -1345,7 +1348,7 @@ internal static class Program
         Check(reloadedInvoiceGeneral["Invoice Prefix"].Value == "LN-" && reloadedInvoiceGeneral["Starting Number"].Value == "27", "Invoice settings must reload from SQLite");
         Check(reloaded.Settings["PDF Settings"][1].Fields[0].Value == "Grid Classic" && reloaded.Settings["PDF Settings"][3].Fields[0].Value == "#0F766E", "PDF settings must reload from SQLite");
         var printConfiguration = reloaded.GetPrintConfiguration();
-        Check(printConfiguration.PrinterName == "Office Printer" && printConfiguration.ShowDialog, "Printer selection and dialog preference must reload from SQLite");
+        Check(printConfiguration.PrinterName == "Office Printer" && !printConfiguration.Options.Silent, "Printer selection and dialog preference must reload from SQLite");
     }
 
     private sealed class TestDbContextFactory(DbContextOptions<LedgerNestDbContext> options) : IDbContextFactory<LedgerNestDbContext>
