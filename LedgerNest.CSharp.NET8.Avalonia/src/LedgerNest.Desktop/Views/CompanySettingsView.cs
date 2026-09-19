@@ -43,13 +43,16 @@ public partial class MainWindow
         };
         var save = Ui.Button("Save", () => Model.SaveSettings("Company Info"), true); save.HorizontalAlignment = HorizontalAlignment.Stretch;
         var businessType = sections[2].Fields[0];
+        var businessIcon = Ui.Icon("account_tree", 25, Brush.Parse("#003B87"));
+        businessIcon.VerticalAlignment = VerticalAlignment.Top;
+        businessIcon.Margin = new Thickness(0, 4, 0, 0);
         var businessCard = Ui.Card(Ui.Columns("Auto,16,*",
-            Ui.Icon("account_tree", 25, Brush.Parse("#003B87")),
+            businessIcon,
             new Border(),
             Ui.Stack(8,
                 Ui.Text("Business Type", 16),
                 Ui.Text("Controls item type options in the product list and invoices", 12, color: Ui.Muted),
-                Ui.Segments(businessType))), 16);
+                CompanyBusinessTypeSegments(businessType))), 16);
         var qrCard = Ui.Card(Ui.Columns("Auto,16,*",
             Ui.Icon("credit_card", 25, Ui.Muted),
             new Border(),
@@ -120,6 +123,43 @@ public partial class MainWindow
         var theme = new ComboBox { ItemsSource = new[] { "Light", "Dark", "System" }, SelectedItem = Model.ThemeMode, Width = 100 };
         theme.SelectionChanged += (_, _) => ApplyTheme(theme.SelectedItem?.ToString() ?? "Light");
         return new CompanySettingsInfoView(Ui.AppBar("Company Information", language, theme), logo, Ui.Field(sections[0].Fields[1]), previewName, save, details);
+    }
+
+    // Builds the icon-backed Product, Service, and Both selector used by Company Information.
+    private static Control CompanyBusinessTypeSegments(FormField field)
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        var buttons = new List<Button>();
+        void UpdateSelection()
+        {
+            foreach (var button in buttons)
+            {
+                var selected = button.Tag?.ToString() == field.Value;
+                button.Background = selected ? Brush.Parse("#E8DEF8") : Brushes.Transparent;
+                button.Foreground = selected ? Brush.Parse("#4F4268") : Brushes.Black;
+            }
+        }
+        foreach (var (label, iconName) in new[] { ("Product", "inventory_2"), ("Service", "build"), ("Both", "check") })
+        {
+            var button = Ui.Button(label, () => { field.Value = label; UpdateSelection(); });
+            button.Tag = label;
+            button.Padding = new Thickness(12, 6);
+            button.MinHeight = 32;
+            button.CornerRadius = new CornerRadius(0);
+            button.Content = Ui.Columns("Auto,7,*", Ui.Icon(iconName, 17, Brushes.Black), new Border(), Ui.Text(label, 14));
+            buttons.Add(button);
+            panel.Children.Add(button);
+        }
+        UpdateSelection();
+        return new Border
+        {
+            BorderBrush = Ui.Outline,
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(18),
+            ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Child = panel
+        };
     }
 
     // Performs the apply theme action for this screen or workflow.

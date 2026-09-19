@@ -109,9 +109,23 @@ public partial class MainWindow
                     Background = Brush.Parse(backup.IsDatabase ? "#2196F3" : "#4CAF60"),
                     Child = Ui.Icon(backup.IsDatabase ? "storage" : "code", 23, Brushes.White)
                 };
-                var menu = Ui.Button("⋮", () => Model.Status = $"Backup: {backup.Name}");
+                var menu = Ui.Button("⋮", () => { });
                 menu.MinWidth = 38;
                 ToolTip.SetTip(menu, "Backup actions");
+                var flyout = new MenuFlyout();
+                var restore = new MenuItem { Header = "Restore" };
+                restore.Click += async (_, _) => await RunBackupFileAction(() => RestoreTrackedBackup(backup));
+                var download = new MenuItem { Header = "Download" };
+                download.Click += async (_, _) => await RunBackupFileAction(() => SaveTrackedBackupCopy(backup, "Download Backup"));
+                var share = new MenuItem { Header = "Share" };
+                share.Click += async (_, _) => await RunBackupFileAction(() => SaveTrackedBackupCopy(backup, "Share Backup"));
+                var delete = new MenuItem { Header = "Delete" };
+                delete.Click += (_, _) => Confirm("Delete Backup", $"Delete {backup.Name}?", async () => await RunBackupFileAction(() => DeleteTrackedBackup(backup)));
+                flyout.Items.Add(restore);
+                flyout.Items.Add(download);
+                flyout.Items.Add(share);
+                flyout.Items.Add(delete);
+                menu.Flyout = flyout;
                 var details = Ui.Stack(3,
                     Ui.Text(backup.Name, 15),
                     Ui.Text($"Size: {FormatFileSize(backup.Size)}", 12, color: Ui.Muted),
@@ -162,11 +176,49 @@ public partial class MainWindow
         : $"{Math.Max(0.1, bytes / 1024d):0.0} KB";
 
     // Adds or refreshes an entry in the visible backup history.
-    private void TrackBackup(string name, long size)
+    private void TrackBackup(IStorageFile file, long size)
     {
-        var existing = backupHistory.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        var existing = backupHistory.FirstOrDefault(item => item.Name.Equals(file.Name, StringComparison.OrdinalIgnoreCase));
         if (existing != null) backupHistory.Remove(existing);
-        backupHistory.Add(new BackupHistoryItem(name, size, DateTime.Now, name.EndsWith(".invoicedb", StringComparison.OrdinalIgnoreCase)));
+        backupHistory.Add(new BackupHistoryItem(file.Name, size, DateTime.Now, file.Name.EndsWith(".invoicedb", StringComparison.OrdinalIgnoreCase), file));
+    }
+
+    // Restores a backup selected from the history card action menu.
+    private async Task RestoreTrackedBackup(BackupHistoryItem backup)
+    {
+        await using var stream = await backup.File.OpenReadAsync();
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        var restored = backup.IsDatabase
+            ? Model.RestoreDatabaseBackup(memory.ToArray())
+            : Model.RestoreJsonBackup(Encoding.UTF8.GetString(memory.ToArray()));
+        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
+    }
+
+    // Saves another copy of a history backup using the platform file picker.
+    private async Task SaveTrackedBackupCopy(BackupHistoryItem backup, string title)
+    {
+        await using var source = await backup.File.OpenReadAsync();
+        using var memory = new MemoryStream();
+        await source.CopyToAsync(memory);
+        var target = await StorageProvider.SaveFilePickerAsync(new()
+        {
+            Title = title,
+            SuggestedFileName = backup.Name,
+            DefaultExtension = backup.IsDatabase ? "invoicedb" : "json",
+            FileTypeChoices = [new FilePickerFileType("LedgerNest backup") { Patterns = backup.IsDatabase ? ["*.invoicedb"] : ["*.json"] }]
+        });
+        if (target == null) return;
+        await WriteBackupFileAsync(target, memory.ToArray());
+        Model.Status = $"Saved {target.Name}.";
+    }
+
+    // Deletes a history backup from storage and removes its card after successful deletion.
+    private async Task DeleteTrackedBackup(BackupHistoryItem backup)
+    {
+        await backup.File.DeleteAsync();
+        backupHistory.Remove(backup);
+        Model.Status = $"Deleted {backup.Name}.";
     }
 
     // Performs the run backup file action action for this screen or workflow.
@@ -175,10 +227,10 @@ public partial class MainWindow
         var operationModel = Model;
         var version = operationModel.SessionVersion;
         try { await action(); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex)
         {
             if (!CanContinueBackupOperation(operationModel, version)) return;
-            operationModel.Status = "The backup file could not be read or fully written. Check the file location and available space before trying again.";
+            operationModel.Status = $"Backup file error: {ex.Message}";
             ShowOverlay("Backup File Error", Ui.Text(operationModel.Status), Ui.Button("Close", CloseOverlay, true));
         }
     }
@@ -203,13 +255,9 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("JSON backup") { Patterns = ["*.json"], MimeTypes = ["application/json", "text/json"] }]
         });
         if (file == null || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
-        await using (var stream = await file.OpenWriteAsync())
-        {
-            if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
-            await BackupStreamWriter.WriteAsync(stream, Encoding.UTF8.GetBytes(backup));
-        }
+        await WriteBackupFileAsync(file, Encoding.UTF8.GetBytes(backup));
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
-        TrackBackup(file.Name, Encoding.UTF8.GetByteCount(backup));
+        TrackBackup(file, Encoding.UTF8.GetByteCount(backup));
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
 
@@ -230,14 +278,23 @@ public partial class MainWindow
             FileTypeChoices = [new FilePickerFileType("Database backup") { Patterns = ["*.invoicedb"], MimeTypes = ["application/octet-stream"] }]
         });
         if (file == null || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
-        await using (var stream = await file.OpenWriteAsync())
-        {
-            if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
-            await BackupStreamWriter.WriteAsync(stream, backup);
-        }
+        await WriteBackupFileAsync(file, backup);
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
-        TrackBackup(file.Name, backup.LongLength);
+        TrackBackup(file, backup.LongLength);
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+    }
+
+    // Writes a selected backup through its local path when available and falls back to the storage-provider stream.
+    private static async Task WriteBackupFileAsync(IStorageFile file, ReadOnlyMemory<byte> contents)
+    {
+        var localPath = file.TryGetLocalPath();
+        if (!string.IsNullOrWhiteSpace(localPath))
+        {
+            await File.WriteAllBytesAsync(localPath, contents.ToArray());
+            return;
+        }
+        await using var stream = await file.OpenWriteAsync();
+        await BackupStreamWriter.WriteAsync(stream, contents);
     }
 
     // Imports either a JSON export or a complete database backup selected by the user.
@@ -259,7 +316,7 @@ public partial class MainWindow
         var restored = files[0].Name.EndsWith(".invoicedb", StringComparison.OrdinalIgnoreCase)
             ? operationModel.RestoreDatabaseBackup(memory.ToArray())
             : operationModel.RestoreJsonBackup(Encoding.UTF8.GetString(memory.ToArray()));
-        if (restored) TrackBackup(files[0].Name, memory.Length);
+        if (restored) TrackBackup(files[0], memory.Length);
         ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
         page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
@@ -319,4 +376,4 @@ public partial class MainWindow
 }
 
 // Describes a backup shown in the current Backup Management history.
-internal sealed record BackupHistoryItem(string Name, long Size, DateTime CreatedAt, bool IsDatabase);
+internal sealed record BackupHistoryItem(string Name, long Size, DateTime CreatedAt, bool IsDatabase, IStorageFile File);

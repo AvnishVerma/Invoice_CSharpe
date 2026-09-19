@@ -4,11 +4,11 @@
              x:CompileBindings="False">
   <Grid RowDefinitions="Auto,*">
     <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Background="#FAFAFA" Padding="8,6">
-      <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
+      <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled">
         <ItemsControl ItemsSource="{Binding Tabs}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="4" />
+              <WrapPanel Orientation="Horizontal" />
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
@@ -20,9 +20,9 @@
                       Classes.selected="{Binding IsSelected}"
                       HorizontalAlignment="Stretch"
                       HorizontalContentAlignment="Center"
-                      MinHeight="42"
-                      Margin="2,0"
-                      Padding="14,8"
+                      MinHeight="40"
+                      Margin="2"
+                      Padding="10,7"
                       ToolTip.Tip="{Binding Label}">
                 <StackPanel Orientation="Horizontal" Spacing="7">
                   <TextBlock Text="{Binding Icon}"

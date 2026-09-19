@@ -50,6 +50,8 @@ internal static class Ui
         ["account_tree"] = "\ue97a",
         ["credit_card"] = "\ue870",
         ["account_balance"] = "\ue84f",
+        ["build"] = "\ue869",
+        ["check"] = "\ue5ca",
         ["backup"] = "\ue864",
         ["view_column"] = "\ue8ec",
         ["tune"] = "\ue429",
