@@ -18,7 +18,7 @@ dotnet build LedgerNest.CSharp.sln
 pwsh src/LedgerNest.Desktop/bin/Debug/net9.0/playwright.ps1 install chromium
 ```
 
-For a release build, replace `Debug` with `Release`. On a clean Windows machine, run the browser installation command once for the application user. The application reports a clear setup error if the matching Chromium build is missing.
+For a release build, replace `Debug` with `Release`. On a clean Windows machine, the first print automatically installs the matching Chromium build for the application user. The command above can still be used during deployment to install it in advance and avoid the one-time download during the first print.
 
 ## Printer configuration
 

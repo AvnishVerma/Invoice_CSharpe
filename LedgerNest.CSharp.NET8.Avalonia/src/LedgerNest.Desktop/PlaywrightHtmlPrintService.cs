@@ -50,10 +50,6 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
             await page.BringToFrontAsync().WaitAsync(cancellationToken);
             await page.EvaluateAsync("() => window.print()").WaitAsync(cancellationToken);
         }
-        catch (PlaywrightException ex) when (ex.Message.Contains("Executable doesn't exist", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("Playwright Chromium is not installed. Run the generated playwright.ps1 install chromium command described in docs/HTML_PRINTING.md.", ex);
-        }
         finally
         {
             printLock.Release();
@@ -66,14 +62,43 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
         if (browser is { IsConnected: true } && browserIsSilent == silent) return browser;
         if (browser != null) await browser.DisposeAsync();
         playwright ??= await Microsoft.Playwright.Playwright.CreateAsync().WaitAsync(cancellationToken);
-        browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+        try
+        {
+            browser = await LaunchBrowserAsync(playwright, silent, cancellationToken);
+        }
+        catch (PlaywrightException ex) when (IsMissingBrowserExecutable(ex))
+        {
+            playwright.Dispose();
+            playwright = null;
+            await InstallChromiumAsync(cancellationToken);
+            playwright = await Microsoft.Playwright.Playwright.CreateAsync().WaitAsync(cancellationToken);
+            browser = await LaunchBrowserAsync(playwright, silent, cancellationToken);
+        }
+        browserIsSilent = silent;
+        return browser;
+    }
+
+    // Launches the Playwright-managed Chromium instance with the requested print mode.
+    private static Task<IBrowser> LaunchBrowserAsync(IPlaywright activePlaywright, bool silent, CancellationToken cancellationToken) =>
+        activePlaywright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = false,
             Args = BuildChromiumArguments(silent)
         }).WaitAsync(cancellationToken);
-        browserIsSilent = silent;
-        return browser;
+
+    // Downloads the matching Chromium revision once when Playwright was newly installed or upgraded.
+    private static async Task InstallChromiumAsync(CancellationToken cancellationToken)
+    {
+        var exitCode = await Task.Run(
+            () => Microsoft.Playwright.Program.Main(["install", "chromium"]),
+            cancellationToken);
+        if (exitCode != 0)
+            throw new InvalidOperationException($"Playwright could not install Chromium (exit code {exitCode}). Check the internet connection and write access to the user profile.");
     }
+
+    // Identifies the Playwright error that specifically indicates a missing managed browser executable.
+    internal static bool IsMissingBrowserExecutable(PlaywrightException exception) =>
+        exception.Message.Contains("Executable doesn't exist", StringComparison.OrdinalIgnoreCase);
 
     // Creates Chromium flags for off-screen kiosk printing or an interactive print dialog.
     private static string[] BuildChromiumArguments(bool silent)

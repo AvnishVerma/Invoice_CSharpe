@@ -1057,6 +1057,8 @@ internal static class Program
     private static void CheckPlaywrightPrinterValidation()
     {
         Check(typeof(Microsoft.Playwright.Playwright).Assembly.GetName().Version?.Major == 1, "HTML printing must deploy Microsoft.Playwright");
+        Check(PlaywrightHtmlPrintService.IsMissingBrowserExecutable(new Microsoft.Playwright.PlaywrightException("Executable doesn't exist at test path")), "HTML printing must detect a missing Chromium installation for automatic recovery");
+        Check(!PlaywrightHtmlPrintService.IsMissingBrowserExecutable(new Microsoft.Playwright.PlaywrightException("Printer is unavailable")), "HTML printing must not treat unrelated Playwright failures as missing Chromium");
         var printCss = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.Thermal80mm });
         Check(printCss.Contains("size: 80mm auto", StringComparison.Ordinal) && printCss.Contains("margin: 0", StringComparison.Ordinal), "HTML printing must inject centralized thermal page dimensions");
         var a4Css = PlaywrightHtmlPrintService.ApplyPrintCss("<html><head></head><body></body></html>", new HtmlPrintOptions { PaperSize = PaperSizeType.A4, Landscape = true });
