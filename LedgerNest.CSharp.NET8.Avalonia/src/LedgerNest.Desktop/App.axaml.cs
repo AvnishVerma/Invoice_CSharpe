@@ -49,9 +49,15 @@ public partial class App : Avalonia.Application
                 .AddSingleton<IHtmlPrintService, PlaywrightHtmlPrintService>()
                 .BuildServiceProvider();
 
-            desktop.MainWindow = new MainWindow(serviceProvider.GetRequiredService<IHtmlPrintService>())
+            var printService = serviceProvider.GetRequiredService<IHtmlPrintService>();
+            desktop.MainWindow = new MainWindow(printService)
             {
                 DataContext = new MainWindowViewModel(serviceProvider.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(), databasePath)
+            };
+            desktop.MainWindow.Opened += async (_, _) =>
+            {
+                try { await printService.WarmUpAsync(); }
+                catch (Exception ex) { AppErrorLog.Write(ex, "Warming up the HTML print service"); }
             };
             desktop.Exit += async (_, _) =>
             {

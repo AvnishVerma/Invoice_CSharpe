@@ -60,7 +60,7 @@ await printService.PrintHtmlAsync(html, printerName, new HtmlPrintOptions
 
 The service waits for document readiness, `document.fonts.ready`, and all images before printing. It injects centralized print CSS for paper size, margins, background colors, non-printable elements, and table row page breaks. Existing invoice logos are embedded as data URLs.
 
-Chromium is reused across consecutive jobs of the same mode. Print jobs are serialized because Windows printer selection temporarily changes the process user's default printer. The browser is recreated after a crash or when switching between silent and interactive modes, and it is disposed during application shutdown.
+Chromium is warmed in the background when the main window opens. Its browser process, context, and page are reused across consecutive jobs of the same mode, avoiding startup and page-creation work when the user presses Print. Print jobs are serialized because Windows printer selection temporarily changes the process user's default printer. The browser is recreated after a crash or when switching between silent and interactive modes, and it is disposed during application shutdown.
 
 ## Platform limitation
 

@@ -9,6 +9,8 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
     private readonly SemaphoreSlim printLock = new(1, 1);
     private IPlaywright? playwright;
     private IBrowser? browser;
+    private IBrowserContext? browserContext;
+    private IPage? browserPage;
     private bool browserIsSilent;
     private bool disposed;
 
@@ -17,6 +19,21 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
 
     // Returns the current Windows default printer, or null outside supported Windows versions.
     public string? GetDefaultPrinter() => PlatformPrinterService.GetDefaultPrinter();
+
+    // Starts Chromium and creates its reusable page before the first user-initiated print.
+    public async Task WarmUpAsync(CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        await printLock.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsurePageAsync(silent: true, cancellationToken);
+        }
+        finally
+        {
+            printLock.Release();
+        }
+    }
 
     // Renders supplied HTML, waits for deterministic resource readiness, and invokes Chromium printing.
     public async Task PrintHtmlAsync(string html, string? printerName = null, HtmlPrintOptions? options = null, CancellationToken cancellationToken = default)
@@ -33,9 +50,7 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
             var usesUnixPrintDialog = (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && !options.Silent;
             var selectedPrinter = usesUnixPrintDialog ? null : PlatformPrinterService.ResolvePrinter(printerName);
             using var printerScope = PlatformPrinterService.UseWindowsPrinter(selectedPrinter);
-            var activeBrowser = await EnsureBrowserAsync(options.Silent, cancellationToken);
-            await using var context = await activeBrowser.NewContextAsync().WaitAsync(cancellationToken);
-            var page = await context.NewPageAsync().WaitAsync(cancellationToken);
+            var page = await EnsurePageAsync(options.Silent, cancellationToken);
             page.SetDefaultTimeout((float)options.RenderTimeout.TotalMilliseconds);
             await page.SetContentAsync(ApplyPrintCss(html, options), new PageSetContentOptions
             {
@@ -66,7 +81,7 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
     private async Task<IBrowser> EnsureBrowserAsync(bool silent, CancellationToken cancellationToken)
     {
         if (browser is { IsConnected: true } && browserIsSilent == silent) return browser;
-        if (browser != null) await browser.DisposeAsync();
+        await CloseBrowserSessionAsync();
         playwright ??= await Microsoft.Playwright.Playwright.CreateAsync().WaitAsync(cancellationToken);
         try
         {
@@ -82,6 +97,30 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
         }
         browserIsSilent = silent;
         return browser;
+    }
+
+    // Returns the reusable page for the current print mode, creating it only when required.
+    private async Task<IPage> EnsurePageAsync(bool silent, CancellationToken cancellationToken)
+    {
+        var activeBrowser = await EnsureBrowserAsync(silent, cancellationToken);
+        if (browserPage is { IsClosed: false }) return browserPage;
+        browserContext ??= await activeBrowser.NewContextAsync().WaitAsync(cancellationToken);
+        browserPage = await browserContext.NewPageAsync().WaitAsync(cancellationToken);
+        return browserPage;
+    }
+
+    // Clears reusable browser objects while tolerating an already-crashed Chromium process.
+    private async Task CloseBrowserSessionAsync()
+    {
+        try { if (browserPage != null) await browserPage.CloseAsync(); }
+        catch (PlaywrightException) { }
+        try { if (browserContext != null) await browserContext.DisposeAsync(); }
+        catch (PlaywrightException) { }
+        try { if (browser != null) await browser.DisposeAsync(); }
+        catch (PlaywrightException) { }
+        browserPage = null;
+        browserContext = null;
+        browser = null;
     }
 
     // Launches the Playwright-managed Chromium instance with the requested print mode.
@@ -210,9 +249,8 @@ public sealed class PlaywrightHtmlPrintService : IHtmlPrintService
         {
             if (disposed) return;
             disposed = true;
-            if (browser != null) await browser.DisposeAsync();
+            await CloseBrowserSessionAsync();
             playwright?.Dispose();
-            browser = null;
             playwright = null;
         }
         finally
