@@ -171,8 +171,6 @@ public partial class MainWindowViewModel
             LoadAccounts(db.Settings.AsNoTracking().FirstOrDefault(setting => setting.Key == "company.upi_accounts")?.Value, UpiAccounts, CreateUpiAccount);
             LoadAccounts(db.Settings.AsNoTracking().FirstOrDefault(setting => setting.Key == "company.bank_accounts")?.Value, BankAccounts, CreateBankAccount);
         }
-        if (UpiAccounts.Count == 0) UpiAccounts.Add(CreateUpiAccount(Settings["Company Info"][4].Fields.ToDictionary(field => field.Label, field => field.Value)));
-        if (BankAccounts.Count == 0) BankAccounts.Add(CreateBankAccount(Settings["Company Info"][5].Fields.ToDictionary(field => field.Label, field => field.Value)));
     }
 
     // Adds a blank UPI account row to the company payment settings.

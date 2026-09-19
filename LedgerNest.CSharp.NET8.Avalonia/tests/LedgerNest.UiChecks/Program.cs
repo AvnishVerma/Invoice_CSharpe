@@ -1299,11 +1299,13 @@ internal static class Program
         companyFields["Phone"].Value = "9998887777";
         companyFields["Email"].Value = "hello@ledgernest.test";
         companyFields["GSTIN"].Value = "GST-123";
+        model.AddUpiAccount();
         model.UpiAccounts[0][0].Value = "Primary";
         model.UpiAccounts[0][1].Value = "billing@upi";
         model.AddUpiAccount();
         model.UpiAccounts[1][0].Value = "Secondary";
         model.UpiAccounts[1][1].Value = "backup@upi";
+        model.AddBankAccount();
         model.BankAccounts[0][0].Value = "Operating";
         model.BankAccounts[0][1].Value = "LedgerNest Bank";
         model.BankAccounts[0][2].Value = "1234567890";
