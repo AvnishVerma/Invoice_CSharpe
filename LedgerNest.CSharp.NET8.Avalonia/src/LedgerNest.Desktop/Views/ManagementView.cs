@@ -198,7 +198,11 @@ internal sealed partial class ManagementView : UserControl
         ToolTip.SetTip(check, isAdmin ? "Administrator users cannot be deleted." : "Select user");
         check.IsCheckedChanged += (_, _) => { if (check.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); Refresh(); };
         var initial = record.Name.Length == 0 ? "?" : record.Name[..1].ToUpperInvariant();
-        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = Brush.Parse("#F0DDF8"), VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0")) };
+        var initialText = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0"));
+        initialText.HorizontalAlignment = HorizontalAlignment.Center;
+        initialText.VerticalAlignment = VerticalAlignment.Center;
+        initialText.TextAlignment = TextAlignment.Center;
+        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = Brush.Parse("#F0DDF8"), VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Child = initialText };
         var nameLine = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
         nameLine.Children.Add(Ui.Text(record.Name, 14, true));
         if (record.Name == model.CurrentUsername) nameLine.Children.Add(new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 2), VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text("You", 10, true, Ui.Primary) });
