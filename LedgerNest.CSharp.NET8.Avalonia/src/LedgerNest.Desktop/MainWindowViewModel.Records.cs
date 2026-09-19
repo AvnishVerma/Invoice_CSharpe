@@ -48,8 +48,8 @@ public partial class MainWindowViewModel
     {
         var records = kind switch { "Customer" => Customers, "Product" => Products, "User" => Users, _ => null };
         if (records == null || !records.Contains(record)) return false;
-        if (dbFactory == null && kind == "User" && record["Role"] == "Admin" && Users.Count(u => u["Role"] == "Admin") <= 1)
-        { Status = "The last administrator cannot be deleted."; return false; }
+        if (kind == "User" && record["Role"] == "Admin")
+        { Status = "Administrator users cannot be deleted."; return false; }
         if (dbFactory != null)
         {
             using var db = dbFactory.CreateDbContext();
@@ -77,8 +77,6 @@ public partial class MainWindowViewModel
             {
                 var user = db.Users.Find(record.SourceId);
                 if (user == null) return false;
-                if (user.Role == "Admin" && db.Users.Count(u => u.Role == "Admin") <= 1)
-                { Status = "The last administrator cannot be deleted."; return false; }
                 db.Users.Remove(user);
             }
             db.SaveChanges();

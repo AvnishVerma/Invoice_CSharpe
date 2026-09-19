@@ -192,13 +192,16 @@ internal sealed partial class ManagementView : UserControl
         if (record == null)
             return new Border { Background = Brush.Parse("#FBF6FC"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, 10), Child = Ui.Columns("44,*,220,160", new CheckBox { IsEnabled = false }, Ui.Text("USER", 11, true, Ui.Muted), Ui.Text("ROLE", 11, true, Ui.Muted), Ui.Text("ACTIONS", 11, true, Ui.Muted)) };
 
-        var check = new CheckBox { IsChecked = selected.Contains(record.Id), VerticalAlignment = VerticalAlignment.Center };
+        var isAdmin = record["Role"] == "Admin";
+        if (isAdmin) selected.Remove(record.Id);
+        var check = new CheckBox { IsChecked = !isAdmin && selected.Contains(record.Id), IsEnabled = !isAdmin, VerticalAlignment = VerticalAlignment.Center };
+        ToolTip.SetTip(check, isAdmin ? "Administrator users cannot be deleted." : "Select user");
         check.IsCheckedChanged += (_, _) => { if (check.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); Refresh(); };
         var initial = record.Name.Length == 0 ? "?" : record.Name[..1].ToUpperInvariant();
-        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = Brush.Parse("#F0DDF8"), Child = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0")) };
+        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = Brush.Parse("#F0DDF8"), VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0")) };
         var nameLine = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
         nameLine.Children.Add(Ui.Text(record.Name, 14, true));
-        if (record.Name == model.CurrentUsername) nameLine.Children.Add(new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 2), Child = Ui.Text("You", 10, true, Ui.Primary) });
+        if (record.Name == model.CurrentUsername) nameLine.Children.Add(new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 2), VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text("You", 10, true, Ui.Primary) });
         var user = Ui.Columns("34,10,*", avatar, new Border(), nameLine);
         var role = new Border { Background = Brush.Parse(record["Role"] == "Admin" ? "#F3E5F5" : "#E3F2FD"), CornerRadius = new CornerRadius(6), Padding = new Thickness(9, 4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(record["Role"], 11, false, record["Role"] == "Admin" ? Brush.Parse("#9C27B0") : Ui.Primary) };
         return new Border { Background = Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, 10), Child = Ui.Columns("44,*,220,160", check, user, role, UserActions(record)) };
@@ -223,7 +226,7 @@ internal sealed partial class ManagementView : UserControl
         delete.Click += (_, _) => window.Confirm("Delete Users", $"Delete {selected.Count} selected user(s)?", () => { foreach (var record in model.Users.Where(item => selected.Contains(item.Id)).ToArray()) model.DeleteRecord("User", record); selected.Clear(); Refresh(); });
         menu.Items.Add(delete);
         bulk.Flyout = menu;
-        return Ui.Columns("Auto,*,Auto", bulk, Ui.Text($"Showing {(count == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, count)} of {count} users", 12, color: Ui.Muted), Ui.Wrap(Ui.Button("‹", () => { page--; Refresh(); }), Ui.Button((page + 1).ToString(), () => { }, true), Ui.Text($"of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
+        return Ui.Columns("Auto,20,*,Auto", bulk, new Border(), Ui.Text($"Showing {(count == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, count)} of {count} users", 12, color: Ui.Muted), Ui.Wrap(Ui.Button("‹", () => { page--; Refresh(); }), Ui.Button((page + 1).ToString(), () => { }, true), Ui.Text($"of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
     }
 
 

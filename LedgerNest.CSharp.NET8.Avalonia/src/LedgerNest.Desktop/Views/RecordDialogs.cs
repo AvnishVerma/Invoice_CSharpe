@@ -56,7 +56,8 @@ public partial class MainWindow
         var roleControl = Ui.Field(role);
         var editingSelf = user.Name == Model.CurrentUsername;
         roleControl.IsEnabled = !editingSelf;
-        var form = Ui.Stack(16, Ui.Field(username), roleControl);
+        var form = Ui.Stack(18, Ui.Field(username), roleControl);
+        form.Margin = new Thickness(0, 8, 0, 0);
         if (editingSelf) form.Children.Add(Ui.Text("You can't change your own role.", 12, color: Ui.Muted));
         var cancel = Ui.Button("Cancel", CloseOverlay);
         var save = Ui.Button("✓  Save Changes", () =>
