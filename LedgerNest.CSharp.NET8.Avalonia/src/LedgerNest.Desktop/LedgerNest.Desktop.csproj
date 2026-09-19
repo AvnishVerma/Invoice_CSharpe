@@ -9,6 +9,9 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Keep the application entry XAML explicitly compiled into every build and publish configuration. -->
+    <AvaloniaXaml Remove="App.axaml" />
+    <AvaloniaXaml Include="App.axaml" />
     <AvaloniaResource Include="Assets/**" />
     <EmbeddedResource Include="Assets/Roboto-Regular.ttf" LogicalName="LedgerNest.Pdf.Regular" />
     <EmbeddedResource Include="Assets/Roboto-Bold.ttf" LogicalName="LedgerNest.Pdf.Bold" />
