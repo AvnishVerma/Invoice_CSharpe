@@ -5,6 +5,7 @@ using Avalonia.Media;
 using LedgerNest.Desktop.Views;
 using Avalonia.Platform.Storage;
 using System.Text;
+using System.Collections.ObjectModel;
 using LedgerNest.Infrastructure;
 
 namespace LedgerNest.Desktop;
@@ -12,6 +13,7 @@ namespace LedgerNest.Desktop;
 public partial class MainWindow
 {
     private string settingsTab = "Company Info";
+    private readonly ObservableCollection<BackupHistoryItem> backupHistory = [];
     // Performs the settings view action by preparing settings navigation data and loading the XAML settings view.
     private Control SettingsView()
     {
@@ -85,8 +87,87 @@ public partial class MainWindow
         };
         Select(0); return Ui.Rows("Auto,*", Ui.AppBar("Invoice Settings"), layout);
     }
-    // Performs the backup view action for this screen or workflow.
-    private Control BackupView() => Ui.Rows("Auto,*", Ui.AppBar("Backup Management"), Ui.Scroll(Ui.Stack(20, Ui.Wrap(Ui.Button("＋ Create JSON Backup", async () => await RunBackupFileAction(CreateBackupFile)), Ui.Button("＋ Create DB Backup", async () => await RunBackupFileAction(CreateDatabaseBackupFile)), Ui.Button("↑ Restore JSON", async () => await RunBackupFileAction(RestoreBackupFile)), Ui.Button("↑ Restore DB", async () => await RunBackupFileAction(RestoreDatabaseBackupFile))), Ui.Card(Ui.Stack(8, Ui.Text("Backup modes", 18, true), Ui.Text("JSON backups export business data and exclude user credentials. DB backups copy the full SQLite database file for local restore, matching the legacy backup manager modes."))), Ui.Empty("No backups found", "Create a backup to protect your data")), 28));
+    // Builds the backup management screen and keeps its history list synchronized with completed file operations.
+    private Control BackupView()
+    {
+        var history = Ui.Stack(14);
+        void RenderHistory()
+        {
+            history.Children.Clear();
+            if (backupHistory.Count == 0)
+            {
+                history.Children.Add(Ui.Empty("No backups found", "Create or import a backup to show it here."));
+                return;
+            }
+            foreach (var backup in backupHistory.OrderByDescending(item => item.CreatedAt))
+            {
+                var icon = new Border
+                {
+                    Width = 40,
+                    Height = 40,
+                    CornerRadius = new CornerRadius(20),
+                    Background = Brush.Parse(backup.IsDatabase ? "#2196F3" : "#4CAF60"),
+                    Child = Ui.Icon(backup.IsDatabase ? "storage" : "code", 23, Brushes.White)
+                };
+                var menu = Ui.Button("⋮", () => Model.Status = $"Backup: {backup.Name}");
+                menu.MinWidth = 38;
+                ToolTip.SetTip(menu, "Backup actions");
+                var details = Ui.Stack(3,
+                    Ui.Text(backup.Name, 15),
+                    Ui.Text($"Size: {FormatFileSize(backup.Size)}", 12, color: Ui.Muted),
+                    Ui.Text($"Created: {backup.CreatedAt:dd MMM yyyy HH:mm}", 12, color: Ui.Muted));
+                var card = Ui.Card(Ui.Columns("Auto,16,*,Auto", icon, new Border(), details, menu), 16);
+                card.Background = Brush.Parse("#F8F3FB");
+                card.MaxWidth = 870;
+                card.HorizontalAlignment = HorizontalAlignment.Stretch;
+                history.Children.Add(card);
+            }
+        }
+        RenderHistory();
+        System.Collections.Specialized.NotifyCollectionChangedEventHandler historyChanged = (_, _) => RenderHistory();
+        history.AttachedToVisualTree += (_, _) => backupHistory.CollectionChanged += historyChanged;
+        history.DetachedFromVisualTree += (_, _) => backupHistory.CollectionChanged -= historyChanged;
+
+        Button ActionButton(string label, string icon, Func<Task> action)
+        {
+            var button = Ui.Button(label, async () => await RunBackupFileAction(action));
+            button.Content = Ui.Columns("Auto,8,*", Ui.Icon(icon, 18, Brush.Parse("#6750A4")), new Border(), Ui.Text(label, 14, color: Brush.Parse("#6750A4")));
+            button.Background = Brush.Parse("#F5EFFA");
+            button.BorderBrush = Brush.Parse("#E2D9E8");
+            button.CornerRadius = new CornerRadius(22);
+            button.HorizontalAlignment = HorizontalAlignment.Stretch;
+            return button;
+        }
+
+        var actions = Ui.Columns("*,16,*,16,*",
+            ActionButton("Create DB Backup", "backup", CreateDatabaseBackupFile),
+            new Border(),
+            ActionButton("Export JSON", "download", CreateBackupFile),
+            new Border(),
+            ActionButton("Import Backup", "upload", ImportBackupFile));
+        var body = Ui.Stack(16, actions, new Separator(), history);
+        body.MaxWidth = 940;
+        var refresh = Ui.Button("↻", RenderHistory);
+        refresh.Background = Brushes.Transparent;
+        refresh.BorderThickness = new Thickness(0);
+        refresh.Foreground = Brushes.White;
+        refresh.FontSize = 22;
+        ToolTip.SetTip(refresh, "Refresh backup history");
+        return Ui.Rows("Auto,*", Ui.AppBar("Backup Management", refresh), Ui.Scroll(body, 16));
+    }
+
+    // Formats a backup byte length for the history cards.
+    private static string FormatFileSize(long bytes) => bytes >= 1024 * 1024
+        ? $"{bytes / 1024d / 1024d:0.0} MB"
+        : $"{Math.Max(0.1, bytes / 1024d):0.0} KB";
+
+    // Adds or refreshes an entry in the visible backup history.
+    private void TrackBackup(string name, long size)
+    {
+        var existing = backupHistory.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (existing != null) backupHistory.Remove(existing);
+        backupHistory.Add(new BackupHistoryItem(name, size, DateTime.Now, name.EndsWith(".invoicedb", StringComparison.OrdinalIgnoreCase)));
+    }
 
     // Performs the run backup file action action for this screen or workflow.
     private async Task RunBackupFileAction(Func<Task> action)
@@ -128,6 +209,7 @@ public partial class MainWindow
             await BackupStreamWriter.WriteAsync(stream, Encoding.UTF8.GetBytes(backup));
         }
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
+        TrackBackup(file.Name, Encoding.UTF8.GetByteCount(backup));
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
 
@@ -154,7 +236,32 @@ public partial class MainWindow
             await BackupStreamWriter.WriteAsync(stream, backup);
         }
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
+        TrackBackup(file.Name, backup.LongLength);
         ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+    }
+
+    // Imports either a JSON export or a complete database backup selected by the user.
+    private async Task ImportBackupFile()
+    {
+        var operationModel = Model;
+        var sessionVersion = operationModel.SessionVersion;
+        var files = await StorageProvider.OpenFilePickerAsync(new()
+        {
+            Title = "Import Backup",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("LedgerNest backup") { Patterns = ["*.json", "*.invoicedb"], MimeTypes = ["application/json", "application/octet-stream"] }]
+        });
+        if (files.Count == 0 || !CanContinueBackupOperation(operationModel, sessionVersion)) return;
+        await using var stream = await files[0].OpenReadAsync();
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
+        var restored = files[0].Name.EndsWith(".invoicedb", StringComparison.OrdinalIgnoreCase)
+            ? operationModel.RestoreDatabaseBackup(memory.ToArray())
+            : operationModel.RestoreJsonBackup(Encoding.UTF8.GetString(memory.ToArray()));
+        if (restored) TrackBackup(files[0].Name, memory.Length);
+        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
+        page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
 
     // Performs the restore database backup file action for this screen or workflow.
@@ -210,3 +317,6 @@ public partial class MainWindow
     // Performs the software info action for this screen or workflow.
     private Control SoftwareInfo() => Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(Ui.Stack(24, Ui.Logo(), Ui.Card(Ui.Stack(18, Ui.Text("App Details", 18, true), Ui.Text($"App Name       {Branding.Name}"), Ui.Text("Platform          Desktop"), Ui.Text("License           See legacy LICENSE"))), Ui.Card(Ui.Stack(18, Ui.Text("Developer", 18, true), Ui.Text(Branding.Tagline), Ui.Button("Check for Updates"))), Ui.Button("Change Password", ShowChangePassword), Ui.Button("First-time Setup", ShowOnboarding)), 28));
 }
+
+// Describes a backup shown in the current Backup Management history.
+internal sealed record BackupHistoryItem(string Name, long Size, DateTime CreatedAt, bool IsDatabase);
