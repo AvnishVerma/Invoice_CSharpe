@@ -5,6 +5,7 @@ using Avalonia.Threading;
 using LedgerNest.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using LedgerNest.Desktop.Printing;
+using LedgerNest.Desktop.Notifications;
 
 namespace LedgerNest.Desktop;
 
@@ -49,10 +50,11 @@ public partial class App : Avalonia.Application
                 .AddInfrastructure(databasePath)
                 .AddSingleton<IPdfGenerator, TemporaryPdfGenerator>()
                 .AddSingleton<IPrintServiceFactory, PrintServiceFactory>()
+                .AddSingleton<IToastService, AvaloniaToastService>()
                 .BuildServiceProvider();
 
             var printService = serviceProvider.GetRequiredService<IPrintServiceFactory>().Create();
-            desktop.MainWindow = new MainWindow(printService, serviceProvider.GetRequiredService<IPdfGenerator>())
+            desktop.MainWindow = new MainWindow(printService, serviceProvider.GetRequiredService<IPdfGenerator>(), serviceProvider.GetRequiredService<IToastService>())
             {
                 DataContext = new MainWindowViewModel(serviceProvider.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(), databasePath)
             };

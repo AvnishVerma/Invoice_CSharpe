@@ -28,6 +28,9 @@ public sealed partial class OverlayDialogView : UserControl
         {
             TitleText.FontSize = 24;
             TitleText.FontWeight = Avalonia.Media.FontWeight.Normal;
+            CloseButton.IsVisible = false;
+            Panel.CornerRadius = new CornerRadius(28);
+            Panel.Background = Ui.Palette("#F2EDF5", "#282330");
         }
 
         Panel.Width = side ? (availableWidth < 750 ? availableWidth - 32 : Math.Clamp(availableWidth * .42, 520, 680)) : width;

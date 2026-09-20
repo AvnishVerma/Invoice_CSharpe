@@ -12,6 +12,10 @@ LedgerNest is a cross-platform invoicing and business-management desktop applica
 - Docnet.Core/PDFium for direct Windows printer rendering
 - ScottPlot for report charts
 
+## Notifications
+
+Application status and error messages use an injected Avalonia toast service with info, success, warning, and error variants, timed dismissal, manual dismissal, and persistent exception notifications. Its API and behavior are inspired by the MIT-licensed [WPF Toast Notifications](https://github.com/mike-eason/WPF_ToastNotifications) project. The archived WPF assembly itself is not referenced because WPF controls are Windows-only and incompatible with Avalonia on macOS and Linux.
+
 ## Projects
 
 - `src/LedgerNest.Domain` — entities and domain contracts with no project dependencies

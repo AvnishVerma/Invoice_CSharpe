@@ -17,16 +17,14 @@ public partial class MainWindow
         sidebar.Content = null;
         overlay.Children.Clear(); overlay.IsVisible = false;
         shellModel = vm;
-        status.Text = vm.Status;
-        statusBar.Background = Ui.Palette("#E8F5E9", "#183A2D");
-        statusBar.IsVisible = vm.Status.Length > 0;
+        ShowStatusToast(vm.Status);
         shellChanged = (_, e) =>
         {
             if (e.PropertyName == nameof(vm.Title)) { ShowPage(); if (vm.CanAccessWorkspace) BuildSidebar(); }
             if (e.PropertyName is nameof(vm.SidebarExpanded) or nameof(vm.CurrentUsername))
                 if (vm.CanAccessWorkspace) BuildSidebar();
             if (e.PropertyName == nameof(vm.CanAccessWorkspace)) RefreshWorkspaceAccess();
-            if (e.PropertyName == nameof(vm.Status)) { status.Text = vm.Status; statusBar.IsVisible = vm.Status.Length > 0; }
+            if (e.PropertyName == nameof(vm.Status)) ShowStatusToast(vm.Status);
         };
         vm.PropertyChanged += shellChanged;
         RefreshWorkspaceAccess();

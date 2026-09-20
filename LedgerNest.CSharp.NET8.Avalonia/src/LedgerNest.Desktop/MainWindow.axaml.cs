@@ -7,6 +7,7 @@ using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Desktop.Views;
 using LedgerNest.Desktop.Printing;
+using LedgerNest.Desktop.Notifications;
 
 namespace LedgerNest.Desktop;
 
@@ -14,18 +15,21 @@ public partial class MainWindow : Window
 {
     private readonly IPrintService printService;
     private readonly IPdfGenerator pdfGenerator;
+    private readonly IToastService toastService;
     private MainWindowViewModel Model => (MainWindowViewModel)DataContext!;
     private bool invoiceCompletionVisible;
-    public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator())
+    public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator(), new AvaloniaToastService())
     {
     }
 
     // Creates the main window with application-scoped PDF generation and native printing services.
-    public MainWindow(IPrintService printService, IPdfGenerator pdfGenerator)
+    public MainWindow(IPrintService printService, IPdfGenerator pdfGenerator, IToastService toastService)
     {
         this.printService = printService;
         this.pdfGenerator = pdfGenerator;
+        this.toastService = toastService;
         InitializeComponent();
+        InitializeToasts();
         Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
         Background = Ui.Canvas;
         PropertyChanged += (_, e) =>
@@ -37,6 +41,8 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
+            toastService.Requested -= OnToastRequested;
+            toastTimer?.Stop();
             page.Content = null;
         };
         Title = Branding.Name;
@@ -108,10 +114,4 @@ public partial class MainWindow : Window
         search?.SelectAll();
     }
 
-    // Performs the on dismiss status action for this screen or workflow.
-    private void OnDismissStatus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        if (DataContext is MainWindowViewModel vm)
-            vm.Status = "";
-    }
 }

@@ -9,6 +9,7 @@ using Avalonia.Styling;
 using LedgerNest.Application;
 using LedgerNest.Desktop;
 using LedgerNest.Desktop.Printing;
+using LedgerNest.Desktop.Notifications;
 using LedgerNest.Desktop.Views;
 using LedgerNest.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,7 @@ internal static class Program
         CheckTaxReport();
         CheckRevenueReport();
         CheckCrossPlatformPrinting();
+        CheckToastService();
         CheckReceivablesLifecycle();
         CheckFormRoundTrips();
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
@@ -81,6 +83,11 @@ internal static class Program
             }
             Settle();
         }
+        model.Status = "Test operation failed."; Settle();
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Error") &&
+              window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Test operation failed."),
+            "Error status messages must render as dismissible error toasts");
+        Click("×");
         var layoutButton = window.GetVisualDescendants().OfType<Button>().Single(b => b.Flyout is MenuFlyout menu && menu.Items.OfType<MenuItem>().Any(i => i.Tag?.ToString() == "Bento"));
         Check(layoutButton.IsEnabled, "Issue 5: dashboard layout selector must be enabled");
         ((MenuFlyout)layoutButton.Flyout!).Items.OfType<MenuItem>().Single(i => i.Tag?.ToString() == "Simple Feed").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle();
@@ -1109,6 +1116,19 @@ internal static class Program
             }
         });
         Check(pdf.Length > 500 && System.Text.Encoding.ASCII.GetString(pdf, 0, 8).StartsWith("%PDF-1."), "Direct printing must generate a valid platform-independent PDF");
+    }
+
+    private static void CheckToastService()
+    {
+        var service = new AvaloniaToastService();
+        ToastMessage? received = null;
+        service.Requested += (_, toast) => received = toast;
+        service.Show("Saved", "Invoice saved.", ToastType.Success, TimeSpan.FromSeconds(2));
+        Check(received is { Title: "Saved", Message: "Invoice saved.", Type: ToastType.Success, IsPersistent: false } && received.DisplayTime == TimeSpan.FromSeconds(2),
+            "Toast service must publish typed notifications with configurable display duration");
+        service.Show(new InvalidOperationException("Printer unavailable"), "Print failed");
+        Check(received is { Title: "Print failed", Message: "Printer unavailable", Type: ToastType.Error, IsPersistent: true },
+            "Toast service must convert exceptions into persistent error notifications");
     }
 
     private static void CheckRecordDeletion()

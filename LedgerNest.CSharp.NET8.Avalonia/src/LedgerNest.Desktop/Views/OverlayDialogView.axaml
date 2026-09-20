@@ -42,7 +42,8 @@
             <ContentControl x:Name="HeaderAccessoryHost"
                             Grid.Column="2"
                             VerticalAlignment="Center" />
-            <Button Grid.Column="3"
+            <Button x:Name="CloseButton"
+                    Grid.Column="3"
                     Content="×"
                     Classes="outline"
                     MinWidth="38"
