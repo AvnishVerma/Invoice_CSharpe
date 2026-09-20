@@ -15,6 +15,20 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindowViewModel
 {
+    // Creates a simple catalog PDF for the selected management records.
+    public byte[] ExportRecordsPdf(string title, IEnumerable<UiRecord> records)
+    {
+        var selected = records.ToArray();
+        var lines = new List<string> { Branding.Name, title, $"Records: {selected.Length}", "" };
+        lines.AddRange(selected.Select(record => string.Join("  |  ",
+            record.Name,
+            record["Type"],
+            $"Price: {record["Sale Price"]}",
+            $"Stock: {(record["Unlimited stock"].Equals("true", StringComparison.OrdinalIgnoreCase) ? "Unlimited" : record["Stock"])}",
+            $"Tax: {record["Tax (%)"]}%")));
+        Status = $"Exported {selected.Length} {title.ToLowerInvariant()} record{(selected.Length == 1 ? "" : "s")}.";
+        return SimplePdf.Create(lines);
+    }
     // Performs the export csv action for this screen or workflow.
     public string ExportCsv(string kind, IEnumerable<UiRecord>? records = null)
     {

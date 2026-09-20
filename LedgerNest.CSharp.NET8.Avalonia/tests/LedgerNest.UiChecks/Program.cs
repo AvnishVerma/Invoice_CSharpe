@@ -120,6 +120,15 @@ internal static class Program
         Check(customerReport is { IsStatement: true, SelectedCustomerName: "Test Customer" }, "Customer payment action must open the Statements tab filtered by customer name");
         Capture("customer-statement-filtered");
         model.NavigateCommand.Execute("Customers"); Settle();
+        Click("↑ Import");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Import Customers from CSV") &&
+              window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Customer full name"),
+            "Customer import must show its structured CSV schema");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Maximum 200 rows per import.") &&
+              window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text != null && t.Text.StartsWith("Duplicates are detected", StringComparison.Ordinal)),
+            "Customer import must explain row limits and duplicate handling");
+        Capture("customer-import-csv");
+        Click("Cancel");
         var user = FormCatalog.User(); user[0].Value = "review-user"; user[1].Value = "temporary-secret";
         Check(model.SaveRecord("User", user), "User form must validate");
         Check(!model.Users.Single().Values.ContainsKey("Password"), "User table must not retain or expose password text"); Capture("customers-populated");
@@ -142,6 +151,12 @@ internal static class Program
         Check(window.GetVisualDescendants().OfType<TextBlock>().Count(t => t.Text == "Yes") == 2,
             "Product import must mark name and price as required");
         Capture("product-import-csv");
+        Click("Cancel");
+        Click("↓ Export");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Export to PDF") &&
+              FindButton("Current Page").IsVisible && FindButton("All Products").IsVisible,
+            "Product export must offer current-page and all-products PDF choices");
+        Capture("product-export-pdf");
         Click("Cancel");
         Click("＋ New Product"); Capture("product-form"); Click("Cancel");
         model.NavigateCommand.Execute("New Invoice"); Settle();

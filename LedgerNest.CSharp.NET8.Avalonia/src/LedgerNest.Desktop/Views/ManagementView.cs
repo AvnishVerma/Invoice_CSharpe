@@ -784,22 +784,22 @@ internal sealed partial class ManagementView : UserControl
     // Performs the import action for this screen or workflow.
     private void Import()
     {
-        if (kind == "Product")
+        if (kind is "Product" or "Customer")
         {
             var cancel = Ui.Button("Cancel", window.CloseOverlay);
             cancel.Classes.Add("text");
             var choose = Ui.Button("Choose File", async () => await ChooseCsvFile(), true);
             choose.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("folder", 18, Brushes.White), new Border(), Ui.Text("Choose File", 13, true, Brushes.White));
             window.ShowOverlay(
-                "Import Products from CSV",
-                ProductImportGuide(),
+                $"Import {kind}s from CSV",
+                kind == "Product" ? ProductImportGuide() : CustomerImportGuide(),
                 new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
                     Spacing = 12,
                     Children = { cancel, choose }
                 },
-                width: 665,
+                width: kind == "Product" ? 665 : 645,
                 leadingIcon: Ui.Icon("upload_file", 22, Ui.Primary));
             return;
         }
@@ -808,6 +808,33 @@ internal sealed partial class ManagementView : UserControl
             ? "name (required), email, phone, address, business_name, tax_number"
             : "name (required), price (required), hsn_code, description, tax_rate, stock, type, default_discount, purchase_price, alias_name, unit, unlimited_stock, price_includes_tax, storage_location, container_number, batch_number, expiry_date, manufacture_date, manufacture_name, supplier_name, sku_code, notes";
         window.ShowOverlay($"Import {kind}s from CSV", Ui.Stack(16, Ui.Text("CSV columns", 16, true), Ui.Text(columns), Ui.Button("Download Sample CSV", async () => await DownloadSampleCsv()), Ui.Button("Choose File", async () => await ChooseCsvFile())));
+    }
+
+    // Builds the customer CSV requirements and validation notes shown before file selection.
+    private static Control CustomerImportGuide()
+    {
+        (string Column, bool Required, string Description)[] rows =
+        [
+            ("name", true, "Customer full name"),
+            ("email", false, "Email address"),
+            ("phone", false, "Phone number"),
+            ("address", false, "Full address"),
+            ("business_name", false, "Company / business name"),
+            ("tax_number", false, "Tax / VAT / GSTIN number")
+        ];
+        var notes = new[]
+        {
+            "Maximum 200 rows per import.",
+            "Duplicates are detected by email or phone. You will be asked to overwrite or skip each one.",
+            "Rows missing a name are skipped and reported at the end.",
+            "UTF-8 encoding recommended. Excel BOM is handled automatically."
+        };
+        var noteList = Ui.Stack(7);
+        foreach (var note in notes)
+            noteList.Children.Add(Ui.Columns("18,*", Ui.Icon("info_outline", 15, Brush.Parse("#607D8B")), Ui.Text(note, 12)));
+        return Ui.Stack(14,
+            CsvRequirementsTable(rows, "224,104,*"),
+            noteList);
     }
 
     // Builds the product CSV requirements table shown before choosing an import file.
@@ -832,9 +859,15 @@ internal sealed partial class ManagementView : UserControl
             ("container_number", false, "Container/box number")
         ];
 
+        return CsvRequirementsTable(rows, "208,106,*");
+    }
+
+    // Creates a consistent three-column CSV schema table for import dialogs.
+    private static Control CsvRequirementsTable((string Column, bool Required, string Description)[] rows, string columns)
+    {
         var table = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("208,106,*"),
+            ColumnDefinitions = new ColumnDefinitions(columns),
             RowDefinitions = new RowDefinitions(string.Join(',', Enumerable.Repeat("30", rows.Length + 1)))
         };
 
@@ -881,9 +914,61 @@ internal sealed partial class ManagementView : UserControl
     // Performs the export action for this screen or workflow.
     private void Export()
     {
+        if (kind == "Product")
+        {
+            var currentCount = Filtered().Skip(page * pageSize).Take(pageSize).Count();
+            var totalCount = Records.Count();
+            var cancel = Ui.Button("Cancel", window.CloseOverlay); cancel.Classes.Add("text");
+            var current = Ui.Button("Current Page", async () => await ExportProductsPdf(true));
+            var all = Ui.Button("All Products", async () => await ExportProductsPdf(false), true);
+            all.Background = Brush.Parse("#6D4CB3");
+            window.ShowOverlay(
+                "Export to PDF",
+                Ui.Text($"Export the current page ({currentCount} product{(currentCount == 1 ? "" : "s")}) or all {totalCount} products?", 13),
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { cancel, current, all } },
+                width: 420,
+                prominentHeader: true);
+            return;
+        }
         var currentPage = new RadioButton { Content = "Current Page", IsChecked = true, GroupName = "export" };
         var allRecords = new RadioButton { Content = "All Records", GroupName = "export" };
         window.ShowOverlay("Export", Ui.Stack(12, Ui.Text("Export records"), currentPage, allRecords, Ui.Button("Export CSV", async () => await ExportCsv(currentPage.IsChecked == true)), Ui.Button("Export PDF", Documents ? async () => await ExportDocumentsPdf() : null)));
+    }
+
+    // Exports either the visible product page or the complete active product catalog as a PDF.
+    private async Task ExportProductsPdf(bool currentPageOnly)
+    {
+        var records = (currentPageOnly ? Filtered().Skip(page * pageSize).Take(pageSize) : Records).ToArray();
+        if (records.Length == 0)
+        {
+            model.Status = "No products are available to export.";
+            window.CloseOverlay();
+            return;
+        }
+        try
+        {
+            var bytes = model.ExportRecordsPdf("Products", records);
+            if (OperatingSystem.IsMacOS())
+            {
+                var path = FilePickerHelpers.MacDownloadsPdfPath("products");
+                await File.WriteAllBytesAsync(path, bytes);
+                model.Status = $"Saved PDF to {path}";
+            }
+            else
+            {
+                var file = await window.StorageProvider.SaveFilePickerAsync(FilePickerHelpers.PdfSaveOptions("Export Products PDF", "products"));
+                if (file == null) return;
+                await using var stream = await file.OpenWriteAsync();
+                await LedgerNest.Infrastructure.BackupStreamWriter.WriteAsync(stream, bytes);
+                model.Status = $"Saved {file.Name}.";
+            }
+            window.CloseOverlay();
+        }
+        catch (Exception ex)
+        {
+            AppErrorLog.Write(ex, "Exporting products PDF");
+            model.Status = $"Could not save products PDF. Log: {AppErrorLog.Path}";
+        }
     }
 
 
