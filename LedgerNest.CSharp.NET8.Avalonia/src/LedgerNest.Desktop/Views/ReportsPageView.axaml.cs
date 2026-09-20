@@ -1,11 +1,11 @@
+using Avalonia.Controls;
+using Avalonia.Data.Converters;
+using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using Avalonia.Data.Converters;
-using Avalonia.Controls;
-using CommunityToolkit.Mvvm.Input;
 
 namespace LedgerNest.Desktop.Views;
 

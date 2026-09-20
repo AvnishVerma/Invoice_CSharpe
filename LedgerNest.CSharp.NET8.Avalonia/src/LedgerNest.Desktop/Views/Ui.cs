@@ -230,7 +230,7 @@ internal static class Ui
         if (field.Kind is "file" or "slider") return Stack(5, Text(labelText, 12, color: Muted), input, error);
         var floatLabel = new Border { Background = CardSurface, Padding = new Thickness(4, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(9, -7, 0, 0), Child = Text(labelText + (field.Required && !labelText.EndsWith("*") ? " *" : ""), 12, color: Muted), IsHitTestVisible = false };
         var fieldGrid = new Grid(); input.Margin = new Thickness(0); fieldGrid.Children.Add(input); fieldGrid.Children.Add(floatLabel);
-        void UpdateLabel() => floatLabel.IsVisible = field.Value.Length > 0 || input.IsKeyboardFocusWithin || field.Kind is "choice" or "date";
+        void UpdateLabel() => floatLabel.IsVisible = field.Value?.Length > 0 || input.IsKeyboardFocusWithin || field.Kind is "choice" or "date";
         input.GotFocus += (_, _) => UpdateLabel(); input.LostFocus += (_, _) => UpdateLabel();
         System.ComponentModel.PropertyChangedEventHandler changed = (_, e) => { if (e.PropertyName == nameof(FormField.Value)) UpdateLabel(); };
         fieldGrid.AttachedToVisualTree += (_, _) => field.PropertyChanged += changed;

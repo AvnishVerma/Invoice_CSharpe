@@ -65,7 +65,9 @@ public partial class MainWindow
             "Invoices" => new ManagementView(Model, "Invoice", this),
             "Quotations" => new ManagementView(Model, "Quotation", this),
             "Receipts" => new ManagementView(Model, "Receipt", this),
-            "Reports" => Reports(), "Settings" => SettingsView(), _ => Dashboard()
+            "Reports" => Reports(), 
+            "Settings" => SettingsView(), 
+            _ => Dashboard()
         };
     }
 }
