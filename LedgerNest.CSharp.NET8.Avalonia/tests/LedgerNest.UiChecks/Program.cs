@@ -1095,6 +1095,9 @@ internal static class Program
         Check(PlatformPrinterService.NormalizePrinterName(PlatformPrinterService.DefaultPrinter) == null, "Cross-platform printing must map the system-default choice to the native default printer");
         Check(PlatformPrinterService.NormalizePrinterName("Windows default printer") == null, "Cross-platform printing must preserve legacy Windows-default settings");
         Check(PlatformPrinterService.NormalizePrinterName("Office Printer") == "Office Printer", "Cross-platform printing must preserve an explicit printer selection");
+        Check(PrinterClassifier.IsFilePrinter("Microsoft Print to PDF") && PrinterClassifier.IsFilePrinter("Microsoft XPS Document Writer"),
+            "Direct printing must detect Windows file-output printers that display save dialogs");
+        Check(!PrinterClassifier.IsFilePrinter("EPSON TM-T88VI"), "Direct printing must preserve physical printer destinations");
 
         var service = new PrintServiceFactory().Create();
         Check((OperatingSystem.IsWindows() && service is WindowsPrintService) ||

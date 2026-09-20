@@ -3,6 +3,20 @@ namespace LedgerNest.Desktop.Printing;
 // Describes one printer returned by the active operating system.
 public sealed record PrinterInfo(string Name, bool IsDefault = false, string? Description = null, string? DriverName = null, string? PortName = null);
 
+// Identifies virtual destinations that create files instead of producing a physical printout.
+public static class PrinterClassifier
+{
+    private static readonly string[] FilePrinterNames =
+    [
+        "print to pdf", "adobe pdf", "pdfcreator", "cups-pdf",
+        "microsoft xps document writer", "onenote", "fax"
+    ];
+
+    public static bool IsFilePrinter(string? printerName) =>
+        !string.IsNullOrWhiteSpace(printerName) &&
+        FilePrinterNames.Any(value => printerName.Contains(value, StringComparison.OrdinalIgnoreCase));
+}
+
 // Configures a native PDF print job.
 public sealed class PrintOptions
 {

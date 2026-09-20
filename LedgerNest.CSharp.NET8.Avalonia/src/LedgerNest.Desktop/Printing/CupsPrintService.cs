@@ -32,10 +32,24 @@ public class CupsPrintService(bool macOS) : IPrintService
         options ??= new PrintOptions();
         if (options.ShowPrintDialog) throw new NotSupportedException($"A native print dialog is not available through the {(macOS ? "macOS" : "Linux")} CUPS command line. Select a printer in LedgerNest before printing.");
         var printers = await GetPrintersAsync(cancellationToken);
-        if (!string.IsNullOrWhiteSpace(printerName) && printerName != PlatformPrinterService.DefaultPrinter && !printers.Any(printer => printer.Name.Equals(printerName, StringComparison.OrdinalIgnoreCase)))
+        var resolved = PlatformPrinterService.NormalizePrinterName(printerName);
+        if (resolved != null && !printers.Any(printer => printer.Name.Equals(resolved, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException($"Printer '{printerName}' was not found.");
+        if (resolved != null && PrinterClassifier.IsFilePrinter(resolved))
+            throw new InvalidOperationException($"Printer '{resolved}' saves to a file. Select a physical printer for direct printing.");
+        if (resolved == null)
+        {
+            var defaultPrinter = await GetDefaultPrinterAsync(cancellationToken);
+            resolved = PrinterClassifier.IsFilePrinter(defaultPrinter?.Name)
+                ? printers.FirstOrDefault(item => !PrinterClassifier.IsFilePrinter(item.Name))?.Name
+                : defaultPrinter?.Name;
+            if (string.IsNullOrWhiteSpace(resolved))
+                resolved = printers.FirstOrDefault(item => !PrinterClassifier.IsFilePrinter(item.Name))?.Name;
+            if (string.IsNullOrWhiteSpace(resolved))
+                throw new InvalidOperationException("No physical printer is available. Select or install a physical printer before printing.");
+        }
         var args = new List<string>();
-        if (!string.IsNullOrWhiteSpace(printerName) && printerName != PlatformPrinterService.DefaultPrinter) { args.Add("-d"); args.Add(printerName); }
+        args.Add("-d"); args.Add(resolved);
         if (options.Copies is > 1) { args.Add("-n"); args.Add(options.Copies.Value.ToString()); }
         if (options.Landscape) { args.Add("-o"); args.Add("landscape"); }
         if (!string.IsNullOrWhiteSpace(options.PaperSize)) { args.Add("-o"); args.Add("media=" + options.PaperSize); }

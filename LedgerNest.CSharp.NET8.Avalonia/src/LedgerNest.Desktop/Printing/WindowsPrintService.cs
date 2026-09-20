@@ -35,8 +35,20 @@ public sealed class WindowsPrintService : IPrintService
         options ??= new PrintOptions();
         if (options.ShowPrintDialog) throw new NotSupportedException("The native Windows print dialog is not available in this Avalonia Community build. Select a printer in PDF Settings.");
         var resolved = PlatformPrinterService.NormalizePrinterName(printerName);
-        if (resolved != null && !WindowsPrinterService.GetInstalledPrinters().Contains(resolved, StringComparer.OrdinalIgnoreCase))
+        var installed = WindowsPrinterService.GetInstalledPrinters();
+        if (resolved != null && !installed.Contains(resolved, StringComparer.OrdinalIgnoreCase))
             throw new InvalidOperationException($"Printer '{resolved}' was not found.");
+        if (resolved != null && PrinterClassifier.IsFilePrinter(resolved))
+            throw new InvalidOperationException($"Printer '{resolved}' saves to a file. Select a physical printer for direct printing.");
+        if (resolved == null)
+        {
+            var defaultPrinter = WindowsPrinterService.GetDefaultPrinter();
+            resolved = PrinterClassifier.IsFilePrinter(defaultPrinter)
+                ? installed.FirstOrDefault(name => !PrinterClassifier.IsFilePrinter(name))
+                : defaultPrinter;
+            if (string.IsNullOrWhiteSpace(resolved))
+                throw new InvalidOperationException("No physical printer is available. Select or install a physical printer before printing.");
+        }
         await Task.Run(() => Print(pdfFilePath, resolved, options, cancellationToken), cancellationToken);
     }
 

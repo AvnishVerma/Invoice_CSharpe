@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using LedgerNest.Desktop.Views;
 using Avalonia.Styling;
+using LedgerNest.Desktop.Printing;
 
 namespace LedgerNest.Desktop;
 
@@ -234,11 +235,11 @@ public partial class MainWindow
             {
                 var discovered = await printService.GetPrintersAsync();
                 printer.Options = new[] { PlatformPrinterService.DefaultPrinter }
-                    .Concat(discovered.Select(item => item.Name))
+                    .Concat(discovered.Where(item => !PrinterClassifier.IsFilePrinter(item.Name)).Select(item => item.Name))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToArray();
                 if (!printer.Options.Contains(printer.Value, StringComparer.OrdinalIgnoreCase))
-                    printer.Value = discovered.FirstOrDefault(item => item.IsDefault)?.Name ?? printer.Options[0];
+                    printer.Value = discovered.FirstOrDefault(item => item.IsDefault && !PrinterClassifier.IsFilePrinter(item.Name))?.Name ?? printer.Options[0];
                 Display();
             }
             catch (Exception ex)

@@ -122,12 +122,12 @@ public partial class MainWindow
     {
         var discovered = await printService.GetPrintersAsync();
         var choices = new[] { PlatformPrinterService.DefaultPrinter }
-            .Concat(discovered.Select(printer => printer.Name))
+            .Concat(discovered.Where(printer => !PrinterClassifier.IsFilePrinter(printer.Name)).Select(printer => printer.Name))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         var selected = choices.Contains(configuredPrinter, StringComparer.OrdinalIgnoreCase)
             ? configuredPrinter
-            : discovered.FirstOrDefault(printer => printer.IsDefault)?.Name ?? choices[0];
+            : discovered.FirstOrDefault(printer => printer.IsDefault && !PrinterClassifier.IsFilePrinter(printer.Name))?.Name ?? choices[0];
         var picker = new ComboBox
         {
             ItemsSource = choices,
