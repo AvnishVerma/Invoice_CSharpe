@@ -33,12 +33,12 @@ public partial class MainWindow
         ShowPage();
     }
     // Performs the show overlay action for this screen or workflow.
-    internal void ShowOverlay(string title, Control content, Control? footer = null, bool side = false, double width = 560, Control? headerAccessory = null)
+    internal void ShowOverlay(string title, Control content, Control? footer = null, bool side = false, double width = 560, Control? headerAccessory = null, Control? leadingIcon = null)
     {
         overlay.Children.Clear(); overlay.IsVisible = true;
         overlay.Margin = new Thickness(side ? (Model.SidebarExpanded ? 210 : 64) : 0, 0, 0, 0);
         var availableWidth = Bounds.Width - overlay.Margin.Left;
-        overlay.Children.Add(new OverlayDialogView(title, content, footer ?? Ui.Button("Close", CloseOverlay), headerAccessory, CloseOverlay, side, width, availableWidth, Bounds.Height));
+        overlay.Children.Add(new OverlayDialogView(title, content, footer ?? Ui.Button("Close", CloseOverlay), headerAccessory, CloseOverlay, side, width, availableWidth, Bounds.Height, leadingIcon));
     }
     // Performs the confirm action for this screen or workflow.
     internal void Confirm(string title, string message, Action action)

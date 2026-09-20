@@ -125,7 +125,18 @@ internal static class Program
         }
         foreach (var key in new[] { Key.Q, Key.S, Key.F, Key.M, Key.P })
             Check(window.KeyBindings.Any(k => k.Gesture?.Key == key && k.Gesture.KeyModifiers.HasFlag(KeyModifiers.Control)), $"Ctrl+{key} must have a window-level key binding");
-        model.NavigateCommand.Execute("Products"); Click("＋ New Product"); Capture("product-form"); Click("Cancel");
+        model.NavigateCommand.Execute("Products");
+        Click("↑ Import");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Import Products from CSV"), "Product import must show the CSV guidance dialog");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Column") &&
+              window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Required") &&
+              window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Description"),
+            "Product import must present a structured CSV column table");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Count(t => t.Text == "Yes") == 2,
+            "Product import must mark name and price as required");
+        Capture("product-import-csv");
+        Click("Cancel");
+        Click("＋ New Product"); Capture("product-form"); Click("Cancel");
         model.NavigateCommand.Execute("New Invoice"); Settle();
         Shortcut(Key.M);
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Add Custom Item") && window.GetVisualDescendants().OfType<TextBox>().Any(t => t.PlaceholderText == "Name"), "Ctrl+M must open the custom item dialog");

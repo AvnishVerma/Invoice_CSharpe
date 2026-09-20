@@ -70,6 +70,8 @@ internal static class Ui
         ["account_balance_wallet"] = "\ue850",
         ["check_circle"] = "\ue86c",
         ["save"] = "\ue161",
+        ["folder"] = "\ue2c7",
+        ["upload_file"] = "\ue9fc",
         ["visibility"] = "\ue8f4",
         ["print"] = "\ue8ad",
         ["picture_as_pdf"] = "\ue415",
