@@ -226,7 +226,6 @@ public partial class MainWindow
             applyPayment.IsEnabled,
             () => ShowDocumentPreview(document),
             () => ShowPdfPreviewAsync(document),
-            () => DownloadDocumentPdf(document),
             () => PrintDocumentAsync(document),
             () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); },
             () => ShowPayment(document));

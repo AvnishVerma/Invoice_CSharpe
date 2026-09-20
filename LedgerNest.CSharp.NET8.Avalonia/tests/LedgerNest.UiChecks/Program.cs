@@ -124,6 +124,7 @@ internal static class Program
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Import Customers from CSV") &&
               window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Customer full name"),
             "Customer import must show its structured CSV schema");
+        Check(FindButton("Download Sample").IsVisible, "Customer import must offer a sample CSV download");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Maximum 200 rows per import.") &&
               window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text != null && t.Text.StartsWith("Duplicates are detected", StringComparison.Ordinal)),
             "Customer import must explain row limits and duplicate handling");
@@ -139,7 +140,7 @@ internal static class Program
             binding.Command!.Execute(binding.CommandParameter);
             Settle();
         }
-        foreach (var key in new[] { Key.Q, Key.S, Key.F, Key.M, Key.P })
+        foreach (var key in new[] { Key.Q, Key.S, Key.F, Key.M, Key.O, Key.P })
             Check(window.KeyBindings.Any(k => k.Gesture?.Key == key && k.Gesture.KeyModifiers.HasFlag(KeyModifiers.Control)), $"Ctrl+{key} must have a window-level key binding");
         model.NavigateCommand.Execute("Products");
         Click("↑ Import");
@@ -150,6 +151,7 @@ internal static class Program
             "Product import must present a structured CSV column table");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Count(t => t.Text == "Yes") == 2,
             "Product import must mark name and price as required");
+        Check(FindButton("Download Sample").IsVisible, "Product import must offer a sample CSV download");
         Capture("product-import-csv");
         Click("Cancel");
         Click("↓ Export");
@@ -1146,6 +1148,9 @@ internal static class Program
             }
         });
         Check(pdf.Length > 500 && System.Text.Encoding.ASCII.GetString(pdf, 0, 8).StartsWith("%PDF-1."), "Direct printing must generate a valid platform-independent PDF");
+        var previewPages = MainWindow.RenderPdfPages(pdf);
+        Check(previewPages.Count > 0 && previewPages.All(page => page.Width > 0 && page.Height > 0 && page.Pixels.Length >= page.Width * page.Height * 4),
+            "PDF preview must render generated pages into valid pixel buffers");
     }
 
     private static void CheckToastService()

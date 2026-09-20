@@ -15,7 +15,6 @@ public sealed partial class InvoiceCreatedView : UserControl
         bool canApplyPayment,
         Action view,
         Func<Task> preview,
-        Func<Task> download,
         Func<Task> print,
         Action createNew,
         Action applyPayment)

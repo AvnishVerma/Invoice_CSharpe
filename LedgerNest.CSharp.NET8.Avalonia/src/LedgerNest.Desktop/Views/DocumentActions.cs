@@ -66,7 +66,7 @@ public partial class MainWindow
         }
     }
 
-    private static List<RenderedPdfPage> RenderPdfPages(byte[] bytes)
+    internal static List<RenderedPdfPage> RenderPdfPages(byte[] bytes)
     {
         using var reader = DocLib.Instance.GetDocReader(bytes, new PageDimensions(1.65));
         var pages = new List<RenderedPdfPage>();
@@ -89,7 +89,7 @@ public partial class MainWindow
         return bitmap;
     }
 
-    private sealed record RenderedPdfPage(byte[] Pixels, int Width, int Height);
+    internal sealed record RenderedPdfPage(byte[] Pixels, int Width, int Height);
 
     // Performs the tax label action for this screen or workflow.
     private static string TaxLabel(UiRecord document)
