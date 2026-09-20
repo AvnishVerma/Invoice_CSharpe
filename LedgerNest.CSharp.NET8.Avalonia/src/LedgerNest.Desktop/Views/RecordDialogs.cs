@@ -41,7 +41,11 @@ public partial class MainWindow
     internal void ShowUserDetails(UiRecord user, Action refresh)
     {
         var initial = user.Name.Length == 0 ? "?" : user.Name[..1].ToUpperInvariant();
-        var avatar = new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(19), Background = Brush.Parse("#F0DDF8"), Child = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0")) };
+        var initialText = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0"));
+        initialText.HorizontalAlignment = HorizontalAlignment.Center;
+        initialText.VerticalAlignment = VerticalAlignment.Center;
+        initialText.TextAlignment = TextAlignment.Center;
+        var avatar = new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(19), Background = Brush.Parse("#F0DDF8"), Child = initialText };
         var role = new Border { Background = Brush.Parse("#F3E5F5"), CornerRadius = new CornerRadius(6), Padding = new Thickness(9, 4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(user["Role"], 11, false, Brush.Parse("#9C27B0")) };
         var note = user.Name == Model.CurrentUsername ? "This is your account" : $"{user["Role"]} access";
         var content = Ui.Stack(14, Ui.Columns("38,10,*", avatar, new Border(), Ui.Text(user.Name, 16, true)), role, Ui.Text(note, 12, color: Ui.Muted));

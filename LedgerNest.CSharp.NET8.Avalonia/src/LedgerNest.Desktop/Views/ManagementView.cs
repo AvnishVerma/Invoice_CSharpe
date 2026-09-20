@@ -198,7 +198,11 @@ internal sealed partial class ManagementView : UserControl
         ToolTip.SetTip(check, isAdmin ? "Administrator users cannot be deleted." : "Select user");
         check.IsCheckedChanged += (_, _) => { if (check.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); Refresh(); };
         var initial = record.Name.Length == 0 ? "?" : record.Name[..1].ToUpperInvariant();
-        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = Brush.Parse("#F0DDF8"), VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0")) };
+        var initialText = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0"));
+        initialText.HorizontalAlignment = HorizontalAlignment.Center;
+        initialText.VerticalAlignment = VerticalAlignment.Center;
+        initialText.TextAlignment = TextAlignment.Center;
+        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = Brush.Parse("#F0DDF8"), VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Child = initialText };
         var nameLine = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
         nameLine.Children.Add(Ui.Text(record.Name, 14, true));
         if (record.Name == model.CurrentUsername) nameLine.Children.Add(new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 2), VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text("You", 10, true, Ui.Primary) });
@@ -780,10 +784,98 @@ internal sealed partial class ManagementView : UserControl
     // Performs the import action for this screen or workflow.
     private void Import()
     {
+        if (kind == "Product")
+        {
+            var cancel = Ui.Button("Cancel", window.CloseOverlay);
+            cancel.Classes.Add("text");
+            var choose = Ui.Button("Choose File", async () => await ChooseCsvFile(), true);
+            choose.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("folder", 18, Brushes.White), new Border(), Ui.Text("Choose File", 13, true, Brushes.White));
+            window.ShowOverlay(
+                "Import Products from CSV",
+                ProductImportGuide(),
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 12,
+                    Children = { cancel, choose }
+                },
+                width: 665,
+                leadingIcon: Ui.Icon("upload_file", 22, Ui.Primary));
+            return;
+        }
+
         var columns = kind == "Customer"
             ? "name (required), email, phone, address, business_name, tax_number"
             : "name (required), price (required), hsn_code, description, tax_rate, stock, type, default_discount, purchase_price, alias_name, unit, unlimited_stock, price_includes_tax, storage_location, container_number, batch_number, expiry_date, manufacture_date, manufacture_name, supplier_name, sku_code, notes";
         window.ShowOverlay($"Import {kind}s from CSV", Ui.Stack(16, Ui.Text("CSV columns", 16, true), Ui.Text(columns), Ui.Button("Download Sample CSV", async () => await DownloadSampleCsv()), Ui.Button("Choose File", async () => await ChooseCsvFile())));
+    }
+
+    // Builds the product CSV requirements table shown before choosing an import file.
+    private static Control ProductImportGuide()
+    {
+        (string Column, bool Required, string Description)[] rows =
+        [
+            ("name", true, "Product name"),
+            ("price", true, "Unit price (numeric)"),
+            ("hsn_code", false, "HSN / SAC code"),
+            ("description", false, "Short description"),
+            ("tax_rate", false, "Tax % (0–100), default 0"),
+            ("stock", false, "Stock quantity, default 0"),
+            ("type", false, "\"product\" or \"service\", default product"),
+            ("default_discount", false, "Flat discount amount (currency), default 0"),
+            ("purchase_price", false, "Cost price (numeric), default 0"),
+            ("alias_name", false, "Local-language display name for PDFs"),
+            ("unit", false, "Unit of measure (e.g. kg, bag, pcs), default pcs"),
+            ("unlimited_stock", false, "1/true for unlimited stock, default 0"),
+            ("price_includes_tax", false, "1/true if price already includes tax, default 0"),
+            ("storage_location", false, "Warehouse/shelf location"),
+            ("container_number", false, "Container/box number")
+        ];
+
+        var table = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("208,106,*"),
+            RowDefinitions = new RowDefinitions(string.Join(',', Enumerable.Repeat("30", rows.Length + 1)))
+        };
+
+        void AddCell(int row, int column, string text, bool header = false, IBrush? color = null)
+        {
+            var label = Ui.Text(text, header ? 12 : 11.5, header, color);
+            label.TextWrapping = TextWrapping.NoWrap;
+            var cell = new Border
+            {
+                Padding = new Thickness(8, 4),
+                Background = header ? Brushes.White : Brushes.Transparent,
+                BorderBrush = Ui.Outline,
+                BorderThickness = new Thickness(column == 0 ? 0 : 1, row == 0 ? 0 : 1, 0, 0),
+                Child = label
+            };
+            Grid.SetRow(cell, row);
+            Grid.SetColumn(cell, column);
+            table.Children.Add(cell);
+        }
+
+        AddCell(0, 0, "Column", true);
+        AddCell(0, 1, "Required", true);
+        AddCell(0, 2, "Description", true);
+        for (var index = 0; index < rows.Length; index++)
+        {
+            var item = rows[index];
+            AddCell(index + 1, 0, item.Column);
+            AddCell(index + 1, 1, item.Required ? "Yes" : "No", color: item.Required ? Brush.Parse("#E53935") : Ui.Muted);
+            AddCell(index + 1, 2, item.Description);
+        }
+
+        return Ui.Stack(12,
+            Ui.Text("Your CSV file must use the following column headers (exact spelling, any order):", 13),
+            new Border
+            {
+                CornerRadius = new CornerRadius(4),
+                BorderBrush = Ui.Outline,
+                BorderThickness = new Thickness(1),
+                ClipToBounds = true,
+                Child = table
+            });
     }
 
     // Performs the export action for this screen or workflow.

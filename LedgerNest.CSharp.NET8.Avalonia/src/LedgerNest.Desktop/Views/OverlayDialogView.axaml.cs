@@ -15,7 +15,7 @@ public sealed partial class OverlayDialogView : UserControl
         close = () => { };
     }
 
-    public OverlayDialogView(string title, Control content, Control footer, Control? headerAccessory, Action close, bool side, double width, double availableWidth, double availableHeight)
+    public OverlayDialogView(string title, Control content, Control footer, Control? headerAccessory, Action close, bool side, double width, double availableWidth, double availableHeight, Control? leadingIcon = null)
     {
         InitializeComponent();
         this.close = close;
@@ -23,6 +23,12 @@ public sealed partial class OverlayDialogView : UserControl
         BodyHost.Content = content;
         FooterHost.Content = footer;
         HeaderAccessoryHost.Content = headerAccessory ?? new Border();
+        LeadingIconHost.Content = leadingIcon ?? new Border();
+        if (leadingIcon != null)
+        {
+            TitleText.FontSize = 24;
+            TitleText.FontWeight = Avalonia.Media.FontWeight.Normal;
+        }
 
         Panel.Width = side ? (availableWidth < 750 ? availableWidth - 32 : Math.Clamp(availableWidth * .42, 520, 680)) : width;
         Panel.MaxWidth = Math.Max(280, availableWidth - 32);
