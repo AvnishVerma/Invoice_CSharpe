@@ -38,7 +38,7 @@ public partial class MainWindow
             ViewCommand = new RelayCommand(() => ShowDocumentPreview(invoice)),
             EditCommand = new RelayCommand(() => Model.LoadDocumentForEditing(invoice)),
             CloneCommand = new RelayCommand(() => Model.CloneDocumentForEditing(invoice)),
-            PdfCommand = new AsyncRelayCommand(async () => await DownloadDocumentPdf(invoice)),
+            PdfCommand = new AsyncRelayCommand(async () => await ShowPdfPreviewAsync(invoice)),
             PrintCommand = new AsyncRelayCommand(async () => await PrintDocumentAsync(invoice)),
             PaymentCommand = new RelayCommand(() => ShowPayment(invoice)),
             DeleteCommand = new RelayCommand(() => DeleteDocumentFromDashboard(invoice))

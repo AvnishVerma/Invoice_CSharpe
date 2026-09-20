@@ -574,6 +574,7 @@ internal sealed partial class ManagementView : UserControl
             IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"),
             IconAction("receipt_long", "Clone", () => { if (model.CloneDocumentForEditing(record)) window.CloseOverlay(); }, "#00A6A6"),
             IconAction("picture_as_pdf", "Download PDF", async () => await window.DownloadDocumentPdf(record), "#FF9800"),
+            IconAction("visibility", "Preview PDF", async () => await window.ShowPdfPreviewAsync(record), "#7E57C2"),
             IconAction("print", "Print", async () => await window.PrintDocumentAsync(record), "#607D8B"),
             IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"),
             DocumentOverflowMenu(record)
@@ -788,6 +789,7 @@ internal sealed partial class ManagementView : UserControl
         {
             var cancel = Ui.Button("Cancel", window.CloseOverlay);
             cancel.Classes.Add("text");
+            var sample = Ui.Button("Download Sample", async () => await DownloadSampleCsv());
             var choose = Ui.Button("Choose File", async () => await ChooseCsvFile(), true);
             choose.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("folder", 18, Brushes.White), new Border(), Ui.Text("Choose File", 13, true, Brushes.White));
             window.ShowOverlay(
@@ -797,7 +799,7 @@ internal sealed partial class ManagementView : UserControl
                 {
                     Orientation = Orientation.Horizontal,
                     Spacing = 12,
-                    Children = { cancel, choose }
+                    Children = { cancel, sample, choose }
                 },
                 width: kind == "Product" ? 665 : 645,
                 leadingIcon: Ui.Icon("upload_file", 22, Ui.Primary));

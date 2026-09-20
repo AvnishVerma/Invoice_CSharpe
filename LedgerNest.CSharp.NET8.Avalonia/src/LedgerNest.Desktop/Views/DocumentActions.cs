@@ -2,7 +2,12 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Avalonia.Platform.Storage;
+using Docnet.Core;
+using Docnet.Core.Models;
+using System.Runtime.InteropServices;
 using LedgerNest.Desktop.Views;
 using LedgerNest.Desktop.Printing;
 
@@ -31,6 +36,60 @@ public partial class MainWindow
         }
         ShowOverlay("", new DocumentPreviewView(preview), Ui.Button("Close", CloseOverlay, true), width: 650);
     }
+
+    // Renders the generated PDF inside LedgerNest without opening an external viewer.
+    internal async Task ShowPdfPreviewAsync(UiRecord document)
+    {
+        try
+        {
+            Model.Status = "Rendering PDF preview…";
+            var bytes = Model.ExportDocumentPdf(document);
+            var rendered = await Task.Run(() => RenderPdfPages(bytes));
+            var preview = new PdfPreviewModel
+            {
+                Title = $"{document.Name} PDF Preview",
+                PageCountText = rendered.Count == 1 ? "1 page" : $"{rendered.Count} pages",
+                MaxPreviewHeight = Math.Max(360, Bounds.Height * .68)
+            };
+            foreach (var page in rendered) preview.Pages.Add(CreatePreviewBitmap(page.Pixels, page.Width, page.Height));
+            ShowOverlay("PDF Preview", new PdfPreviewView(preview),
+                Ui.Wrap(
+                    Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)),
+                    Ui.Button("Print", async () => await PrintDocumentAsync(document), true),
+                    Ui.Button("Close", CloseOverlay)),
+                width: 860);
+            Model.Status = $"PDF preview ready for {document.Name}.";
+        }
+        catch (Exception ex)
+        {
+            NotifyError("Could not render the PDF preview. The error has been logged.", ex, $"Previewing invoice PDF {document.Name}");
+        }
+    }
+
+    private static List<RenderedPdfPage> RenderPdfPages(byte[] bytes)
+    {
+        using var reader = DocLib.Instance.GetDocReader(bytes, new PageDimensions(1.65));
+        var pages = new List<RenderedPdfPage>();
+        for (var index = 0; index < reader.GetPageCount(); index++)
+        {
+            using var page = reader.GetPageReader(index);
+            pages.Add(new RenderedPdfPage(page.GetImage(), page.GetPageWidth(), page.GetPageHeight()));
+        }
+        if (pages.Count == 0) throw new InvalidDataException("The PDF contains no pages.");
+        return pages;
+    }
+
+    private static WriteableBitmap CreatePreviewBitmap(byte[] pixels, int width, int height)
+    {
+        var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormats.Bgra8888, AlphaFormat.Premul);
+        using var locked = bitmap.Lock();
+        var sourceStride = width * 4;
+        for (var row = 0; row < height; row++)
+            Marshal.Copy(pixels, row * sourceStride, IntPtr.Add(locked.Address, row * locked.RowBytes), Math.Min(sourceStride, locked.RowBytes));
+        return bitmap;
+    }
+
+    private sealed record RenderedPdfPage(byte[] Pixels, int Width, int Height);
 
     // Performs the tax label action for this screen or workflow.
     private static string TaxLabel(UiRecord document)

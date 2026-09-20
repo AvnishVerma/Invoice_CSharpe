@@ -51,6 +51,7 @@ public partial class MainWindow : Window
         RegisterShortcut(Key.S);
         RegisterShortcut(Key.F);
         RegisterShortcut(Key.M);
+        RegisterShortcut(Key.O);
         RegisterShortcut(Key.P);
         RegisterShortcut(Key.Escape, KeyModifiers.None);
     }
@@ -95,6 +96,9 @@ public partial class MainWindow : Window
                 return true;
             case Key.M when Model.Title == "New Invoice":
                 ShowCustomItem();
+                return true;
+            case Key.O when Model.Title == "New Invoice" && Model.LastSavedDocument != null:
+                _ = ShowPdfPreviewAsync(Model.LastSavedDocument);
                 return true;
             case Key.P when Model.Title == "New Invoice" && Model.LastSavedDocument != null:
                 _ = PrintDocumentAsync(Model.LastSavedDocument);

@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.PdfPreviewView"
+             x:CompileBindings="False">
+  <Grid RowDefinitions="Auto,*" MinHeight="420">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+      <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+      <TextBlock Grid.Column="1" Text="{Binding PageCountText}" FontSize="12" Foreground="#666666" VerticalAlignment="Center" />
+    </Grid>
+    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding Pages}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><StackPanel Spacing="14" /></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Background="White" BorderBrush="#D5D5D5" BorderThickness="1" Padding="4" BoxShadow="0 2 8 0 #26000000" HorizontalAlignment="Center">
+              <Image Source="{Binding}" Stretch="Uniform" MaxWidth="760" MaxHeight="{Binding DataContext.MaxPreviewHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>
