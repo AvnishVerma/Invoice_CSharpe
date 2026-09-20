@@ -72,6 +72,7 @@ internal static class Ui
         ["save"] = "\ue161",
         ["folder"] = "\ue2c7",
         ["upload_file"] = "\ue9fc",
+        ["location_on"] = "\ue0c8",
         ["visibility"] = "\ue8f4",
         ["print"] = "\ue8ad",
         ["picture_as_pdf"] = "\ue415",

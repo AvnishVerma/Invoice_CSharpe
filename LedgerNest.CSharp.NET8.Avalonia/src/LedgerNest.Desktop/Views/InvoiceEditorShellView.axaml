@@ -18,9 +18,9 @@
             BorderBrush="#E0E0E0"
             BorderThickness="0,1,0,0"
             Padding="64,10">
-      <Grid ColumnDefinitions="*,Auto,*">
+      <Grid ColumnDefinitions="*,Auto">
         <ContentControl x:Name="ActionsHost" HorizontalAlignment="Left" />
-        <ContentControl x:Name="CreateHost" Grid.Column="1" HorizontalAlignment="Center" />
+        <ContentControl x:Name="CreateHost" Grid.Column="1" HorizontalAlignment="Right" />
       </Grid>
     </Border>
   </Grid>

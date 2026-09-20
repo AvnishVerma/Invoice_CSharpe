@@ -171,10 +171,22 @@ internal static class Program
         productFields.First(f => f.Label == "SKU Code").Value = "SCAN-001";
         productFields.First(f => f.Label == "Default Discount").Value = "1";
         productFields.First(f => f.Label == "Unit").Value = "pcs";
+        productFields.First(f => f.Label == "Storage Location").Value = "Shelf B2";
         Check(model.SaveRecord("Product", productFields), "Product selection fixture must save");
         var searchBox = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.PlaceholderText == "Search & add a product or service (Ctrl+F)");
         searchBox.Text = "Selection"; Settle();
-        var suggestions = window.GetVisualDescendants().OfType<ListBox>().Single(); suggestions.SelectedIndex = 0; Settle();
+        var suggestions = window.GetVisualDescendants().OfType<ListBox>().Single();
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Stock: 8") &&
+              window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Shelf B2"),
+            "Product search dropdown must display stock and storage-location details");
+        var createInvoiceButton = FindButton("Create Invoice (Ctrl+S)");
+        var viewActionButton = FindButton("View");
+        var createPosition = createInvoiceButton.TranslatePoint(new Point(0, 0), window);
+        var viewPosition = viewActionButton.TranslatePoint(new Point(0, 0), window);
+        Check(createPosition.HasValue && viewPosition.HasValue && viewPosition.Value.X < createPosition.Value.X && createPosition.Value.X > window.Bounds.Width * .65,
+            "Invoice footer actions must stay left while Create Invoice is aligned to the right");
+        Capture("product-search-dropdown");
+        suggestions.SelectedIndex = 0; Settle();
         Check(model.Lines.Count == 0 && searchBox.Text == "", "Selecting a product must open its dialog without adding a line");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Available Stock: 8"), "Item dialog must show available stock");
         Capture("scanned-item-dialog");
