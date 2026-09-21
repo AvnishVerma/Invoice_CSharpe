@@ -573,8 +573,8 @@ internal sealed partial class ManagementView : UserControl
             IconAction("visibility", "View", () => window.ShowDocumentPreview(record), "#4CAF50"),
             IconAction("edit", "Edit", () => { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); }, "#2196F3"),
             IconAction("receipt_long", "Clone", () => { if (model.CloneDocumentForEditing(record)) window.CloseOverlay(); }, "#00A6A6"),
-            IconAction("picture_as_pdf", "Download PDF", async () => await window.DownloadDocumentPdf(record), "#FF9800"),
-            IconAction("visibility", "Preview PDF", async () => await window.ShowPdfPreviewAsync(record), "#7E57C2"),
+            IconAction("picture_as_pdf", "Preview PDF", async () => await window.ShowPdfPreviewAsync(record), "#FF9800"),
+            //IconAction("visibility", "Preview PDF", async () => await window.ShowPdfPreviewAsync(record), "#7E57C2"),
             IconAction("print", "Print", async () => await window.PrintDocumentAsync(record), "#607D8B"),
             IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"),
             DocumentOverflowMenu(record)

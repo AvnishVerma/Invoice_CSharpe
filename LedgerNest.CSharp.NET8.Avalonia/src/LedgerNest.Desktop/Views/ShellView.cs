@@ -15,7 +15,8 @@ public partial class MainWindow
         if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
         page.Content = null;
         sidebar.Content = null;
-        overlay.Children.Clear(); overlay.IsVisible = false;
+        overlay.Children.Clear();
+        overlay.IsVisible = false;
         shellModel = vm;
         ShowStatusToast(vm.Status);
         shellChanged = (_, e) =>

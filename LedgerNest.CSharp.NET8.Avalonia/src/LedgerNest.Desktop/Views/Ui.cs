@@ -138,7 +138,7 @@ internal static class Ui
     // Performs the button action for this screen or workflow.
     public static Button Button(string label, Action? action = null, bool primary = false)
     {
-        var button = new Button { Content = label, Tag = label, Command = action == null ? null : new RelayCommand(action), IsEnabled = action != null, VerticalAlignment = VerticalAlignment.Center };
+        var button = new Button { Content = label, Tag = label, Command = action == null ? null : new RelayCommand(action), IsEnabled = action != null, VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment=HorizontalAlignment.Center, VerticalContentAlignment=VerticalAlignment.Center };
         var symbols = new Dictionary<string, string> { ["＋"] = "add", ["↑"] = "upload", ["↓"] = "download", ["↻"] = "refresh", ["×"] = "close", ["‹"] = "chevron_left", ["›"] = "chevron_right", ["⋯"] = "more_horiz", ["⇥"] = "logout" };
         if (label.Length > 0 && symbols.TryGetValue(label[..1], out var symbol))
         {
