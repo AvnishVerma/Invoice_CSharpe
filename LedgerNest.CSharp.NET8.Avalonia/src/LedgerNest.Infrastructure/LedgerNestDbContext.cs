@@ -15,6 +15,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<CompanyInfo> CompanyInfos => Set<CompanyInfo>();
     public DbSet<AppSetting> Settings => Set<AppSetting>();
+    public DbSet<BackupHistoryEntry> BackupHistory => Set<BackupHistoryEntry>();
     public DbSet<AppUser> Users => Set<AppUser>();
 
     // Upgrade only the C# schema; the Flutter database has different column names.
@@ -37,6 +38,17 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 Database.ExecuteSqlRaw("ALTER TABLE invoices ADD COLUMN Type TEXT NOT NULL DEFAULT 'Invoice'");
             EnsureColumns("invoices", [("DeletedAt", "TEXT NULL"), ("CustomerName", "TEXT NOT NULL DEFAULT ''"), ("Snapshot", "TEXT NULL")]);
             EnsureColumns("customers", [("BusinessName", "TEXT NOT NULL DEFAULT ''")]);
+            command.CommandText = """
+                CREATE TABLE IF NOT EXISTS backup_history (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL,
+                    FilePath TEXT NOT NULL,
+                    Size INTEGER NOT NULL,
+                    CreatedAt TEXT NOT NULL,
+                    IsDatabase INTEGER NOT NULL
+                )
+                """;
+            command.ExecuteNonQuery();
             EnsureColumns("products", [
                 ("Type", "TEXT NOT NULL DEFAULT 'Product'"),
                 ("AliasName", "TEXT NOT NULL DEFAULT ''"),
@@ -87,6 +99,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<Payment>().ToTable("invoice_payments");
         modelBuilder.Entity<CompanyInfo>().ToTable("company_info");
         modelBuilder.Entity<AppSetting>().ToTable("settings").HasKey(x => x.Key);
+        modelBuilder.Entity<BackupHistoryEntry>().ToTable("backup_history");
         modelBuilder.Entity<AppUser>().ToTable("users").HasIndex(x => x.Username).IsUnique();
 
         modelBuilder.Entity<Invoice>()

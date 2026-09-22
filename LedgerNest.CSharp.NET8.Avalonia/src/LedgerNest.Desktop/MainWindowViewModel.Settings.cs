@@ -15,6 +15,49 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindowViewModel
 {
+    private string savedStartingNumber = "1";
+    public bool SetInvoiceBrandingImage(string label, byte[] bytes)
+    {
+        if (label is not ("Signature Image" or "Watermark Image")) throw new ArgumentException("Unknown branding image.", nameof(label));
+        var field = InvoiceSetting(label);
+        field.Error = "";
+        if (bytes.Length > 2 * 1024 * 1024) { field.Error = "Choose an image up to 2 MB."; return false; }
+        using var data = SkiaSharp.SKData.CreateCopy(bytes);
+        using var codec = SkiaSharp.SKCodec.Create(data);
+        if (codec == null || codec.EncodedFormat is not (SkiaSharp.SKEncodedImageFormat.Png or SkiaSharp.SKEncodedImageFormat.Jpeg))
+        { field.Error = "Choose a valid PNG or JPEG image."; return false; }
+        using var bitmap = SkiaSharp.SKBitmap.Decode(bytes);
+        if (bitmap == null) { field.Error = "The image could not be decoded."; return false; }
+        field.Value = "base64:" + Convert.ToBase64String(bytes);
+        return true;
+    }
+    public FormField InvoiceSetting(string label) => Settings["Invoice Settings"].SelectMany(section => section.Fields).Single(field => field.Label == label);
+
+    public bool CanChangeInvoiceStartingNumber
+    {
+        get
+        {
+            if (dbFactory == null) return !Invoices.Any();
+            using var db = dbFactory.CreateDbContext();
+            return !db.Invoices.Any(); // Includes documents in trash.
+        }
+    }
+
+    private bool ValidateInvoiceSettings()
+    {
+        var start = InvoiceSetting("Starting Number");
+        if (!int.TryParse(start.Value, out var number) || number < 1 || number > 99999999)
+            start.Error = "Enter a whole number between 1 and 99999999.";
+        else if (!CanChangeInvoiceStartingNumber && start.Value != savedStartingNumber)
+            start.Error = "Invoice starting number cannot be changed while documents exist, including trash.";
+        var tax = InvoiceSetting("Default Tax Rate (%)");
+        if (tax.Number > 100) tax.Error = "Tax rate must be between 0 and 100.";
+        var prefix = InvoiceSetting("Invoice Prefix");
+        if (prefix.Value.Length > 25) prefix.Error = "Invoice prefix must be 25 characters or fewer.";
+        var invalid = Settings["Invoice Settings"].SelectMany(section => section.Fields).FirstOrDefault(field => field.Error.Length > 0);
+        if (invalid != null) Status = invalid.Error;
+        return invalid == null;
+    }
     // Performs the set language action for this screen or workflow.
     public void SetLanguage(string value)
     {
@@ -137,6 +180,7 @@ public partial class MainWindowViewModel
         if (!Settings.TryGetValue(name, out var sections)) return false;
         var fields = sections.SelectMany(s => s.Fields).ToArray();
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
+        if (name == "Invoice Settings" && !ValidateInvoiceSettings()) return false;
 
         if (dbFactory != null)
         {
@@ -155,6 +199,7 @@ public partial class MainWindowViewModel
             db.SaveChanges();
         }
 
+        if (name == "Invoice Settings") savedStartingNumber = InvoiceSetting("Starting Number").Value;
         Status = $"{name} saved.";
         return true;
     }

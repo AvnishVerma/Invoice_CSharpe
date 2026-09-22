@@ -66,6 +66,7 @@ public partial class MainWindowViewModel : ObservableObject
         };
         LoadPersistedRecords();
         LoadPersistedSettings();
+        savedStartingNumber = InvoiceSetting("Starting Number").Value;
         LoadPaymentAccounts();
         LoadThemeMode();
         LoadLanguage();

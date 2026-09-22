@@ -27,33 +27,37 @@ internal static class Program
     {
         var output = args.FirstOrDefault() ?? "/tmp/invoiso-ui-captures";
         Directory.CreateDirectory(output);
-        CheckReceiptPdf(output);
-        CheckTotals();
-        CheckServiceTotals();
-        CheckAdministratorGuards();
-        CheckPasswordMigration();
-        CheckSessionInvalidation();
-        CheckRejectedDatabaseRestores();
-        CheckRejectedJsonRestores();
-        CheckJsonRestoreRollback();
-        CheckLockedDatabaseRestore();
-        CheckCommittedRestoreReloadFailure();
-        CheckCommittedJsonRestoreReloadFailure();
-        CheckPendingOperationSession();
-        CheckBackupStreamWriting();
-        CheckInvoiceSnapshots();
-        CheckInvoiceEditing();
-        CheckPersistence();
-        CheckDocumentTypes();
-        CheckDocumentNumbering();
-        CheckDocumentTrash();
-        CheckRecordDeletion();
-        CheckTaxReport();
-        CheckRevenueReport();
-        CheckCrossPlatformPrinting();
-        CheckToastService();
-        CheckReceivablesLifecycle();
-        CheckFormRoundTrips();
+        var pdfSettingsOnly = args.Contains("--pdf-settings-only");
+        if (!pdfSettingsOnly)
+        {
+            CheckReceiptPdf(output);
+            CheckTotals();
+            CheckServiceTotals();
+            CheckAdministratorGuards();
+            CheckPasswordMigration();
+            CheckSessionInvalidation();
+            CheckRejectedDatabaseRestores();
+            CheckRejectedJsonRestores();
+            CheckJsonRestoreRollback();
+            CheckLockedDatabaseRestore();
+            CheckCommittedRestoreReloadFailure();
+            CheckCommittedJsonRestoreReloadFailure();
+            CheckPendingOperationSession();
+            CheckBackupStreamWriting();
+            CheckInvoiceSnapshots();
+            CheckInvoiceEditing();
+            CheckPersistence();
+            CheckDocumentTypes();
+            CheckDocumentNumbering();
+            CheckDocumentTrash();
+            CheckRecordDeletion();
+            CheckTaxReport();
+            CheckRevenueReport();
+            CheckCrossPlatformPrinting();
+            CheckToastService();
+            CheckReceivablesLifecycle();
+            CheckFormRoundTrips();
+        }
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         var model = new MainWindowViewModel();
         var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
@@ -94,6 +98,20 @@ internal static class Program
         Capture("issue-05-simple-feed");
         foreach (var route in MainWindowViewModel.Routes) { model.NavigateCommand.Execute(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
+        Click("PDF Settings"); Click("Grid Classic");
+        Check(FindButton("Save Settings").IsEnabled, "Changing PDF template must enable saving");
+        Click("Landscape");
+        Check(model.Settings["PDF Settings"][0].Fields[1].Value == "Landscape", "PDF orientation selector must update the stored field");
+        Click("Portrait");
+        Capture("settings-pdf-grid-classic");
+        Click("Save Settings");
+        Check(!FindButton("Save Settings").IsEnabled, "Saving PDF settings must clear the dirty state");
+        if (pdfSettingsOnly)
+        {
+            window.Close();
+            Console.WriteLine($"PDF settings UI checks passed ({assertions} assertions). Screenshots: {output}");
+            return;
+        }
         model.NavigateCommand.Execute("Reports");
         foreach (var report in new[] { "Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report", "Inventory" }) { Click(report); Capture("reports-" + report.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var type in new[] { "Invoice", "Quotation", "Receipt" })

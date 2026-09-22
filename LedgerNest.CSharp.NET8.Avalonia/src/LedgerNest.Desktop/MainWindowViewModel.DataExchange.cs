@@ -217,11 +217,16 @@ public partial class MainWindowViewModel
                 db.EnsureCurrentSchema();
             }
 
-            using var source = new SqliteConnection($"Data Source={databasePath}");
-            using var destination = new SqliteConnection($"Data Source={backupPath}");
-            source.Open();
-            destination.Open();
-            source.BackupDatabase(destination);
+            // The destination must be disposed before reading it. On Windows,
+            // SQLite otherwise retains an exclusive handle and the following
+            // File.ReadAllBytes call fails with "being used by another process".
+            using (var source = new SqliteConnection($"Data Source={databasePath}"))
+            using (var destination = new SqliteConnection($"Data Source={backupPath}"))
+            {
+                source.Open();
+                destination.Open();
+                source.BackupDatabase(destination);
+            }
             Status = "Database backup created successfully.";
             return File.ReadAllBytes(backupPath);
         }
@@ -297,6 +302,58 @@ public partial class MainWindowViewModel
         };
         Status = "Backup created successfully.";
         return backup.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    // Returns persisted backup-history records so the Backup screen remains
+    // useful after the application restarts.
+    public IReadOnlyList<BackupHistoryEntry> LoadBackupHistory()
+    {
+        if (dbFactory == null) return [];
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        return db.BackupHistory.AsNoTracking()
+            .OrderByDescending(item => item.CreatedAt)
+            .ToArray();
+    }
+
+    // Upserts a history record after a backup file has been successfully written.
+    public void RecordBackupHistory(string name, string filePath, long size, bool isDatabase)
+    {
+        if (dbFactory == null) return;
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var existing = db.BackupHistory.FirstOrDefault(item => item.FilePath == filePath);
+        if (existing == null)
+        {
+            db.BackupHistory.Add(new BackupHistoryEntry
+            {
+                Name = name,
+                FilePath = filePath,
+                Size = size,
+                CreatedAt = DateTime.Now,
+                IsDatabase = isDatabase
+            });
+        }
+        else
+        {
+            existing.Name = name;
+            existing.Size = size;
+            existing.CreatedAt = DateTime.Now;
+            existing.IsDatabase = isDatabase;
+        }
+        db.SaveChanges();
+    }
+
+    // Removes a history record when its corresponding local file is deleted.
+    public void RemoveBackupHistory(string filePath)
+    {
+        if (dbFactory == null) return;
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var entries = db.BackupHistory.Where(item => item.FilePath == filePath).ToArray();
+        if (entries.Length == 0) return;
+        db.BackupHistory.RemoveRange(entries);
+        db.SaveChanges();
     }
 
     // Performs the restore json backup action for this screen or workflow.

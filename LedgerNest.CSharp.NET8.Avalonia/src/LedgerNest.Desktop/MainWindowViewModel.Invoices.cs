@@ -223,10 +223,15 @@ public partial class MainWindowViewModel
         InvoiceDetails[0].Value = type;
         InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
         InvoiceDetails[2].Value = "";
+        InvoiceDetails[3].Value = type == "Invoice" ? InvoiceSetting("Default GST Title").Value : type;
         InvoiceDetails[4].Value = "";
+        HideInvoiceNumber.IsChecked = InvoiceSetting("Hide Invoice Number").IsChecked;
+        InterState.IsChecked = false;
         InvoiceOptions[0].Value = "None";
         InvoiceOptions[1].Value = "0";
         InvoiceOptions[2].Value = "";
+        InvoiceOptions[3].Value = InvoiceSetting("Tax Enabled").IsChecked ? InvoiceSetting("Tax Mode").Value : "No Tax";
+        InvoiceOptions[4].Value = InvoiceSetting("Default Tax Rate (%)").Value;
         NavigateCommand.Execute("New Invoice");
     }
 

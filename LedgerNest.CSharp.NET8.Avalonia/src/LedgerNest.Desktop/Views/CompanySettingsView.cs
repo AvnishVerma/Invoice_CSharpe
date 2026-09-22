@@ -197,40 +197,93 @@ public partial class MainWindow
                 var template = b.Tag?.ToString() ?? "Classic";
                 b.IsVisible = pageSize.Value switch { "A5" => template == "Grid Classic", "A6" => template is "Compact" or "Grid Classic", "Thermal 80mm" or "Thermal 58mm" => template == "Thermal", _ => template is not ("Compact" or "Thermal") };
                 b.BorderBrush = template == selectedTemplate.Value ? Ui.Primary : Ui.Outline; b.BorderThickness = new Thickness(template == selectedTemplate.Value ? 2 : 1); b.Background = template == selectedTemplate.Value ? Brush.Parse("#ECE8F3") : Brush.Parse("#FAFAFA");
+                if (b.Content is Grid tile && tile.Children.LastOrDefault() is TextBlock check) check.IsVisible = template == selectedTemplate.Value;
             }
-            var controls = Ui.Stack(16, Ui.Columns("*,Auto", Ui.Text(selectedTemplate.Value, 18, true), Ui.Text("Active", 11, true, Ui.Primary)), Ui.Text(TemplateDescription(selectedTemplate.Value), 12.5, color: Ui.Muted));
-            if (selectedTemplate.Value is "Compact" or "Grid Classic" or "Thermal") { controls.Children.Add(Ui.Text("DISPLAY OPTIONS", 12, true, Ui.Muted)); controls.Children.Add(Ui.Fields(sections[2].Fields)); }
+            var controls = Ui.Stack(12, Ui.Columns("*,Auto", Ui.Text(selectedTemplate.Value, 18, true), PdfActiveBadge()), Ui.Text(TemplateDescription(selectedTemplate.Value), 12.5, color: Ui.Muted));
+            controls.Children.Add(new Border { Height = 4 });
+            controls.Children.Add(Ui.Text("DISPLAY OPTIONS", 12, true, Ui.Muted));
+            if (selectedTemplate.Value is "Compact" or "Grid Classic" or "Thermal")
+            {
+                var quantity = new ToggleSwitch { OnContent = null, OffContent = null, MinWidth = 0 };
+                quantity.Bind(ToggleSwitch.IsCheckedProperty, new Binding(nameof(FormField.IsChecked)) { Source = sections[2].Fields[0], Mode = BindingMode.TwoWay });
+                controls.Children.Add(Ui.Card(Ui.Columns("*,Auto", Ui.Text("Show total quantity row", 14), quantity), 12));
+            }
+            var orientation = sections[0].Fields[1];
+            var segments = new StackPanel { Orientation = Orientation.Horizontal };
+            foreach (var value in orientation.Options)
+            {
+                var segment = Ui.Button(value, () => { orientation.Value = value; Display(); });
+                segment.Content = (orientation.Value == value ? "✓  " : "") + value;
+                segment.Background = orientation.Value == value ? Brush.Parse("#E8DEF8") : Brushes.Transparent;
+                segment.Padding = new Thickness(12, 5); segment.MinHeight = 30; segment.CornerRadius = new CornerRadius(0);
+                segments.Children.Add(segment);
+            }
+            controls.Children.Add(Ui.Card(Ui.Stack(8, Ui.Text("Orientation", 14), new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(18), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left, Child = segments }), 12));
             controls.Children.Add(Ui.Text("THEME COLOR", 12, true, Ui.Muted));
             var swatches = Ui.Wrap();
             foreach (var hex in new[] { "#002E78", "#2563EB", "#047857", "#7C2D12", "#6D28D9" })
-            { var b = Ui.Button("", () => { color.Value = hex; Display(); }); b.Background = Brush.Parse(hex); b.Width = 30; b.Height = 30; b.MinHeight = 30; b.CornerRadius = new CornerRadius(15); swatches.Children.Add(b); }
-            controls.Children.Add(Ui.Card(Ui.Stack(12, swatches, Ui.Field(color), Ui.Button("Template default", () => { color.Value = "#002E78"; Display(); })), 12));
-            controls.Children.Add(Ui.Text("PRINTING", 12, true, Ui.Muted));
-            controls.Children.Add(Ui.Card(Ui.Fields(sections.Single(section => section.Title == "PRINTING").Fields), 12));
-            controls.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text("Need a custom template?", 14, true), Ui.Text("Make your invoice look exactly the way you want.", 12, color: Ui.Muted), Ui.Button("Explore Customization", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 14));
+            { var b = Ui.Button("", () => { color.Value = hex; Display(); }); b.Background = Brush.Parse(hex); b.Width = 22; b.Height = 22; b.MinHeight = 22; b.Padding = new Thickness(0); b.CornerRadius = new CornerRadius(11); ToolTip.SetTip(b, hex); swatches.Children.Add(b); }
+            var defaultColor = Ui.Button("Default", () => { color.Value = "#002E78"; Display(); }); defaultColor.Classes.Add("text"); defaultColor.MinHeight = 24; defaultColor.Padding = new Thickness(6, 0);
+            swatches.Children.Add(defaultColor);
+            var colorInput = new TextBox { MinHeight = 40 };
+            colorInput.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = color, Mode = BindingMode.TwoWay });
+            colorInput.LostFocus += (_, _) => preview.Content = InvoicePreview(selectedTemplate.Value, color.Value, orientation.Value == "Landscape");
+            controls.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text("Theme Color", 14), swatches, colorInput), 12));
+            var custom = Ui.Card(Ui.Stack(8, Ui.Text("⚒  Want a custom template?", 14, color: Ui.Primary), Ui.Text("Get a design that matches your brand — colors, fonts, and layout.", 12, color: Ui.Muted), Ui.Button("→  Customization Options", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 12);
+            custom.Background = Brush.Parse("#EEEBF8"); custom.BorderBrush = Brush.Parse("#C8C1E7");
+            controls.Children.Add(custom);
+            controls.Children.Add(new Expander { Header = "Printing & advanced options", Content = Ui.Stack(16, Ui.Fields(sections[2].Fields.Skip(1)), Ui.Fields(sections.Single(section => section.Title == "PRINTING").Fields)), HorizontalAlignment = HorizontalAlignment.Stretch });
             options.Content = Ui.Scroll(controls, 16);
-            preview.Content = InvoicePreview(selectedTemplate.Value, color.Value);
+            preview.Content = InvoicePreview(selectedTemplate.Value, color.Value, orientation.Value == "Landscape");
         }
-        foreach (var template in selectedTemplate.Options)
+        foreach (var template in selectedTemplate.Options.OrderBy(t => t == "Grid Classic" ? 0 : 1))
         {
             var button = Ui.Button(template, () => { selectedTemplate.Value = template; Display(); }); button.HorizontalAlignment = HorizontalAlignment.Stretch; button.HorizontalContentAlignment = HorizontalAlignment.Left;
-            button.Content = Ui.Columns("76,*", new TemplateSketch(template, Brush.Parse("#1A237E"), false) { Width = 64, Height = 80 }, Ui.Stack(4, Ui.Text(template, 14, true), Ui.Text(TemplateDescription(template), 12, color: Ui.Muted)));
+            button.Padding = new Thickness(9); button.CornerRadius = new CornerRadius(12);
+            var description = Ui.Text(TemplateDescription(template), 12, color: Ui.Muted); description.MaxHeight = 36; description.TextTrimming = TextTrimming.CharacterEllipsis;
+            var labels = Ui.Stack(4, Ui.Text(template, 16), description);
+            if (template == "Classic") labels.Children.Add(new Border { Background = Brush.Parse("#E5E5E5"), Padding = new Thickness(5, 1), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text("Default", 11, color: Ui.Muted) });
+            button.Content = Ui.Columns("72,*,18", new TemplateSketch(template, Brushes.Black, false) { Width = 64, Height = 74 }, labels, Ui.Icon("check_circle", 15, Ui.Primary));
             buttons.Add(button); templateList.Children.Add(button);
         }
-        var templates = Ui.Card(Ui.Rows("Auto,Auto,*", Ui.Stack(8, Ui.Text("PAGE SIZE", 12, true, Ui.Muted), Ui.Field(pageSize)), new Border { Padding = new Thickness(0, 16, 0, 10), Child = Ui.Text("TEMPLATES", 12, true, Ui.Muted) }, Ui.Scroll(templateList, 0)), 12);
+        var pageChoice = new ComboBox { ItemsSource = pageSize.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 40 };
+        pageChoice.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((value, _) => Ui.Text(value == "A4" ? "Standard A4" : value ?? "", 15));
+        pageChoice.Bind(ComboBox.SelectedItemProperty, new Binding(nameof(FormField.Value)) { Source = pageSize, Mode = BindingMode.TwoWay });
+        var templates = Ui.Card(Ui.Rows("Auto,Auto,*", Ui.Stack(8, Ui.Text("PAGE SIZE", 12, true, Ui.Muted), pageChoice), new Border { Padding = new Thickness(0, 16, 0, 10), Child = Ui.Text("TEMPLATES", 12, true, Ui.Muted) }, Ui.Scroll(templateList, 0)), 12);
         var settings = Ui.Card(options, 0); var previewCard = Ui.Card(Ui.Rows("Auto,*,Auto", new Border { Padding = new Thickness(16, 10), Child = Ui.Text("Preview", 13, true) }, preview, new Border { Padding = new Thickness(16, 10), Child = Ui.Text("Preview may slightly differ in the final PDF.", 12, color: Ui.Muted) }), 0);
+        templates.Background = settings.Background = previewCard.Background = Ui.Palette("#FDF7FF", "#25212B");
         System.ComponentModel.PropertyChangedEventHandler pageSizeChanged = (_, e) =>
         {
             if (e.PropertyName != nameof(FormField.Value)) return;
             selectedTemplate.Value = pageSize.Value switch { "A5" => "Grid Classic", "A6" => "Compact", "Thermal 80mm" or "Thermal 58mm" => "Thermal", _ => "Classic" }; Display();
         };
         Display();
-        var showPrinterDialog = sections.Single(section => section.Title == "PRINTING").Fields.Single(field => field.Label == "Show Printer Selection Dialog");
-        var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", Ui.Button("Reset to Default", () => { pageSize.Value = "A4"; selectedTemplate.Value = "Classic"; color.Value = "#002E78"; printer.Value = PlatformPrinterService.DefaultPrinter; showPrinterDialog.IsChecked = false; Display(); }), Ui.Button("Save Settings", () => Model.SaveSettings("PDF Settings"), true));
+        var trackedFields = sections.SelectMany(section => section.Fields).ToArray();
+        var savedValues = trackedFields.Select(field => field.Value).ToArray();
+        var save = Ui.Button("Save Settings", null, true);
+        save.Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() =>
+        {
+            if (Model.SaveSettings("PDF Settings")) { savedValues = trackedFields.Select(field => field.Value).ToArray(); save.IsEnabled = false; }
+        });
+        save.IsEnabled = false;
+        System.ComponentModel.PropertyChangedEventHandler settingChanged = (_, e) =>
+        {
+            if (e.PropertyName == nameof(FormField.Value)) save.IsEnabled = !trackedFields.Select(field => field.Value).SequenceEqual(savedValues);
+        };
+        var reset = Ui.Button("Reset to Default", () =>
+        {
+            var defaults = FormCatalog.Settings()["PDF Settings"].SelectMany(section => section.Fields).ToArray();
+            for (var i = 0; i < trackedFields.Length; i++) trackedFields[i].Value = defaults[i].Value;
+            Display();
+        });
+        reset.CornerRadius = new CornerRadius(18); reset.MinHeight = save.MinHeight = 32;
+        reset.Padding = save.Padding = new Thickness(18, 6);
+        var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", reset, save);
         var view = new PdfSettingsShellView(header, templates, settings, previewCard);
         view.AttachedToVisualTree += async (_, _) =>
         {
             pageSize.PropertyChanged += pageSizeChanged;
+            foreach (var field in trackedFields) field.PropertyChanged += settingChanged;
             try
             {
                 var discovered = await printService.GetPrintersAsync();
@@ -248,7 +301,11 @@ public partial class MainWindow
                 Model.Status = "Printers could not be refreshed. Check the printing service configuration.";
             }
         };
-        view.DetachedFromVisualTree += (_, _) => pageSize.PropertyChanged -= pageSizeChanged;
+        view.DetachedFromVisualTree += (_, _) =>
+        {
+            pageSize.PropertyChanged -= pageSizeChanged;
+            foreach (var field in trackedFields) field.PropertyChanged -= settingChanged;
+        };
         return view;
     }
     // Performs the template description action for this screen or workflow.
@@ -260,11 +317,14 @@ public partial class MainWindow
         _ => "Traditional layout with clean structure"
     };
     // Performs the invoice preview action for this screen or workflow.
-    private static Control InvoicePreview(string template, string hex)
+    private static Control PdfActiveBadge() => new Border { Background = Brush.Parse("#E7E2F2"), CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 3), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Columns("Auto,6,Auto", Ui.Icon("check_circle", 13, Ui.Primary), new Border(), Ui.Text("Active", 12, color: Ui.Primary)) };
+
+    private static Control InvoicePreview(string template, string hex, bool landscape = false)
     {
         var accent = Color.TryParse(hex, out var c) ? new SolidColorBrush(c) : Ui.Primary;
-        var header = new Border { Background = Ui.Surface, Padding = new Thickness(24, 16), Child = Ui.Stack(4, Ui.Text(template, 22, true), Ui.Text(TemplateDescription(template), 16, color: Ui.Muted)) };
-        var sketch = new TemplateSketch(template, accent) { Width = 390, Height = 520 };
-        return Ui.Rows("Auto,*", header, new Viewbox { Margin = new Thickness(16, 32), Stretch = Stretch.Uniform, Child = sketch });
+        var header = new Border { Background = Ui.Surface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1), Padding = new Thickness(24, 16), Child = Ui.Stack(8, Ui.Text(template, 22, true), Ui.Text(TemplateDescription(template), 16, color: Ui.Muted), PdfActiveBadge()) };
+        var sketch = new TemplateSketch(template, hex == "#002E78" ? Brushes.Black : accent) { Width = landscape ? 520 : 390, Height = landscape ? 390 : 520 };
+        var paper = new Border { Background = Brushes.White, BoxShadow = new BoxShadows(new BoxShadow { Blur = 22, OffsetY = 8, Color = Color.Parse("#22000000") }), Child = sketch };
+        return Ui.Rows("Auto,*", header, new Viewbox { Margin = new Thickness(48, 16), Stretch = Stretch.Uniform, Child = paper });
     }
 }
