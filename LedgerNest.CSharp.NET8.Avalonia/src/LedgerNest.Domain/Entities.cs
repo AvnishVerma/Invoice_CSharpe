@@ -34,6 +34,7 @@ public sealed class Product
     public string BatchNumber { get; set; } = "";
     public string ExpiryDate { get; set; } = "";
     public string ManufactureDate { get; set; } = "";
+    public string ManufacturerName { get; set; } = "";
     public string SupplierName { get; set; } = "";
     public string Notes { get; set; } = "";
 }
@@ -144,7 +145,13 @@ public sealed record InvoiceSnapshot(
     InvoiceAdditionalCost[] AdditionalCosts)
 {
     public string[]? LineUnits { get; init; }
+    public string[]? LineHsnCodes { get; init; }
+    public InvoiceLinePresentation[]? LinePresentations { get; init; }
+    public InvoiceCustomFieldValue[]? CustomFields { get; init; }
 }
+
+public sealed record InvoiceLinePresentation(string Alias, string ProductType, Dictionary<string, string> Metadata);
+public sealed record InvoiceCustomFieldValue(string Id, string Label, string Value);
 
 public sealed record InvoiceCustomerSnapshot(
     string Name, string BusinessName, string Phone, string Email, string GstNumber, string Address);

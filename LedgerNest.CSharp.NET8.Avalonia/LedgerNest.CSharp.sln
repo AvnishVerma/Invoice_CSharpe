@@ -10,6 +10,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LedgerNest.Infrastructure",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LedgerNest.Desktop", "src\LedgerNest.Desktop\LedgerNest.Desktop.csproj", "{44444444-4444-4444-4444-444444444444}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{07C2787E-EAC7-C090-1BA3-A61EC2A24D84}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LedgerNest.LicenseTool", "tools\LedgerNest.LicenseTool\LedgerNest.LicenseTool.csproj", "{528BB3AB-839F-400C-B4F1-12B095C762A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,9 +36,16 @@ Global
 		{44444444-4444-4444-4444-444444444444}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44444444-4444-4444-4444-444444444444}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44444444-4444-4444-4444-444444444444}.Release|Any CPU.Build.0 = Release|Any CPU
+		{528BB3AB-839F-400C-B4F1-12B095C762A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{528BB3AB-839F-400C-B4F1-12B095C762A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{528BB3AB-839F-400C-B4F1-12B095C762A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{528BB3AB-839F-400C-B4F1-12B095C762A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{528BB3AB-839F-400C-B4F1-12B095C762A3} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C1BF00A2-09EA-420F-90CB-5E941C582182}

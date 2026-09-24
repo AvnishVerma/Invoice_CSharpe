@@ -44,40 +44,69 @@ table{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:auto
 
         html.Append("<div class=\"top-rule\"></div><header class=\"header\"><div><div class=\"title\">")
             .Append(E(title)).Append("</div>");
-        if (invoice.Snapshot?.HideInvoiceNumber != true)
-            html.Append("<div class=\"number\">#").Append(E(invoice.InvoiceNumber)).Append("</div>");
-        html.Append("</div><div>").Append(LogoHtml(business.Logo)).Append("</div></header>");
+        if (DocumentPdf.DisplayNumber(invoice, options).Length > 0)
+            html.Append("<div class=\"number\">#").Append(E(DocumentPdf.DisplayNumber(invoice, options))).Append("</div>");
+        html.Append("</div></header>");
+        if (!thermal && !string.IsNullOrWhiteSpace(options.WatermarkImage))
+            html.Append("<div style=\"position:fixed;inset:20%;display:flex;align-items:center;justify-content:center;opacity:")
+                .Append(options.WatermarkOpacity.ToString(CultureInfo.InvariantCulture)).Append(";pointer-events:none\">")
+                .Append(LogoHtml(options.WatermarkImage, "max-width:100%;max-height:100%" )).Append("</div>");
+        html.Append("<div style=\"text-align:").Append(options.LogoPosition == "Right" ? "right" : "left").Append("\">")
+            .Append(LogoHtml(business.Logo, $"max-width:{options.LogoSize.ToString(CultureInfo.InvariantCulture)}px;max-height:{options.LogoSize.ToString(CultureInfo.InvariantCulture)}px")).Append("</div>");
         html.Append("<section class=\"business\"><div class=\"business-name\">").Append(E(string.IsNullOrWhiteSpace(business.Name) ? Branding.Name : business.Name)).Append("</div>")
             .Append(Line(business.Address)).Append(Line(business.Phone)).Append(Line(business.Email));
-        if (!string.IsNullOrWhiteSpace(business.TaxId)) html.Append("<div>GST / Tax ID: ").Append(E(business.TaxId)).Append("</div>");
+        if (options.ShowGst && !string.IsNullOrWhiteSpace(business.TaxId)) html.Append("<div>GST / Tax ID: ").Append(E(business.TaxId)).Append("</div>");
         html.Append("</section><div class=\"rule\"></div><section class=\"meta\"><div><div>Date: ").Append(E(DateText(invoice.InvoiceDate, options))).Append("</div><div>Status: ").Append(E(invoice.Status)).Append("</div></div><div><div class=\"customer-name\">Customer: ").Append(E(customer?.Name ?? invoice.CustomerName)).Append("</div>");
         if (options.ShowCustomerBusinessName) html.Append(Line(customer?.BusinessName, "Business: "));
         if (options.ShowCustomerAddress) html.Append(Line(customer?.Address));
         if (options.ShowCustomerPhone) html.Append(Line(customer?.Phone));
-        if (options.ShowCustomerEmail) html.Append(Line(customer?.Email));
-        if (options.ShowCustomerGstin) html.Append(Line(customer?.GstNumber, "GSTIN: "));
-        html.Append("</div></section><table><thead><tr>");
+        if (!thermal && options.ShowCustomerEmail) html.Append(Line(customer?.Email));
+        if (options.ShowGst && options.ShowCustomerGstin) html.Append(Line(customer?.GstNumber, "GSTIN: "));
+        html.Append("</div></section>");
+        var metadataColumns = !thermal && template == "Grid Classic" ? options.MetadataColumns : [];
+        if (!thermal && template == "Grid Classic")
+        {
+            var fields = (invoice.Snapshot?.CustomFields ?? []).Where(field => !string.IsNullOrWhiteSpace(field.Value)).ToArray();
+            html.Append("<table><tbody>");
+            for (var index = 0; index < fields.Length; index++)
+            {
+                if (index % 3 == 0) html.Append("<tr>");
+                html.Append("<td style=\"width:33.33%;border:1px solid #ddd\"><strong>").Append(E(fields[index].Label)).Append("</strong><div>").Append(E(fields[index].Value)).Append("</div></td>");
+                if (index % 3 == 2 || index == fields.Length - 1) html.Append("</tr>");
+            }
+            html.Append("</tbody></table>");
+        }
+        html.Append("<table><thead><tr>");
         if (options.ShowSlNo) html.Append("<th>#</th>");
-        html.Append("<th>").Append(options.ShowItemName ? "ITEM / SERVICE" : "DETAILS").Append("</th>");
+        html.Append("<th>ITEM / SERVICE</th>");
+        if (options.ShowGst && options.ShowHsn) html.Append("<th>HSN/SAC</th>");
         if (options.ShowQuantity) html.Append("<th class=\"number-cell\">").Append(E(string.IsNullOrWhiteSpace(options.QuantityLabel) ? "Qty" : options.QuantityLabel)).Append("</th>");
-        if (options.ShowPrice) html.Append("<th class=\"number-cell optional-wide\">RATE</th>");
+        html.Append("<th class=\"number-cell\">").Append(options.ShowQuantity ? "PRICE" : "RATE").Append("</th>");
         if (options.ShowTax) html.Append("<th class=\"number-cell optional-wide\">TAX %</th>");
         if (options.ShowDiscount) html.Append("<th class=\"number-cell optional-wide\">DISCOUNT</th>");
-        html.Append("<th class=\"number-cell\">TOTAL</th></tr></thead><tbody>");
+        html.Append("<th class=\"number-cell\">TOTAL</th>");
+        foreach (var label in metadataColumns) html.Append("<th>").Append(E(label)).Append("</th>");
+        html.Append("</tr></thead><tbody>");
         for (var index = 0; index < items.Length; index++)
         {
             var item = items[index];
+            var displayedTaxRate = invoice.Snapshot?.TaxMode switch { "Global" => invoice.Snapshot.TaxRate, "No Tax" => 0m, _ => item.TaxRate };
             html.Append("<tr>");
             if (options.ShowSlNo) html.Append("<td>").Append(index + 1).Append("</td>");
-            html.Append("<td><strong>").Append(E(options.ShowItemName ? item.Description : "Item")).Append("</strong>");
-            if (options.ShowDescription && !string.IsNullOrWhiteSpace(item.ProductDescription) && !item.ProductDescription.Equals(item.Description, StringComparison.OrdinalIgnoreCase))
-                html.Append("<div class=\"description\">").Append(E(item.ProductDescription)).Append("</div>");
+            var presentation = invoice.Snapshot?.LinePresentations?.ElementAtOrDefault(index);
+            html.Append("<td><strong>").Append(E(options.ShowAliasName && !string.IsNullOrWhiteSpace(presentation?.Alias) ? presentation.Alias : item.Description)).Append("</strong>");
+            if (options.ShowProductServiceTag && !string.IsNullOrWhiteSpace(presentation?.ProductType)) html.Append(" <small>[").Append(E(presentation.ProductType)).Append("]</small>");
+            if (!thermal && options.ShowDescription && !string.IsNullOrWhiteSpace(item.ProductDescription) && !item.ProductDescription.Equals(item.Description, StringComparison.OrdinalIgnoreCase))
+                html.Append(options.DescriptionOnNewLine ? "<div class=\"description\">" : "<span class=\"description\"> — ").Append(E(item.ProductDescription)).Append(options.DescriptionOnNewLine ? "</div>" : "</span>");
             html.Append("</td>");
+            if (options.ShowGst && options.ShowHsn) html.Append("<td>").Append(E(invoice.Snapshot?.LineHsnCodes?.ElementAtOrDefault(index))).Append("</td>");
             if (options.ShowQuantity) html.Append(Cell(item.Quantity.ToString("0.###", CultureInfo.InvariantCulture)));
-            if (options.ShowPrice) html.Append(Cell(Money(item.UnitPrice), true));
-            if (options.ShowTax) html.Append(Cell(item.TaxRate.ToString("0.##", CultureInfo.InvariantCulture), true));
+            html.Append(Cell(Money(item.UnitPrice)));
+            if (options.ShowTax) html.Append(Cell(displayedTaxRate.ToString("0.##", CultureInfo.InvariantCulture), true));
             if (options.ShowDiscount) html.Append(Cell(Money(item.DiscountPerUnit ? item.Discount * item.Quantity : item.Discount), true));
-            html.Append(Cell(Money(item.LineTotal), false)).Append("</tr>");
+            html.Append(Cell(Money(item.LineTotal), false));
+            foreach (var label in metadataColumns) html.Append("<td>").Append(E(presentation?.Metadata.GetValueOrDefault(label))).Append("</td>");
+            html.Append("</tr>");
         }
         html.Append("</tbody></table><section class=\"summary\">");
         if (options.ShowTotalQuantity) html.Append(Summary("Total quantity", items.Sum(item => item.Quantity).ToString("0.###", CultureInfo.InvariantCulture)));
@@ -86,10 +115,22 @@ table{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:auto
         if (options.ShowDiscount && invoice.DiscountTotal != 0) html.Append(Summary("Discount", Money(invoice.DiscountTotal)));
         foreach (var cost in invoice.Snapshot?.AdditionalCosts ?? [])
             if (cost.Amount != 0) html.Append(Summary(string.IsNullOrWhiteSpace(cost.Description) ? "Charges and adjustments" : cost.Description, Money(cost.Amount)));
-        if (options.ShowTotal) html.Append(Summary("Total", Money(invoice.GrandTotal), true));
+        html.Append(Summary("Total", Money(invoice.GrandTotal), true));
+        if (options.PreviousBalance > 0) html.Append(Summary("Previous balance due", Money(options.PreviousBalance)));
+        if (options.ShowRoundOff)
+        {
+            var amount = invoice.GrandTotal + options.PreviousBalance;
+            var rounded = decimal.Round(amount, 0, MidpointRounding.AwayFromZero);
+            html.Append(Summary("Round off", Money(rounded - amount))).Append(Summary("Net Amount", Money(rounded), true));
+            html.Append("<div>").Append(E(LedgerNest.Application.AmountInWords.Format(rounded, invoice.Snapshot?.Currency.Contains("INR", StringComparison.Ordinal) != false))).Append("</div>");
+        }
         html.Append(Summary("Paid", Money(invoice.PaidAmount))).Append(Summary("Balance due", Money(Math.Max(0, invoice.GrandTotal - invoice.PaidAmount)), true)).Append("</section>");
-        if (!string.IsNullOrWhiteSpace(invoice.Snapshot?.Notes) || !string.IsNullOrWhiteSpace(business.Note))
-            html.Append("<section class=\"notes\">").Append(E(invoice.Snapshot?.Notes)).Append(Line(business.Note)).Append("</section>");
+        if (options.PreviousBalance > 0) html.Append(Summary("Total due", Money(Math.Max(0, invoice.GrandTotal - invoice.PaidAmount) + options.PreviousBalance), true));
+        if (!string.IsNullOrWhiteSpace(invoice.Snapshot?.Notes) || !string.IsNullOrWhiteSpace(business.Note) || !string.IsNullOrWhiteSpace(options.AdditionalInformation))
+            html.Append("<section class=\"notes\">").Append(E(invoice.Snapshot?.Notes)).Append(Line(options.AdditionalInformation)).Append(Line(business.Note)).Append("</section>");
+        if (!string.IsNullOrWhiteSpace(options.SignatureImage))
+            html.Append("<div style=\"margin-top:20px;break-inside:avoid;text-align:").Append(options.SignaturePosition == "Left" ? "left" : "right").Append("\">")
+                .Append(LogoHtml(options.SignatureImage, $"max-width:100%;height:{options.SignatureSize.ToString(CultureInfo.InvariantCulture)}px;max-height:none")).Append("<div>Authorised Signature</div></div>");
         html.Append("<footer class=\"footer\">").Append(E($"{Branding.Name} · {invoice.Type} · {template}")).Append("</footer></main></body></html>");
         return html.ToString();
     }
@@ -115,12 +156,12 @@ table{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:auto
     }
 
     // Converts a configured logo path or base64 payload into an embedded image tag.
-    private static string LogoHtml(string logo)
+    private static string LogoHtml(string logo, string style = "")
     {
         try
         {
-            if (logo.StartsWith("base64:", StringComparison.Ordinal)) return $"<img class=\"logo\" src=\"data:image/png;base64,{E(logo[7..])}\">";
-            if (File.Exists(logo)) return $"<img class=\"logo\" src=\"data:image/{ImageExtension(logo)};base64,{Convert.ToBase64String(File.ReadAllBytes(logo))}\">";
+            if (logo.StartsWith("base64:", StringComparison.Ordinal)) return $"<img class=\"logo\" style=\"{E(style)}\" src=\"data:image/png;base64,{E(logo[7..])}\">";
+            if (File.Exists(logo)) return $"<img class=\"logo\" style=\"{E(style)}\" src=\"data:image/{ImageExtension(logo)};base64,{Convert.ToBase64String(File.ReadAllBytes(logo))}\">";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException) { }
         return "";

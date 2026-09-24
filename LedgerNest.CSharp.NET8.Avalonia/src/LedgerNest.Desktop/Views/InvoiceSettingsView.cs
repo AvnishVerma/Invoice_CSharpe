@@ -30,11 +30,15 @@ public partial class MainWindow
                 0 => InvoiceGeneralSettings(),
                 1 => InvoiceBrandingSettings(),
                 2 => InvoiceTaxSettings(),
+                3 => InvoiceItemSettings(),
+                4 => InvoiceCustomerSettings(),
+                5 => InvoiceColumnSettings(),
+                6 => InvoiceCustomSettings(),
                 _ => Ui.Stack(20, Model.Settings["Invoice Settings"].Single(section => section.Title == keys[index]).Fields
                     .Select(field => field.Kind == "toggle" ? InvoiceToggle(field, field.Label, field.Help, icons[index]) : Ui.Field(field)).ToArray())
             };
             var heading = Ui.Columns("4,12,*", new Border { Height = 24, Background = InvoiceSettingsBlue, CornerRadius = new CornerRadius(2) }, new Border(), Ui.Text(labels[index], 20, true));
-            var card = Ui.Card(Ui.Stack(32, heading, fields), 32);
+            var card = InvoiceSettingsCard(Ui.Stack(32, heading, fields), 32);
             card.Background = Ui.Surface;
             card.BorderThickness = new Thickness(0);
             card.CornerRadius = new CornerRadius(18);
@@ -48,13 +52,14 @@ public partial class MainWindow
             var button = Ui.Button(labels[i], () => Select(index));
             button.Classes.Clear(); button.Classes.Add("nav");
             button.MinHeight = 44; button.HorizontalAlignment = HorizontalAlignment.Stretch;
+            button.HorizontalContentAlignment = HorizontalAlignment.Stretch; button.Padding = new Thickness(16, 8);
             button.Content = Ui.Columns("20,12,*", Ui.Icon(icons[i], 18, InvoiceSettingsBlue), new Border(), Ui.Text(labels[i], 14));
             buttons.Add(button); nav.Children.Add(button);
         }
         var options = Ui.Button("See Options", () => Select(6));
         options.Content = Ui.Text("→  See Options", 12, color: InvoiceSettingsBlue);
         options.HorizontalAlignment = HorizontalAlignment.Stretch; options.MinHeight = 32;
-        var promo = Ui.Card(Ui.Stack(12,
+        var promo = InvoiceSettingsCard(Ui.Stack(12,
             Ui.Columns("34,14,*", Ui.Icon("tune", 20, InvoiceSettingsBlue), new Border(), Ui.Text("Need more fields on your invoices?", 14, color: InvoiceSettingsBlue)),
             Ui.Text("Add PO number, project code, department, or any custom field.", 12, color: Ui.Muted), options), 14);
         promo.Background = Ui.Palette("#EAEEF3", "#252D38"); promo.BorderBrush = Brush.Parse("#BDCAE0");
@@ -109,7 +114,7 @@ public partial class MainWindow
                 button.Content = (selected ? "✓  " : "") + button.Tag;
             }
         }
-        foreach (var mode in F("Tax Mode").Options)
+        foreach (var mode in F("Tax Mode").Options.Where(mode => mode != "No Tax" || F("Tax Mode").Value == "No Tax"))
         {
             var button = Ui.Button(mode, () => { F("Tax Mode").Value = mode; RefreshMode(); });
             button.MinHeight = 32; button.Padding = new Thickness(12, 5); button.CornerRadius = new CornerRadius(0);
@@ -121,22 +126,24 @@ public partial class MainWindow
         return Ui.Stack(20,
             InvoicePair(Ui.Stack(6, InvoiceInput(F("Default Tax Rate (%)"), "Default Tax Rate (%)", "percent"), Ui.Text("Applied to new invoices", 12, color: Ui.Muted)), new Border()),
             InvoiceToggle(F("Tax Enabled"), "Tax Enabled by Default", "Enable the Tax toggle by default when creating new invoices.", "percent"),
-            Ui.Card(Ui.Stack(4, Ui.Text("Default Tax Rate Mode", 14), Ui.Text("Applies to new invoices only", 12), new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(18), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left, Child = modes }), 12),
+            InvoiceSettingsCard(Ui.Stack(4, Ui.Text("Default Tax Rate Mode", 14), Ui.Text("Applies to new invoices only", 12), new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(18), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left, Child = modes }), 12),
             InvoiceToggle(F("Show GST fields"), "Show GST Fields", "Display GSTIN fields (HSN/SAC) on invoices, PDFs, and CSV exports", "receipt_long"),
-            Ui.Card(Ui.Stack(8, titleLabel, Ui.Text("Preselected on new invoices", 12, color: Ui.Muted), InvoiceInput(F("Default GST Title"), "", "")), 16),
+            InvoiceSettingsCard(Ui.Stack(8, titleLabel, Ui.Text("Preselected on new invoices", 12, color: Ui.Muted), InvoiceInput(F("Default GST Title"), "", "")), 16),
             InvoiceToggle(F("Show Round Off"), "Show Round Off", "Show a Round off row + Net Amount (rounded to nearest) and amount in words on invoice PDFs.", "payments"));
     }
 
     private Control InvoiceBrandingSettings()
     {
         FormField F(string label) => Model.InvoiceSetting(label);
+        var opacity = Ui.Field(F("Watermark Opacity"));
+        opacity.Bind(IsVisibleProperty, new Binding(nameof(FormField.Value)) { Source = F("Watermark Image"), Converter = new Avalonia.Data.Converters.FuncValueConverter<string, bool>(value => !string.IsNullOrEmpty(value)) });
         return Ui.Stack(20,
             InvoicePair(InvoiceInput(F("Logo Position"), "Company Logo Position", ""), InvoiceSizeChoice(F("Logo Size"), "Company Logo Size", false)),
-            Ui.Card(Ui.Stack(12, Ui.Text("Signature Image", 14), Ui.Text("Printed on invoices as Authorised Signature\nPNG, JPG or JPEG — max 2 MB", 12, color: Ui.Muted),
+            InvoiceSettingsCard(Ui.Stack(12, Ui.Text("Signature Image", 14), Ui.Text("Printed on invoices as Authorised Signature\nPNG, JPG or JPEG — max 2 MB", 12, color: Ui.Muted),
                 InvoiceImageUpload(F("Signature Image"), "Signature"),
                 InvoicePair(InvoiceSizeChoice(F("Signature Size"), "Signature Size", true), InvoiceInput(F("Signature Position"), "Signature Position", "view_list"))), 16),
-            Ui.Card(Ui.Stack(12, Ui.Text("Watermark Image", 14), Ui.Text("Shown on invoice PDFs (not printed on thermal receipts)\nPNG, JPG or JPEG — max 2 MB", 12, color: Ui.Muted),
-                InvoiceImageUpload(F("Watermark Image"), "Watermark"), Ui.Field(F("Watermark Opacity"))), 16));
+            InvoiceSettingsCard(Ui.Stack(12, Ui.Text("Watermark Image", 14), Ui.Text("Shown on invoice PDFs (not printed on thermal receipts)\nPNG, JPG or JPEG — max 2 MB", 12, color: Ui.Muted),
+                InvoiceImageUpload(F("Watermark Image"), "Watermark"), opacity), 16));
     }
 
     private static Control InvoicePair(Control left, Control right)
@@ -153,7 +160,7 @@ public partial class MainWindow
         return grid;
     }
 
-    private static Control InvoiceToggle(FormField field, string title, string help, string icon)
+    private static Control InvoiceToggle(FormField field, string title, string help, string icon, bool compact = false)
     {
         var track = new Border { Width = 52, Height = 32, CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(2), Padding = new Thickness(4) };
         var thumb = new Avalonia.Controls.Shapes.Ellipse { Width = 20, Height = 20 };
@@ -170,7 +177,15 @@ public partial class MainWindow
             thumb.HorizontalAlignment = toggle.IsChecked == true ? HorizontalAlignment.Right : HorizontalAlignment.Left;
         }
         toggle.IsCheckedChanged += (_, _) => Paint(); Paint();
-        return Ui.Card(Ui.Columns("24,16,*,16,Auto", Ui.Icon(icon, 22, InvoiceSettingsBlue), new Border(), Ui.Stack(4, Ui.Text(title, 16), Ui.Text(help, 13, color: Ui.Muted)), new Border(), toggle), 16);
+        if (compact) return Ui.Columns("*,16,Auto", Ui.Text(title, 14), new Border(), toggle);
+        return InvoiceSettingsCard(Ui.Columns("24,16,*,16,Auto", Ui.Icon(icon, 22, InvoiceSettingsBlue), new Border(), Ui.Stack(4, Ui.Text(title, 16), Ui.Text(help, 13, color: Ui.Muted)), new Border(), toggle), 12);
+    }
+
+    private static Border InvoiceSettingsCard(Control content, double padding = 16)
+    {
+        var card = Ui.Card(content, padding);
+        card.Background = Ui.Palette("#FFFFFF", "#252525");
+        return card;
     }
 
     private static Control InvoiceInput(FormField field, string label, string icon)
@@ -179,14 +194,14 @@ public partial class MainWindow
         var padding = new Thickness(icon.Length > 0 ? 44 : 12, 10, 12, 10);
         if (field.Kind == "choice")
         {
-            var combo = new ComboBox { ItemsSource = field.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 48, Padding = padding };
+            var combo = new ComboBox { ItemsSource = field.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 48, Padding = padding, Background = Ui.Palette("#FFFFFF", "#252525") };
             combo.Bind(ComboBox.SelectedItemProperty, new Binding(nameof(FormField.Value)) { Source = field, Mode = BindingMode.TwoWay });
             if (field.Label == "Time Format") combo.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((value, _) => Ui.Text(value == "12 hour" ? "12-hour (2:30 PM)" : "24-hour (14:30)", 15));
             input = combo;
         }
         else
         {
-            var box = new TextBox { MinHeight = 48, Padding = padding, MaxLength = field.Label == "Invoice Prefix" ? 25 : field.MaxLength };
+            var box = new TextBox { MinHeight = 48, Padding = padding, MaxLength = field.Label == "Invoice Prefix" ? 25 : field.MaxLength, Background = Ui.Palette("#FFFFFF", "#252525") };
             box.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = field, Mode = BindingMode.TwoWay });
             input = box;
         }
@@ -214,7 +229,7 @@ public partial class MainWindow
 
     private Control InvoiceLongText(FormField field, string icon)
     {
-        var box = new TextBox { MinHeight = 96, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, PlaceholderText = field.Label, Padding = new Thickness(44, 14, 40, 12), MaxLength = 10000 };
+        var box = new TextBox { MinHeight = 96, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, PlaceholderText = field.Label, Padding = new Thickness(44, 14, 40, 12), MaxLength = 10000, Background = Ui.Palette("#FFFFFF", "#252525") };
         box.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = field, Mode = BindingMode.TwoWay });
         var expand = Ui.Button("Expand " + field.Label, () =>
         {
@@ -230,10 +245,14 @@ public partial class MainWindow
     {
         var preview = new Image { Height = 60, MaxWidth = 200, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left };
         Avalonia.Media.Imaging.Bitmap? bitmap = null;
-        var remove = Ui.Button("Remove " + name, () => { field.Value = ""; Refresh(); });
+        var remove = Ui.Button("Remove " + name, () => { });
+        remove.Click += (_, _) => { field.Value = ""; Refresh(); };
         var upload = Ui.Button("Upload " + name, () => { });
+        upload.Content = Ui.Columns("Auto,8,*", Ui.Icon("upload", 16, Brush.Parse("#6750A4")), new Border(), Ui.Text("Upload " + name, 14, color: Brush.Parse("#6750A4")));
+        upload.MinHeight = 32; upload.Padding = new Thickness(16, 5); upload.CornerRadius = new CornerRadius(18);
         var error = Ui.Text("", 12, color: Brushes.Firebrick);
         error.Bind(TextBlock.TextProperty, new Binding(nameof(FormField.Error)) { Source = field });
+        error.Bind(IsVisibleProperty, new Binding(nameof(FormField.Error)) { Source = field, Converter = new Avalonia.Data.Converters.FuncValueConverter<string, bool>(value => !string.IsNullOrEmpty(value)) });
         var panel = Ui.Stack(8, preview, Ui.Wrap(upload, remove), error);
         void Refresh()
         {

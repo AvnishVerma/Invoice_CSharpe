@@ -1,0 +1,8 @@
+# Publisher credentials and customer activations must never enter source control.
+*.private.pem
+*.ledgerlicense
+.local/licensing/
+
+# Local verification and publisher-tool output.
+**/bin/
+**/obj/

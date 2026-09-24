@@ -33,6 +33,8 @@ public partial class MainWindowViewModel
     public string ExportCsv(string kind, IEnumerable<UiRecord>? records = null)
     {
         var headers = CsvHeaders(kind);
+        if (!InvoiceSetting("Show GST fields").IsChecked)
+            headers = headers.Where(header => header is not ("gstin" or "hsncode")).ToArray();
         var source = (records ?? RecordsForKind(kind)).ToArray();
         var builder = new StringBuilder();
         builder.AppendLine(string.Join(",", headers.Select(EscapeCsv)));
@@ -44,6 +46,7 @@ public partial class MainWindowViewModel
     // Performs the import csv action for this screen or workflow.
     public int ImportCsv(string kind, string csvText)
     {
+        if (!RequireBusinessLicense()) return 0;
         if (kind is not ("Customer" or "Product"))
         {
             Status = $"CSV import is not available for {kind.ToLowerInvariant()}s yet.";
@@ -134,6 +137,7 @@ public partial class MainWindowViewModel
                 SetImportField(byLabel, "Batch Number", Get("batch_number"));
                 SetImportField(byLabel, "Expiry Date", Get("expiry_date"));
                 SetImportField(byLabel, "Manufacture Date", Get("manufacture_date"));
+                SetImportField(byLabel, "Manufacturer Name", FirstNonEmpty(Get("manufacturer_name"), Get("manufacture_name")));
                 SetImportField(byLabel, "Supplier Name", Get("supplier_name"));
                 SetImportField(byLabel, "SKU Code", Get("sku_code"));
                 SetImportField(byLabel, "Notes", JoinNotes(Get("notes"), Get("manufacture_name")));

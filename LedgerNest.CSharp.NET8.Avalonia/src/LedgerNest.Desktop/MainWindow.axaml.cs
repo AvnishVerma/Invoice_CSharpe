@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private readonly IToastService toastService;
     private MainWindowViewModel Model => (MainWindowViewModel)DataContext!;
     private bool invoiceCompletionVisible;
+    private readonly Avalonia.Threading.DispatcherTimer licenseTimer = new() { Interval = TimeSpan.FromMinutes(1) };
     public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator(), new AvaloniaToastService())
     {
     }
@@ -37,12 +38,15 @@ public partial class MainWindow : Window
             if (e.Property == ActualThemeVariantProperty)
                 Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
         };
-        Activated += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.ValidateSession(); };
+        Activated += (_, _) => { if (DataContext is MainWindowViewModel vm) { vm.ValidateSession(); vm.RefreshLicense(); } };
+        licenseTimer.Tick += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.RefreshLicense(); };
+        Opened += (_, _) => licenseTimer.Start();
         Closed += (_, _) =>
         {
             if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
             toastService.Requested -= OnToastRequested;
             toastTimer?.Stop();
+            licenseTimer.Stop();
             page.Content = null;
         };
         Title = Branding.Name;

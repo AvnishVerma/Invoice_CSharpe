@@ -21,6 +21,7 @@ public partial class MainWindow
         for (var i = 0; i < order.Length; i++)
         {
             var f = Ui.Field(editorModel.InvoiceCustomer[order[i]], labels[i], true); Grid.SetColumn(f, i % 3 * 2); Grid.SetRow(f, i / 3 * 2); customerFields.Children.Add(f);
+            if (order[i] == 4) f.IsVisible = editorModel.InvoiceSetting("Show GST fields").IsChecked;
         }
         var customerHeader = Ui.Columns("Auto,8,*,Auto", Ui.Icon("person", 16), new Border(), Ui.Text("CUSTOMER DETAILS", 12, true), Ui.Wrap(saveCustomer, Ui.Button("Select from existing", SelectCustomer), Ui.Button("⌃", () => customerFields.IsVisible = !customerFields.IsVisible)));
         var customer = Ui.Card(Ui.Stack(6, customerHeader, customerFields), 12);
@@ -33,7 +34,7 @@ public partial class MainWindow
             BorderBrush = Ui.Outline,
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            ItemTemplate = new FuncDataTemplate<UiRecord>((product, _) => ProductSearchSuggestion(product), true)
+            ItemTemplate = new FuncDataTemplate<UiRecord>((product, _) => ProductSearchSuggestion(product, editorModel.InvoiceSetting("Show GST fields").IsChecked), true)
         };
         bool Matches(UiRecord p, string query) => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
             || p["SKU Code"].Contains(query, StringComparison.OrdinalIgnoreCase);
@@ -96,7 +97,9 @@ public partial class MainWindow
                     NumericUpDown Number(string property, decimal min = 0)
                     { var n = new NumericUpDown { Minimum = min, Maximum = 1000000000, Increment = 1, FormatString = "0.##", ShowButtonSpinner = false, Margin = new Thickness(2), MinWidth = 0 }; n.Bind(NumericUpDown.ValueProperty, new Binding(property) { Source = line, Mode = BindingMode.TwoWay }); return n; }
                     var total = Ui.Text(line.Total.ToString("0.00"), 12, true); total.Bind(TextBlock.TextProperty, new Binding(nameof(line.Total)) { Source = line, StringFormat = "{0:0.00}" });
-                    rows.Children.Add(new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(8), Child = Ui.Columns("*,70,85,60,80,90,40", Ui.Stack(2, Ui.Text(line.Name, 13, true), Ui.Text(line.Unit == "None" ? "" : line.Unit, 11, color: Ui.Muted)), Number(nameof(line.Quantity), .001m), Number(nameof(line.Price)), Number(nameof(line.TaxRate)), Number(nameof(line.Discount)), total, Ui.Button("×", () => editorModel.Lines.Remove(line))) });
+                    var name = Ui.Stack(2, Ui.Text(line.Name, 13, true), Ui.Text(line.Unit == "None" ? "" : line.Unit, 11, color: Ui.Muted));
+                    if (editorModel.InvoiceSetting("Show Product / Service Tag").IsChecked) name.Children.Add(Ui.Text(line.ProductType, 11, color: Ui.Muted));
+                    rows.Children.Add(new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(8), Child = Ui.Columns("*,70,85,60,80,90,40", name, Number(nameof(line.Quantity), .001m), Number(nameof(line.Price)), Number(nameof(line.TaxRate)), Number(nameof(line.Discount)), total, Ui.Button("×", () => editorModel.Lines.Remove(line))) });
                 }
                 lineHost.Content = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, Content = new Border { MinWidth = 650, Child = rows } };
             }
@@ -114,6 +117,10 @@ public partial class MainWindow
         var discount = Ui.Card(Ui.Fields(editorModel.InvoiceOptions.Take(2), 2), 8); discount.Background = Ui.Palette("#FFF4F4", "#392A30"); discount.BorderBrush = Brush.Parse("#FFD6A5");
         var tax = Ui.Fields(editorModel.InvoiceOptions.Skip(3));
         var options = Ui.Stack(12, costs, discount, Ui.Text("NOTES", 11, true, Ui.Muted), Ui.Field(editorModel.InvoiceOptions[2]), Ui.Text("TAX SETTINGS", 11, true, Ui.Muted), tax, Ui.Field(editorModel.InterState));
+        if (editorModel.InvoiceCustomFields.Count > 0)
+        {
+            options.Children.Insert(0, Ui.Stack(12, Ui.Text("CUSTOM FIELDS", 12, true, Ui.Muted), Ui.Fields(editorModel.InvoiceCustomFields.Select(field => field.Field))));
+        }
         var optionsCard = Ui.Card(Ui.Rows("*,Auto", Ui.Scroll(options, 12), new Border { Padding = new Thickness(16), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 1, 0, 0), Child = totals }), 0);
         var left = Ui.Rows("Auto,8,*", customer, new Border(), items); var right = Ui.Rows("Auto,8,*", details, new Border(), optionsCard);
         var viewport = new InvoiceWorkspace(left, right, items, optionsCard);
@@ -152,7 +159,7 @@ public partial class MainWindow
     }
 
     // Builds a detailed product-search row with the commercial and stock information needed before selection.
-    private static Control ProductSearchSuggestion(UiRecord product)
+    private static Control ProductSearchSuggestion(UiRecord product, bool showGst = true)
     {
         var hasStock = !decimal.TryParse(product["Stock"], out var stock) || stock > 0 ||
             bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited;
@@ -165,8 +172,11 @@ public partial class MainWindow
         metadata.Children.Add(Ui.Text(price, 10.5, color: Ui.Muted));
         metadata.Children.Add(Ui.Text("•", 10.5, color: Ui.Muted));
         metadata.Children.Add(Ui.Text($"Stock: {stockText}", 10.5, color: Ui.Muted));
-        metadata.Children.Add(Ui.Text("•", 10.5, color: Ui.Muted));
-        metadata.Children.Add(Ui.Text($"HSN {hsn}", 10.5, color: Ui.Muted));
+        if (showGst)
+        {
+            metadata.Children.Add(Ui.Text("•", 10.5, color: Ui.Muted));
+            metadata.Children.Add(Ui.Text($"HSN {hsn}", 10.5, color: Ui.Muted));
+        }
         if (!string.IsNullOrWhiteSpace(product["Storage Location"]))
         {
             metadata.Children.Add(Ui.Text("•", 10.5, color: Ui.Muted));
@@ -183,11 +193,11 @@ public partial class MainWindow
     // Performs the show product item action for this screen or workflow.
     private void ShowProductItem(UiRecord product, TextBox search)
     {
-        var dialog = new ProductItemDialogViewModel(product, line => Model.Lines.Add(line), () =>
+        var dialog = new ProductItemDialogViewModel(product, _ => { }, () =>
         {
             CloseOverlay();
             search.Focus();
-        });
+        }, Model.TryAddInvoiceLine, Model.InvoiceSetting("Allow Fractional Quantity").IsChecked);
         overlay.Children.Clear();
         overlay.Margin = new Thickness(0);
         overlay.IsVisible = true;

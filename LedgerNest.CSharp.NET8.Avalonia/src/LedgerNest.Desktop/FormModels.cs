@@ -42,6 +42,9 @@ public sealed class UiRecord
 
 public sealed partial class InvoiceLineViewModel : ObservableObject
 {
+    public string ProductKey { get; init; } = "";
+    public string ProductType { get; init; } = "Product";
+    public LedgerNest.Domain.InvoiceLinePresentation? SavedPresentation { get; init; }
     [ObservableProperty] private string name = "";
     [ObservableProperty] private string unit = "None";
     [ObservableProperty] private decimal quantity = 1;
@@ -65,3 +68,11 @@ public sealed partial class InvoiceLineViewModel : ObservableObject
     // Performs the on discount changed action for this screen or workflow.
     partial void OnDiscountChanged(decimal value) => OnPropertyChanged(nameof(Total));
 }
+
+public sealed partial class InvoiceCustomFieldDefinition : ObservableObject
+{
+    public string Id { get; init; } = Guid.NewGuid().ToString("N");
+    [ObservableProperty] private string label = "";
+}
+
+public sealed record InvoiceCustomFieldEntry(string Id, FormField Field);

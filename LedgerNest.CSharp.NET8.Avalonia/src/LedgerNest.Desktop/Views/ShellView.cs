@@ -56,7 +56,7 @@ public partial class MainWindow
         invoiceCompletionVisible = false;
         if (!Model.ValidateSession() || !Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
         CloseOverlay();
-        page.Content = Model.Title switch
+        Control content = Model.Title switch
         {
             "Dashboard" => Dashboard(), "New Invoice" => InvoiceEditor(),
             "Customers" => new ManagementView(Model, "Customer", this),
@@ -68,5 +68,6 @@ public partial class MainWindow
             "Settings" => SettingsView(), 
             _ => Dashboard()
         };
+        page.Content = LicenseWorkspaceContent(content);
     }
 }

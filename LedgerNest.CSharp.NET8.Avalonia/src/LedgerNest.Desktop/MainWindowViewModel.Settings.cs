@@ -48,12 +48,23 @@ public partial class MainWindowViewModel
         var start = InvoiceSetting("Starting Number");
         if (!int.TryParse(start.Value, out var number) || number < 1 || number > 99999999)
             start.Error = "Enter a whole number between 1 and 99999999.";
-        else if (!CanChangeInvoiceStartingNumber && start.Value != savedStartingNumber)
-            start.Error = "Invoice starting number cannot be changed while documents exist, including trash.";
+        else if (!CanChangeInvoiceStartingNumber)
+        {
+            var persistedStart = savedStartingNumber;
+            if (dbFactory != null)
+            {
+                using var db = dbFactory.CreateDbContext();
+                var key = SettingKey("Invoice Settings", "General", "Starting Number");
+                persistedStart = db.Settings.AsNoTracking().FirstOrDefault(setting => setting.Key == key)?.Value ?? "1";
+            }
+            if (start.Value != persistedStart) start.Error = "Invoice starting number cannot be changed while documents exist, including trash.";
+        }
         var tax = InvoiceSetting("Default Tax Rate (%)");
         if (tax.Number > 100) tax.Error = "Tax rate must be between 0 and 100.";
         var prefix = InvoiceSetting("Invoice Prefix");
         if (prefix.Value.Length > 25) prefix.Error = "Invoice prefix must be 25 characters or fewer.";
+        if (InvoiceSetting("Enable Custom Fields").IsChecked && InvoiceCustomFieldDefinitions.Any(field => string.IsNullOrWhiteSpace(field.Label) || field.Label.Length > 100))
+        { Status = "Every custom field needs a label of 1 to 100 characters."; return false; }
         var invalid = Settings["Invoice Settings"].SelectMany(section => section.Fields).FirstOrDefault(field => field.Error.Length > 0);
         if (invalid != null) Status = invalid.Error;
         return invalid == null;
@@ -170,6 +181,7 @@ public partial class MainWindowViewModel
             update.Target.Value = update.Value;
             update.Target.IsChecked = bool.TryParse(update.Value, out var value) && value;
         }
+        savedStartingNumber = InvoiceSetting("Starting Number").Value;
         Status = "Setup saved.";
         return true;
     }
@@ -196,6 +208,7 @@ public partial class MainWindowViewModel
 
             if (name == "Company Info") SaveCompanyInfo(db, sections);
             if (name == "Company Info") SavePaymentAccounts(db);
+            if (name == "Invoice Settings") SetSetting(db, "invoice.custom_field_definitions", JsonSerializer.Serialize(InvoiceCustomFieldDefinitions));
             db.SaveChanges();
         }
 

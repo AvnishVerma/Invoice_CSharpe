@@ -62,6 +62,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 ("BatchNumber", "TEXT NOT NULL DEFAULT ''"),
                 ("ExpiryDate", "TEXT NOT NULL DEFAULT ''"),
                 ("ManufactureDate", "TEXT NOT NULL DEFAULT ''"),
+                ("ManufacturerName", "TEXT NOT NULL DEFAULT ''"),
                 ("SupplierName", "TEXT NOT NULL DEFAULT ''"),
                 ("Notes", "TEXT NOT NULL DEFAULT ''")]);
             void EnsureColumns(string table, (string Name, string Definition)[] additions)

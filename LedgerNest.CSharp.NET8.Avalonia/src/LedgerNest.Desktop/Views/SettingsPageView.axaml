@@ -2,42 +2,43 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.SettingsPageView"
              x:CompileBindings="False">
-  <Grid RowDefinitions="Auto,*">
-    <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Background="#FAFAFA" Padding="8,6">
-      <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled">
-        <ItemsControl ItemsSource="{Binding Tabs}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <WrapPanel Orientation="Horizontal" />
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Button Tag="{Binding Label}"
-                      Command="{Binding DataContext.SelectTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                      CommandParameter="{Binding Label}"
-                      Classes="nav"
-                      Classes.selected="{Binding IsSelected}"
-                      HorizontalAlignment="Stretch"
-                      HorizontalContentAlignment="Center"
-                      MinHeight="40"
-                      Margin="2"
-                      Padding="10,7"
-                      ToolTip.Tip="{Binding Label}">
-                <StackPanel Orientation="Horizontal" Spacing="7">
-                  <TextBlock Text="{Binding Icon}"
-                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
-                             FontSize="17"
-                             VerticalAlignment="Center" />
-                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
-                </StackPanel>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </ScrollViewer>
-    </Border>
+    <Grid ColumnDefinitions="112,*">
+        <Border BorderBrush="#E0E0E0" BorderThickness="0,0,1,0" Background="#FAFAFA" Padding="0,4">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl ItemsSource="{Binding Tabs}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Tag="{Binding Label}"
+                                    Command="{Binding DataContext.SelectTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding Label}"
+                                    Classes="nav"
+                                    Classes.selected="{Binding IsSelected}"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    MinHeight="64"
+                                    Margin="0"
+                                    Padding="4,7"
+                                    ToolTip.Tip="{Binding Label}">
+                                <StackPanel Spacing="7" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding Icon}"
+                                               FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                                               FontSize="24"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Label}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
 
-    <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" />
-  </Grid>
+        <ContentControl Grid.Column="1" Content="{Binding CurrentContent}" />
+    </Grid>
 </UserControl>

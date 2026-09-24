@@ -85,13 +85,32 @@ public partial class MainWindowViewModel
             Checked("Invoice Settings", "Show Customer Email"),
             Checked("Invoice Settings", "Show Customer GSTIN"),
             Checked("Invoice Settings", "Show Sl. No."),
-            Checked("Invoice Settings", "Item Name"),
+            true,
             Checked("Invoice Settings", "Show Quantity"),
-            Checked("Invoice Settings", "Price"),
+            true,
             Checked("Invoice Settings", "Tax"),
             Checked("Invoice Settings", "Show Discount"),
-            Checked("Invoice Settings", "Total"),
-            Checked("PDF Settings", "Show Total Quantity"));
+            true,
+            Checked("PDF Settings", "Show Total Quantity"))
+        {
+            InvoicePrefix = Setting("Invoice Settings", "Invoice Prefix"),
+            LeadingZeros = Checked("Invoice Settings", "Leading Zeros"),
+            AdditionalInformation = Setting("Invoice Settings", "Additional Information"),
+            LogoPosition = Setting("Invoice Settings", "Logo Position"),
+            LogoSize = (float)Math.Clamp(InvoiceSetting("Logo Size").Number, 20, 240),
+            SignatureImage = Setting("Invoice Settings", "Signature Image"),
+            SignaturePosition = Setting("Invoice Settings", "Signature Position"),
+            SignatureSize = (float)Math.Clamp(InvoiceSetting("Signature Size").Number, 20, 140),
+            WatermarkImage = Setting("Invoice Settings", "Watermark Image"),
+            WatermarkOpacity = (float)Math.Clamp(InvoiceSetting("Watermark Opacity").Number / 100m, 0, 1),
+            ShowGst = Checked("Invoice Settings", "Show GST fields"),
+            ShowHsn = Checked("Invoice Settings", "Show GST fields"),
+            ShowRoundOff = Checked("Invoice Settings", "Show Round Off"),
+            ShowAliasName = Checked("Invoice Settings", "Show Alias Name"),
+            ShowProductServiceTag = Checked("Invoice Settings", "Show Product / Service Tag") && Setting("Company Info", "Business Type") == "Both",
+            MetadataColumns = InvoiceMetadataLabels.Where(label => Checked("Invoice Settings", "Metadata: " + label)).ToArray(),
+            PreviousBalance = PreviousBalanceFor(invoice)
+        };
         return new DocumentExportContext(
             invoice,
             InvoiceItemsFor(document),

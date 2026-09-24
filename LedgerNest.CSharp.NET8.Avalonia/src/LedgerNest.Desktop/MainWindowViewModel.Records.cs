@@ -18,6 +18,7 @@ public partial class MainWindowViewModel
     // Performs the save record action for this screen or workflow.
     public bool SaveRecord(string kind, FormField[] fields, UiRecord? original = null)
     {
+        if (kind is "Customer" or "Product" && !RequireBusinessLicense()) return false;
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
         var records = kind == "Customer" ? Customers : kind == "Product" ? Products : Users;
         var databaseValues = fields.ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Kind == "password" ? f.Value : f.Value.Trim());
@@ -46,6 +47,7 @@ public partial class MainWindowViewModel
     // Performs the delete record action for this screen or workflow.
     public bool DeleteRecord(string kind, UiRecord record)
     {
+        if (kind is "Customer" or "Product" && !RequireBusinessLicense()) return false;
         var records = kind switch { "Customer" => Customers, "Product" => Products, "User" => Users, _ => null };
         if (records == null || !records.Contains(record)) return false;
         if (kind == "User" && record["Role"] == "Admin")
@@ -95,6 +97,7 @@ public partial class MainWindowViewModel
     // Performs the set document trash action for this screen or workflow.
     public bool SetDocumentTrash(UiRecord record, bool trashed)
     {
+        if (!RequireBusinessLicense()) return false;
         if (!Invoices.Contains(record)) return false;
         if (dbFactory != null)
         {
@@ -113,6 +116,7 @@ public partial class MainWindowViewModel
     // Performs the delete document permanently action for this screen or workflow.
     public bool DeleteDocumentPermanently(UiRecord record)
     {
+        if (!RequireBusinessLicense()) return false;
         if (!Invoices.Contains(record) || !DeletedRecords.Contains(record.Id)) return false;
         if (dbFactory != null)
         {

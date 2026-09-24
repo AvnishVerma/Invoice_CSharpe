@@ -68,6 +68,7 @@ public partial class MainWindowViewModel
                     ["Batch Number"] = product.BatchNumber,
                     ["Expiry Date"] = product.ExpiryDate,
                     ["Manufacture Date"] = product.ManufactureDate,
+                    ["Manufacturer Name"] = product.ManufacturerName,
                     ["Supplier Name"] = product.SupplierName,
                     ["Notes"] = product.Notes,
                     ["Name"] = product.Name,
@@ -163,6 +164,7 @@ public partial class MainWindowViewModel
             }
         }
 
+        LoadInvoiceCustomDefinitions();
         var businessType = Settings["Company Info"].Single(section => section.Title == "BUSINESS TYPE").Fields[0];
         businessType.Value = businessType.Value switch
         {
@@ -228,6 +230,7 @@ public partial class MainWindowViewModel
             product.BatchNumber = values.GetValueOrDefault("Batch Number", "");
             product.ExpiryDate = values.GetValueOrDefault("Expiry Date", "");
             product.ManufactureDate = values.GetValueOrDefault("Manufacture Date", "");
+            product.ManufacturerName = values.GetValueOrDefault("Manufacturer Name", "");
             product.SupplierName = values.GetValueOrDefault("Supplier Name", "");
             product.Notes = values.GetValueOrDefault("Notes", "");
             if (product.Id == 0) db.Products.Add(product);
@@ -279,7 +282,14 @@ public partial class MainWindowViewModel
             InvoiceOptions[3].Value, InvoiceOptions[4].Number, InvoiceOptions[0].Value,
             InvoiceOptions[1].Number, InvoiceOptions[2].Value,
             AdditionalCosts.Select(c => new InvoiceAdditionalCost(c[0].Value, c[1].Number)).ToArray())
-        { LineUnits = Lines.Select(line => line.Unit).ToArray() };
+        {
+            LineUnits = Lines.Select(line => line.Unit).ToArray(),
+            LinePresentations = Lines.Select(CaptureLinePresentation).ToArray(),
+            CustomFields = InvoiceCustomFields.Select(field => new InvoiceCustomFieldValue(field.Id, field.Field.Label, field.Field.Value)).ToArray(),
+            LineHsnCodes = Lines.Select(line => historicalLines.TryGetValue(line, out var original)
+                ? editingSnapshot?.LineHsnCodes?.ElementAtOrDefault(historicalLines.Keys.ToList().IndexOf(line)) ?? ""
+                : Products.FirstOrDefault(product => product.Name.Equals(line.Name, StringComparison.OrdinalIgnoreCase))?["HSN/SAC"] ?? "").ToArray()
+        };
     }
 
     // Performs the save invoice to database action for this screen or workflow.
@@ -307,7 +317,8 @@ public partial class MainWindowViewModel
         {
             InvoiceNumber = values["Name"],
             Type = values["Type"],
-            InvoiceDate = DateTime.TryParse(InvoiceDetails[1].Value, out var date) ? date : DateTime.Today,
+            InvoiceDate = (DateTime.TryParse(InvoiceDetails[1].Value, out var date) ? date.Date : DateTime.Today)
+                + (existing?.InvoiceDate.TimeOfDay ?? DateTime.Now.TimeOfDay),
             CustomerId = customerId,
             CustomerName = customerName,
             Snapshot = CaptureInvoiceSnapshot(),
@@ -321,6 +332,7 @@ public partial class MainWindowViewModel
                 var product = Products.FirstOrDefault(p => p.Name.Equals(line.Name, StringComparison.OrdinalIgnoreCase));
                 return new InvoiceItem
                 {
+                    ProductId = line.ProductKey.StartsWith("id:", StringComparison.Ordinal) && int.TryParse(line.ProductKey[3..], out var productId) ? productId : null,
                     Description = line.Name,
                     ProductDescription = historicalLines.TryGetValue(line, out var original) ? original.ProductDescription : product?["Description"] ?? line.Name,
                     Quantity = line.Quantity,
@@ -359,6 +371,7 @@ public partial class MainWindowViewModel
     // Performs the apply payment action for this screen or workflow.
     public bool ApplyPayment(UiRecord invoiceRecord, FormField[] fields)
     {
+        if (!RequireBusinessLicense()) return false;
         if (dbFactory == null)
         {
             Status = "Payment storage is not available.";

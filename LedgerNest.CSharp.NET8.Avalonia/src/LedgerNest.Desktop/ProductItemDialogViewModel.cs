@@ -8,6 +8,8 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
     private readonly InvoiceLineViewModel draft;
     private readonly Action<InvoiceLineViewModel> addLine;
     private readonly Action close;
+    private readonly Func<InvoiceLineViewModel, bool>? acceptLine;
+    private readonly bool allowFractional;
     private bool completed;
 
     public string Title { get; }
@@ -20,11 +22,13 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
     public FormField ExtraCost { get; } = new("Extra Cost (optional)", "", "number");
     [ObservableProperty] private bool discountPerUnit = true;
 
-    public ProductItemDialogViewModel(UiRecord product, Action<InvoiceLineViewModel> addLine, Action close)
+    public ProductItemDialogViewModel(UiRecord product, Action<InvoiceLineViewModel> addLine, Action close, Func<InvoiceLineViewModel, bool>? acceptLine = null, bool allowFractional = true)
     {
         draft = MainWindowViewModel.CreateProductLine(product);
         this.addLine = addLine;
         this.close = close;
+        this.acceptLine = acceptLine;
+        this.allowFractional = allowFractional;
         Title = $"{product.Name} (Rs. {draft.Price:0.0#})";
         var hasUnlimitedStock = bool.TryParse(product["Unlimited stock"], out var unlimitedStock) && unlimitedStock;
         StockText = hasUnlimitedStock ? "Unlimited Stock" : $"Available Stock: {product["Stock"]}";
@@ -42,14 +46,16 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
         if (completed) return;
         if (!new[] { Quantity, Discount, Price, ExtraCost }.Select(field => field.Validate()).ToArray().All(valid => valid)) return;
         if (Quantity.Number <= 0) { Quantity.Error = "Quantity must be greater than zero."; return; }
+        if (!allowFractional && decimal.Truncate(Quantity.Number) != Quantity.Number) { Quantity.Error = "Enter a whole-number quantity."; return; }
         draft.Quantity = Quantity.Number;
         draft.Unit = Unit.Value;
         draft.Discount = Discount.Number;
         draft.DiscountPerUnit = DiscountPerUnit;
         draft.Price = Price.Number;
         draft.ExtraCost = ExtraCost.Number;
+        if (acceptLine != null && !acceptLine(draft)) return;
         completed = true;
-        addLine(draft);
+        if (acceptLine == null) addLine(draft);
         close();
     }
 

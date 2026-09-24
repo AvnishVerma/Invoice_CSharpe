@@ -19,7 +19,127 @@ using System.Text.Json.Nodes;
 
 internal static class Program
 {
+    // Ordinary UI/business checks inject an explicit entitlement; production defaults deny writes.
+    private static MainWindowViewModel CreateModel(IDbContextFactory<LedgerNestDbContext>? factory = null, string? databasePath = null)
+        => new(factory, databasePath, new TestEntitlementService());
+
+    private sealed class TestEntitlementService : LedgerNest.Domain.ILicenseService
+    {
+        public string DeviceId => new('A', 64);
+        public LedgerNest.Domain.LicenseStatus GetStatus() => new(LedgerNest.Domain.LicenseState.Active, "Test fixture license", new LedgerNest.Domain.LicenseClaims { Features = [LedgerNest.Domain.LicenseFeatures.BusinessWrite] });
+        public LedgerNest.Domain.LicenseStatus Activate(string document) => GetStatus();
+    }
+
     private static int assertions;
+    private sealed class LicenseTestClock(DateTimeOffset now) : TimeProvider
+    {
+        public DateTimeOffset UtcNow { get; set; } = now;
+        public override DateTimeOffset GetUtcNow() => UtcNow;
+    }
+
+    private sealed class MemoryLicenseStore : LedgerNest.Domain.ILicenseStore
+    {
+        public LedgerNest.Domain.StoredLicense? Value { get; set; }
+        public bool FailWrite { get; set; }
+        public LedgerNest.Domain.StoredLicense? Read() => Value;
+        public void Write(LedgerNest.Domain.StoredLicense license)
+        {
+            if (FailWrite) throw new IOException("Injected storage failure");
+            Value = license;
+        }
+    }
+
+    private static LedgerNest.Domain.LicenseClaims LicenseFixture(DateTimeOffset now) => new()
+    {
+        LicenseId = Guid.NewGuid().ToString(), Customer = "License test customer", DeviceId = new string('A', 64),
+        IssuedAtUtc = now, NotBeforeUtc = now, ExpiresAtUtc = now.AddDays(30), Features = [LedgerNest.Domain.LicenseFeatures.BusinessWrite]
+    };
+
+    private static string SignLicense(System.Security.Cryptography.RSA key, LedgerNest.Domain.LicenseClaims claims)
+    {
+        var payload = JsonSerializer.SerializeToUtf8Bytes(claims);
+        return JsonSerializer.Serialize(new LedgerNest.Domain.SignedLicense(Convert.ToBase64String(payload), Convert.ToBase64String(key.SignData(payload, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pss))));
+    }
+
+    private static void CheckLicensing()
+    {
+        using var key = System.Security.Cryptography.RSA.Create(2048);
+        using var wrongKey = System.Security.Cryptography.RSA.Create(2048);
+        var verifier = new LicenseVerifier(key.ExportSubjectPublicKeyInfoPem());
+        var clock = new LicenseTestClock(new DateTimeOffset(2030, 1, 1, 12, 0, 0, TimeSpan.Zero));
+        var claims = LicenseFixture(clock.UtcNow);
+        var signed = SignLicense(key, claims);
+        LedgerNest.Domain.LicenseStatus Verify(string text) => verifier.Verify(text, claims.DeviceId, clock.UtcNow);
+        Check(Verify(signed).Allows(LedgerNest.Domain.LicenseFeatures.BusinessWrite), "Valid signed license must grant its entitlement");
+        Check(new LicenseVerifier("").Verify(signed, claims.DeviceId, clock.UtcNow).State == LedgerNest.Domain.LicenseState.NotConfigured, "Missing public keys must fail closed");
+        Check(!new LicenseVerifier("broken PEM").IsConfigured, "Malformed publisher keys must be reported as unconfigured before activation");
+        Check(new LicenseVerifier(key.ExportPkcs8PrivateKeyPem()).Verify(signed, claims.DeviceId, clock.UtcNow).State == LedgerNest.Domain.LicenseState.NotConfigured, "Client trust configuration must reject private keys");
+        Check(Verify("not json").State == LedgerNest.Domain.LicenseState.Invalid && Verify(new string('x', 65537)).State == LedgerNest.Domain.LicenseState.Invalid, "Malformed and oversized license files must be rejected");
+        Check(Verify(SignLicense(wrongKey, claims)).State == LedgerNest.Domain.LicenseState.Invalid, "Untrusted signing keys must be rejected");
+        var envelope = JsonSerializer.Deserialize<LedgerNest.Domain.SignedLicense>(signed)!;
+        var tampered = envelope with { Payload = Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(claims with { ExpiresAtUtc = null })) };
+        Check(Verify(JsonSerializer.Serialize(tampered)).State == LedgerNest.Domain.LicenseState.Invalid, "Editing expiry without resigning must fail verification");
+        Check(Verify(JsonSerializer.Serialize(envelope with { Signature = Convert.ToBase64String(new byte[256]) })).State == LedgerNest.Domain.LicenseState.Invalid, "An altered signature must be rejected");
+        Check(Verify(SignLicense(key, claims with { Product = "Another app" })).State == LedgerNest.Domain.LicenseState.Invalid, "Another product's license must be rejected");
+        var missingProduct = JsonNode.Parse(JsonSerializer.Serialize(claims))!.AsObject(); missingProduct.Remove("Product");
+        var missingProductBytes = System.Text.Encoding.UTF8.GetBytes(missingProduct.ToJsonString());
+        var missingProductLicense = JsonSerializer.Serialize(new LedgerNest.Domain.SignedLicense(Convert.ToBase64String(missingProductBytes), Convert.ToBase64String(key.SignData(missingProductBytes, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pss))));
+        Check(Verify(missingProductLicense).State == LedgerNest.Domain.LicenseState.Invalid, "An omitted product claim must not inherit the DTO's default product");
+        Check(Verify(SignLicense(key, claims with { Version = 2 })).State == LedgerNest.Domain.LicenseState.Invalid, "Unknown license schema versions must be rejected");
+        Check(Verify(SignLicense(key, claims with { DeviceId = new string('B', 64) })).State == LedgerNest.Domain.LicenseState.WrongDevice, "Licenses must be bound to the requesting device");
+        Check(Verify(SignLicense(key, claims with { NotBeforeUtc = clock.UtcNow.AddDays(1) })).State == LedgerNest.Domain.LicenseState.NotYetValid, "A future license must not grant access early");
+        Check(Verify(SignLicense(key, claims with { Kind = "Trial", ExpiresAtUtc = null })).State == LedgerNest.Domain.LicenseState.Invalid, "Trials cannot be perpetual");
+        Check(Verify(SignLicense(key, claims with { Kind = "Trial", ExpiresAtUtc = clock.UtcNow.AddDays(31) })).State == LedgerNest.Domain.LicenseState.Invalid, "Trials must be at most thirty days");
+        Check(Verify(SignLicense(key, claims with { Kind = "Trial" })).State == LedgerNest.Domain.LicenseState.Trial, "Signed thirty-day trials must activate");
+        Check(Verify(SignLicense(key, claims with { ExpiresAtUtc = null })).State == LedgerNest.Domain.LicenseState.Active, "Perpetual paid licenses must activate");
+        Check(!Verify(SignLicense(key, claims with { Features = ["other.feature"] })).Allows(LedgerNest.Domain.LicenseFeatures.BusinessWrite), "Unknown entitlements must not grant business write access");
+        var store = new MemoryLicenseStore();
+        var service = new LicenseService(verifier, store, claims.DeviceId, clock);
+        Check(service.GetStatus().State == LedgerNest.Domain.LicenseState.Missing, "No activation file must produce an unlicensed state");
+        Check(service.Activate(signed).State == LedgerNest.Domain.LicenseState.Active, "Valid activation must save successfully");
+        var original = store.Value;
+        Check(service.Activate("bad").State == LedgerNest.Domain.LicenseState.Invalid && store.Value == original, "Rejected imports must preserve the current activation");
+        store.FailWrite = true;
+        Check(service.Activate(signed).State == LedgerNest.Domain.LicenseState.StorageError && store.Value == original, "Write failures must preserve the current license");
+        store.FailWrite = false;
+        clock.UtcNow += TimeSpan.FromDays(2); service.GetStatus();
+        clock.UtcNow -= TimeSpan.FromHours(1);
+        Check(service.GetStatus().State == LedgerNest.Domain.LicenseState.ClockError && service.Activate(signed).State == LedgerNest.Domain.LicenseState.ClockError, "Reimporting must not reset clock rollback detection");
+        clock.UtcNow = claims.ExpiresAtUtc!.Value;
+        Check(service.GetStatus().State == LedgerNest.Domain.LicenseState.Expired, "Expiry is an exclusive UTC boundary");
+        clock.UtcNow -= TimeSpan.FromHours(1);
+        Check(new LicenseService(verifier, store, claims.DeviceId, clock).GetStatus().State == LedgerNest.Domain.LicenseState.ClockError, "An observed expiry must preserve clock rollback detection across restarts");
+        clock.UtcNow = claims.ExpiresAtUtc.Value;
+        var directory = Path.Combine(Path.GetTempPath(), "ledgernest-license-" + Guid.NewGuid().ToString("N"));
+        var fileStore = new FileLicenseStore(directory);
+        fileStore.Write(new(signed, clock.UtcNow));
+        Check(new FileLicenseStore(directory).Read()!.Document == signed, "Activation must survive reopening the store");
+        Check(fileStore.GetDeviceId().Length == 64 && fileStore.GetDeviceId() == new FileLicenseStore(directory).GetDeviceId(), "Device IDs must remain stable and use a hashed identifier");
+        File.WriteAllText(Path.Combine(directory, "activation.json"), "corrupt JSON");
+        var recovery = new LicenseService(verifier, fileStore, claims.DeviceId, clock);
+        Check(recovery.GetStatus().State == LedgerNest.Domain.LicenseState.StorageError, "Corrupt activation storage must fail closed");
+        Check(recovery.Activate(SignLicense(key, LicenseFixture(clock.UtcNow))).State == LedgerNest.Domain.LicenseState.Active, "A valid signed license must repair corrupt activation storage");
+        var database = Path.Combine(directory, "test.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={database}").Options);
+        var model = new MainWindowViewModel(factory, database, service);
+        model.Lines.Add(new InvoiceLineViewModel { Name = "License fixture", Quantity = 1, Price = 100 });
+        Check(!model.SaveInvoice(), "Expired licenses must block invoice saves at the model boundary");
+        var product = FormCatalog.Product(); product[1].Value = "Licensed product";
+        Check(!model.SaveRecord("Product", product) && model.ImportCsv("Product", "name,price\nUnlicensed,5") == 0, "Unlicensed records and CSV imports must be blocked");
+        using (var db = factory.CreateDbContext()) Check(!db.Invoices.Any() && !db.Products.Any(), "Rejected operations must not write business data");
+        var renewed = SignLicense(key, LicenseFixture(clock.UtcNow));
+        Check(model.ActivateLicense(renewed) && model.SaveInvoice() && model.SaveRecord("Product", product), "Renewal must unlock business writes without restarting");
+        var record = model.LastSavedDocument!;
+        clock.UtcNow += TimeSpan.FromDays(31);
+        var payment = FormCatalog.Payment(); payment[0].Value = "10";
+        Check(!model.ApplyPayment(record, payment) && !model.SetDocumentTrash(record, true) && !model.DeleteRecord("Product", model.Products.Single()), "Payments and business deletions must check current license expiry");
+        Check(model.ExportDocumentPdf(record).Length > 1000 && model.CreateJsonBackup().Contains("License fixture"), "Unlicensed users must retain exports and backups of existing data");
+        Check(!model.CreateJsonBackup().Contains("activation.json") && !model.CreateJsonBackup().Contains(renewed), "Database backups must not carry activation state");
+        using (var db = factory.CreateDbContext()) Check(db.Invoices.Single().PaidAmount == 0 && db.Invoices.Single().DeletedAt == null, "Denied payments and trash changes must leave existing data untouched");
+        var defaultModel = new MainWindowViewModel(); defaultModel.Lines.Add(new InvoiceLineViewModel { Name = "Denied", Quantity = 1 });
+        Check(!defaultModel.SaveInvoice(), "A missing service injection must fail closed in every build configuration");
+    }
+
     private static void Check(bool condition, string message)
     { assertions++; if (!condition) throw new InvalidOperationException(message); }
     [STAThread]
@@ -28,7 +148,12 @@ internal static class Program
         var output = args.FirstOrDefault() ?? "/tmp/invoiso-ui-captures";
         Directory.CreateDirectory(output);
         var pdfSettingsOnly = args.Contains("--pdf-settings-only");
-        if (!pdfSettingsOnly)
+        var invoiceSettingsOnly = args.Contains("--invoice-settings-only");
+        var licensingOnly = args.Contains("--licensing-only");
+        if (licensingOnly) CheckLicensing();
+        if (!pdfSettingsOnly && !licensingOnly) CheckInvoiceSettingsBehavior(output);
+        if (!pdfSettingsOnly && !licensingOnly) CheckInvoicePresentationSettings(output);
+        if (!pdfSettingsOnly && !invoiceSettingsOnly && !licensingOnly)
         {
             CheckReceiptPdf(output);
             CheckTotals();
@@ -59,7 +184,7 @@ internal static class Program
             CheckFormRoundTrips();
         }
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
-        var model = new MainWindowViewModel();
+        var model = CreateModel();
         var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
         window.Show();
         Check(window.Title == Branding.Name, "Window must use the application brand");
@@ -86,6 +211,76 @@ internal static class Program
                 if (button.Flyout is MenuFlyout menu) menu.ShowAt(button);
             }
             Settle();
+        }
+        if (licensingOnly)
+        {
+            using var keys = System.Security.Cryptography.RSA.Create(2048);
+            var clock = new LicenseTestClock(DateTimeOffset.UtcNow);
+            var store = new MemoryLicenseStore();
+            var service = new LicenseService(new LicenseVerifier(keys.ExportSubjectPublicKeyInfoPem()), store, new string('A', 64), clock);
+            var licensedModel = new MainWindowViewModel(licenseService: service);
+            window.DataContext = licensedModel;
+            licensedModel.NavigateCommand.Execute("Settings"); Click("License"); Capture("licensing-unactivated");
+            Check(FindButton("Import License File").IsVisible && FindButton("Copy Device ID").IsEnabled, "License screen must provide file activation and a device request ID");
+            var input = window.GetVisualDescendants().OfType<TextBox>().Single(box => box.PlaceholderText == "Paste a license document");
+            input.Text = "invalid"; Click("Activate License");
+            Check(!licensedModel.CanMakeBusinessChanges, "Invalid pasted licenses must not unlock business operations");
+            input.Text = SignLicense(keys, LicenseFixture(clock.GetUtcNow())); Click("Activate License");
+            Check(licensedModel.CanMakeBusinessChanges && input.Text == "", "License activation must refresh UI state and clear pasted contents");
+            Capture("licensing-active");
+            clock.UtcNow += TimeSpan.FromDays(31); Click("Refresh License Status");
+            Check(!licensedModel.CanMakeBusinessChanges, "Expired licenses must return the UI to read-only mode");
+            Capture("licensing-expired");
+            input.Text = SignLicense(keys, LicenseFixture(clock.GetUtcNow()) with { Kind = "Trial", ExpiresAtUtc = clock.GetUtcNow().AddDays(14) }); Click("Activate License");
+            Capture("licensing-trial");
+            window.Close();
+            Console.WriteLine($"Licensing checks passed ({assertions} assertions). Screenshots: {output}");
+            return;
+        }
+        if (invoiceSettingsOnly)
+        {
+            window.Width = 1366; window.Height = 698;
+            model.NavigateCommand.Execute("Settings"); Click("Invoice Settings");
+            Check(FindButton("Invoice Settings").TranslatePoint(new Point(), window)!.Value.X == FindButton("Company Info").TranslatePoint(new Point(), window)!.Value.X, "Settings navigation must use the reference's vertical rail");
+            Capture("invoice-settings-general");
+            Click("Expand Additional Information");
+            var expanded = window.GetVisualDescendants().OfType<TextBox>().Single(box => box.MinHeight == 260);
+            expanded.Text = "Delivery within seven days."; Click("Apply");
+            Check(model.InvoiceSetting("Additional Information").Value == "Delivery within seven days.", "Expanded editor must apply text");
+            Click("Expand Thank You Note");
+            window.GetVisualDescendants().OfType<TextBox>().Single(box => box.MinHeight == 260).Text = "Discard this";
+            Click("Cancel");
+            Check(model.InvoiceSetting("Thank You Note").Value == "", "Expanded editor Cancel must discard changes");
+            Click("Branding"); Capture("invoice-settings-branding");
+            Check(FindButton("Upload Signature").IsVisible && FindButton("Upload Watermark").IsVisible, "Branding must expose both uploads");
+            Click("Tax & GST"); Click("Per Item");
+            Check(model.InvoiceSetting("Tax Mode").Value == "Per Item", "Tax mode segment must update the default");
+            Capture("invoice-settings-tax");
+            foreach (var tab in new[] { "Invoice Items", "Customer Details", "Invoice Columns", "Custom Fields" }) { Click(tab); Capture("invoice-settings-" + tab.Replace(' ', '-').ToLowerInvariant()); }
+            model.InvoiceSetting("Enable Custom Fields").IsChecked = true; Settle();
+            var customInput = window.GetVisualDescendants().OfType<TextBox>().Single(box => box.PlaceholderText == "New field label");
+            customInput.Text = "Project code"; Click("Add custom field");
+            var added = model.InvoiceCustomFieldDefinitions.Last();
+            Check(added.Label == "Project code" && customInput.Text == "", "Adding a custom field must update definitions and clear input");
+            Click("Move up " + added.Id);
+            Check(model.InvoiceCustomFieldDefinitions[^2] == added, "Move up must reorder the custom field");
+            var rename = window.GetVisualDescendants().OfType<TextBox>().Single(box => Avalonia.Automation.AutomationProperties.GetName(box) == "Field label " + added.Id);
+            rename.Text = "Project reference"; Settle();
+            Check(model.InvoiceCustomFieldDefinitions[^2].Label == "Project reference" && window.GetVisualDescendants().OfType<TextBlock>().Any(block => block.Text == "Project reference"), "Renaming must update the live preview");
+            Click("Move down " + added.Id); Click("Delete field " + added.Id);
+            Check(!model.InvoiceCustomFieldDefinitions.Contains(added), "Delete must remove the selected custom field");
+            Click("View custom field example"); Capture("invoice-settings-custom-preview-expanded"); Click("Close");
+            var customScroll = window.GetVisualDescendants().OfType<ScrollViewer>().Last(scroll => scroll.Extent.Height > scroll.Viewport.Height && scroll.Viewport.Height > 200);
+            customScroll.Offset = new Vector(0, customScroll.Extent.Height); Capture("invoice-settings-custom-fields-enabled");
+            Click("General"); Click("Save"); Click("×");
+            model.Invoices.Add(new UiRecord { Values = new() { ["Name"] = "00000001", ["Type"] = "Invoice" } });
+            Click("Branding"); Click("General");
+            Check(window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text?.StartsWith("Invoice starting number cannot") == true), "Existing documents must display the starting-number lock");
+            Capture("invoice-settings-general-locked");
+            window.Width = 800; Capture("invoice-settings-narrow");
+            window.Close();
+            Console.WriteLine($"Invoice settings checks passed ({assertions} assertions). Screenshots: {output}");
+            return;
         }
         model.Status = "Test operation failed."; Settle();
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Error") &&
@@ -272,7 +467,7 @@ internal static class Program
         Capture("settings-dark");
         var editPath = Path.Combine(Path.GetTempPath(), $"ledgernest-edit-ui-{Guid.NewGuid():N}.db");
         var editFactory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={editPath}").Options);
-        var editModel = new MainWindowViewModel(editFactory, editPath);
+        var editModel = CreateModel(editFactory, editPath);
         editModel.Lines.Add(new InvoiceLineViewModel { Name = "Editable service", Price = 100, Quantity = 1 });
         Check(editModel.SaveInvoice(), "UI edit fixture must save");
         Avalonia.Application.Current!.RequestedThemeVariant = ThemeVariant.Light;
@@ -370,14 +565,14 @@ internal static class Program
         var defaultFields = FormCatalog.Customer(); defaultFields[0].Value = "Default customer"; defaultFields[2].Value = "1234567890";
         Check(editModel.SaveRecord("Customer", defaultFields), "Default customer fixture must save");
         editModel.SetDefaultCustomer(editModel.Customers.Single(c => c.Name == "Default customer"));
-        var defaultReload = new MainWindowViewModel(editFactory, editPath); defaultReload.StartDocument("Invoice");
+        var defaultReload = CreateModel(editFactory, editPath); defaultReload.StartDocument("Invoice");
         Check(defaultReload.InvoiceCustomer[0].Value == "Default customer", "Issue 6: default customer must survive restart and populate new invoices");
         defaultReload.SetDefaultCustomer(null); defaultReload.StartDocument("Invoice");
         Check(defaultReload.InvoiceCustomer[0].Value == "", "Issue 6: clearing default must leave a new invoice blank");
         var savedLogo = "base64:iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAEElEQVR4nGP4z8AARAwQCgAf7gP9i18U1AAAAABJRU5ErkJggg==";
         defaultReload.Settings["Company Info"][0].Fields[0].Value = savedLogo;
         Check(defaultReload.SaveSettings("Company Info"), "Company settings must save embedded logo");
-        var logoReload = new MainWindowViewModel(editFactory, editPath);
+        var logoReload = CreateModel(editFactory, editPath);
         Check(logoReload.Settings["Company Info"][0].Fields[0].Value == savedLogo, "Issue 8: image contents must persist independently of original file path");
         using (var db = editFactory.CreateDbContext()) { db.Users.Single(u => u.Username == "admin").PasswordChanged = true; db.SaveChanges(); }
         window.DataContext = logoReload; Check(logoReload.SignIn("ADMIN", "updated-admin-password"), "Logo review must sign in with normalized username");
@@ -425,11 +620,258 @@ internal static class Program
         Check(clamp.Total == 0, "Invoice total must not become negative");
     }
 
+    private static void CheckInvoiceSettingsBehavior(string output)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-invoice-settings-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = CreateModel(factory, path);
+        FormField F(string label) => model.InvoiceSetting(label);
+        Check(model.CanChangeInvoiceStartingNumber, "Empty storage must allow setting the starting number");
+        F("Starting Number").Value = "0";
+        Check(!model.SaveSettings("Invoice Settings"), "Starting number zero must be rejected");
+        F("Starting Number").Value = "17";
+        F("Default Tax Rate (%)").Value = "101";
+        Check(!model.SaveSettings("Invoice Settings"), "Tax over 100% must be rejected");
+        F("Default Tax Rate (%)").Value = "5";
+        F("Tax Mode").Value = "Global";
+        F("Default GST Title").Value = "Cash Bill";
+        F("Hide Invoice Number").IsChecked = true;
+        F("Invoice Prefix").Value = "INV";
+        F("Leading Zeros").IsChecked = false;
+        F("Additional Information").Value = "Delivery within seven days.";
+        F("Show Round Off").IsChecked = true;
+        F("Show time in PDF").IsChecked = true;
+        F("Time Format").Value = "24 hour";
+        Check(model.SaveSettings("Invoice Settings"), "Invoice defaults must persist");
+        model.StartDocument("Invoice");
+        Check(model.InvoiceOptions[3].Value == "Global" && model.InvoiceOptions[4].Number == 5, "New invoices must use configured tax mode and rate");
+        Check(model.InvoiceDetails[3].Value == "Cash Bill" && model.HideInvoiceNumber.IsChecked, "New invoices must use the title and hide-number defaults");
+        model.HideInvoiceNumber.IsChecked = false;
+        model.InvoiceCustomer[4].Value = "GST-CUSTOMER-TEST";
+        var fixtureProduct = FormCatalog.Product();
+        fixtureProduct.Single(field => field.Label == "Name").Value = "Settings fixture";
+        fixtureProduct.Single(field => field.Label == "HSN/SAC").Value = "998399";
+        Check(model.SaveRecord("Product", fixtureProduct), "HSN fixture product must save");
+        model.Lines.Add(new InvoiceLineViewModel { Name = "Settings fixture", Price = 100.50m, Quantity = 1 });
+        Check(model.SaveInvoice(), "Settings fixture must save");
+        var record = model.LastSavedDocument!;
+        Check(record.Name == "00000017", "Printed number formatting must not change the stored sequence");
+        Check(!model.CanChangeInvoiceStartingNumber, "Existing invoices must lock the starting number");
+        F("Starting Number").Value = "30";
+        Check(!model.SaveSettings("Invoice Settings"), "Changing a locked starting number must be rejected by the model");
+        F("Starting Number").Value = "17";
+        static string PdfText(byte[] bytes)
+        {
+            using var reader = Docnet.Core.DocLib.Instance.GetDocReader(bytes, new Docnet.Core.Models.PageDimensions(1));
+            return string.Join("\n", Enumerable.Range(0, reader.GetPageCount()).Select(index => { using var page = reader.GetPageReader(index); return page.GetText(); }));
+        }
+        var pdf = model.ExportDocumentPdf(record);
+        var text = PdfText(pdf);
+        Check(text.Contains("CASH BILL") && text.Contains("INV-17"), "PDF must use the chosen title, prefix and leading-zero setting");
+        Check(text.Contains("Delivery within seven days.") && text.Contains("Round off") && text.Contains("Net Amount") && text.Contains("One Hundred and Six Only"), "PDF must render additional information and rounded amount in words");
+        Check(text.Contains("GST-CUSTOMER-TEST") && text.Contains("998399"), "GST-enabled PDFs must include historical customer and product tax identifiers");
+        F("Show GST fields").IsChecked = false;
+        var noGstText = PdfText(model.ExportDocumentPdf(record));
+        Check(!noGstText.Contains("GST-CUSTOMER-TEST") && !noGstText.Contains("998399"), "GST-disabled PDFs must omit tax identifiers");
+        F("Show GST fields").IsChecked = true;
+        using (var db = factory.CreateDbContext())
+        {
+            var invoice = db.Invoices.Single();
+            Check(invoice.InvoiceDate.TimeOfDay != TimeSpan.Zero, "Saved invoice must retain its creation time");
+            var expected = invoice.InvoiceDate.ToString("HH:mm");
+            Check(text.Contains(expected), "Show Time on PDF must print the creation time");
+            invoice.DeletedAt = DateTime.UtcNow; db.SaveChanges();
+        }
+        Check(!model.CanChangeInvoiceStartingNumber, "Trashed invoices must keep the starting number locked");
+        F("Show Round Off").IsChecked = false;
+        Check(!PdfText(model.ExportDocumentPdf(record)).Contains("Net Amount"), "Round-off rows must disappear when disabled");
+        F("Tax Enabled").IsChecked = false;
+        model.StartDocument("Invoice");
+        Check(model.InvoiceOptions[3].Value == "No Tax", "Disabling tax by default must create a tax-free draft");
+        F("Tax Enabled").IsChecked = true;
+        F("Tax Mode").Value = "Per Item";
+        model.StartDocument("Invoice");
+        Check(model.InvoiceOptions[3].Value == "Per Item", "The per-item default must apply to a fresh draft");
+        using var bitmap = new SKBitmap(80, 30);
+        using (var canvas = new SKCanvas(bitmap)) canvas.Clear(SKColors.Navy);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
+        Check(model.SetInvoiceBrandingImage("Signature Image", encoded.ToArray()), "Valid PNG signature must be accepted");
+        Check(model.SetInvoiceBrandingImage("Watermark Image", encoded.ToArray()), "Valid PNG watermark must be accepted");
+        var signature = F("Signature Image").Value;
+        Check(!model.SetInvoiceBrandingImage("Signature Image", [1, 2, 3]) && F("Signature Image").Value == signature, "Invalid upload must preserve the previous image");
+        Check(!model.SetInvoiceBrandingImage("Signature Image", new byte[2 * 1024 * 1024 + 1]), "Uploads over 2 MB must be rejected");
+        F("Signature Image").Error = "";
+        Check(model.SaveSettings("Invoice Settings"), "Branding settings must save without changing the locked sequence");
+        var reloaded = CreateModel(factory, path);
+        Check(reloaded.InvoiceSetting("Signature Image").Value == signature && reloaded.InvoiceSetting("Default GST Title").Value == "Cash Bill", "Branding and invoice defaults must reload from SQLite");
+        pdf = model.ExportDocumentPdf(record);
+        Check(PdfText(pdf).Contains("Authorised Signature"), "PDF must render the uploaded signature section");
+        File.WriteAllBytes(Path.Combine(output, "invoice-settings-branded.pdf"), pdf);
+        var rendered = MainWindow.RenderPdfPages(pdf).First();
+        using (var preview = new SKBitmap(rendered.Width, rendered.Height, SKColorType.Bgra8888, SKAlphaType.Premul))
+        {
+            System.Runtime.InteropServices.Marshal.Copy(rendered.Pixels, 0, preview.GetPixels(), rendered.Pixels.Length);
+            using var previewImage = SKImage.FromBitmap(preview);
+            using var previewBytes = previewImage.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(output, "invoice-settings-branded.png"), previewBytes.ToArray());
+        }
+        F("Watermark Opacity").Value = "0";
+        var transparent = MainWindow.RenderPdfPages(model.ExportDocumentPdf(record)).First();
+        Check(!rendered.Pixels.SequenceEqual(transparent.Pixels), "Watermark opacity must change the rendered PDF");
+        F("Watermark Opacity").Value = "15";
+        model.Settings["PDF Settings"][0].Fields[0].Value = "Thermal 80mm";
+        F("Quantity Column").Value = "";
+        var thermalText = PdfText(model.ExportDocumentPdf(record));
+        Check(thermalText.Contains("Qty 1") && thermalText.Contains("Tax 5%"), "Thermal output must use the default quantity label and the invoice's global tax rate");
+        var thermalWatermark = MainWindow.RenderPdfPages(model.ExportDocumentPdf(record)).First();
+        F("Watermark Image").Value = "";
+        var thermalPlain = MainWindow.RenderPdfPages(model.ExportDocumentPdf(record)).First();
+        Check(thermalWatermark.Pixels.SequenceEqual(thermalPlain.Pixels), "Watermarks must be excluded from thermal output");
+        model.Settings["PDF Settings"][0].Fields[0].Value = "A4";
+        F("Show GST fields").IsChecked = false;
+        Check(!model.ExportCsv("Customer").Contains("gstin") && !model.ExportCsv("Product").Contains("hsncode"), "GST-disabled CSV exports must omit tax identifiers");
+        F("Show GST fields").IsChecked = true;
+        Check(model.ExportCsv("Customer").Contains("gstin") && model.ExportCsv("Product").Contains("hsncode"), "GST-enabled CSV exports must include tax identifier columns");
+        Check(AmountInWords.Format(1234.5m) == "One Thousand Two Hundred and Thirty Five Only", "Rounding must follow the Flutter half-away-from-zero rule");
+        Check(AmountInWords.Format(125000, false) == "One Hundred and Twenty Five Thousand Only" && AmountInWords.Format(125000) == "One Lakh Twenty Five Thousand Only", "Amount words must support international and Indian grouping");
+    }
+
+    private static void CheckInvoicePresentationSettings(string output)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-invoice-presentation-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = CreateModel(factory, path);
+        FormField F(string label) => model.InvoiceSetting(label);
+        FormField Pdf(string label) => model.Settings["PDF Settings"].SelectMany(section => section.Fields).Single(field => field.Label == label);
+        string Text(UiRecord record)
+        {
+            using var reader = Docnet.Core.DocLib.Instance.GetDocReader(model.ExportDocumentPdf(record), new Docnet.Core.Models.PageDimensions(1));
+            return string.Join("\n", Enumerable.Range(0, reader.GetPageCount()).Select(index => { using var page = reader.GetPageReader(index); return page.GetText(); }));
+        }
+        string Compact(UiRecord record) => string.Concat(Text(record).Where(character => !char.IsWhiteSpace(character)));
+        Check(model.InvoiceCustomFieldDefinitions.Count == 13, "Custom fields must seed the thirteen reference labels");
+        var delivery = model.InvoiceCustomFieldDefinitions[0];
+        Check(!model.AddInvoiceCustomField(" ") && !model.AddInvoiceCustomField(new string('x', 101)), "Blank or oversized custom labels must be rejected");
+        Check(model.AddInvoiceCustomField("Project code"), "A valid custom label must be accepted");
+        var project = model.InvoiceCustomFieldDefinitions.Last();
+        model.MoveInvoiceCustomField(project, -1);
+        Check(model.InvoiceCustomFieldDefinitions[^2] == project, "Custom fields must support reordering");
+        model.RemoveInvoiceCustomField(project);
+        F("Enable Custom Fields").IsChecked = true;
+        Check(model.SaveSettings("Invoice Settings"), "Custom definitions must save");
+        var loaded = CreateModel(factory, path);
+        Check(loaded.InvoiceCustomFieldDefinitions.Select(field => field.Id).SequenceEqual(model.InvoiceCustomFieldDefinitions.Select(field => field.Id)), "Custom field identities and order must survive reload");
+        model.StartDocument("Invoice");
+        Check(model.InvoiceCustomFields.Count == 13 && model.InvoiceCustomFields.All(entry => entry.Field.Value == ""), "A new invoice must receive blank per-invoice custom values");
+        model.InvoiceCustomFields[0].Field.Value = "DELIVERY-KEEP";
+        var productFields = FormCatalog.Product();
+        void Product(string label, string value) => productFields.Single(field => field.Label == label).Value = value;
+        Product("Name", "Catalog item"); Product("Sale Price", "100"); Product("Alias Name (for invoice PDF)", "AliasStable"); Product("Description", "DescriptionStable");
+        foreach (var label in MainWindowViewModel.InvoiceMetadataLabels) Product(label, label is "Expiry Date" or "Manufacture Date" ? "2026-10-12" : label.Replace(" ", "") + "Stable");
+        Product("Manufacturer Name", "MFG42");
+        Check(model.SaveRecord("Product", productFields), "Metadata product fixture must save");
+        var product = model.Products.Single();
+        F("Allow Fractional Quantity").IsChecked = false;
+        var fraction = MainWindowViewModel.CreateProductLine(product); fraction.Quantity = 1.5m;
+        Check(!model.TryAddInvoiceLine(fraction) && model.Lines.Count == 0, "Fractional quantity must be rejected when disabled");
+        F("Allow Fractional Quantity").IsChecked = true;
+        Check(model.TryAddInvoiceLine(fraction), "Fractional quantity must be accepted when enabled");
+        Check(!model.TryAddInvoiceLine(MainWindowViewModel.CreateProductLine(product)), "Duplicate products must be rejected when disabled");
+        F("Allow Duplicate Items").IsChecked = true;
+        Check(model.TryAddInvoiceLine(MainWindowViewModel.CreateProductLine(product)), "Duplicate product toggle must allow another line");
+        model.Lines.RemoveAt(1); F("Allow Duplicate Items").IsChecked = false;
+        Check(model.TryAddInvoiceLine(new InvoiceLineViewModel { Name = "Manual", Quantity = 1 }) && model.TryAddInvoiceLine(new InvoiceLineViewModel { Name = "Manual", Quantity = 1 }), "Independent custom items must not be treated as duplicate catalog products");
+        model.Lines.RemoveAt(2); model.Lines.RemoveAt(1);
+        var customerFields = FormCatalog.Customer();
+        customerFields[0].Value = "Presentation customer"; customerFields[2].Value = "9876543210";
+        Check(model.SaveRecord("Customer", customerFields), "Customer fixture must save");
+        string[] customer = ["Presentation customer", "BusinessStable", "9876543210", "email-stable@example.com", "GST-Stable", "AddressStable"];
+        for (var i = 0; i < customer.Length; i++) model.InvoiceCustomer[i].Value = customer[i];
+        Check(model.SaveInvoice(), "Custom values and product metadata must save with invoice");
+        var record = model.LastSavedDocument!;
+        using (var db = factory.CreateDbContext())
+        {
+            var saved = db.Invoices.Single();
+            Check(saved.Snapshot!.CustomFields![0].Value == "DELIVERY-KEEP" && saved.Snapshot.LinePresentations![0].Metadata["Manufacturer Name"] == "MFG42", "Invoice snapshot must retain custom values and product metadata");
+            Check(db.Products.Single().ManufacturerName == "MFG42", "Manufacturer name must persist as product data");
+            var entity = db.Products.Single(); entity.AliasName = "ChangedAlias"; db.SaveChanges();
+        }
+        F("Show Alias Name").IsChecked = true; F("Show Description").IsChecked = true;
+        foreach (var label in MainWindowViewModel.InvoiceMetadataLabels) F("Metadata: " + label).IsChecked = true;
+        Pdf("Template").Value = "Grid Classic";
+        var text = Compact(record);
+        Check(text.Contains("AliasStable") && !text.Contains("ChangedAlias") && text.Contains("DELIVERY-KEEP") && text.Contains("MFG42"), "Grid Classic must print historical alias, metadata and custom values");
+        File.WriteAllBytes(Path.Combine(output, "invoice-settings-grid-metadata.pdf"), model.ExportDocumentPdf(record));
+        F("Item Name").IsChecked = false; F("Price").IsChecked = false; F("Total").IsChecked = false;
+        Check(Compact(record).Contains("AliasStable") && Text(record).Contains("Total"), "Structural invoice columns must remain present despite obsolete settings");
+        foreach (var label in MainWindowViewModel.InvoiceMetadataLabels) F("Metadata: " + label).IsChecked = false;
+        F("Show Product / Service Tag").IsChecked = true;
+        Check(Text(record).Contains("[Product]"), "The Product/Service tag must print when enabled");
+        F("Show Product / Service Tag").IsChecked = false;
+        Check(!Text(record).Contains("[Product]"), "The Product/Service tag must disappear when disabled");
+        F("Show Quantity").IsChecked = false;
+        Check(Text(record).Contains("Rate"), "Hiding quantity must rename Price to Rate");
+        Pdf("Template").Value = "Classic";
+        Check(!Compact(record).Contains("DELIVERY-KEEP") && !Compact(record).Contains("MFG42"), "Custom fields and metadata columns must only print on Grid Classic");
+        Check(Text(record).Contains("email-stable@example.com") && Text(record).Contains("DescriptionStable"), "Standard PDFs must honor enabled email and description");
+        Pdf("Page Size").Value = "Thermal 80mm";
+        Check(!Text(record).Contains("email-stable@example.com") && !Text(record).Contains("DescriptionStable") && Text(record).Contains("AliasStable"), "Thermal output must omit customer email and description while honoring aliases");
+        Pdf("Page Size").Value = "A4";
+        foreach (var label in new[] { "Business Name", "Address", "Phone", "Email", "GSTIN" }) F("Show Customer " + label).IsChecked = false;
+        text = Text(record);
+        Check(text.Contains("Presentation customer") && !text.Contains("BusinessStable") && !text.Contains("AddressStable") && !text.Contains("9876543210") && !text.Contains("email-stable") && !text.Contains("GST-Stable"), "Customer toggles must omit optional details while retaining the name");
+        delivery.Label = "Renamed definition"; model.RemoveInvoiceCustomField(delivery);
+        Check(model.LoadDocumentForEditing(record) && model.InvoiceCustomFields[0].Field.Label == "Delivery Note" && model.InvoiceCustomFields[0].Field.Value == "DELIVERY-KEEP", "Editing an invoice must preserve historical custom labels and values after definition deletion");
+        Check(model.SaveInvoice(), "Historical custom values must survive saving edits"); record = model.LastSavedDocument!;
+        Check(model.CloneDocumentForEditing(record) && model.InvoiceCustomFields[0].Field.Value == "DELIVERY-KEEP", "Cloning must copy the document's custom values");
+        model.StartDocument("Invoice");
+        Check(model.InvoiceCustomFields.All(entry => entry.Field.Value == "") && !model.InvoiceCustomFields.Any(entry => entry.Id == delivery.Id), "A fresh invoice must use current definitions without another invoice's values");
+        model.InvoiceCustomFieldDefinitions.Clear(); Check(model.SaveSettings("Invoice Settings"), "Empty custom definitions must save");
+        Check(CreateModel(factory, path).InvoiceCustomFieldDefinitions.Count == 0, "Explicitly empty definitions must remain empty on reload");
+        F("Enable Custom Fields").IsChecked = false; model.StartDocument("Invoice");
+        Check(model.InvoiceCustomFields.Count == 0, "Disabled custom fields must not create draft inputs");
+        using (var db = factory.CreateDbContext())
+        {
+            var invoice = db.Invoices.Single(); var snapshot = invoice.Snapshot!;
+            db.Invoices.AddRange(
+                new LedgerNest.Domain.Invoice { InvoiceNumber = "prior", CustomerId = invoice.CustomerId, InvoiceDate = invoice.InvoiceDate.AddDays(-1), GrandTotal = 80, PaidAmount = 30, Snapshot = snapshot },
+                new LedgerNest.Domain.Invoice { InvoiceNumber = "future", CustomerId = invoice.CustomerId, InvoiceDate = invoice.InvoiceDate.AddDays(1), GrandTotal = 1000, Snapshot = snapshot },
+                new LedgerNest.Domain.Invoice { InvoiceNumber = "deleted", CustomerId = invoice.CustomerId, InvoiceDate = invoice.InvoiceDate.AddDays(-1), GrandTotal = 2000, DeletedAt = DateTime.UtcNow, Snapshot = snapshot },
+                new LedgerNest.Domain.Invoice { InvoiceNumber = "quotation", Type = "Quotation", CustomerId = invoice.CustomerId, InvoiceDate = invoice.InvoiceDate.AddDays(-1), GrandTotal = 3000, Snapshot = snapshot },
+                new LedgerNest.Domain.Invoice { InvoiceNumber = "currency", CustomerId = invoice.CustomerId, InvoiceDate = invoice.InvoiceDate.AddDays(-1), GrandTotal = 4000, Snapshot = snapshot with { Currency = "USD" } },
+                new LedgerNest.Domain.Invoice { InvoiceNumber = "other", CustomerId = null, InvoiceDate = invoice.InvoiceDate.AddDays(-1), GrandTotal = 5000, Snapshot = snapshot });
+            db.SaveChanges();
+        }
+        F("Show Previous Balance").IsChecked = true; text = Text(record);
+        Check(text.Contains("Previous balance due") && text.Contains("50.00") && !text.Contains("1,000.00") && text.Contains("Total due"), "Previous balance must include only prior unpaid invoices for the same customer and currency");
+        F("Show Previous Balance").IsChecked = false;
+        Check(!Text(record).Contains("Previous balance due"), "Prior balance rows must disappear when disabled");
+        using (var db = factory.CreateDbContext()) Check(db.Invoices.Single(invoice => invoice.Id == record.SourceId).GrandTotal == 177, "Exporting prior balance must not change stored invoice totals");
+        model.StartDocument("Invoice");
+        Pdf("Template").Value = "Grid Classic";
+        foreach (var label in MainWindowViewModel.InvoiceMetadataLabels) F("Metadata: " + label).IsChecked = true;
+        for (var index = 0; index < 65; index++) model.Lines.Add(new InvoiceLineViewModel { Name = $"Row{index:000} " + new string('W', 80), Quantity = 1, Price = 12 });
+        Check(model.SaveInvoice(), "Multipage column fixture must save");
+        var pages = model.ExportDocumentPdf(model.LastSavedDocument!);
+        using (var reader = Docnet.Core.DocLib.Instance.GetDocReader(pages, new Docnet.Core.Models.PageDimensions(1)))
+        {
+            Check(reader.GetPageCount() > 1 && Compact(model.LastSavedDocument!).Contains("Row064"), "Wide metadata tables must paginate without dropping the last item");
+        }
+        File.WriteAllBytes(Path.Combine(output, "invoice-settings-grid-multipage.pdf"), pages);
+        using (var db = factory.CreateDbContext())
+        {
+            db.Database.ExecuteSqlRaw("ALTER TABLE products DROP COLUMN ManufacturerName");
+            db.EnsureCurrentSchema();
+            Check(db.Products.Single().Name == "Catalog item" && db.Products.Single().ManufacturerName == "", "Upgrading an older C# product table must preserve its records and add a blank manufacturer column");
+        }
+    }
+
     private static void CheckReceiptPdf(string output)
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-receipt-pdf-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         foreach (var field in model.Settings["Company Info"].SelectMany(s => s.Fields))
         {
             if (field.Label == "Company Name") field.Value = "Harbour Coffee & Kitchen";
@@ -486,7 +928,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-pending-session-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         Check(!model.CanContinueWorkspaceOperation(model.SessionVersion), "Signed-out accounts must not start pending workspace operations");
         Check(model.SignIn("admin", "admin") && !model.CanContinueWorkspaceOperation(model.SessionVersion), "Required password changes must block pending operations");
         FormField[] change = [new("Current Password", "admin"), new("New Password", "operation-password"), new("Confirm", "operation-password")];
@@ -506,7 +948,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-json-reload-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "JSON reload fixture", Price = 45, Quantity = 1 });
         Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "JSON reload failure fixture must save and sign in");
         var backup = model.CreateJsonBackup();
@@ -517,14 +959,14 @@ internal static class Program
         Check(model.CurrentUsername == null && !model.CanAccessWorkspace, "Partially reloaded JSON workspace must clear access");
         factory.SuccessfulCreationsRemaining = null;
         using (var db = factory.CreateDbContext()) Check(db.Invoices.Single().GrandTotal == 45m, "JSON replacement must already be committed before reload failure");
-        Check(new MainWindowViewModel(factory, path).Invoices.Count == 1, "JSON restored records must be available after reopening");
+        Check(CreateModel(factory, path).Invoices.Count == 1, "JSON restored records must be available after reopening");
     }
 
     private static void CheckCommittedRestoreReloadFailure()
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-restore-reload-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Committed restore", Price = 60, Quantity = 1 });
         Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "Reload failure fixture must save and sign in");
         var backup = model.CreateDatabaseBackup();
@@ -535,14 +977,14 @@ internal static class Program
         Check(model.CurrentUsername == null && !model.CanAccessWorkspace, "Post-commit reload failure must retain the signed-out state");
         factory.FailCreation = false;
         using (var db = factory.CreateDbContext()) Check(db.Invoices.Single().GrandTotal == 60m, "Backup contents must already be committed despite the reload failure");
-        Check(new MainWindowViewModel(factory, path).Invoices.Count == 1, "Restored data must be usable after reopening");
+        Check(CreateModel(factory, path).Invoices.Count == 1, "Restored data must be usable after reopening");
     }
 
     private static void CheckLockedDatabaseRestore()
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-locked-restore-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Lock fixture", Price = 90, Quantity = 1 });
         Check(model.SaveInvoice(), "Locked restore fixture must save");
         var backup = model.CreateDatabaseBackup();
@@ -575,7 +1017,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-rollback-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Rollback original", Price = 90, Quantity = 1 });
         Check(model.SaveInvoice(), "Rollback fixture must save");
         var original = model.CreateJsonBackup();
@@ -592,7 +1034,7 @@ internal static class Program
             db.Database.ExecuteSqlRaw("DROP TRIGGER reject_restore");
         }
         Check(model.RestoreJsonBackup(original), "A failed restore must not leave locks that prevent retry");
-        var reopened = new MainWindowViewModel(factory, path);
+        var reopened = CreateModel(factory, path);
         Check(reopened.Invoices.Count == 1, "Rolled-back and retried records must survive reopening");
         factory.FailCreation = true;
         Check(!model.RestoreJsonBackup(original) && model.Status.StartsWith("Restore failed:", StringComparison.Ordinal), "Database setup failures must be reported instead of escaping the restore action");
@@ -604,7 +1046,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-json-guard-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Protected JSON invoice", Price = 75, Quantity = 1 });
         Check(model.SaveInvoice(), "JSON restore fixture must persist");
         var valid = model.CreateJsonBackup();
@@ -642,7 +1084,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-restore-guard-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Protected invoice", Price = 125, Quantity = 1 });
         Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "Restore guard fixture must persist and sign in");
         var valid = model.CreateDatabaseBackup();
@@ -673,14 +1115,14 @@ internal static class Program
         }
         Check(model.RestoreDatabaseBackup(valid), "Validated backup must still restore");
         Check(model.CurrentUsername == null && !model.CanAccessWorkspace, "Successful database restore must require a fresh login");
-        Check(new MainWindowViewModel(factory, path).Invoices.Count == 1, "Restored records must survive reopening");
+        Check(CreateModel(factory, path).Invoices.Count == 1, "Restored records must survive reopening");
     }
 
     private static void CheckSessionInvalidation()
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-session-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         var fields = FormCatalog.User(); fields[0].Value = "session-user"; fields[1].Value = "session-password";
         Check(model.SaveRecord("User", fields), "Session invalidation fixture must save");
         foreach (var change in new[] { "role", "password", "salt", "required-change", "username", "delete" })
@@ -717,7 +1159,7 @@ internal static class Program
         Check(PasswordCredentials.Hash("password", "0123456789ABCDEF") == "pbkdf2-sha256$v1$600000$D538B33181CB6504852E04C1DE79050BD42A58CF6DA21B9B127332677C5595BE", "PBKDF2 output must match an independently calculated reference vector");
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-password-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         const string password = " legacy password é ";
         var oldHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes("old-salt" + password))).ToLowerInvariant();
         using (var db = factory.CreateDbContext())
@@ -743,7 +1185,7 @@ internal static class Program
             foreach (var malformed in new[] { "", new string('z', 64), "pbkdf2-sha256$v2$600000$" + new string('0', 64), "pbkdf2-sha256$v1$999999999$" + new string('0', 64) })
                 Check(!PasswordCredentials.Verify(password, user.Salt, malformed, out _), "Malformed and unsupported credential formats must fail closed");
         }
-        var reloaded = new MainWindowViewModel(factory, path);
+        var reloaded = CreateModel(factory, path);
         Check(reloaded.SignIn("admin", password) && reloaded.RequiresPasswordChange, "Migrated credentials must survive restart and preserve forced change");
         using (var db = factory.CreateDbContext()) Check(db.Users.Single().PasswordHash == upgraded, "Modern login must not rewrite the hash");
     }
@@ -752,7 +1194,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-admin-guards-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         var admin = model.Users.Single();
         FormField[] Demote(string username) => [new("Username", username), new("Role", "User")];
         Check(!model.SaveRecord("User", Demote("admin"), admin), "Last admin demotion must fail");
@@ -761,7 +1203,7 @@ internal static class Program
         spacedPassword[1].Value = "  exact password  ";
         Check(model.SaveRecord("User", spacedPassword), "Password whitespace account must save");
         Check(model.VerifyUser("whitespace-user", "  exact password  ") && !model.VerifyUser("whitespace-user", "exact password"), "Creation must preserve password whitespace while normalizing username");
-        var freshCredentials = new MainWindowViewModel(factory, path);
+        var freshCredentials = CreateModel(factory, path);
         Check(freshCredentials.VerifyUser("whitespace-user", "  exact password  "), "Exact password must authenticate after restart");
         Check(model.DeleteRecord("User", model.Users.Single(u => u.Name == "whitespace-user")), "Password fixture must be removable");
         var duplicate = FormCatalog.User();
@@ -769,33 +1211,33 @@ internal static class Program
         Check(!model.SaveRecord("User", duplicate) && model.Users.Count == 1, "Duplicate normalized usernames must fail without adding a row");
         var second = FormCatalog.User(); second[0].Value = "second-admin"; second[1].Value = "second-password"; second[2].Value = "Admin";
         Check(model.SaveRecord("User", second), "Second administrator must be creatable");
-        var stale = new MainWindowViewModel(factory, path);
+        var stale = CreateModel(factory, path);
         Check(model.SaveRecord("User", Demote("admin"), admin), "Demotion must succeed when another administrator exists");
         Check(!stale.DeleteRecord("User", stale.Users.Single(u => u.Name == "second-admin")), "Stale view must use database administrator count before deletion");
         Check(!stale.SaveRecord("User", Demote("second-admin"), stale.Users.Single(u => u.Name == "second-admin")), "Stale view must use database administrator count before demotion");
-        var refreshed = new MainWindowViewModel(factory, path);
+        var refreshed = CreateModel(factory, path);
         var rename = new[] { new FormField("Username", "second-admin"), new FormField("Role", "User") };
         Check(!refreshed.SaveRecord("User", rename, refreshed.Users.Single(u => u.Name == "admin")), "Renaming onto an existing username must fail");
         Check(refreshed.SignIn("admin", "admin"), "Ordinary user must be able to sign in");
         Check(refreshed.DeleteRecord("User", refreshed.Users.Single(u => u.Name == "admin")) && refreshed.CurrentUsername == null, "Deleting a non-admin account must clear its session");
         Check(!stale.SaveRecord("User", Demote("resurrected"), stale.Users.Single(u => u.Name == "admin")), "Stale edit must not recreate a deleted account");
-        Check(new MainWindowViewModel(factory, path).Users.Single().Name == "second-admin", "All rejected mutations must preserve the remaining administrator");
+        Check(CreateModel(factory, path).Users.Single().Name == "second-admin", "All rejected mutations must preserve the remaining administrator");
     }
 
     private static void CheckInvoiceEditing()
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-edit-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.InvoiceCustomer[0].Value = "Original";
         model.InvoiceDetails[2].Value = "2026-12-31";
         model.InvoiceOptions[2].Value = "Original note";
         model.Lines.Add(new InvoiceLineViewModel { Name = "Original item", Price = 100, Quantity = 2, TaxRate = 5, Unit = "box" });
         Check(model.SaveInvoice(), "Editable invoice must save");
         var id = model.Invoices.Single().SourceId;
-        var stale = new MainWindowViewModel(factory, path);
+        var stale = CreateModel(factory, path);
         Check(stale.LoadDocumentForEditing(stale.Invoices.Single()), "Second editor must load the original snapshot");
-        var editor = new MainWindowViewModel(factory, path);
+        var editor = CreateModel(factory, path);
         Check(editor.LoadDocumentForEditing(editor.Invoices.Single()), "Persisted document must load for editing");
         Check(editor.InvoiceDetails[2].Value == "2026-12-31" && editor.InvoiceOptions[2].Value == "Original note" && editor.Totals.Total == 210, "Editor must restore saved inputs and totals");
         Check(editor.Lines[0].Unit == "box", "Item unit override must survive save and reopen");
@@ -810,12 +1252,12 @@ internal static class Program
             Check(db.Invoices.Single().GrandTotal == 315 && db.Invoices.Single().Snapshot!.Notes == "Updated note" && db.InvoiceItems.Count() == 1, "Edits must replace line data and snapshot atomically");
         stale.Lines[0].Price = 1;
         Check(!stale.SaveInvoice() && stale.Status.Contains("changed"), "Stale editor must not overwrite a newer saved version");
-        var fresh = new MainWindowViewModel(factory, path);
+        var fresh = CreateModel(factory, path);
         Check(fresh.LoadDocumentForEditing(fresh.Invoices.Single()), "Latest snapshot must reopen");
         var payment = FormCatalog.Payment(); payment[0].Value = "10";
         Check(model.ApplyPayment(model.Invoices.Single(), payment), "Payment during editing must apply");
         Check(!fresh.SaveInvoice(), "Payment arriving after editor load must prevent overwrite");
-        var paid = new MainWindowViewModel(factory, path);
+        var paid = CreateModel(factory, path);
         Check(!paid.LoadDocumentForEditing(paid.Invoices.Single()), "Paid documents must not open in this edit workflow");
         using (var db = factory.CreateDbContext())
             Check(db.Invoices.Single().PaidAmount == 10 && db.Invoices.Single().GrandTotal == 315, "Rejected edit must preserve payment and invoice totals");
@@ -827,7 +1269,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-snapshots-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         string[] customer = ["Original Customer", "Original Business", "1234567890", "original@example.com", "GST-123", "Original Address"];
         for (var i = 0; i < customer.Length; i++) model.InvoiceCustomer[i].Value = customer[i];
         model.InvoiceDetails[2].Value = "2026-12-31";
@@ -868,7 +1310,7 @@ internal static class Program
         var dbBackup = model.CreateDatabaseBackup();
         Check(model.RestoreDatabaseBackup(dbBackup) && ReadSnapshot() == expected, "Database restore must retain complete snapshots");
         using (var db = factory.CreateDbContext()) db.Database.ExecuteSqlRaw("ALTER TABLE invoices DROP COLUMN Snapshot");
-        var upgraded = new MainWindowViewModel(factory, path);
+        var upgraded = CreateModel(factory, path);
         using (var db = factory.CreateDbContext())
             Check(db.Invoices.Single().Snapshot == null && upgraded.Invoices.Count == 1, "Pre-snapshot databases must preserve invoices without inventing missing history");
     }
@@ -890,7 +1332,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-forms-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         var customer = FormCatalog.Customer();
         customer[0].Value = "Business owner";
         customer[1].Value = "Roundtrip business";
@@ -918,11 +1360,11 @@ internal static class Program
                     : record[field.Label] == field.Value,
                     $"Product field {field.Label} must round trip");
         }
-        Verify(new MainWindowViewModel(factory, path));
+        Verify(CreateModel(factory, path));
         var backup = model.CreateJsonBackup();
         Check(model.RestoreJsonBackup(backup), "Full forms must restore from JSON");
-        Verify(new MainWindowViewModel(factory, path));
-        var edited = new MainWindowViewModel(factory, path);
+        Verify(CreateModel(factory, path));
+        var edited = CreateModel(factory, path);
         edited.AddProductLine(edited.Products.Single());
         var addedLine = edited.Lines.Single();
         addedLine.Quantity = 3;
@@ -930,14 +1372,14 @@ internal static class Program
         product.Single(f => f.Label == "Type").Value = "Product";
         product.Single(f => f.Label == "Alias Name (for invoice PDF)").Value = "Edited alias";
         Check(edited.SaveRecord("Product", product, edited.Products.Single()), "Full product edit must save");
-        Verify(new MainWindowViewModel(factory, path));
+        Verify(CreateModel(factory, path));
         using (var db = factory.CreateDbContext())
         {
             db.Database.ExecuteSqlRaw("ALTER TABLE customers DROP COLUMN BusinessName");
             db.Database.ExecuteSqlRaw("ALTER TABLE products DROP COLUMN AliasName");
             db.Database.ExecuteSqlRaw("ALTER TABLE products DROP COLUMN PriceIncludesTax");
         }
-        var upgraded = new MainWindowViewModel(factory, path);
+        var upgraded = CreateModel(factory, path);
         Check(upgraded.Customers.Count == 1 && upgraded.Customers.Single()["Business Name"] == "", "Existing customer schema must upgrade preserving records");
         Check(upgraded.Products.Single()["Alias Name (for invoice PDF)"] == "" && !bool.Parse(upgraded.Products.Single()["Price includes tax"]), "Existing product schema must upgrade with safe defaults");
         var setup = model.CreateOnboardingFields();
@@ -949,7 +1391,7 @@ internal static class Program
         setup[2].Single(f => f.Label == "Page Size").Value = "A5";
         setup[2].Single(f => f.Label == "Template").Value = "Modern";
         Check(model.CompleteOnboarding(setup), "First-time setup must save");
-        var savedSetup = new MainWindowViewModel(factory, path).CreateOnboardingFields();
+        var savedSetup = CreateModel(factory, path).CreateOnboardingFields();
         Check(savedSetup[0][0].Value == "Setup company" && savedSetup[0][1].Value == "Nepal", "Setup company and country must reload");
         Check(savedSetup[1][2].Value == "27" && !savedSetup[1][3].IsChecked && savedSetup[1][4].Value == "13", "Setup invoice preferences must reload");
         Check(savedSetup[2][0].Value == "A5" && savedSetup[2][1].Value == "Modern", "Setup appearance must reload");
@@ -958,7 +1400,7 @@ internal static class Program
         setup[0][0].Value = "Must not save";
         setup[1][2].Value = "1.5";
         Check(!model.CompleteOnboarding(setup), "Setup must reject fractional starting number");
-        Check(new MainWindowViewModel(factory, path).CreateOnboardingFields()[0][0].Value == "Setup company", "Invalid setup must leave persisted values untouched");
+        Check(CreateModel(factory, path).CreateOnboardingFields()[0][0].Value == "Setup company", "Invalid setup must leave persisted values untouched");
         var user = FormCatalog.User();
         user[0].Value = "second-user"; user[1].Value = "initial-password";
         Check(model.SaveRecord("User", user), "Second user must save");
@@ -981,7 +1423,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-receivables-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.InvoiceCustomer[0].Value = "Receivable customer";
         model.InvoiceDetails[2].Value = DateTime.Today.AddDays(-45).ToString("yyyy-MM-dd");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Service", Price = 100, Quantity = 2, TaxRate = 5 });
@@ -1010,22 +1452,22 @@ internal static class Program
             Check(customer.Overdue == balance, "Customer statement overdue total must use outstanding invoices past their due date");
         }
         Verify(model, "0.00", "200.00", "Unpaid", 200);
-        Verify(new MainWindowViewModel(factory, path), "0.00", "200.00", "Unpaid", 200);
+        Verify(CreateModel(factory, path), "0.00", "200.00", "Unpaid", 200);
         var payment = FormCatalog.Payment(); payment[0].Value = "50";
         Check(model.ApplyPayment(model.Invoices.Single(), payment), "Partial payment must apply");
         Verify(model, "50.00", "150.00", "Partial", 150);
-        Verify(new MainWindowViewModel(factory, path), "50.00", "150.00", "Partial", 150);
+        Verify(CreateModel(factory, path), "50.00", "150.00", "Partial", 150);
         payment[0].Value = "149.996";
         Check(model.ApplyPayment(model.Invoices.Single(), payment), "Final payment inside legacy money tolerance must apply");
         Verify(model, "200.00", "0.00", "Paid", 0);
-        Verify(new MainWindowViewModel(factory, path), "200.00", "0.00", "Paid", 0);
+        Verify(CreateModel(factory, path), "200.00", "0.00", "Paid", 0);
     }
 
     private static void CheckTaxReport()
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-tax-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.InvoiceDetails[1].Value = "2026-01-15";
         model.Lines.Add(new InvoiceLineViewModel { Name = "Five percent", Price = 100, TaxRate = 5 });
         model.Lines.Add(new InvoiceLineViewModel { Name = "Eighteen percent", Price = 100, TaxRate = 18 });
@@ -1054,19 +1496,19 @@ internal static class Program
             Check(loaded.ExportReportCsv("Tax").Contains(amount), "Tax CSV must use the same actual tax totals");
         }
         Verify(model, "₹ 48.00");
-        Verify(new MainWindowViewModel(factory, path), "₹ 48.00");
+        Verify(CreateModel(factory, path), "₹ 48.00");
         var backup = model.CreateJsonBackup();
         Check(model.RestoreJsonBackup(backup), "Tax report backup must restore");
         Verify(model, "₹ 48.00");
         Check(model.SetDocumentTrash(model.Invoices.Single(i => i.SourceId == mixed.SourceId), true), "Tax test invoice must move to trash");
-        Verify(new MainWindowViewModel(factory, path), "₹ 25.00");
+        Verify(CreateModel(factory, path), "₹ 25.00");
     }
 
     private static void CheckRevenueReport()
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-revenue-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         var product = FormCatalog.Product();
         product.First(field => field.Label == "Name").Value = "Costed product";
         product.First(field => field.Label == "Sale Price").Value = "100";
@@ -1152,7 +1594,7 @@ internal static class Program
             File.Delete(second);
         }
 
-        var model = new MainWindowViewModel();
+        var model = CreateModel();
         var pdf = model.ExportDocumentPdf(new UiRecord
         {
             Values = new Dictionary<string, string>
@@ -1188,7 +1630,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-delete-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         var customer = FormCatalog.Customer();
         customer[0].Value = "Historical customer"; customer[2].Value = "1234567890";
         Check(model.SaveRecord("Customer", customer), "Deletion test customer must save");
@@ -1207,7 +1649,7 @@ internal static class Program
         }
         Check(model.DeleteRecord("Customer", model.Customers.Single()), "Customer deletion must persist");
         Check(model.DeleteRecord("Product", model.Products.Single()), "Product deletion must persist");
-        var reloaded = new MainWindowViewModel(factory, path);
+        var reloaded = CreateModel(factory, path);
         Check(!reloaded.Customers.Any() && !reloaded.Products.Any(), "Deleted catalog records must stay deleted after restart");
         Check(reloaded.Invoices.Single()["Customer"] == "Historical customer", "Deleting a customer must retain invoice customer identity");
         Check(reloaded.BuildReport("Products").Rows.Any(r => r[0] == "Historical product" && r[1] == "1"), "Deleting a product must retain historical sales");
@@ -1219,20 +1661,20 @@ internal static class Program
         user[0].Value = "deletable"; user[1].Value = "test-password";
         Check(reloaded.SaveRecord("User", user) && reloaded.SignIn("deletable", "test-password"), "Deletion test user must sign in");
         Check(reloaded.DeleteRecord("User", reloaded.Users.Single(u => u.Name == "deletable")) && reloaded.CurrentUsername == null, "Deleting signed-in user must clear session");
-        Check(!new MainWindowViewModel(factory, path).VerifyUser("deletable", "test-password"), "Deleted user must not authenticate after restart");
+        Check(!CreateModel(factory, path).VerifyUser("deletable", "test-password"), "Deleted user must not authenticate after restart");
         Check(!reloaded.DeleteRecord("User", reloaded.Users.Single()), "Last administrator deletion must be rejected");
-        Check(new MainWindowViewModel(factory, path).Users.Single().Name == "admin", "Last administrator must remain available after restart");
+        Check(CreateModel(factory, path).Users.Single().Name == "admin", "Last administrator must remain available after restart");
     }
 
     private static void CheckDocumentTrash()
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-trash-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Trash item", Price = 100, Quantity = 1 });
         Check(model.SaveInvoice(), "Trash test invoice must save");
         using (var db = factory.CreateDbContext()) db.Database.ExecuteSqlRaw("ALTER TABLE invoices DROP COLUMN DeletedAt");
-        model = new MainWindowViewModel(factory, path);
+        model = CreateModel(factory, path);
         Check(model.ActiveInvoices.Count() == 1, "Older C# databases must gain trash state without losing invoices");
         var record = model.Invoices.Single();
         var payment = FormCatalog.Payment();
@@ -1243,7 +1685,7 @@ internal static class Program
         Check(!model.ActiveInvoices.Any() && model.BuildReport("Revenue").Billed == 0, "Trash must be excluded from dashboard and revenue");
         Check(!model.ExportCsv("Invoice").Contains("00000001"), "Default document export must exclude trash");
         Check(model.PeekNextDocumentNumber("Invoice") == "00000002", "Trashed document number must remain reserved");
-        var reloaded = new MainWindowViewModel(factory, path);
+        var reloaded = CreateModel(factory, path);
         record = reloaded.Invoices.Single();
         Check(reloaded.DeletedRecords.Contains(record.Id), "Trash must survive restart");
         Check(reloaded.BuildReport("Products").Rows.Length == 1, "Trashed invoice items must not count as product sales");
@@ -1254,7 +1696,7 @@ internal static class Program
         Check(reloaded.SetDocumentTrash(reloaded.Invoices.Single(), false), "Document must restore from trash");
         Check(reloaded.RestoreDatabaseBackup(dbBackup) && reloaded.DeletedRecords.Contains(reloaded.Invoices.Single().Id), "Database backup must preserve trash state");
         Check(reloaded.SetDocumentTrash(reloaded.Invoices.Single(), false), "Restored backup document must restore from trash");
-        var restored = new MainWindowViewModel(factory, path);
+        var restored = CreateModel(factory, path);
         record = restored.Invoices.Single();
         Check(restored.ActiveInvoices.Count() == 1 && restored.BuildReport("Revenue").Billed == 100 && restored.Payments.Count == 1, "Restore must recover report totals and payment history after restart");
         Check(restored.SetDocumentTrash(record, true) && restored.DeleteDocumentPermanently(record), "Trashed document must support permanent deletion");
@@ -1267,12 +1709,12 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-numbering-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Starting Number").Value = "27";
         Check(model.SaveSettings("Invoice Settings"), "Starting number must persist");
         Check(model.PeekNextDocumentNumber("Invoice") == "00000027" && model.PeekNextDocumentNumber("Invoice") == "00000027", "Number preview must honor settings without consuming a number");
         Check(model.PeekNextDocumentNumber("Quotation") == "00000001" && model.PeekNextDocumentNumber("Receipt") == "00000001", "Quotation and receipt sequences must start independently at one");
-        var stale = new MainWindowViewModel(factory, path);
+        var stale = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Numbered item", Price = 1 });
         stale.Lines.Add(new InvoiceLineViewModel { Name = "Numbered item", Price = 1 });
         Check(model.SaveInvoice() && stale.SaveInvoice(), "Two already-open editors must save distinct numbers");
@@ -1280,7 +1722,7 @@ internal static class Program
             Check(db.Invoices.Select(i => i.InvoiceNumber).ToArray().Order().SequenceEqual(new[] { "00000027", "00000028" }), "Save must derive its number from current database rows");
         model.InvoiceDetails[0].Value = "Quotation";
         Check(model.SaveInvoice() && model.Invoices.Last().Name == "00000001", "Quotation must use its own sequence");
-        Check(new MainWindowViewModel(factory, path).PeekNextDocumentNumber("Invoice") == "00000029", "Invoice sequence must continue across restart");
+        Check(CreateModel(factory, path).PeekNextDocumentNumber("Invoice") == "00000029", "Invoice sequence must continue across restart");
         var backup = model.CreateJsonBackup();
         Check(model.RestoreJsonBackup(backup) && model.PeekNextDocumentNumber("Quotation") == "00000002", "Number sequence must survive backup restore");
         using (var db = factory.CreateDbContext())
@@ -1295,7 +1737,7 @@ internal static class Program
     {
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-types-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
-        var model = new MainWindowViewModel(factory, path);
+        var model = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Type test", Price = 10, Quantity = 1 });
         foreach (var type in new[] { "Invoice", "Quotation", "Receipt" })
         {
@@ -1308,15 +1750,15 @@ internal static class Program
                 Check(loaded.Invoices.Count(i => i["Type"] == type) == 1, $"{type} must retain its type");
             Check(loaded.BuildReport("Products").Rows.Any(r => r[0] == "Type test" && r[1] == "1"), "Product sales must exclude quotations and receipts");
         }
-        Verify(new MainWindowViewModel(factory, path));
+        Verify(CreateModel(factory, path));
         var backup = model.CreateJsonBackup();
         Check(model.RestoreJsonBackup(backup), "Document backup must restore");
-        Verify(new MainWindowViewModel(factory, path));
+        Verify(CreateModel(factory, path));
         using (var db = factory.CreateDbContext())
             db.Database.ExecuteSqlRaw("ALTER TABLE invoices DROP COLUMN Type");
-        var upgraded = new MainWindowViewModel(factory, path);
+        var upgraded = CreateModel(factory, path);
         Check(upgraded.Invoices.Count == 3 && upgraded.Invoices.All(i => i["Type"] == "Invoice"), "Pre-type C# databases must upgrade without losing invoices");
-        Check(new MainWindowViewModel(factory, path).Invoices.Count == 3, "Schema upgrade must be repeatable");
+        Check(CreateModel(factory, path).Invoices.Count == 3, "Schema upgrade must be repeatable");
     }
 
     private static void CheckPersistence()
@@ -1326,7 +1768,7 @@ internal static class Program
         var options = new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={dbPath}").Options;
         var factory = new TestDbContextFactory(options);
 
-        var model = new MainWindowViewModel(factory, dbPath);
+        var model = CreateModel(factory, dbPath);
         var customer = FormCatalog.Customer();
         customer[0].Value = "Persisted Customer";
         customer[2].Value = "5551234567";
@@ -1357,7 +1799,7 @@ internal static class Program
         Check(model.Invoices.Single()["Status"] == "Partial", "Partial payment must update invoice status");
         Check(model.Invoices.Single()["Outstanding"] == "57.35", "Partial payment must update outstanding balance");
 
-        var reloaded = new MainWindowViewModel(factory, dbPath);
+        var reloaded = CreateModel(factory, dbPath);
         Check(reloaded.Customers.Any(c => c.Name == "Persisted Customer"), "Customers must reload from SQLite");
         Check(reloaded.Customers.Any(c => c.Name == "Comma, Customer" && c["Address"] == "Street 1, City"), "Imported customers must reload from SQLite");
         Check(reloaded.Products.Any(p => p.Name == "Persisted Product" && p["Sale Price"] == "42.5"), "Products must reload from SQLite");
@@ -1370,7 +1812,7 @@ internal static class Program
         persistedUser[1].Value = "temporary-secret";
         persistedUser[2].Value = "Admin";
         Check(model.SaveRecord("User", persistedUser), "User must save to SQLite");
-        reloaded = new MainWindowViewModel(factory, dbPath);
+        reloaded = CreateModel(factory, dbPath);
         Check(reloaded.Users.Any(u => u.Name == "admin" && u["Role"] == "Admin") && reloaded.VerifyUser("admin", "admin"), "Default admin must be available for first login");
         Check(reloaded.Users.Any(u => u.Name == "persisted-admin" && u["Role"] == "Admin" && !u.Values.ContainsKey("Password")), "Users must reload from SQLite without exposing passwords");
         Check(reloaded.VerifyUser("persisted-admin", "temporary-secret") && !reloaded.VerifyUser("persisted-admin", "wrong-secret"), "Persisted users must authenticate with their salted password hash");
@@ -1406,6 +1848,8 @@ internal static class Program
         var invoiceGeneral = model.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
         invoiceGeneral["Invoice Prefix"].Value = "LN-";
         invoiceGeneral["Starting Number"].Value = "27";
+        Check(!model.SaveSettings("Invoice Settings"), "Existing invoices must prevent changing the starting number");
+        invoiceGeneral["Starting Number"].Value = "1";
         Check(model.SaveSettings("Invoice Settings"), "Invoice settings must save to SQLite");
 
         var pdfSections = model.Settings["PDF Settings"];
@@ -1444,10 +1888,10 @@ internal static class Program
         var reportPdf = model.ExportReportPdf("Customers");
         Check(reportPdf.Length > 500 && System.Text.Encoding.ASCII.GetString(reportPdf.Take(8).ToArray()).StartsWith("%PDF-1."), "Report PDF export must create a valid PDF document");
 
-        reloaded = new MainWindowViewModel(factory, dbPath);
+        reloaded = CreateModel(factory, dbPath);
         model.SetThemeMode("Dark");
         model.SetLanguage("हिन्दी");
-        reloaded = new MainWindowViewModel(factory, dbPath);
+        reloaded = CreateModel(factory, dbPath);
         Check(reloaded.ThemeMode == "Dark", "Theme mode must persist and reload from SQLite");
         Check(reloaded.Language == "हिन्दी", "Language preference must persist and reload from SQLite");
         var reloadedCompanyFields = reloaded.Settings["Company Info"][1].Fields.ToDictionary(f => f.Label);
@@ -1455,7 +1899,7 @@ internal static class Program
         Check(reloaded.UpiAccounts.Count == 2 && reloaded.UpiAccounts[1][1].Value == "backup@upi", "Repeatable UPI accounts must reload from SQLite");
         Check(reloaded.BankAccounts.Count == 1 && reloaded.BankAccounts[0][2].Value == "1234567890", "Bank account details must reload from SQLite");
         var reloadedInvoiceGeneral = reloaded.Settings["Invoice Settings"].Single(s => s.Title == "General").Fields.ToDictionary(f => f.Label);
-        Check(reloadedInvoiceGeneral["Invoice Prefix"].Value == "LN-" && reloadedInvoiceGeneral["Starting Number"].Value == "27", "Invoice settings must reload from SQLite");
+        Check(reloadedInvoiceGeneral["Invoice Prefix"].Value == "LN-" && reloadedInvoiceGeneral["Starting Number"].Value == "1", "Invoice settings must reload without changing a locked starting number");
         Check(reloaded.Settings["PDF Settings"][1].Fields[0].Value == "Grid Classic" && reloaded.Settings["PDF Settings"][3].Fields[0].Value == "#0F766E", "PDF settings must reload from SQLite");
         var printConfiguration = reloaded.GetPrintConfiguration();
         Check(printConfiguration.PrinterName == "Office Printer" && !printConfiguration.Options.Silent, "Printer selection and dialog preference must reload from SQLite");

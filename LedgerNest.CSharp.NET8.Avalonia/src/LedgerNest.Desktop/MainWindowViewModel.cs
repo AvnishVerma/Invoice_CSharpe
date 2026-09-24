@@ -48,10 +48,12 @@ public partial class MainWindowViewModel : ObservableObject
         InvoiceOptions[4].Number, AdditionalCosts.Sum(c => c[1].Number),
         InvoiceOptions[0].Value switch { "Amount" => InvoiceDiscountKind.Amount, "Percentage" => InvoiceDiscountKind.Percent, _ => InvoiceDiscountKind.None }, InvoiceOptions[1].Number);
     public event Action? InvoiceChanged;
-    public MainWindowViewModel(IDbContextFactory<LedgerNestDbContext>? dbFactory = null, string? databasePath = null)
+    public MainWindowViewModel(IDbContextFactory<LedgerNestDbContext>? dbFactory = null, string? databasePath = null, ILicenseService? licenseService = null)
     {
         this.dbFactory = dbFactory;
         this.databasePath = databasePath;
+        this.licenseService = licenseService ?? new UnavailableLicenseService();
+        RefreshLicense();
         foreach (var option in InvoiceOptions) option.PropertyChanged += (_, _) => InvoiceChanged?.Invoke();
         AdditionalCosts.CollectionChanged += (_, e) =>
         {

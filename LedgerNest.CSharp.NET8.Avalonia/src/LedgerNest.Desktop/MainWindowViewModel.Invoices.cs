@@ -109,10 +109,11 @@ public partial class MainWindowViewModel
             AdditionalCosts.Add([new("Description", cost.Description), new("Amount", cost.Amount.ToString(CultureInfo.CurrentCulture), "number")]);
         foreach (var item in invoice.Items)
         {
-            var line = new InvoiceLineViewModel { Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
+            var line = new InvoiceLineViewModel { ProductKey = item.ProductId is int productId ? $"id:{productId}" : "", ProductType = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count)?.ProductType ?? "Product", SavedPresentation = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count), Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
             line.Unit = snapshot.LineUnits?.ElementAtOrDefault(Lines.Count) ?? "None";
             Lines.Add(line);
         }
+        InitializeInvoiceCustomValues(snapshot);
         NavigateCommand.Execute("New Invoice");
         Status = $"Cloned {record.Name} without payment history. Review and save to create a new invoice.";
         return true;
@@ -153,11 +154,12 @@ public partial class MainWindowViewModel
             AdditionalCosts.Add([new("Description", cost.Description), new("Amount", cost.Amount.ToString(CultureInfo.CurrentCulture), "number")]);
         foreach (var item in invoice.Items)
         {
-            var line = new InvoiceLineViewModel { Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
+            var line = new InvoiceLineViewModel { ProductKey = item.ProductId is int productId ? $"id:{productId}" : "", ProductType = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count)?.ProductType ?? "Product", SavedPresentation = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count), Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
             line.Unit = snapshot.LineUnits?.ElementAtOrDefault(Lines.Count) ?? "None";
             historicalLines.Add(line, item);
             Lines.Add(line);
         }
+        InitializeInvoiceCustomValues(snapshot);
         NavigateCommand.Execute("New Invoice");
         return true;
     }
@@ -165,7 +167,12 @@ public partial class MainWindowViewModel
     // Performs the save invoice action for this screen or workflow.
     public bool SaveInvoice()
     {
+        if (!RequireBusinessLicense()) return false;
         if (Lines.Count == 0) { Status = "Add at least one item before creating an invoice."; return false; }
+        if (!InvoiceSetting("Allow Fractional Quantity").IsChecked && Lines.Any(line => decimal.Truncate(line.Quantity) != line.Quantity))
+        { Status = "Fractional quantities are disabled in Invoice Settings."; return false; }
+        if (!InvoiceSetting("Allow Duplicate Items").IsChecked && Lines.Where(line => line.ProductKey.Length > 0).GroupBy(line => line.ProductKey).Any(group => group.Count() > 1))
+        { Status = "Duplicate products are disabled in Invoice Settings."; return false; }
         if (Lines.Any(l => string.IsNullOrWhiteSpace(l.Name) || l.Quantity <= 0 || l.Price < 0 || l.TaxRate < 0 || l.Discount < 0))
         { Status = "Check item names, quantities, prices, tax and discounts."; return false; }
         var values = new Dictionary<string, string> {
@@ -196,11 +203,13 @@ public partial class MainWindowViewModel
 
 
     // Performs the add product line action for this screen or workflow.
-    public void AddProductLine(UiRecord product) => Lines.Add(CreateProductLine(product));
+    public void AddProductLine(UiRecord product) => TryAddInvoiceLine(CreateProductLine(product));
 
     // Performs the create product line action for this screen or workflow.
     public static InvoiceLineViewModel CreateProductLine(UiRecord product) => new()
     {
+        ProductKey = ProductKey(product),
+        ProductType = product["Type"] is "Service" ? "Service" : "Product",
         Unit = product["Unit"] == "Custom…" ? product["Custom unit"] : product["Unit"],
         Name = product.Name,
         Price = ParseDecimal(product["Sale Price"]),
@@ -232,6 +241,7 @@ public partial class MainWindowViewModel
         InvoiceOptions[2].Value = "";
         InvoiceOptions[3].Value = InvoiceSetting("Tax Enabled").IsChecked ? InvoiceSetting("Tax Mode").Value : "No Tax";
         InvoiceOptions[4].Value = InvoiceSetting("Default Tax Rate (%)").Value;
+        InitializeInvoiceCustomValues();
         NavigateCommand.Execute("New Invoice");
     }
 

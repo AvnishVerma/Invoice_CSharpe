@@ -41,11 +41,15 @@ internal static class DocumentPdf
         public bool ShowGst { get; init; } = true;
         public bool ShowHsn { get; init; } = true;
         public bool ShowRoundOff { get; init; }
+        public bool ShowAliasName { get; init; }
+        public bool ShowProductServiceTag { get; init; }
+        public string[] MetadataColumns { get; init; } = [];
+        public decimal PreviousBalance { get; init; }
     }
 
     internal static string DisplayNumber(Invoice invoice, PdfExportOptions options)
     {
-        if (!string.IsNullOrWhiteSpace(invoice.Snapshot?.CustomInvoiceNumber)) return invoice.Snapshot.CustomInvoiceNumber;
+        if (invoice.Snapshot?.HideInvoiceNumber == true) return invoice.Snapshot.CustomInvoiceNumber.Trim();
         var number = invoice.InvoiceNumber;
         if (long.TryParse(number, out var numeric)) number = numeric.ToString(options.LeadingZeros ? "D8" : "0", CultureInfo.InvariantCulture);
         return (string.IsNullOrWhiteSpace(options.InvoicePrefix) ? "" : options.InvoicePrefix.Trim() + "-") + number;
@@ -73,6 +77,7 @@ internal static class DocumentPdf
         var grid = template.Equals("Grid Classic", StringComparison.OrdinalIgnoreCase);
         var title = string.IsNullOrWhiteSpace(invoice.Snapshot?.DocumentTitle) ? invoice.Type : invoice.Snapshot.DocumentTitle;
         var displayNumber = DisplayNumber(invoice, options);
+        var quantityLabel = string.IsNullOrWhiteSpace(options.QuantityLabel) ? "Qty" : options.QuantityLabel;
         var thermal = useThermalTemplate || pageSize.StartsWith("Thermal", StringComparison.Ordinal);
         static SKBitmap? DecodeImage(string value)
         {
@@ -134,7 +139,7 @@ internal static class DocumentPdf
             {
                 paint.Color = accent; canvas.DrawRect(0, 0, width, narrow ? 58 : 82, paint);
                 Text(title.ToUpperInvariant(), margin, margin + 22, narrow ? 15 : 24, true, SKColors.White);
-                if (invoice.Snapshot?.HideInvoiceNumber != true) Text("#" + displayNumber, width - margin, margin + 22, size, true, SKColors.White, true);
+                if (displayNumber.Length > 0) Text("#" + displayNumber, width - margin, margin + 22, size, true, SKColors.White, true);
                 y = narrow ? 76 : 104;
             }
             else if (executive)
@@ -142,14 +147,14 @@ internal static class DocumentPdf
                 paint.Color = accent; canvas.DrawRect(0, 0, 14, height, paint);
                 paint.Color = WithAlpha(accent, 24); canvas.DrawRoundRect(new SKRoundRect(new SKRect(margin, margin - 5, width - margin, margin + 48), 8, 8), paint);
                 Text(title.ToUpperInvariant(), margin + 12, margin + 22, narrow ? 16 : 24, true, accent);
-                if (invoice.Snapshot?.HideInvoiceNumber != true) Text("#" + displayNumber, width - margin - 12, margin + 22, size, true, muted, true);
+                if (displayNumber.Length > 0) Text("#" + displayNumber, width - margin - 12, margin + 22, size, true, muted, true);
                 y = margin + 72;
             }
             else if (minimal)
             {
                 Text(title.ToUpperInvariant(), margin, margin + 20, narrow ? 16 : 24, true, ink);
                 paint.Color = accent; canvas.DrawRect(margin, margin + 30, usable, 1.2f, paint);
-                if (invoice.Snapshot?.HideInvoiceNumber != true) Text("#" + displayNumber, width - margin, margin + 20, size, color: muted, right: true);
+                if (displayNumber.Length > 0) Text("#" + displayNumber, width - margin, margin + 20, size, color: muted, right: true);
                 y = margin + 54;
             }
             else if (narrow)
@@ -157,14 +162,14 @@ internal static class DocumentPdf
                 paint.Color = accent; canvas.DrawRect(0, 0, width, 4, paint);
                 Text((string.IsNullOrWhiteSpace(business.Name) ? Branding.Name : business.Name).ToUpperInvariant(), width / 2, margin + 12, 10, true, accent, true);
                 Text(title.ToUpperInvariant(), width / 2, margin + 28, 14, true, ink, true);
-                if (invoice.Snapshot?.HideInvoiceNumber != true) Text("#" + displayNumber, width / 2, margin + 42, size, color: muted, right: true);
+                if (displayNumber.Length > 0) Text("#" + displayNumber, width / 2, margin + 42, size, color: muted, right: true);
                 y = margin + 58;
             }
             else
             {
                 paint.Color = accent; canvas.DrawRect(0, 0, width, compact ? 4 : 6, paint);
                 Text(title.ToUpperInvariant(), margin, margin + 20, compact ? 21 : 25, true, accent);
-                if (invoice.Snapshot?.HideInvoiceNumber != true) Text("#" + displayNumber, margin, margin + 36, size, color: muted);
+                if (displayNumber.Length > 0) Text("#" + displayNumber, margin, margin + 36, size, color: muted);
                 y = margin + (compact ? 44 : 53);
             }
         }
@@ -234,11 +239,61 @@ internal static class DocumentPdf
         if (options.ShowCustomerBusinessName && !string.IsNullOrWhiteSpace(customer?.BusinessName)) Paragraph("Business: " + customer.BusinessName);
         if (options.ShowCustomerAddress) Paragraph(customer?.Address);
         if (options.ShowCustomerPhone) Paragraph(customer?.Phone);
-        if (options.ShowCustomerEmail) Paragraph(customer?.Email);
+        if (!thermal && options.ShowCustomerEmail) Paragraph(customer?.Email);
         if (options.ShowGst && options.ShowCustomerGstin && !string.IsNullOrWhiteSpace(customer?.GstNumber)) Paragraph("GSTIN: " + customer.GstNumber);
         y += 8;
+        if (grid && !thermal)
+        {
+            var customFields = (invoice.Snapshot?.CustomFields ?? []).Where(field => !string.IsNullOrWhiteSpace(field.Value)).ToArray();
+            for (var start = 0; start < customFields.Length; start += 3)
+            {
+                var cells = customFields.Skip(start).Take(3).Select(field => Wrap(field.Label + "\n" + field.Value, usable / 3 - 12, size).ToArray()).ToArray();
+                var count = cells.Max(cell => cell.Length);
+                for (var line = 0; line < count; line++)
+                {
+                    Ensure(size + 8);
+                    for (var col = 0; col < 3; col++)
+                    {
+                        paint.Color = ruleColor; paint.Style = SKPaintStyle.Stroke;
+                        canvas.DrawRect(margin + col * usable / 3, y, usable / 3, size + 7, paint); paint.Style = SKPaintStyle.Fill;
+                        if (col < cells.Length && line < cells[col].Length) Text(cells[col][line], margin + col * usable / 3 + 6, y + size + 2, size, line == 0);
+                    }
+                    y += size + 7;
+                }
+            }
+            if (customFields.Length > 0) y += 14;
+        }
+        var metadataColumns = grid && !thermal ? options.MetadataColumns : [];
+        var columns = new List<(string Key, string Label, float Weight)>();
+        if (options.ShowSlNo) columns.Add(("serial", "#", .45f));
+        columns.Add(("item", "Item / Service", 3));
+        if (options.ShowGst && options.ShowHsn) columns.Add(("hsn", "HSN/SAC", 1));
+        if (options.ShowQuantity) columns.Add(("qty", quantityLabel, .7f));
+        columns.Add(("price", options.ShowQuantity ? "Price" : "Rate", 1));
+        if (options.ShowTax) columns.Add(("tax", options.ShowGst ? invoice.Snapshot?.IsInterState == true ? "IGST %" : "CGST / SGST %" : "Tax %", 1));
+        if (options.ShowDiscount) columns.Add(("discount", "Discount", 1));
+        columns.Add(("total", "Total", 1));
+        columns.AddRange(metadataColumns.Select(label => ("meta:" + label, label, 1.2f)));
+        var tableSize = Math.Min(size, columns.Count > 10 ? 6.5f : 8.5f);
+        var widths = columns.Select(column => usable * column.Weight / columns.Sum(c => c.Weight)).ToArray();
+        var headers = columns.Select((column, i) => Wrap(column.Label, widths[i] - 8, tableSize).ToArray()).ToArray();
+        var headerHeight = headers.Max(lines => lines.Length) * (tableSize + 4) + 8;
         void TableHeader()
         {
+            if (!thermal)
+            {
+                Ensure(headerHeight + 24);
+                paint.Color = grid || minimal ? soft : accent;
+                canvas.DrawRect(margin, y, usable, headerHeight, paint);
+                var x = margin;
+                for (var i = 0; i < columns.Count; i++)
+                {
+                    for (var line = 0; line < headers[i].Length; line++) Text(headers[i][line], x + 4, y + tableSize + 4 + line * (tableSize + 4), tableSize, true, grid || minimal ? ink : SKColors.White);
+                    x += widths[i];
+                }
+                y += headerHeight;
+                return;
+            }
             Ensure(36);
             if (minimal)
             {
@@ -267,9 +322,48 @@ internal static class DocumentPdf
         foreach (var item in items)
         {
             rowNumber++;
-            var itemText = options.ShowItemName ? item.Description : "Item";
-            var productDescription = options.ShowDescription && !string.IsNullOrWhiteSpace(item.ProductDescription) && !item.ProductDescription.Equals(itemText, StringComparison.OrdinalIgnoreCase) ? item.ProductDescription : "";
+            var displayedTaxRate = invoice.Snapshot?.TaxMode switch { "Global" => invoice.Snapshot.TaxRate, "No Tax" => 0m, _ => item.TaxRate };
+            var presentation = invoice.Snapshot?.LinePresentations?.ElementAtOrDefault(rowNumber - 1);
+            var itemText = options.ShowAliasName && !string.IsNullOrWhiteSpace(presentation?.Alias) ? presentation.Alias : item.Description;
+            if (options.ShowProductServiceTag && !string.IsNullOrWhiteSpace(presentation?.ProductType)) itemText += " [" + presentation.ProductType + "]";
+            var productDescription = !thermal && options.ShowDescription && !string.IsNullOrWhiteSpace(item.ProductDescription) && !item.ProductDescription.Equals(itemText, StringComparison.OrdinalIgnoreCase) ? item.ProductDescription : "";
             var firstLine = options.DescriptionOnNewLine || string.IsNullOrWhiteSpace(productDescription) ? itemText : itemText + " — " + productDescription;
+            if (!thermal)
+            {
+                var itemLabel = firstLine + (options.DescriptionOnNewLine && productDescription.Length > 0 ? "\n" + productDescription : "");
+                string Cell(string key) => key switch
+                {
+                    "serial" => rowNumber.ToString(CultureInfo.InvariantCulture),
+                    "item" => itemLabel,
+                    "hsn" => invoice.Snapshot?.LineHsnCodes?.ElementAtOrDefault(rowNumber - 1) ?? "",
+                    "qty" => item.Quantity.ToString("0.###", CultureInfo.InvariantCulture),
+                    "price" => Money(item.UnitPrice),
+                    "tax" => options.ShowGst && invoice.Snapshot?.IsInterState != true ? $"{displayedTaxRate / 2:0.##} / {displayedTaxRate / 2:0.##}" : displayedTaxRate.ToString("0.##", CultureInfo.InvariantCulture),
+                    "discount" => Money(item.DiscountPerUnit ? item.Discount * item.Quantity : item.Discount),
+                    "total" => Money(item.LineTotal),
+                    _ => presentation?.Metadata.GetValueOrDefault(key[5..]) ?? ""
+                };
+                var cells = columns.Select((column, index) => Wrap(Cell(column.Key), widths[index] - 8, tableSize).ToArray()).ToArray();
+                var lines = Math.Max(1, cells.Max(cell => cell.Length));
+                for (var line = 0; line < lines; line++)
+                {
+                    if (y + tableSize + 8 > height - 45) { NewPage(); TableHeader(); }
+                    var x = margin;
+                    for (var col = 0; col < columns.Count; col++)
+                    {
+                        if (grid)
+                        {
+                            paint.Color = ruleColor; paint.Style = SKPaintStyle.Stroke;
+                            canvas.DrawRect(x, y, widths[col], tableSize + 7, paint); paint.Style = SKPaintStyle.Fill;
+                        }
+                        if (line < cells[col].Length) Text(cells[col][line], x + 4, y + tableSize + 2, tableSize);
+                        x += widths[col];
+                    }
+                    y += tableSize + 7;
+                }
+                Rule(y); y += grid ? 0 : 7;
+                continue;
+            }
             var description = Wrap(firstLine, narrow ? usable - 12 : usable * .49f, size).DefaultIfEmpty("Item").ToArray();
             if (y + size + 26 > height - 45) { NewPage(); TableHeader(); }
             Text(description[0], margin + 6, y, size, true);
@@ -278,7 +372,7 @@ internal static class DocumentPdf
                 if (options.ShowSlNo) Text(rowNumber.ToString(CultureInfo.InvariantCulture), margin + usable * .52f, y, size, right: true);
                 if (options.ShowQuantity) Text(item.Quantity.ToString("0.###", CultureInfo.InvariantCulture), margin + usable * .63f, y, size, right: true);
                 if (options.ShowPrice) Text(Money(item.UnitPrice), margin + usable * .78f, y, size, right: true);
-                if (options.ShowTax) Text(item.TaxRate.ToString("0.##", CultureInfo.InvariantCulture), width - margin - 6, y, size, right: true);
+                if (options.ShowTax) Text(displayedTaxRate.ToString("0.##", CultureInfo.InvariantCulture), width - margin - 6, y, size, right: true);
             }
             y += size + 5;
             var hsn = invoice.Snapshot?.LineHsnCodes?.ElementAtOrDefault(rowNumber - 1);
@@ -291,13 +385,14 @@ internal static class DocumentPdf
             if (narrow)
             {
                 var parts = new List<string>();
-                if (options.ShowQuantity) parts.Add($"{options.QuantityLabel} {item.Quantity:0.###}");
-                if (options.ShowPrice) parts.Add("Rate " + Money(item.UnitPrice));
-                if (options.ShowTax) parts.Add($"Tax {item.TaxRate:0.##}%");
+                if (options.ShowQuantity) parts.Add($"{quantityLabel} {item.Quantity:0.###}");
+                parts.Add("Rate " + Money(item.UnitPrice));
+                if (options.ShowTax) parts.Add($"Tax {displayedTaxRate:0.##}%");
                 Paragraph(string.Join(" · ", parts));
             }
             if (options.ShowDiscount && item.Discount != 0) Paragraph("Item discount: " + Money(item.DiscountPerUnit ? item.Discount * item.Quantity : item.Discount));
             if (item.ExtraCost != 0) Paragraph("Item extra cost: " + Money(item.ExtraCost));
+            Paragraph("Total " + Money(item.LineTotal), true);
             Ensure(10); Rule(y); y += compact || narrow ? 10 : 16;
         }
         Ensure(135); y += 6;
@@ -319,16 +414,19 @@ internal static class DocumentPdf
         if (options.ShowDiscount && invoice.DiscountTotal != 0) Total("Discount", invoice.DiscountTotal);
         foreach (var cost in invoice.Snapshot?.AdditionalCosts ?? [])
             if (cost.Amount != 0) Total(string.IsNullOrWhiteSpace(cost.Description) ? "Charges and adjustments" : cost.Description, cost.Amount);
-        if (options.ShowTotal) Total("Total", invoice.GrandTotal, true);
+        Total("Total", invoice.GrandTotal, true);
+        if (options.PreviousBalance > 0) Total("Previous balance due", options.PreviousBalance);
         if (options.ShowRoundOff)
         {
-            var rounded = decimal.Round(invoice.GrandTotal, 0, MidpointRounding.AwayFromZero);
-            Total("Round off", rounded - invoice.GrandTotal);
+            var amount = invoice.GrandTotal + options.PreviousBalance;
+            var rounded = decimal.Round(amount, 0, MidpointRounding.AwayFromZero);
+            Total("Round off", rounded - amount);
             Total("Net Amount", rounded, true);
-            Paragraph(LedgerNest.Application.AmountInWords.Format(rounded));
+            Paragraph(LedgerNest.Application.AmountInWords.Format(rounded, invoice.Snapshot?.Currency.Contains("INR", StringComparison.Ordinal) != false));
         }
         Total("Paid", invoice.PaidAmount);
         Total("Balance due", invoice.GrandTotal - invoice.PaidAmount, true);
+        if (options.PreviousBalance > 0) Total("Total due", Math.Max(0, invoice.GrandTotal - invoice.PaidAmount) + options.PreviousBalance, true);
         y += 8; Paragraph(invoice.Snapshot?.Notes); Paragraph(options.AdditionalInformation); Paragraph(business.Note);
         using var signature = DecodeImage(options.SignatureImage);
         if (signature != null)

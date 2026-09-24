@@ -21,7 +21,7 @@ public partial class MainWindow
         [
             new("Company Info", "business"), new("Backup", "backup"), new("Users", "people"),
             new("PDF Settings", "settings"), new("Invoice Settings", "receipt_long"), new("Product Details", "view_column"),
-            new("Customize", "tune"), new("Accessibility", "accessibility_new"), new("Software Info", "info_outline")
+            new("Customize", "tune"), new("Accessibility", "accessibility_new"), new("License", "lock"), new("Software Info", "info_outline")
         ];
         return new SettingsPageView(new SettingsPageModel(tabs, settingsTab, SettingsContent, selected => settingsTab = selected));
     }
@@ -35,6 +35,7 @@ public partial class MainWindow
         "Backup" => BackupView(),
         "Customize" => CustomizationView(),
         "Software Info" => SoftwareInfo(),
+        "License" => LicenseSettingsView(),
         _ => SettingsForm(name)
     };
     // Performs the settings form action for this screen or workflow.

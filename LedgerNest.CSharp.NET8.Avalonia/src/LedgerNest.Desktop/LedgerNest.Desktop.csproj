@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <LedgerNestLicensePublicKeyFile Condition="'$(LedgerNestLicensePublicKeyFile)' == ''">$(MSBuildProjectDirectory)/Licensing/public-key.pem</LedgerNestLicensePublicKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <!-- Keep the application entry XAML explicitly compiled into every build and publish configuration. -->
@@ -15,6 +16,7 @@
     <AvaloniaResource Include="Assets/**" />
     <EmbeddedResource Include="Assets/Roboto-Regular.ttf" LogicalName="LedgerNest.Pdf.Regular" />
     <EmbeddedResource Include="Assets/Roboto-Bold.ttf" LogicalName="LedgerNest.Pdf.Bold" />
+    <EmbeddedResource Include="$(LedgerNestLicensePublicKeyFile)" LogicalName="LedgerNest.Licensing.PublicKey" Condition="Exists('$(LedgerNestLicensePublicKeyFile)')" />
     <PackageReference Include="Docnet.Core" Version="2.6.0" />
     <PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.12" />
@@ -32,4 +34,7 @@
     <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
+  <Target Name="RequirePublisherPublicKey" BeforeTargets="PrepareForBuild" Condition="'$(Configuration)' == 'Release'">
+    <Error Condition="!Exists('$(LedgerNestLicensePublicKeyFile)')" Text="A publisher public key is required for Release builds. Generate it with LedgerNest.LicenseTool and set LedgerNestLicensePublicKeyFile. See migration/LICENSING.md." />
+  </Target>
 </Project>
