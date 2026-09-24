@@ -39,12 +39,12 @@ internal sealed partial class ManagementView : UserControl
             : Documents
             ? new Control[] { Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, trashButton, Ui.Button("↻", Refresh) }
             : [Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add];
-        var header = Ui.Header($"{kind} Management", Subtitle(), headerActions);
+        var header = Ui.AppBar($"{kind} Management", headerActions);
         var filterButton = MenuButton("Filter ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); });
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
         if (kind == "Product")
         {
-            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text("New: Customize product fields", 13, true, Ui.Primary), Ui.Text("Choose which fields show for a simpler catalog. Settings > Customize Product Details.", 12, color: Ui.Primary)), Ui.Button("Configure", () => model.NavigateCommand.Execute("Settings"))), 16);
+            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text("New: Customize product fields", 13, true, Ui.Primary), Ui.Text("Choose which fields show for a simpler catalog. Settings > Customize Product Details.", 12, color: Ui.Primary)), Ui.Button("Configure", () => window.OpenProductDetailsSettings())), 16);
             banner.Background = Brush.Parse("#EFF6FF");
             ProductBannerHost.Content = banner;
         }
@@ -124,12 +124,12 @@ internal sealed partial class ManagementView : UserControl
             "Admin" or "User" => query.Where(r => r["Role"] == filter), "Paid" or "Partial" or "Unpaid" or "Overdue" => query.Where(r => r["Status"] == filter), _ => query };
         return sort switch { "Name A–Z" => query.OrderBy(r => r.Name), "Name Z–A" => query.OrderByDescending(r => r.Name), "Newest" => query.Reverse(), _ => query };
     }
-    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Expiry Date"] : ["Username", "Role"];
+    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Expiry Date", "Description", "Default Discount", "Unit", "Storage Location", "Container Number", "Batch Number", "Manufacture Date", "Manufacturer Name", "Supplier Name", "SKU Code", "Notes"] : ["Username", "Role"];
     private readonly HashSet<string> hidden = [];
     // Performs the columns action for this screen or workflow.
     private void Columns()
     {
-        var checks = Headers.Select(h => new CheckBox { Content = h, IsChecked = !hidden.Contains(h) }).ToArray();
+        var checks = Headers.Where(h => kind != "Product" || model.ProductFieldVisible(h)).Select(h => new CheckBox { Content = h, IsChecked = !hidden.Contains(h), IsEnabled = kind != "Product" || h is not ("Name / Alias" or "Price") }).ToArray();
         window.ShowOverlay("Show Columns", Ui.Stack(10, checks), Ui.Wrap(Ui.Button("Cancel", window.CloseOverlay), Ui.Button("Apply", () => { hidden.Clear(); foreach (var c in checks.Where(c => c.IsChecked != true)) hidden.Add(c.Content!.ToString()!); Refresh(); window.CloseOverlay(); }, true)));
     }
     // Performs the refresh action for this screen or workflow.
@@ -148,7 +148,7 @@ internal sealed partial class ManagementView : UserControl
         var filtered = Filtered().ToArray();
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)pageSize)); page = Math.Clamp(page, 0, pages - 1);
         if (Documents && DocumentPageSummaryHost != null) DocumentPageSummaryHost.Content = Ui.Text($"Total: {filtered.Length}   ·   Page {page + 1}/{pages}", 12, color: Ui.Muted);
-        var body = Ui.Stack(0); var columns = kind == "Product" ? ProductColumns() : kind == "Customer" ? CustomerColumns() : Documents ? DocumentColumns() : kind == "User" ? "44,*,220,160" : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(_ => "*")).Append("160"));
+        var body = Ui.Stack(0); var columns = kind == "Product" ? ProductColumns() : kind == "Customer" ? CustomerColumns() : Documents ? DocumentColumns() : kind == "User" ? "44,*,220,160" : string.Join(",", new[] { "0", "56" }.Concat(Headers.Where(h => !hidden.Contains(h) && (kind != "Product" || model.ProductFieldVisible(h))).Select(_ => "*")).Append("160"));
         Control TableRow(UiRecord? record, int index)
         {
             if (kind == "Product") return ProductTableRow(record, index);
@@ -177,7 +177,7 @@ internal sealed partial class ManagementView : UserControl
         body.Children.Add(new Border { Padding = Documents ? new Thickness(20, 10, 20, 0) : new Thickness(16, 8), Child = pager });
         results.Content = Documents
             ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 1120, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
-            : Ui.Card(new ScrollViewer { Content = new Border { MinWidth = kind is "Product" or "Customer" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
+            : Ui.Card(new ScrollViewer { Content = new Border { MinWidth = kind == "Product" ? Math.Max(800, 200 + Headers.Count(h => !hidden.Contains(h) && model.ProductFieldVisible(h)) * 130) : kind == "Customer" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
 
     // Builds the three summary cards shown above the user table.
@@ -412,7 +412,7 @@ internal sealed partial class ManagementView : UserControl
             ["Tax Rate"] = ".95*",
             ["Expiry Date"] = "1.25*"
         };
-        return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h)).Select(h => widths[h])).Append("122"));
+        return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h) && (kind != "Product" || model.ProductFieldVisible(h))).Select(h => widths.GetValueOrDefault(h, "1.3*"))).Append("122"));
     }
 
     // Performs the product table row action for this screen or workflow.
@@ -421,9 +421,9 @@ internal sealed partial class ManagementView : UserControl
         var controls = new List<Control> { HeaderOrCell(record == null ? "SL. NO." : (index + 1).ToString(), record == null, false) };
         string[] values = record == null
             ? Headers
-            : [$"{record.Name}\n{record["Type"]}", record["Sale Price"], record["HSN/SAC"], record["Purchase Price"], ProductStock(record), record["Tax (%)"], record["Expiry Date"]];
+            : Headers.Select(h => h switch { "Name / Alias" => record.Name, "Price" => record["Sale Price"], "Stock" => ProductStock(record), "Tax Rate" => record["Tax (%)"], _ => record[h] }).ToArray();
         for (var i = 0; i < Headers.Length; i++)
-            if (!hidden.Contains(Headers[i])) controls.Add(ProductCell(record, Headers[i], values[i]));
+            if (!hidden.Contains(Headers[i]) && model.ProductFieldVisible(Headers[i])) controls.Add(ProductCell(record, Headers[i], values[i]));
         controls.Add(record == null ? new Border() : ProductActions(record));
         return new Border
         {
@@ -464,14 +464,15 @@ internal sealed partial class ManagementView : UserControl
     }
 
     // Performs the product name cell action for this screen or workflow.
-    private static Control ProductNameCell(UiRecord record)
+    private Control ProductNameCell(UiRecord record)
     {
         var type = record["Type"].Length == 0 ? "Product" : record["Type"];
         var badgeColor = type == "Service" ? "#FF7A00" : "#2E7D32";
         var badgeBack = type == "Service" ? "#FFE9D6" : "#E4F3E7";
         var alias = record["Alias Name (for invoice PDF)"];
         var children = new List<Control> { Ui.Text(record.Name, 13, false), new Border { CornerRadius = new CornerRadius(5), Padding = new Thickness(8, 3), HorizontalAlignment = HorizontalAlignment.Left, Background = Brush.Parse(badgeBack), Child = Ui.Text(type, 11, true, Brush.Parse(badgeColor)) } };
-        if (!string.IsNullOrWhiteSpace(alias)) children.Add(Ui.Text("(" + alias + ")", 11, color: Ui.Muted));
+        if (!model.ProductFieldVisible("Type")) children.RemoveAt(1);
+        if (model.ProductFieldVisible("Alias Name") && !string.IsNullOrWhiteSpace(alias)) children.Add(Ui.Text("(" + alias + ")", 11, color: Ui.Muted));
         return Ui.Stack(4, children.ToArray());
     }
 

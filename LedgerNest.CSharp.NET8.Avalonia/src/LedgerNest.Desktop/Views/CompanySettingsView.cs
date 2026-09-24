@@ -278,7 +278,7 @@ public partial class MainWindow
         });
         reset.CornerRadius = new CornerRadius(18); reset.MinHeight = save.MinHeight = 32;
         reset.Padding = save.Padding = new Thickness(18, 6);
-        var header = Ui.Header("PDF Settings", "Customize invoice, quotation and receipt PDF templates", reset, save);
+        var header = Ui.AppBar("PDF Settings", reset, save);
         var view = new PdfSettingsShellView(header, templates, settings, previewCard);
         view.AttachedToVisualTree += async (_, _) =>
         {

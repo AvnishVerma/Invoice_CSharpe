@@ -31,6 +31,7 @@ public partial class MainWindow
     {
         "Company Info" => CompanySettingsView(),
         "PDF Settings" => PdfSettingsView(),
+        "Product Details" => ProductDetailsSettingsView(),
         "Users" => new ManagementView(Model, "User", this),
         "Backup" => BackupView(),
         "Customize" => CustomizationView(),
@@ -356,7 +357,7 @@ public partial class MainWindow
     {
         var cards = Ui.Stack(20, Ui.Text("MADE FOR YOUR BUSINESS", 12, true, Ui.Primary), Ui.Text($"Customize {Branding.Name}", 28, true));
         foreach (var (title, description) in new[] { ("Custom PDF Template", "An invoice design tailored to your business and branding."), ("Custom Fields", "Capture the additional details your business needs."), ("White Label", "Your brand, logo and identity throughout the application."), ("Industry Build", "A tailored workflow for your industry.") }) cards.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text(title, 20, true), Ui.Text(description, 14, color: Ui.Muted), Ui.Button("Request Customization")), 24));
-        cards.MaxWidth = 900; return Ui.Scroll(cards, 28);
+        cards.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar("Customize"), Ui.Scroll(cards, 28));
     }
     // Performs the software info action for this screen or workflow.
     private Control SoftwareInfo() => Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(Ui.Stack(24, Ui.Logo(), Ui.Card(Ui.Stack(18, Ui.Text("App Details", 18, true), Ui.Text($"App Name       {Branding.Name}"), Ui.Text("Platform          Desktop"), Ui.Text("License           See legacy LICENSE"))), Ui.Card(Ui.Stack(18, Ui.Text("Developer", 18, true), Ui.Text(Branding.Tagline), Ui.Button("Check for Updates"))), Ui.Button("Change Password", ShowChangePassword), Ui.Button("First-time Setup", ShowOnboarding)), 28));

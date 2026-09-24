@@ -140,6 +140,49 @@ internal static class Program
         Check(!defaultModel.SaveInvoice(), "A missing service injection must fail closed in every build configuration");
     }
 
+    private static void CheckProductSettingsBehavior()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-product-settings-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var model = CreateModel(factory, path);
+        Check(model.ProductFieldVisible("Manufacturer Name") && model.ProductFieldVisible("Extra Cost"), "Reference product defaults must enable metadata and extra cost");
+        model.ProductSetting("Stock").IsChecked = false;
+        model.ProductSetting("HSN/SAC").IsChecked = false;
+        model.ProductSetting("Manufacturer Name").IsChecked = false;
+        model.ProductSetting("Name").IsChecked = false;
+        model.ProductSetting("Price").IsChecked = false;
+        Check(model.SaveSettings("Product Details"), "Product preferences must save");
+        Check(model.ProductSetting("Name").IsChecked && model.ProductSetting("Price").IsChecked, "Required product fields cannot be disabled");
+        var reloaded = CreateModel(factory, path);
+        Check(!reloaded.ProductFieldVisible("Stock") && !reloaded.ProductFieldVisible("HSN/SAC") && !reloaded.ProductFieldVisible("Manufacturer Name"), "Product settings must survive a database reload");
+        var fields = reloaded.ProductEditorFields();
+        Check(fields.Single(f => f.Label == "Unlimited stock").IsChecked, "New products default to unlimited stock when stock is hidden");
+        fields.Single(f => f.Label == "Name").Value = "Product preference check";
+        fields.Single(f => f.Label == "Sale Price").Value = "120";
+        fields.Single(f => f.Label == "HSN/SAC").Value = "9988";
+        fields.Single(f => f.Label == "Manufacturer Name").Value = "Existing manufacturer";
+        Check(reloaded.SaveRecord("Product", fields), "Products must save with optional fields hidden");
+        var product = reloaded.Products.Single(p => p.Name == "Product preference check");
+        var editing = reloaded.ProductEditorFields(product);
+        editing.Single(f => f.Label == "Sale Price").Value = "125";
+        Check(reloaded.SaveRecord("Product", editing, product), "Existing products must remain editable");
+        var afterEdit = CreateModel(factory, path).Products.Single(p => p.Name == "Product preference check");
+        Check(afterEdit["HSN/SAC"] == "9988" && afterEdit["Manufacturer Name"] == "Existing manufacturer", "Hiding product fields must preserve stored values on edit");
+        reloaded.ProductSetting("Advanced Information").IsChecked = false;
+        Check(!reloaded.ProductFieldVisible("Notes") && reloaded.ProductSetting("Notes").IsChecked, "Metadata master must gate visibility without changing child settings");
+        reloaded.ProductSetting("Advanced Information").IsChecked = true;
+        Check(reloaded.ProductFieldVisible("Notes") && !reloaded.ProductFieldVisible("Manufacturer Name"), "Re-enabling metadata must restore individual choices");
+        reloaded.ProductSetting("Extra Cost").IsChecked = false;
+        reloaded.ProductSetting("Unit").IsChecked = false;
+        reloaded.ProductSetting("Default Discount").IsChecked = false;
+        InvoiceLineViewModel? line = null;
+        var dialog = new ProductItemDialogViewModel(afterEdit, value => line = value, () => { }, fieldVisible: reloaded.ProductFieldVisible);
+        Check(!dialog.ShowStock && !dialog.ShowUnit && !dialog.ShowDiscount && !dialog.ShowExtraCost, "Invoice item editor must honor product field preferences");
+        dialog.ExtraCost.Value = "99";
+        dialog.AddCommand.Execute(null);
+        Check(line is { ExtraCost: 0, Price: 125 }, "Hidden extra cost must not add a charge");
+    }
+
     private static void Check(bool condition, string message)
     { assertions++; if (!condition) throw new InvalidOperationException(message); }
     [STAThread]
@@ -150,10 +193,12 @@ internal static class Program
         var pdfSettingsOnly = args.Contains("--pdf-settings-only");
         var invoiceSettingsOnly = args.Contains("--invoice-settings-only");
         var licensingOnly = args.Contains("--licensing-only");
+        var productSettingsOnly = args.Contains("--product-settings-only");
+        if (productSettingsOnly) CheckProductSettingsBehavior();
         if (licensingOnly) CheckLicensing();
-        if (!pdfSettingsOnly && !licensingOnly) CheckInvoiceSettingsBehavior(output);
-        if (!pdfSettingsOnly && !licensingOnly) CheckInvoicePresentationSettings(output);
-        if (!pdfSettingsOnly && !invoiceSettingsOnly && !licensingOnly)
+        if (!pdfSettingsOnly && !licensingOnly && !productSettingsOnly) CheckInvoiceSettingsBehavior(output);
+        if (!pdfSettingsOnly && !licensingOnly && !productSettingsOnly) CheckInvoicePresentationSettings(output);
+        if (!pdfSettingsOnly && !invoiceSettingsOnly && !licensingOnly && !productSettingsOnly)
         {
             CheckReceiptPdf(output);
             CheckTotals();
@@ -236,6 +281,38 @@ internal static class Program
             window.Close();
             Console.WriteLine($"Licensing checks passed ({assertions} assertions). Screenshots: {output}");
             return;
+        }
+        if (productSettingsOnly)
+        {
+            window.Width = 1366; window.Height = 698;
+            model.NavigateCommand.Execute("Settings"); Click("Product Details");
+            Capture("product-details-top");
+            var toggles = window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().ToArray();
+            var nameToggle = toggles.Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Name");
+            Check(!nameToggle.IsEffectivelyEnabled && nameToggle.IsChecked == true, "Name must remain visibly enabled and locked");
+            var productScroll = window.GetVisualDescendants().OfType<ScrollViewer>().Where(s => s.Extent.Height - s.Viewport.Height > 300).OrderByDescending(s => s.Extent.Height).First();
+            productScroll.Offset = new Vector(0, productScroll.Extent.Height); Capture("product-details-metadata");
+            var master = toggles.Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Advanced Information");
+            master.IsChecked = false; Settle();
+            var manufacturer = toggles.Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Manufacturer Name");
+            Check(!manufacturer.IsEffectivelyVisible && model.ProductSetting("Manufacturer Name").IsChecked, "Metadata master must hide children without resetting choices");
+            master.IsChecked = true; Click("Save");
+            Check(model.Status == "Product Details saved.", "Save rail must persist product settings");
+            model.ProductSetting("HSN/SAC").IsChecked = false;
+            model.ProductSetting("Stock").IsChecked = false;
+            model.NavigateCommand.Execute("Products"); Settle(); Capture("products-configured");
+            Check(!window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsEffectivelyVisible && t.Text == "HSN/SAC"), "Disabled HSN column must be absent from the product list");
+            Click("＋ New Product"); Settle(); Capture("product-form-configured");
+            Check(!window.GetVisualDescendants().OfType<TextBox>().Any(t => t.IsEffectivelyVisible && Avalonia.Automation.AutomationProperties.GetName(t) is "HSN/SAC" or "Stock"), "Disabled fields must be absent from product forms");
+            Click("Cancel");
+            foreach (var pageName in new[] { "Dashboard", "New Invoice", "Reports", "Settings" })
+            {
+                model.NavigateCommand.Execute(pageName); Settle();
+                Check(window.GetVisualDescendants().OfType<Border>().Any(b => b.IsEffectivelyVisible && b.Background is Avalonia.Media.ISolidColorBrush brush && brush.Color.ToString().Equals("#ff002e78", StringComparison.OrdinalIgnoreCase)), "Shared blue header missing on " + pageName);
+            }
+            model.NavigateCommand.Execute("Settings"); Click("Product Details"); window.Width = 800; Capture("product-details-narrow");
+            Console.WriteLine($"Product settings checks passed: {assertions} assertions. Screenshots: {output}");
+            window.Close(); return;
         }
         if (invoiceSettingsOnly)
         {

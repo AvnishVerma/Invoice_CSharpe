@@ -159,9 +159,9 @@ public partial class MainWindow
     }
 
     // Builds a detailed product-search row with the commercial and stock information needed before selection.
-    private static Control ProductSearchSuggestion(UiRecord product, bool showGst = true)
+    private Control ProductSearchSuggestion(UiRecord product, bool showGst = true)
     {
-        var hasStock = !decimal.TryParse(product["Stock"], out var stock) || stock > 0 ||
+        var hasStock = !Model.ProductFieldVisible("Stock") || !decimal.TryParse(product["Stock"], out var stock) || stock > 0 ||
             bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited;
         var name = Ui.Text(product.Name, 13, false, hasStock ? Ui.TextColor : Brush.Parse("#D32F2F"));
         name.TextWrapping = TextWrapping.NoWrap;
@@ -170,14 +170,17 @@ public partial class MainWindow
         var hsn = product["HSN/SAC"].Length == 0 ? "—" : product["HSN/SAC"];
         var metadata = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         metadata.Children.Add(Ui.Text(price, 10.5, color: Ui.Muted));
-        metadata.Children.Add(Ui.Text("•", 10.5, color: Ui.Muted));
-        metadata.Children.Add(Ui.Text($"Stock: {stockText}", 10.5, color: Ui.Muted));
-        if (showGst)
+        if (Model.ProductFieldVisible("Stock"))
+        {
+            metadata.Children.Add(Ui.Text("•", 10.5, color: Ui.Muted));
+            metadata.Children.Add(Ui.Text($"Stock: {stockText}", 10.5, color: Ui.Muted));
+        }
+        if (showGst && Model.ProductFieldVisible("HSN/SAC"))
         {
             metadata.Children.Add(Ui.Text("•", 10.5, color: Ui.Muted));
             metadata.Children.Add(Ui.Text($"HSN {hsn}", 10.5, color: Ui.Muted));
         }
-        if (!string.IsNullOrWhiteSpace(product["Storage Location"]))
+        if (Model.ProductFieldVisible("Storage Location") && !string.IsNullOrWhiteSpace(product["Storage Location"]))
         {
             metadata.Children.Add(Ui.Text("•", 10.5, color: Ui.Muted));
             metadata.Children.Add(Ui.Icon("location_on", 12, Brush.Parse("#E91E63")));
@@ -197,7 +200,7 @@ public partial class MainWindow
         {
             CloseOverlay();
             search.Focus();
-        }, Model.TryAddInvoiceLine, Model.InvoiceSetting("Allow Fractional Quantity").IsChecked);
+        }, Model.TryAddInvoiceLine, Model.InvoiceSetting("Allow Fractional Quantity").IsChecked, Model.ProductFieldVisible);
         overlay.Children.Clear();
         overlay.Margin = new Thickness(0);
         overlay.IsVisible = true;

@@ -12,7 +12,7 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
-    private static readonly IBrush InvoiceSettingsBlue = Brush.Parse("#002E78");
+    private static readonly IBrush InvoiceSettingsBlue = Ui.HeaderBand;
 
     private Control InvoiceSettingsView()
     {
@@ -160,7 +160,7 @@ public partial class MainWindow
         return grid;
     }
 
-    private static Control InvoiceToggle(FormField field, string title, string help, string icon, bool compact = false)
+    private static Control InvoiceToggle(FormField field, string title, string help, string icon, bool compact = false, bool leading = false)
     {
         var track = new Border { Width = 52, Height = 32, CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(2), Padding = new Thickness(4) };
         var thumb = new Avalonia.Controls.Shapes.Ellipse { Width = 20, Height = 20 };
@@ -177,6 +177,7 @@ public partial class MainWindow
             thumb.HorizontalAlignment = toggle.IsChecked == true ? HorizontalAlignment.Right : HorizontalAlignment.Left;
         }
         toggle.IsCheckedChanged += (_, _) => Paint(); Paint();
+        if (leading) return Ui.Columns("52,16,*", toggle, new Border(), Ui.Text(title, 14));
         if (compact) return Ui.Columns("*,16,Auto", Ui.Text(title, 14), new Border(), toggle);
         return InvoiceSettingsCard(Ui.Columns("24,16,*,16,Auto", Ui.Icon(icon, 22, InvoiceSettingsBlue), new Border(), Ui.Stack(4, Ui.Text(title, 16), Ui.Text(help, 13, color: Ui.Muted)), new Border(), toggle), 12);
     }

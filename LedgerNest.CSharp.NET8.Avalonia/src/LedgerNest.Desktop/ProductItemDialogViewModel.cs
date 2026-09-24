@@ -15,6 +15,10 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
     public string Title { get; }
     public string StockText { get; }
     public string DefaultPriceText { get; }
+    public bool ShowStock { get; }
+    public bool ShowUnit { get; }
+    public bool ShowDiscount { get; }
+    public bool ShowExtraCost { get; }
     public FormField Quantity { get; } = new("Quantity", "1", "number", required: true);
     public FormField Unit { get; }
     public FormField Discount { get; }
@@ -22,8 +26,12 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
     public FormField ExtraCost { get; } = new("Extra Cost (optional)", "", "number");
     [ObservableProperty] private bool discountPerUnit = true;
 
-    public ProductItemDialogViewModel(UiRecord product, Action<InvoiceLineViewModel> addLine, Action close, Func<InvoiceLineViewModel, bool>? acceptLine = null, bool allowFractional = true)
+    public ProductItemDialogViewModel(UiRecord product, Action<InvoiceLineViewModel> addLine, Action close, Func<InvoiceLineViewModel, bool>? acceptLine = null, bool allowFractional = true, Func<string, bool>? fieldVisible = null)
     {
+        ShowStock = fieldVisible?.Invoke("Stock") ?? true;
+        ShowUnit = fieldVisible?.Invoke("Unit") ?? true;
+        ShowDiscount = fieldVisible?.Invoke("Default Discount") ?? true;
+        ShowExtraCost = fieldVisible?.Invoke("Extra Cost") ?? true;
         draft = MainWindowViewModel.CreateProductLine(product);
         this.addLine = addLine;
         this.close = close;
@@ -52,7 +60,7 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
         draft.Discount = Discount.Number;
         draft.DiscountPerUnit = DiscountPerUnit;
         draft.Price = Price.Number;
-        draft.ExtraCost = ExtraCost.Number;
+        draft.ExtraCost = ShowExtraCost ? ExtraCost.Number : 0;
         if (acceptLine != null && !acceptLine(draft)) return;
         completed = true;
         if (acceptLine == null) addLine(draft);

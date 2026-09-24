@@ -190,6 +190,7 @@ public partial class MainWindowViewModel
     public bool SaveSettings(string name)
     {
         if (!Settings.TryGetValue(name, out var sections)) return false;
+        if (name == "Product Details") { ProductSetting("Name").IsChecked = true; ProductSetting("Price").IsChecked = true; }
         var fields = sections.SelectMany(s => s.Fields).ToArray();
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
         if (name == "Invoice Settings" && !ValidateInvoiceSettings()) return false;

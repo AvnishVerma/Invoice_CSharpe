@@ -12,7 +12,7 @@ public partial class MainWindow
     // Performs the edit record action for this screen or workflow.
     internal void EditRecord(string kind, Action refresh, UiRecord? record = null)
     {
-        var fields = kind == "Customer" ? FormCatalog.Customer() : kind == "Product" ? FormCatalog.Product() : FormCatalog.User();
+        var fields = kind == "Customer" ? FormCatalog.Customer() : kind == "Product" ? Model.ProductEditorFields(record) : FormCatalog.User();
         if (record != null && kind == "User") fields = fields.Where(f => f.Kind != "password").ToArray();
         if (record != null) foreach (var f in fields) { f.Value = record[f.Label]; f.IsChecked = bool.TryParse(f.Value, out var v) && v; }
         var useDefault = new CheckBox { Content = "Use as default for new invoices", IsVisible = kind == "Customer" };
@@ -27,14 +27,20 @@ public partial class MainWindow
         Control form = Ui.Fields(fields);
         if (kind == "Product")
         {
-            form = new ProductRecordFormView(
-                Ui.Fields(fields.Skip(1).Take(4)),
-                Ui.Stack(8, Ui.Fields(fields.Skip(5).Take(2), 2), Ui.Field(fields[7]), Ui.Fields(fields.Skip(8).Take(2), 2)),
-                Ui.Fields(fields.Skip(10).Take(4), 2),
-                Ui.Fields(fields.Skip(14), 2));
+            var groups = Ui.Stack(20);
+            void AddGroup(string title, IEnumerable<FormField> source)
+            {
+                var visible = source.Where(f => Model.ProductFieldVisible(f.Label)).ToArray();
+                if (visible.Length > 0) groups.Children.Add(Ui.Stack(10, Ui.Text(title, 11, true, Ui.Muted), Ui.Fields(visible, 2)));
+            }
+            AddGroup("GENERAL", fields.Skip(1).Take(4));
+            AddGroup("PRICING", fields.Skip(5).Take(5));
+            AddGroup("STOCK & UNIT", fields.Skip(10).Take(4));
+            AddGroup("PRODUCT METADATA", fields.Skip(14));
+            form = groups;
         }
         var footer = new RecordDialogFooterView(useDefault, another, cancel, save);
-        ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, footer, true, kind == "Product" ? 550 : 520, kind == "Product" ? Ui.Segments(fields[0]) : null);
+        ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, footer, true, kind == "Product" ? 550 : 520, kind == "Product" && Model.ProductFieldVisible("Type") ? Ui.Segments(fields[0]) : null);
     }
 
     // Shows a compact read-only summary for a user account.

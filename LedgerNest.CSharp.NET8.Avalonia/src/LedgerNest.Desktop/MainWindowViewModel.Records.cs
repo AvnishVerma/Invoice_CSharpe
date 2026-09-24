@@ -19,6 +19,11 @@ public partial class MainWindowViewModel
     public bool SaveRecord(string kind, FormField[] fields, UiRecord? original = null)
     {
         if (kind is "Customer" or "Product" && !RequireBusinessLicense()) return false;
+        if (kind == "Product" && original == null && !ProductFieldVisible("Stock"))
+        {
+            var unlimited = fields.FirstOrDefault(f => f.Label == "Unlimited stock");
+            if (unlimited != null) unlimited.IsChecked = true;
+        }
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
         var records = kind == "Customer" ? Customers : kind == "Product" ? Products : Users;
         var databaseValues = fields.ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Kind == "password" ? f.Value : f.Value.Trim());

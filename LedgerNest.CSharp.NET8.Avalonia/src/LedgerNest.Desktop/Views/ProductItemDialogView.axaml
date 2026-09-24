@@ -67,7 +67,7 @@
           </Grid>
           <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Spacing="12">
-              <Border Background="#E7F5E9" BorderBrush="#A5D6A7" BorderThickness="1" CornerRadius="8" Padding="12,8">
+              <Border IsVisible="{Binding ShowStock}" Background="#E7F5E9" BorderBrush="#A5D6A7" BorderThickness="1" CornerRadius="8" Padding="12,8">
                 <TextBlock Text="{Binding StockText}" FontSize="13" Foreground="#388E3C" />
               </Border>
               <StackPanel Spacing="4">
@@ -78,11 +78,11 @@
                 <TextBlock Classes="error" Text="{Binding Quantity.Error}"
                            IsVisible="{Binding Quantity.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
               </StackPanel>
-              <Grid>
+              <Grid IsVisible="{Binding ShowUnit}">
                 <ComboBox ItemsSource="{Binding Unit.Options}" SelectedItem="{Binding Unit.Value, Mode=TwoWay}" AutomationProperties.Name="Unit (override)" />
                 <Border Classes="label"><TextBlock Classes="caption" Text="Unit (override)" /></Border>
               </Grid>
-              <StackPanel Spacing="4">
+              <StackPanel Spacing="4" IsVisible="{Binding ShowDiscount}">
                 <Grid>
                   <TextBox PlaceholderText="Discount" Text="{Binding Discount.Value, Mode=TwoWay}" AutomationProperties.Name="Discount" />
                   <Border Classes="label"><TextBlock Classes="caption" Text="Discount" /></Border>
@@ -90,7 +90,7 @@
                 <TextBlock Classes="error" Text="{Binding Discount.Error}"
                            IsVisible="{Binding Discount.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
               </StackPanel>
-              <Grid ColumnDefinitions="*,Auto">
+              <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding ShowDiscount}">
                 <StackPanel Spacing="2">
                   <TextBlock Text="Discount per unit" FontSize="13" />
                   <TextBlock Classes="helper" Text="(price − discount) × qty" />
@@ -106,7 +106,7 @@
                            IsVisible="{Binding Price.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
               </StackPanel>
               <TextBlock Classes="helper" Text="{Binding DefaultPriceText}" />
-              <StackPanel Spacing="4">
+              <StackPanel Spacing="4" IsVisible="{Binding ShowExtraCost}">
                 <Grid>
                   <TextBox PlaceholderText="Extra Cost (optional)" Text="{Binding ExtraCost.Value, Mode=TwoWay}" AutomationProperties.Name="Extra Cost (optional)" />
                   <Border Classes="label"><TextBlock Classes="caption" Text="Extra Cost (optional)" /></Border>

@@ -14,10 +14,14 @@ namespace LedgerNest.Desktop.Views;
 
 internal static class Ui
 {
+    public static IBrush HeaderBand => Brush.Parse(Branding.HeaderColor);
     // Performs the icon action for this screen or workflow.
     public static TextBlock Icon(string name, double size = 20, IBrush? color = null) => new() { Text = Icons.GetValueOrDefault(name, "\ue88f"), FontFamily = new FontFamily("avares://LedgerNest.Desktop/Assets#Material Icons"), FontSize = size, Foreground = color ?? Muted, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
     private static readonly Dictionary<string, string> Icons = new()
     {
+        ["straighten"] = "\ue41c",
+        ["category"] = "\ue574",
+        ["qr_code_2"] = "\ue00a",
         ["calendar_today"] = "\ue935",
         ["image"] = "\ue3f4",
         ["percent"] = "\ueb58",
@@ -305,8 +309,9 @@ internal static class Ui
             if (action is Button button)
             {
                 button.Foreground = Brushes.White;
-                button.Background = Primary;
+                button.Background = HeaderBand;
                 button.BorderThickness = new Thickness(0);
+                if (button.Content is TextBlock caption) caption.Foreground = Brushes.White;
                 if (button.Content is Panel content)
                     foreach (var label in content.Children.OfType<TextBlock>())
                         label.Foreground = Brushes.White;
@@ -314,7 +319,7 @@ internal static class Ui
             a.Children.Add(action);
         }
         var heading = Text(title, 20, color: Brushes.White); heading.TextWrapping = TextWrapping.NoWrap; heading.TextTrimming = TextTrimming.CharacterEllipsis;
-        return new Border { Background = Primary, Padding = new Thickness(20, 0), Height = 56, Child = Columns("*,Auto", heading, a) };
+        return new Border { Background = HeaderBand, Padding = new Thickness(20, 0), Height = 56, Child = Columns("*,Auto", heading, a) };
     }
     // Performs the stats action for this screen or workflow.
     public static Control Stats(params (string Label, string Value, string Subtitle, string Color)[] stats)
