@@ -298,12 +298,46 @@ internal static class Program
             Check(!manufacturer.IsEffectivelyVisible && model.ProductSetting("Manufacturer Name").IsChecked, "Metadata master must hide children without resetting choices");
             master.IsChecked = true; Click("Save");
             Check(model.Status == "Product Details saved.", "Save rail must persist product settings");
+            Click("×"); // Dismiss the success toast before capturing the product editor.
             model.ProductSetting("HSN/SAC").IsChecked = false;
             model.ProductSetting("Stock").IsChecked = false;
             model.NavigateCommand.Execute("Products"); Settle(); Capture("products-configured");
             Check(!window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsEffectivelyVisible && t.Text == "HSN/SAC"), "Disabled HSN column must be absent from the product list");
             Click("＋ New Product"); Settle(); Capture("product-form-configured");
             Check(!window.GetVisualDescendants().OfType<TextBox>().Any(t => t.IsEffectivelyVisible && Avalonia.Automation.AutomationProperties.GetName(t) is "HSN/SAC" or "Stock"), "Disabled fields must be absent from product forms");
+            Click("Cancel");
+            model.ProductSetting("HSN/SAC").IsChecked = true;
+            model.ProductSetting("Stock").IsChecked = true;
+            Click("＋ New Product"); Settle(); Capture("product-editor-general");
+            TextBox ProductBox(string label) => window.GetVisualDescendants().OfType<TextBox>().Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == label);
+            var fixedSaveY = FindButton("Save Product").TranslatePoint(new Point(), window)!.Value.Y;
+            Click("Save Product");
+            Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Name is required."), "Blank product name must show validation");
+            ProductBox("Name").Text = "Reference editor product";
+            ProductBox("Sale Price").Text = "125.50";
+            Click("Service");
+            var unlimitedStock = window.GetVisualDescendants().OfType<CheckBox>().Single(c => Avalonia.Automation.AutomationProperties.GetName(c) == "Unlimited stock");
+            unlimitedStock.IsChecked = true; Settle();
+            Check(!ProductBox("Stock").IsEffectivelyEnabled, "Unlimited stock must disable the stock amount input");
+            var unitChoice = window.GetVisualDescendants().OfType<ComboBox>().Single(c => Avalonia.Automation.AutomationProperties.GetName(c) == "Unit");
+            unitChoice.SelectedItem = "Custom…"; Settle();
+            Check(ProductBox("Custom unit").IsEffectivelyVisible, "Custom unit choice must reveal its input");
+            ProductBox("Custom unit").Text = "hours";
+            var advanced = window.GetVisualDescendants().OfType<Expander>().Single(e => e.Name == "ProductAdvancedInformation");
+            Check(!advanced.IsExpanded, "Advanced information must start collapsed");
+            advanced.IsExpanded = true; Settle();
+            ProductBox("Manufacturer Name").Text = "Example manufacturer";
+            ProductBox("Notes").Text = "Reference editor notes";
+            var editorScroll = window.GetVisualDescendants().OfType<OverlayDialogView>().Single().GetVisualDescendants().OfType<ScrollViewer>().OrderByDescending(s => s.Extent.Height).First();
+            editorScroll.Offset = new Vector(0, 470); Capture("product-editor-inventory");
+            editorScroll.Offset = new Vector(0, 760); Capture("product-editor-metadata");
+            editorScroll.Offset = new Vector(0, editorScroll.Extent.Height); Capture("product-editor-bottom");
+            Check(Math.Abs(FindButton("Save Product").TranslatePoint(new Point(), window)!.Value.Y - fixedSaveY) < 1, "Product footer must stay fixed while scrolling");
+            var addAnother = window.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Content?.ToString() == "Add another after saving");
+            addAnother.IsChecked = true; Click("Save Product"); Settle();
+            var savedProduct = model.Products.Single(p => p.Name == "Reference editor product");
+            Check(savedProduct["Type"] == "Service" && savedProduct["Manufacturer Name"] == "Example manufacturer" && savedProduct["Notes"] == "Reference editor notes", "Product editor must save the selected type and metadata");
+            Check(ProductBox("Name").Text == "", "Add another must open a fresh product editor");
             Click("Cancel");
             foreach (var pageName in new[] { "Dashboard", "New Invoice", "Reports", "Settings" })
             {

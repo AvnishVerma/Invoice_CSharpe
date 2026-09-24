@@ -20,6 +20,12 @@ internal static class Ui
     private static readonly Dictionary<string, string> Icons = new()
     {
         ["straighten"] = "\ue41c",
+        ["factory"] = "\uebbc",
+        ["expand_more"] = "\ue5cf",
+        ["local_shipping"] = "\ue558",
+        ["lightbulb"] = "\ue0f0",
+        ["description"] = "\ue873",
+        ["notes"] = "\ue8ef",
         ["category"] = "\ue574",
         ["qr_code_2"] = "\ue00a",
         ["calendar_today"] = "\ue935",

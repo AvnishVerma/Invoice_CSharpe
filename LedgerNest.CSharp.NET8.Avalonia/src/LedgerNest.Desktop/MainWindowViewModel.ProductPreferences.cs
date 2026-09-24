@@ -30,8 +30,13 @@ public partial class MainWindowViewModel
                 field.Value = record[field.Label];
                 field.IsChecked = bool.TryParse(field.Value, out var enabled) && enabled;
             }
-        else if (!ProductFieldVisible("Stock"))
-            fields.Single(f => f.Label == "Unlimited stock").IsChecked = true;
+        else
+        {
+            fields.Single(f => f.Label == "Sale Price").Value = "";
+            fields.Single(f => f.Label == "Purchase Price").Value = "";
+            fields.Single(f => f.Label == "Tax (%)").Value = InvoiceSetting("Default Tax Rate (%)").Value;
+            if (!ProductFieldVisible("Stock")) fields.Single(f => f.Label == "Unlimited stock").IsChecked = true;
+        }
         return fields;
     }
 }

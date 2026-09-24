@@ -32,13 +32,15 @@
             <ContentControl x:Name="LeadingIconHost"
                             Margin="0,0,12,0"
                             VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
             <TextBlock x:Name="TitleText"
-                       Grid.Column="1"
                        FontSize="16"
                        FontWeight="Bold"
                        Foreground="{DynamicResource OverlayText}"
                        VerticalAlignment="Center"
                        TextWrapping="Wrap" />
+            <TextBlock x:Name="SubtitleText" IsVisible="False" Text="Enter product details" FontSize="12" Foreground="#777777" />
+            </StackPanel>
             <ContentControl x:Name="HeaderAccessoryHost"
                             Grid.Column="2"
                             VerticalAlignment="Center" />

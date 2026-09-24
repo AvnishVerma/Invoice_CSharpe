@@ -27,20 +27,19 @@ public partial class MainWindow
         Control form = Ui.Fields(fields);
         if (kind == "Product")
         {
-            var groups = Ui.Stack(20);
-            void AddGroup(string title, IEnumerable<FormField> source)
-            {
-                var visible = source.Where(f => Model.ProductFieldVisible(f.Label)).ToArray();
-                if (visible.Length > 0) groups.Children.Add(Ui.Stack(10, Ui.Text(title, 11, true, Ui.Muted), Ui.Fields(visible, 2)));
-            }
-            AddGroup("GENERAL", fields.Skip(1).Take(4));
-            AddGroup("PRICING", fields.Skip(5).Take(5));
-            AddGroup("STOCK & UNIT", fields.Skip(10).Take(4));
-            AddGroup("PRODUCT METADATA", fields.Skip(14));
-            form = groups;
+            form = new ProductEditorFormView(fields, Model.ProductFieldVisible);
         }
-        var footer = new RecordDialogFooterView(useDefault, another, cancel, save);
-        ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, footer, true, kind == "Product" ? 550 : 520, kind == "Product" && Model.ProductFieldVisible("Type") ? Ui.Segments(fields[0]) : null);
+        Control footer;
+        if (kind == "Product")
+        {
+            foreach (var button in new[] { cancel, save }) { button.Height = 32; button.MinHeight = 32; button.Padding = new Thickness(12, 5); }
+            cancel.Background = Brushes.Transparent; cancel.Foreground = ProductEditorFormView.Purple;
+            save.Background = ProductEditorFormView.Purple;
+            save.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("save", 17, Brushes.White), new Border(), Ui.Text("Save Product", 13, true, Brushes.White));
+            footer = Ui.Stack(12, another, Ui.Columns("*,12,2*", cancel, new Border(), save));
+        }
+        else footer = new RecordDialogFooterView(useDefault, another, cancel, save);
+        ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, footer, true, kind == "Product" ? 550 : 520, kind == "Product" && Model.ProductFieldVisible("Type") ? ProductEditorFormView.TypeSelector(fields[0]) : null);
     }
 
     // Shows a compact read-only summary for a user account.

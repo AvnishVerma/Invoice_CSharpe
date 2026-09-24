@@ -38,6 +38,18 @@ public sealed partial class OverlayDialogView : UserControl
         Panel.MaxHeight = Math.Max(320, availableHeight - 32);
         Panel.HorizontalAlignment = side ? HorizontalAlignment.Right : HorizontalAlignment.Center;
         Panel.VerticalAlignment = side ? VerticalAlignment.Stretch : VerticalAlignment.Center;
+        if (content is ProductEditorFormView)
+        {
+            Panel.Width = Math.Min(550, Math.Max(280, availableWidth - 32));
+            Panel.Background = ProductEditorFormView.Surface;
+            Panel.Resources["OverlayCardSurface"] = ProductEditorFormView.Surface;
+            FooterHost.HorizontalAlignment = HorizontalAlignment.Stretch;
+            SubtitleText.IsVisible = true;
+            LeadingIconHost.IsVisible = false;
+            CloseButton.Classes.Clear(); CloseButton.Background = Avalonia.Media.Brushes.Transparent;
+            CloseButton.BorderThickness = new Thickness(0); CloseButton.Padding = new Thickness(8);
+            CloseButton.MinWidth = 32; CloseButton.MinHeight = 32; CloseButton.FontSize = 22;
+        }
     }
 
     // Performs the on close pressed action for this screen or workflow.
