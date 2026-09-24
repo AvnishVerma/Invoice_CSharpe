@@ -1,0 +1,116 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:LedgerNest.LicenseManager"
+        x:Class="LedgerNest.LicenseManager.PublisherWindow"
+        x:DataType="local:PublisherViewModel"
+        Title="LedgerNest License Manager" Width="1040" Height="850" MinWidth="760" MinHeight="660"
+        Background="#F3F6FA" WindowStartupLocation="CenterScreen">
+  <Grid RowDefinitions="Auto,*,Auto">
+    <Border Background="#153E7E" Padding="32,18">
+      <StackPanel Spacing="5">
+        <TextBlock Text="LEDGERNEST  /  PUBLISHER TOOLS" FontSize="11" Foreground="#BFD2F0" LetterSpacing="1.5" />
+        <TextBlock Text="License Manager" FontSize="28" FontWeight="SemiBold" Foreground="White" />
+        <TextBlock Text="Create signed licenses for your customers’ Windows installations." Foreground="#DEE8F8" />
+      </StackPanel>
+    </Border>
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <Grid Margin="28,16" ColumnDefinitions="*,260" ColumnSpacing="20">
+        <TabControl x:Name="Sections" IsEnabled="{Binding IsIdle}">
+          <TabItem Header="Issue license">
+            <Border Classes="card" Margin="0,16,0,0">
+              <StackPanel Spacing="10">
+                <TextBlock Text="Customer license" FontSize="21" FontWeight="SemiBold" />
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Encrypted signing key" FontWeight="SemiBold" />
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBox x:Name="PrivateKeyPath" Text="{Binding PrivateKeyPath}" PlaceholderText="Select issuer.private.pem" />
+                    <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseKeyCommand}" />
+                  </Grid>
+                </StackPanel>
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Signing password" FontWeight="SemiBold" />
+                  <TextBox x:Name="SigningPassword" Text="{Binding Password}" PasswordChar="●" RevealPassword="False" PlaceholderText="Password for the selected private key" />
+                </StackPanel>
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Customer / business name" FontWeight="SemiBold" />
+                  <TextBox x:Name="CustomerName" Text="{Binding Customer}" MaxLength="200" PlaceholderText="e.g. Acme Trading Ltd" />
+                </StackPanel>
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Customer Device ID" FontWeight="SemiBold" />
+                  <TextBox x:Name="DeviceId" Text="{Binding DeviceId}" PlaceholderText="Paste the 64-character Device ID" FontFamily="Consolas" FontSize="12" />
+                  <TextBlock Classes="hint" Text="Ask the customer to copy this from Settings → License in LedgerNest." />
+                </StackPanel>
+                <Grid ColumnDefinitions="*,140" ColumnSpacing="16">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="License type" FontWeight="SemiBold" />
+                    <ComboBox x:Name="LicenseType" SelectedIndex="{Binding LicenseKindIndex}" HorizontalAlignment="Stretch" MinHeight="40">
+                      <ComboBoxItem Content="Paid — fixed duration" />
+                      <ComboBoxItem Content="Trial — up to 30 days" />
+                      <ComboBoxItem Content="Paid — perpetual" />
+                    </ComboBox>
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="6" IsVisible="{Binding HasDuration}">
+                    <TextBlock Text="Duration (days)" FontWeight="SemiBold" />
+                    <NumericUpDown x:Name="Duration" Value="{Binding DurationDays}" Minimum="1" Maximum="{Binding MaximumDays}" Increment="1" FormatString="0" MinHeight="40" />
+                  </StackPanel>
+                </Grid>
+                <TextBlock Classes="hint" Text="{Binding DurationHint}" />
+                <Button x:Name="IssueButton" Classes="primary" Content="Issue &amp; save license…" Command="{Binding IssueCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,4,0,0" />
+              </StackPanel>
+            </Border>
+          </TabItem>
+          <TabItem Header="Signing keys">
+            <Border Classes="card" Margin="0,16,0,0">
+              <StackPanel Spacing="14">
+                <TextBlock Text="Create your signing keys" FontSize="21" FontWeight="SemiBold" />
+                <TextBlock Classes="hint" Text="Set up once, then reuse the same signing key for every customer. Existing customer apps only accept licenses signed with the key that matches their embedded public key." />
+                <StackPanel Spacing="6">
+                  <TextBlock Text="New signing password" FontWeight="SemiBold" />
+                  <TextBox Text="{Binding NewKeyPassword}" PasswordChar="●" RevealPassword="False" PlaceholderText="At least 16 characters" />
+                </StackPanel>
+                <StackPanel Spacing="6">
+                  <TextBlock Text="Confirm password" FontWeight="SemiBold" />
+                  <TextBox Text="{Binding ConfirmPassword}" PasswordChar="●" RevealPassword="False" PlaceholderText="Enter the same password again" />
+                </StackPanel>
+                <Button x:Name="GenerateButton" Classes="primary" Content="Choose folder &amp; generate keys…" Command="{Binding GenerateKeysCommand}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" />
+                <TextBlock Classes="hint" Text="Creates issuer.private.pem (encrypted) and public-key.pem in the folder you choose. Existing files are never overwritten." />
+                <Separator />
+                <TextBlock Text="Already have a signing key?" FontSize="17" FontWeight="SemiBold" />
+                <TextBlock Classes="hint" Text="Select your private key and enter its password on the Issue license tab. You can then export its matching public key here." />
+                <Button Content="Export public key…" Command="{Binding ExportPublicKeyCommand}" />
+              </StackPanel>
+            </Border>
+          </TabItem>
+        </TabControl>
+        <StackPanel Grid.Column="1" Spacing="16" Margin="0,55,0,0">
+          <Border Classes="card" Padding="20">
+            <StackPanel Spacing="16">
+              <TextBlock Text="From setup to activation" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="1. Create or select your signing key." TextWrapping="Wrap" />
+              <TextBlock Text="2. Build the customer app with the matching public-key.pem." TextWrapping="Wrap" />
+              <TextBlock Text="3. Enter the customer’s Device ID and issue their license." TextWrapping="Wrap" />
+              <TextBlock Text="4. Send the .ledgerlicense file. The customer imports it in Settings → License." TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+          <Border Background="#E7EEF9" CornerRadius="10" Padding="20">
+            <StackPanel Spacing="8">
+              <TextBlock Text="Publisher use only" FontWeight="SemiBold" Foreground="#153E7E" />
+              <TextBlock Classes="hint" Text="Keep this app, your private key, and its password with you. Only the public key belongs in the customer app." />
+              <TextBlock Classes="hint" Text="Passwords are not saved and are cleared after signing or key generation." />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+    <Border Grid.Row="2" Background="White" BorderBrush="#DCE3ED" BorderThickness="0,1,0,0" Padding="28,15">
+      <StackPanel Spacing="7">
+        <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="True" Height="3" />
+        <TextBlock x:Name="StatusMessage" Text="{Binding Status}" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="#153E7E" />
+        <ScrollViewer MaxHeight="140" VerticalScrollBarVisibility="Auto">
+          <SelectableTextBlock Text="{Binding Result}" TextWrapping="Wrap" FontSize="12" Foreground="#526078" />
+        </ScrollViewer>
+      </StackPanel>
+    </Border>
+  </Grid>
+</Window>
+

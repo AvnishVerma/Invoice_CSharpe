@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "src\\LedgerNest.Desktop\\LedgerNest.Desktop.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "tools\\LedgerNest.LicenseManager\\LedgerNest.LicenseManager.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

@@ -1,0 +1,13 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.LicenseManager.PublisherApp" RequestedThemeVariant="Light">
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector="Window"><Setter Property="FontFamily" Value="Segoe UI" /></Style>
+    <Style Selector="TextBlock.hint"><Setter Property="Foreground" Value="#66758B" /><Setter Property="TextWrapping" Value="Wrap" /><Setter Property="FontSize" Value="13" /></Style>
+    <Style Selector="TextBox"><Setter Property="MinHeight" Value="40" /></Style>
+    <Style Selector="Button"><Setter Property="MinHeight" Value="38" /><Setter Property="Padding" Value="16,8" /><Setter Property="CornerRadius" Value="6" /></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#153E7E" /><Setter Property="Foreground" Value="White" /></Style>
+    <Style Selector="Border.card"><Setter Property="Background" Value="White" /><Setter Property="BorderBrush" Value="#DCE3ED" /><Setter Property="BorderThickness" Value="1" /><Setter Property="CornerRadius" Value="12" /><Setter Property="Padding" Value="20" /></Style>
+  </Application.Styles>
+</Application>

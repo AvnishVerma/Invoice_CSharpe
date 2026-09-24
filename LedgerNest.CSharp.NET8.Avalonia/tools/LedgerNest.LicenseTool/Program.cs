@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Security.Cryptography;
-using System.Text.Json;
+using LedgerNest.LicensePublisher;
 using LedgerNest.Application;
 using LedgerNest.Domain;
 
@@ -33,26 +33,12 @@ try
     {
         if (options.Keys.Any(key => !names.Contains(key))) throw new ArgumentException("Unknown option.");
     }
-    void WriteNew(string path, string content)
-    {
-        var fullPath = Path.GetFullPath(path);
-        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-        using var stream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-        using var writer = new StreamWriter(stream); writer.Write(content);
-    }
-    using var rsa = RSA.Create();
     switch (args[0])
     {
         case "keygen":
             Allowed("private", "public");
             var privatePath = Required("private"); var publicPath = Required("public");
-            if (File.Exists(privatePath) || File.Exists(publicPath) || Path.GetFullPath(privatePath).Equals(Path.GetFullPath(publicPath), StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Choose two different output paths that do not already exist.");
-            var password = ReadPassword();
-            if (password.Length < 16) throw new ArgumentException("Use a signing password of at least 16 characters.");
-            rsa.KeySize = 3072;
-            WriteNew(privatePath, rsa.ExportEncryptedPkcs8PrivateKeyPem(password, new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 200_000)));
-            WriteNew(publicPath, rsa.ExportSubjectPublicKeyInfoPem());
+            LicenseIssuer.SaveKeys(privatePath, publicPath, LicenseIssuer.GenerateKeys(ReadPassword()));
             Console.WriteLine("Created encrypted publisher key and public verification key. Back up the encrypted private key securely.");
             break;
         case "issue":
@@ -65,17 +51,9 @@ try
             if (days < 1 || days > (trial ? 30 : 36500)) throw new ArgumentException("License duration is outside the supported range.");
             var output = Required("out");
             if (File.Exists(output)) throw new ArgumentException("Output file already exists.");
-            rsa.ImportFromEncryptedPem(File.ReadAllText(Required("private")), ReadPassword());
-            if (rsa.KeySize < 2048) throw new ArgumentException("The signing key must be at least 2048 bits.");
-            var now = DateTimeOffset.UtcNow;
-            var claims = new LicenseClaims
-            {
-                LicenseId = Guid.NewGuid().ToString(), Customer = customer.Trim(), DeviceId = device, Kind = trial ? "Trial" : "Paid",
-                IssuedAtUtc = now, NotBeforeUtc = now, ExpiresAtUtc = perpetual ? null : now.AddDays(days), Features = [LicenseFeatures.BusinessWrite]
-            };
-            var payload = JsonSerializer.SerializeToUtf8Bytes(claims);
-            var document = JsonSerializer.Serialize(new SignedLicense(Convert.ToBase64String(payload), Convert.ToBase64String(rsa.SignData(payload, HashAlgorithmName.SHA256, RSASignaturePadding.Pss))));
-            WriteNew(output, document);
+            var issued = LicenseIssuer.Issue(File.ReadAllText(Required("private")), ReadPassword(), customer, device, trial, perpetual, days);
+            LicenseIssuer.WriteNew(output, issued.Document);
+            var claims = issued.Claims;
             Console.WriteLine($"Issued {claims.Kind} license {claims.LicenseId}. Expiry: {claims.ExpiresAtUtc?.ToString("u") ?? "Perpetual"}.");
             break;
         case "verify":

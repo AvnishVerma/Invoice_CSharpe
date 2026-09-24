@@ -10,6 +10,34 @@ There is no activation server configured or implemented in this first version. T
 
 ## Publisher setup
 
+### Windows License Manager
+
+The separate Windows publisher interface is `tools/LedgerNest.LicenseManager`. Start it with:
+
+```powershell
+dotnet run --project tools/LedgerNest.LicenseManager
+```
+
+To create a distributable publisher folder (requires the .NET 10 runtime on the publisher's computer):
+
+```powershell
+dotnet publish tools/LedgerNest.LicenseManager -c Release -o tools/LedgerNest.LicenseManager/bin/publish
+```
+
+Open `LedgerNest.LicenseManager.exe` in that folder. Keep all files in the folder together.
+
+1. On **Signing keys**, enter and confirm a password of at least 16 characters. Choose a folder to create `issuer.private.pem` and `public-key.pem`. Reuse an existing private key instead if your customer application already embeds its public key.
+2. Copy **only** `public-key.pem` to `src/LedgerNest.Desktop/Licensing/public-key.pem`, or supply its path using `LedgerNestLicensePublicKeyFile` when publishing the customer application (see below).
+3. On **Issue license**, browse to the encrypted private key and enter its password, the customer name, and the Device ID copied from the customer's **Settings → License** screen.
+4. Select a paid duration, a trial of 1–30 days, or a perpetual paid license. Click **Issue & save license…** and select a new `.ledgerlicense` filename. Duration starts at issuance in UTC.
+5. Send the saved license file to the customer to import under **Settings → License**. The result panel shows the license ID, expiry, and saved path.
+
+The manager does not overwrite keys or licenses. Passwords are masked, never persisted, and cleared after the corresponding operation or when the window closes. If you need another copy of your public key, select your existing private key and enter its password on the issuance tab, then use **Export public key…** on the keys tab. This also recovers from a failed public-key save after the private key was successfully created.
+
+Both the GUI and CLI use the publisher-only `LedgerNest.LicensePublisher` project for key generation and signing. None of these three projects is referenced by the customer Desktop application. Do not ship the License Manager or private keys in the customer installer. No production keys are generated automatically.
+
+### Command-line alternative
+
 Run from the solution root using its pinned SDK:
 
 ```powershell
@@ -57,3 +85,11 @@ dotnet build tools/LedgerNest.LicenseTool --no-restore
 ```
 
 The focused checks cover signature/payload tampering, wrong keys/devices/products, schema checks, trial and perpetual licenses, UTC expiry boundaries, clock rollback/reimports, failed writes, persistence, renewals, business-operation guards, retained exports, and activation screen states.
+
+The separate publisher GUI checks use disposable keys and the production client verifier, exercise actual bound controls, and render both tabs and the issuance result:
+
+```powershell
+dotnet run --project tests/LedgerNest.LicenseManager.Checks -- artifacts/license-manager
+```
+
+They cover encrypted key generation, password confirmation and clearing, paid/trial/perpetual issuance, device binding, invalid input, failed signing, cancellation, overwrite protection, and public-key recovery. Temporary test keys are deleted after the checks.
