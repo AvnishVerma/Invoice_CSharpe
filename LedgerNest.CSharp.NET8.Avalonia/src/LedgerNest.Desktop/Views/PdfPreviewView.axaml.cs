@@ -18,6 +18,5 @@ public sealed class PdfPreviewModel
 {
     public string Title { get; init; } = "PDF Preview";
     public string PageCountText { get; init; } = "";
-    public double MaxPreviewHeight { get; init; } = 720;
     public ObservableCollection<IImage> Pages { get; } = [];
 }

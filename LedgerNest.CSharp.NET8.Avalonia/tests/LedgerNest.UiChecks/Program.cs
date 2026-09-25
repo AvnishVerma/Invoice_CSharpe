@@ -332,6 +332,26 @@ internal static class Program
             model.NavigateCommand.Execute("Customers"); Settle();
             Check(FindButton("View").Content is TextBlock { Text.Length: 1 }, "Customer actions must display icons instead of clipped words");
             Capture("appearance-customer-actions");
+            foreach (var previewWidth in new[] { 1366, 800 })
+            {
+                window.Width = previewWidth; Settle();
+                var previewTask = window.ShowPdfPreviewAsync(model.LastSavedDocument!);
+                var deadline = DateTime.UtcNow.AddSeconds(30);
+                while (!previewTask.IsCompleted && DateTime.UtcNow < deadline)
+                {
+                    Settle(); Thread.Sleep(10);
+                }
+                Check(previewTask.IsCompletedSuccessfully, "PDF preview must render successfully");
+                Settle();
+                var pdfView = window.GetVisualDescendants().OfType<PdfPreviewView>().Single();
+                var pageImage = pdfView.GetVisualDescendants().OfType<Image>().First();
+                Check(pageImage.Bounds.Width > pdfView.Bounds.Width * .9, "PDF page must fill the available preview width");
+                Check(Math.Abs(pageImage.Bounds.Width / pageImage.Bounds.Height - pageImage.Source!.Size.AspectRatio) < .01, "PDF preview must preserve page proportions");
+                var scroller = pdfView.GetVisualAncestors().OfType<ScrollViewer>().First();
+                Check(scroller.Extent.Height > scroller.Viewport.Height, "Large PDF pages must scroll vertically");
+                Capture($"pdf-preview-width-{previewWidth}");
+                Click("Close"); Settle();
+            }
             var path = Path.Combine(Path.GetTempPath(), $"ledgernest-appearance-{Guid.NewGuid():N}.db");
             var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
             var saved = CreateModel(factory, path); saved.SetLanguage("हिन्दी"); saved.SetThemeMode("Dark");

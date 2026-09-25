@@ -752,7 +752,6 @@ internal sealed partial class ManagementView : UserControl
             item.Click += (_, _) => { menu.Hide(); action?.Invoke(); };
             menu.Items.Add(item);
         }
-        Add("Duplicate", "receipt_long", () => model.Status = $"Duplicate {kind.ToLowerInvariant()} is not yet migrated.");
         Add(trash ? "Delete Permanently" : "Move to Trash", "delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }));
         button.Flyout = menu;
         return button;

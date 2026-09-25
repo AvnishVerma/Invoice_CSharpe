@@ -48,8 +48,7 @@ public partial class MainWindow
             var preview = new PdfPreviewModel
             {
                 Title = $"{document.Name} PDF Preview",
-                PageCountText = rendered.Count == 1 ? "1 page" : $"{rendered.Count} pages",
-                MaxPreviewHeight = Math.Max(360, Bounds.Height * .68)
+                PageCountText = rendered.Count == 1 ? "1 page" : $"{rendered.Count} pages"
             };
             foreach (var page in rendered) preview.Pages.Add(CreatePreviewBitmap(page.Pixels, page.Width, page.Height));
             ShowOverlay("PDF Preview", new PdfPreviewView(preview),
@@ -57,7 +56,7 @@ public partial class MainWindow
                     Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)),
                     Ui.Button("Print", async () => await PrintDocumentAsync(document), true),
                     Ui.Button("Close", CloseOverlay)),
-                width: 860);
+                width: 1100);
             Model.Status = $"PDF preview ready for {document.Name}.";
         }
         catch (Exception ex)
