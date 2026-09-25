@@ -1,12 +1,12 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.InvoiceCreatedView">
   <Grid RowDefinitions="Auto,*">
     <Border Background="{DynamicResource PageHeaderBrush}"
-            Height="56"
-            Padding="20,0">
+            Height="44.8"
+            Padding="16,0">
       <Grid ColumnDefinitions="*,Auto,*">
-        <TextBlock Text="Invoice Created"
+        <TextBlock loc:UiLocalization.Text="Invoice Created"
                    Foreground="White"
                    FontSize="20"
                    VerticalAlignment="Center" />
@@ -30,7 +30,7 @@
         <Border Width="480"
                 MinHeight="500"
                 CornerRadius="22"
-                Padding="34"
+                Padding="27.2"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 BoxShadow="0 6 18 0 #37000000">
@@ -41,15 +41,15 @@
             </LinearGradientBrush>
           </Border.Background>
 
-          <StackPanel Spacing="20"
+          <StackPanel Spacing="16"
                       HorizontalAlignment="Center">
             <Border Width="112"
-                    Height="112"
+                    Height="89.6"
                     CornerRadius="56"
                     Background="#C8EBCB"
                     HorizontalAlignment="Center">
               <Border Width="64"
-                      Height="64"
+                      Height="51.2"
                       CornerRadius="32"
                       Background="#338E3C"
                       HorizontalAlignment="Center"
@@ -63,14 +63,14 @@
               </Border>
             </Border>
 
-            <TextBlock Text="Invoice Created Successfully!"
+            <TextBlock loc:UiLocalization.Text="Invoice Created Successfully!"
                        FontSize="24"
                        FontWeight="Bold"
                        HorizontalAlignment="Center" />
 
-            <Border Background="#E3F2FD"
+            <Border Background="{DynamicResource AppCardBrush}"
                     CornerRadius="18"
-                    Padding="16,8"
+                    Padding="12.8,6.4"
                     HorizontalAlignment="Center">
               <TextBlock x:Name="InvoiceIdText"
                          Foreground="#1E88E5"
@@ -79,12 +79,12 @@
             </Border>
 
             <StackPanel Orientation="Horizontal"
-                        Spacing="18"
+                        Spacing="14.4"
                         HorizontalAlignment="Center">
-              <StackPanel Spacing="8">
+              <StackPanel Spacing="6.4">
                 <Button x:Name="ViewButton"
                         Width="72"
-                        Height="72"
+                        Height="57.6"
                         Background="#1A4CAF50"
                         BorderBrush="#594CAF50"
                         BorderThickness="2">
@@ -93,18 +93,18 @@
                              FontSize="34"
                              Foreground="#4CAF50" />
                 </Button>
-                <TextBlock Text="View Details"
+                <TextBlock loc:UiLocalization.Text="View Details"
                            Foreground="#4CAF50"
                            FontSize="13"
                            FontWeight="Bold"
                            TextAlignment="Center" />
               </StackPanel>
                 <StackPanel x:Name="PaymentActionPanel"
-                            Spacing="8">
+                            Spacing="6.4">
                     <Button x:Name="ApplyPaymentButton"
                             Tag="Apply Payment"
                             Width="72"
-                            Height="72"
+                            Height="57.6"
                             Background="#1A009688"
                             BorderBrush="#59009688"
                             BorderThickness="2">
@@ -113,17 +113,17 @@
                                    FontSize="34"
                                    Foreground="#00897B" />
                     </Button>
-                    <TextBlock Text="Payment"
+                    <TextBlock loc:UiLocalization.Text="Payment"
                                Foreground="#00897B"
                                FontSize="13"
                                FontWeight="Bold"
                                TextAlignment="Center" />
                 </StackPanel>
 
-                <StackPanel Spacing="8">
+                <StackPanel Spacing="6.4">
                 <Button x:Name="PreviewButton"
                         Width="72"
-                        Height="72"
+                        Height="57.6"
                         Background="#1A9C27B0"
                         BorderBrush="#599C27B0"
                         BorderThickness="2">
@@ -132,17 +132,17 @@
                              FontSize="34"
                              Foreground="#9C27B0" />
                 </Button>
-                <TextBlock Text="Preview PDF"
+                <TextBlock loc:UiLocalization.Text="Preview PDF"
                            Foreground="#9C27B0"
                            FontSize="13"
                            FontWeight="Bold"
                            TextAlignment="Center" />
               </StackPanel>
 
-              <StackPanel Spacing="8">
+              <StackPanel Spacing="6.4">
                 <Button x:Name="PrintButton"
                         Width="72"
-                        Height="72"
+                        Height="57.6"
                         Background="#1A2196F3"
                         BorderBrush="#592196F3"
                         BorderThickness="2">
@@ -151,7 +151,7 @@
                              FontSize="34"
                              Foreground="#2196F3" />
                 </Button>
-                <TextBlock Text="Print Invoice"
+                <TextBlock loc:UiLocalization.Text="Print Invoice"
                            Foreground="#2196F3"
                            FontSize="13"
                            FontWeight="Bold"
@@ -163,7 +163,7 @@
             <Button x:Name="CreateNewButton"
                     Tag="Create New Invoice"
                     HorizontalAlignment="Stretch"
-                    MinHeight="52"
+                    MinHeight="41.6"
                     Classes="primary">
               <Grid ColumnDefinitions="Auto,10,*">
                 <TextBlock Text=""
@@ -172,7 +172,7 @@
                            Foreground="White"
                            VerticalAlignment="Center" />
                 <TextBlock Grid.Column="2"
-                           Text="Create New Invoice (Shortcut: Ctrl+q)"
+                           loc:UiLocalization.Text="Create New Invoice (Shortcut: Ctrl+q)"
                            Foreground="White"
                            FontSize="16"
                            FontWeight="Bold"

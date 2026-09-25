@@ -2,12 +2,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.InvoiceEditorShellView"
              x:CompileBindings="False">
+  <UserControl.Styles>
+    <Style Selector="Expander /template/ ToggleButton">
+      <Setter Property="MinHeight" Value="38" />
+      <Setter Property="Padding" Value="10,6" />
+    </Style>
+    <Style Selector="NumericUpDown /template/ TextBox">
+      <Setter Property="MinHeight" Value="29" />
+      <Setter Property="Padding" Value="6,3" />
+    </Style>
+  </UserControl.Styles>
   <Grid RowDefinitions="Auto,*,Auto">
     <Border Background="{DynamicResource PageHeaderBrush}" Padding="18,10">
-      <Grid ColumnDefinitions="*,Auto,*" MinHeight="38">
+      <Grid ColumnDefinitions="*,Auto" MinHeight="34">
         <TextBlock Text="{Binding Title}" Foreground="White" FontSize="20" VerticalAlignment="Center" />
-        <TextBlock Grid.Column="1" Text="{Binding DateText}" Foreground="White" FontSize="20" VerticalAlignment="Center" />
-        <TextBlock Grid.Column="2" Text="{Binding NumberText}" Foreground="White" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding NumberText}" Foreground="White" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,0" />
       </Grid>
     </Border>
 
@@ -15,12 +24,13 @@
 
     <Border x:Name="FooterFrame"
             Grid.Row="2"
-            BorderBrush="#E0E0E0"
+            BorderBrush="{DynamicResource AppOutlineBrush}"
             BorderThickness="0,1,0,0"
-            Padding="64,10">
-      <Grid ColumnDefinitions="*,Auto">
-        <ContentControl x:Name="ActionsHost" HorizontalAlignment="Left" />
-        <ContentControl x:Name="CreateHost" Grid.Column="1" HorizontalAlignment="Right" />
+            Padding="16,8">
+      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+        <ContentControl x:Name="TotalsHost" Grid.ColumnSpan="2" Margin="0,0,0,6" HorizontalContentAlignment="Stretch" />
+        <ContentControl x:Name="ActionsHost" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Center" />
+        <ContentControl x:Name="CreateHost" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" />
       </Grid>
     </Border>
   </Grid>

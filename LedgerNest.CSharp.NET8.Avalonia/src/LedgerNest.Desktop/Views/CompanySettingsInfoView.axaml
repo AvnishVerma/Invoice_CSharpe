@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.CompanySettingsInfoView">
   <UserControl.Resources>
@@ -23,23 +23,23 @@
               BorderThickness="0,0,1,0">
         <Grid RowDefinitions="*,Auto">
           <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Border Padding="24">
-              <StackPanel Spacing="16">
-                <TextBlock Text="COMPANY LOGO" FontSize="12" FontWeight="Bold" Foreground="#666666" />
+            <Border Padding="19.2">
+              <StackPanel Spacing="12.8">
+                <TextBlock loc:UiLocalization.Text="COMPANY LOGO" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
                 <ContentControl x:Name="LogoButtonHost" />
                 <ContentControl x:Name="LogoPositionHost" />
                 <ContentControl x:Name="PreviewNameHost" />
-                <TextBlock Text="Max 1080x1080 px - 2 MB&#x0a;PNG or JPG only" FontSize="12" Foreground="#666666" TextWrapping="Wrap" />
+                <TextBlock Text="Max 1080x1080 px - 2 MB&#x0a;PNG or JPG only" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
               </StackPanel>
             </Border>
           </ScrollViewer>
-          <Border Grid.Row="1" Padding="16">
+          <Border Grid.Row="1" Padding="12.8">
             <ContentControl x:Name="SaveHost" />
           </Border>
         </Grid>
       </Border>
       <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Border Padding="32">
+        <Border Padding="25.6">
           <ContentControl x:Name="DetailsHost" />
         </Border>
       </ScrollViewer>

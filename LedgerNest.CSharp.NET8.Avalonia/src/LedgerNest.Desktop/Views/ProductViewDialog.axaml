@@ -1,16 +1,16 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.ProductViewDialog"
              x:CompileBindings="False">
-  <StackPanel Spacing="14">
-    <TextBlock Text="Product details" FontSize="13" Foreground="#6E6E78" />
+  <StackPanel Spacing="11.2">
+    <TextBlock loc:UiLocalization.Text="Product details" FontSize="13" Foreground="#6E6E78" />
 
-    <TextBlock Text="GENERAL" FontSize="12" FontWeight="Bold" Foreground="#6E6E78" />
+    <TextBlock loc:UiLocalization.Text="GENERAL" FontSize="12" FontWeight="Bold" Foreground="#6E6E78" />
 
     <Grid ColumnDefinitions="*,12,*">
       <StackPanel>
-        <TextBlock Text="Product Name" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="48" Padding="10,8">
+        <TextBlock loc:UiLocalization.Text="Product Name" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
+        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
           <Grid ColumnDefinitions="28,*">
             <TextBlock Text="▣" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
             <TextBlock Grid.Column="1" Text="{Binding ProductName}" FontSize="15" Foreground="#1F1F29" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
@@ -19,8 +19,8 @@
       </StackPanel>
 
       <StackPanel Grid.Column="2">
-        <TextBlock Text="Alias Name (for invoice PDF)" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="48" Padding="10,8">
+        <TextBlock loc:UiLocalization.Text="Alias Name (for invoice PDF)" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
+        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
           <Grid ColumnDefinitions="28,*">
             <TextBlock Text="文" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
             <TextBlock Grid.Column="1" Text="{Binding AliasName}" FontSize="15" Foreground="#1F1F29" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
@@ -30,8 +30,8 @@
     </Grid>
 
     <StackPanel>
-      <TextBlock Text="Description" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
-      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="92" Padding="10,12">
+      <TextBlock loc:UiLocalization.Text="Description" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
+      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="73.6" Padding="8,9.6">
         <Grid ColumnDefinitions="28,*">
           <TextBlock Text="▤" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Top" />
           <TextBlock Grid.Column="1" Text="{Binding Description}" FontSize="15" Foreground="#1F1F29" TextWrapping="Wrap" />
@@ -40,8 +40,8 @@
     </StackPanel>
 
     <StackPanel>
-      <TextBlock Text="HSN / SAC" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
-      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="48" Padding="10,8">
+      <TextBlock loc:UiLocalization.Text="HSN / SAC" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
+      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
         <Grid ColumnDefinitions="28,*">
           <TextBlock Text="⌘" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
           <TextBlock Grid.Column="1" Text="{Binding HsnSac}" FontSize="15" Foreground="#1F1F29" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
@@ -49,35 +49,35 @@
       </Border>
     </StackPanel>
 
-    <TextBlock Text="PRICING" FontSize="12" FontWeight="Bold" Foreground="#6E6E78" Margin="0,4,0,0" />
+    <TextBlock loc:UiLocalization.Text="PRICING" FontSize="12" FontWeight="Bold" Foreground="#6E6E78" Margin="0,4,0,0" />
 
     <Grid ColumnDefinitions="*,12,*">
       <StackPanel>
-        <TextBlock Text="Price" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="48" Padding="10,8">
+        <TextBlock loc:UiLocalization.Text="Price" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
+        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
           <TextBlock Text="{Binding Price}" FontSize="15" Foreground="#1F1F29" VerticalAlignment="Center" />
         </Border>
       </StackPanel>
 
       <StackPanel Grid.Column="2">
-        <TextBlock Text="Purchase Price" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="48" Padding="10,8">
+        <TextBlock loc:UiLocalization.Text="Purchase Price" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
+        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
           <TextBlock Text="{Binding PurchasePrice}" FontSize="15" Foreground="#1F1F29" VerticalAlignment="Center" />
         </Border>
       </StackPanel>
     </Grid>
 
     <StackPanel>
-      <TextBlock Text="Default Discount" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
-      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="48" Padding="10,8">
+      <TextBlock loc:UiLocalization.Text="Default Discount" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
+      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
         <TextBlock Text="{Binding DefaultDiscount}" FontSize="15" Foreground="#1F1F29" VerticalAlignment="Center" />
       </Border>
     </StackPanel>
 
     <Grid ColumnDefinitions="*,12,*">
       <StackPanel>
-        <TextBlock Text="Tax Rate (%)" FontSize="12" Foreground="#777777" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="White" MinHeight="48" Padding="10,8">
+        <TextBlock loc:UiLocalization.Text="Tax Rate (%)" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
+        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
           <Grid ColumnDefinitions="28,*">
             <TextBlock Text="%" FontSize="22" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
             <TextBlock Grid.Column="1" Text="{Binding TaxRate}" FontSize="15" Foreground="#1F1F29" VerticalAlignment="Center" />

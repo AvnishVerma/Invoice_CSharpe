@@ -31,7 +31,7 @@ public sealed partial class SidebarView : UserControl
             var button = Ui.Button(route, () => navigate(route));
             var marker = new Border { Width = 3, Height = 18, CornerRadius = new CornerRadius(2), Background = Ui.Primary, IsVisible = selected && expanded };
             button.Content = expanded
-                ? Ui.Columns("18,12,*,Auto", Ui.Icon(icons[i], 18, selected ? Ui.Primary : Ui.Muted), new Border(), Ui.Text(route, 13.5, selected, selected ? Ui.Primary : Ui.Muted), marker)
+                ? Ui.Columns("18,12,*,Auto", Ui.Icon(icons[i], 18, selected ? Ui.Primary : Ui.Muted), new Border(), Ui.LocalText(route, 13.5, selected, selected ? Ui.Primary : Ui.Muted), marker)
                 : Ui.Icon(icons[i], 20, selected ? Ui.Primary : Ui.Muted);
             button.HorizontalContentAlignment = HorizontalAlignment.Stretch;
             button.Classes.Clear();
@@ -42,7 +42,7 @@ public sealed partial class SidebarView : UserControl
         }
         NavHost.Content = nav;
 
-        var avatar = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(15), Background = Brush.Parse("#DDE3ED"), Child = Ui.Text(model.CurrentUsername is { Length: > 0 } username ? username[..1].ToUpperInvariant() : "?", 12, true, Ui.Primary) };
+        var avatar = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(15), Background = Ui.Palette("#DDE3ED", "#202B36"), Child = Ui.Text(model.CurrentUsername is { Length: > 0 } username ? username[..1].ToUpperInvariant() : "?", 12, true, Ui.Primary) };
         ((TextBlock)avatar.Child!).HorizontalAlignment = HorizontalAlignment.Center;
         var logoutButton = Ui.Button("⇥", logout);
         Avalonia.Automation.AutomationProperties.SetName(logoutButton, model.CurrentUsername == null ? "Sign in" : "Sign out");

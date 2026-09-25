@@ -45,7 +45,7 @@ public sealed partial class InvoiceWorkspace : UserControl
         if (left == null || right == null || items == null || options == null)
             return;
 
-        var narrow = width < 1000;
+        var narrow = width < 880;
         if (previousNarrow == narrow)
             return;
 
@@ -56,7 +56,7 @@ public sealed partial class InvoiceWorkspace : UserControl
         NarrowRight.Content = null;
 
         items.MinHeight = narrow ? 360 : 0;
-        options.MinHeight = narrow ? 540 : 0;
+        options.MinHeight = narrow ? 320 : 0;
         WideRoot.IsVisible = !narrow;
         NarrowRoot.IsVisible = narrow;
 

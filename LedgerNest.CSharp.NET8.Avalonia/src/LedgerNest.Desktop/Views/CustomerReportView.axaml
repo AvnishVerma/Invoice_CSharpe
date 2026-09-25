@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.CustomerReportView"
              x:CompileBindings="False">
@@ -11,7 +11,7 @@
     </Style>
     <Style Selector="Button.reportTab">
       <Setter Property="MinWidth" Value="104" />
-      <Setter Property="Height" Value="34" />
+      <Setter Property="Height" Value="27.2" />
       <Setter Property="Padding" Value="14,5" />
       <Setter Property="CornerRadius" Value="7" />
       <Setter Property="FontSize" Value="12" />
@@ -36,19 +36,19 @@
   </UserControl.Styles>
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-    <StackPanel Margin="16" Spacing="14">
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <Button Classes="reportTab" IsVisible="{Binding IsOverview}" Content="✓  Overview" Background="#E8EDF9" BorderBrush="#0D47A1" Foreground="#0D47A1" FontWeight="SemiBold" />
-        <Button Classes="reportTab" IsVisible="{Binding IsStatement}" Content="Overview" Command="{Binding ShowOverviewCommand}" Background="#FBF5FF" BorderBrush="#E4DEE8" Foreground="#666666" />
-        <Button Classes="reportTab" IsVisible="{Binding IsOverview}" Content="Statements" Command="{Binding ShowStatementCommand}" Background="#FBF5FF" BorderBrush="#E4DEE8" Foreground="#666666" />
-        <Button Classes="reportTab" IsVisible="{Binding IsStatement}" Content="✓  Statements" Background="#E8EDF9" BorderBrush="#0D47A1" Foreground="#0D47A1" FontWeight="SemiBold" />
+    <StackPanel Margin="16" Spacing="11.2">
+      <StackPanel Orientation="Horizontal" Spacing="6.4">
+        <Button Classes="reportTab" IsVisible="{Binding IsOverview}" Content="✓  Overview" Background="{DynamicResource AppCardBrush}" BorderBrush="#0D47A1" Foreground="#0D47A1" FontWeight="SemiBold" />
+        <Button Classes="reportTab" IsVisible="{Binding IsStatement}" Content="Overview" Command="{Binding ShowOverviewCommand}" Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" Foreground="{DynamicResource AppMutedBrush}" />
+        <Button Classes="reportTab" IsVisible="{Binding IsOverview}" Content="Statements" Command="{Binding ShowStatementCommand}" Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" Foreground="{DynamicResource AppMutedBrush}" />
+        <Button Classes="reportTab" IsVisible="{Binding IsStatement}" Content="✓  Statements" Background="{DynamicResource AppCardBrush}" BorderBrush="#0D47A1" Foreground="#0D47A1" FontWeight="SemiBold" />
       </StackPanel>
 
       <Border Classes="customerReportCard" IsVisible="{Binding IsOverview}">
         <StackPanel>
           <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,12">
             <TextBlock Text="{Binding RevenueTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
               <Button Classes="exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer report as CSV" Content="↓  Export CSV" />
               <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer report as PDF" Content="↓  Export PDF" />
             </StackPanel>
@@ -59,35 +59,35 @@
               <DataTemplate>
                 <Grid ColumnDefinitions="140,*,110" Margin="0,5">
                   <TextBlock Text="{Binding Name}" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                  <ProgressBar Grid.Column="1" Height="21" Minimum="0" Maximum="{Binding Maximum}" Value="{Binding Value}" Foreground="#3B82F6" Background="White" CornerRadius="4" />
+                  <ProgressBar Grid.Column="1" Height="16.8" Minimum="0" Maximum="{Binding Maximum}" Value="{Binding Value}" Foreground="#3B82F6" Background="{DynamicResource AppCanvasBrush}" CornerRadius="4" />
                   <TextBlock Grid.Column="2" Text="{Binding Billed}" FontSize="13" FontWeight="SemiBold" Foreground="#0D47A1" HorizontalAlignment="Right" VerticalAlignment="Center" />
                 </Grid>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <Border IsVisible="{Binding HasNoRevenueRows}" Margin="20,4,20,16" Padding="12">
-            <TextBlock Text="No customer revenue for this period." Foreground="#777777" HorizontalAlignment="Center" />
+          <Border IsVisible="{Binding HasNoRevenueRows}" Margin="20,4,20,16" Padding="9.6">
+            <TextBlock loc:UiLocalization.Text="No customer revenue for this period." Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
           </Border>
 
-          <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="20,9">
+          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="16,7.2">
             <Grid ColumnDefinitions="44,2*,*,*,*,*">
-              <TextBlock Classes="tableHeader" Text="SL" />
-              <TextBlock Grid.Column="1" Classes="tableHeader" Text="CUSTOMER" />
-              <TextBlock Grid.Column="2" Classes="tableHeader" Text="INVOICES" HorizontalAlignment="Center" />
-              <TextBlock Grid.Column="3" Classes="tableHeader" Text="BILLED" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="4" Classes="tableHeader" Text="COLLECTED" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="5" Classes="tableHeader" Text="OUTSTANDING" HorizontalAlignment="Right" />
+              <TextBlock Classes="tableHeader" loc:UiLocalization.Text="SL" />
+              <TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="CUSTOMER" />
+              <TextBlock Grid.Column="2" Classes="tableHeader" loc:UiLocalization.Text="INVOICES" HorizontalAlignment="Center" />
+              <TextBlock Grid.Column="3" Classes="tableHeader" loc:UiLocalization.Text="BILLED" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="4" Classes="tableHeader" loc:UiLocalization.Text="COLLECTED" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="5" Classes="tableHeader" loc:UiLocalization.Text="OUTSTANDING" HorizontalAlignment="Right" />
             </Grid>
           </Border>
           <ItemsControl ItemsSource="{Binding RevenueRows}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,13">
+                <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
                   <Grid ColumnDefinitions="44,2*,*,*,*,*">
-                    <TextBlock Classes="tableCell" Text="{Binding Index}" Foreground="#777777" />
+                    <TextBlock Classes="tableCell" Text="{Binding Index}" Foreground="{DynamicResource AppMutedBrush}" />
                     <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Name}" />
-                    <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding InvoiceCount}" HorizontalAlignment="Center" Foreground="#777777" />
-                    <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Billed}" HorizontalAlignment="Right" Foreground="#777777" />
+                    <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding InvoiceCount}" HorizontalAlignment="Center" Foreground="{DynamicResource AppMutedBrush}" />
+                    <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Billed}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}" />
                     <TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Collected}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="SemiBold" />
                     <TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Outstanding}" HorizontalAlignment="Right" Foreground="#EF4444" />
                   </Grid>
@@ -97,7 +97,7 @@
           </ItemsControl>
           <Grid ColumnDefinitions="*,Auto" Margin="20,13">
             <TextBlock Text="{Binding RevenueRange}" FontSize="13" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold" />
+            <TextBlock Grid.Column="1" loc:UiLocalization.Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold" />
           </Grid>
         </StackPanel>
       </Border>
@@ -106,10 +106,10 @@
         <StackPanel>
           <Grid ColumnDefinitions="*,Auto" Margin="20,14,14,8">
             <StackPanel>
-              <TextBlock Text="Customer" FontSize="11" Foreground="#777777" Margin="10,0,0,-4" ZIndex="1" />
+              <TextBlock loc:UiLocalization.Text="Customer" FontSize="11" Foreground="{DynamicResource AppMutedBrush}" Margin="10,0,0,-4" ZIndex="1" />
               <ComboBox ItemsSource="{Binding CustomerOptions}"
                         SelectedItem="{Binding SelectedCustomer, Mode=TwoWay}"
-                        MinHeight="42"
+                        MinHeight="33.6"
                         HorizontalAlignment="Stretch">
                 <ComboBox.ItemTemplate>
                   <DataTemplate>
@@ -118,60 +118,60 @@
                 </ComboBox.ItemTemplate>
               </ComboBox>
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="12,0,0,0">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8" VerticalAlignment="Center" Margin="12,0,0,0">
               <Button Classes="exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer statement as CSV" Content="↓  Export CSV" />
               <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer statement as PDF" Content="↓  Export PDF" />
             </StackPanel>
           </Grid>
 
-          <StackPanel Orientation="Horizontal" Spacing="8" Margin="20,6,20,10">
+          <StackPanel Orientation="Horizontal" Spacing="6.4" Margin="20,6,20,10">
             <TextBlock Text="{Binding SelectedCustomerName}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
-            <Border Background="#E5E9F3" CornerRadius="5" Padding="8,4">
-              <TextBlock Text="INR" FontSize="11" Foreground="#0D47A1" FontWeight="SemiBold" />
+            <Border Background="{DynamicResource AppCardBrush}" CornerRadius="5" Padding="6.4,3.2">
+              <TextBlock loc:UiLocalization.Text="INR" FontSize="11" Foreground="#0D47A1" FontWeight="SemiBold" />
             </Border>
           </StackPanel>
 
           <Grid ColumnDefinitions="*,14,*,14,*" RowDefinitions="Auto,14,Auto" Margin="20,0,20,18">
-            <Border Grid.Column="0" Background="#FBF5FF" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="16">
-              <StackPanel Spacing="12"><TextBlock Text="▣  Opening" Foreground="#777777" FontSize="12" /><TextBlock Text="Rs. 0.00" Foreground="#777777" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+            <Border Grid.Column="0" Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="12.8">
+              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▣  Opening" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock loc:UiLocalization.Text="Rs. 0.00" Foreground="{DynamicResource AppMutedBrush}" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
-            <Border Grid.Column="2" Background="#FBF5FF" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="16">
-              <StackPanel Spacing="12"><TextBlock Text="▤  Invoiced" Foreground="#777777" FontSize="12" /><TextBlock Text="{Binding SelectedInvoiced}" Foreground="#0D47A1" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+            <Border Grid.Column="2" Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="12.8">
+              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▤  Invoiced" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding SelectedInvoiced}" Foreground="#0D47A1" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
-            <Border Grid.Column="4" Background="#FBF5FF" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="16">
-              <StackPanel Spacing="12"><TextBlock Text="▣  Paid" Foreground="#777777" FontSize="12" /><TextBlock Text="{Binding SelectedPaid}" Foreground="#16A34A" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+            <Border Grid.Column="4" Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="12.8">
+              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▣  Paid" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding SelectedPaid}" Foreground="#16A34A" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
-            <Border Grid.Row="2" Grid.Column="0" Background="#FBF5FF" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="16">
-              <StackPanel Spacing="12"><TextBlock Text="▧  Closing" Foreground="#777777" FontSize="12" /><TextBlock Text="{Binding SelectedClosing}" Foreground="#7C3AED" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+            <Border Grid.Row="2" Grid.Column="0" Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="12.8">
+              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▧  Closing" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding SelectedClosing}" Foreground="#7C3AED" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
-            <Border Grid.Row="2" Grid.Column="2" Background="#FBF5FF" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="16">
-              <StackPanel Spacing="12"><TextBlock Text="⚠  Overdue" Foreground="#777777" FontSize="12" /><TextBlock Text="{Binding SelectedOverdue}" Foreground="#EF4444" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+            <Border Grid.Row="2" Grid.Column="2" Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="10" Padding="12.8">
+              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="⚠  Overdue" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding SelectedOverdue}" Foreground="#EF4444" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
           </Grid>
 
-          <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="20,9">
+          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="16,7.2">
             <Grid ColumnDefinitions="42,100,86,130,2*,*,*,*">
-              <TextBlock Classes="tableHeader" Text="SL" />
-              <TextBlock Grid.Column="1" Classes="tableHeader" Text="DATE" />
-              <TextBlock Grid.Column="2" Classes="tableHeader" Text="TYPE" />
-              <TextBlock Grid.Column="3" Classes="tableHeader" Text="REFERENCE" />
-              <TextBlock Grid.Column="4" Classes="tableHeader" Text="DESCRIPTION" />
-              <TextBlock Grid.Column="5" Classes="tableHeader" Text="DEBIT" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="6" Classes="tableHeader" Text="CREDIT" HorizontalAlignment="Right" />
-              <TextBlock Grid.Column="7" Classes="tableHeader" Text="BALANCE" HorizontalAlignment="Right" />
+              <TextBlock Classes="tableHeader" loc:UiLocalization.Text="SL" />
+              <TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="DATE" />
+              <TextBlock Grid.Column="2" Classes="tableHeader" loc:UiLocalization.Text="TYPE" />
+              <TextBlock Grid.Column="3" Classes="tableHeader" loc:UiLocalization.Text="REFERENCE" />
+              <TextBlock Grid.Column="4" Classes="tableHeader" loc:UiLocalization.Text="DESCRIPTION" />
+              <TextBlock Grid.Column="5" Classes="tableHeader" loc:UiLocalization.Text="DEBIT" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="6" Classes="tableHeader" loc:UiLocalization.Text="CREDIT" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="7" Classes="tableHeader" loc:UiLocalization.Text="BALANCE" HorizontalAlignment="Right" />
             </Grid>
           </Border>
           <ItemsControl ItemsSource="{Binding StatementRows}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,13">
+                <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
                   <Grid ColumnDefinitions="42,100,86,130,2*,*,*,*">
-                    <TextBlock Classes="tableCell" Text="{Binding Index}" Foreground="#777777" />
-                    <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Date}" Foreground="#777777" />
+                    <TextBlock Classes="tableCell" Text="{Binding Index}" Foreground="{DynamicResource AppMutedBrush}" />
+                    <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Date}" Foreground="{DynamicResource AppMutedBrush}" />
                     <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding Type}" Foreground="{Binding TypeColor}" FontWeight="SemiBold" />
-                    <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Reference}" Foreground="#777777" />
-                    <TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Description}" Foreground="#777777" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Debit}" HorizontalAlignment="Right" Foreground="#777777" />
+                    <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Reference}" Foreground="{DynamicResource AppMutedBrush}" />
+                    <TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Description}" Foreground="{DynamicResource AppMutedBrush}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Debit}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}" />
                     <TextBlock Grid.Column="6" Classes="tableCell" Text="{Binding Credit}" HorizontalAlignment="Right" Foreground="#16A34A" />
                     <TextBlock Grid.Column="7" Classes="tableCell" Text="{Binding Balance}" HorizontalAlignment="Right" />
                   </Grid>
@@ -179,8 +179,8 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <Border IsVisible="{Binding HasNoStatementRows}" Padding="20,22">
-            <TextBlock Text="No statement activity for this customer." Foreground="#777777" HorizontalAlignment="Center" />
+          <Border IsVisible="{Binding HasNoStatementRows}" Padding="16,17.6">
+            <TextBlock loc:UiLocalization.Text="No statement activity for this customer." Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
           </Border>
         </StackPanel>
       </Border>

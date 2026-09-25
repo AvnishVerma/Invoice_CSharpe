@@ -16,7 +16,7 @@ internal static class Ui
 {
     public static IBrush HeaderBand => Brush.Parse(Branding.HeaderColor);
     // Performs the icon action for this screen or workflow.
-    public static TextBlock Icon(string name, double size = 20, IBrush? color = null) => new() { Text = Icons.GetValueOrDefault(name, "\ue88f"), FontFamily = new FontFamily("avares://LedgerNest.Desktop/Assets#Material Icons"), FontSize = size, Foreground = color ?? Muted, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+    public static TextBlock Icon(string name, double size = 20, IBrush? color = null) => new() { Text = Icons.GetValueOrDefault(name, "\ue88f"), FontFamily = new FontFamily("avares://LedgerNest.Desktop/Assets#Material Icons"), FontSize = size * .8, Foreground = color ?? Muted, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
     private static readonly Dictionary<string, string> Icons = new()
     {
         ["straighten"] = "\ue41c",
@@ -125,7 +125,7 @@ internal static class Ui
     public static IBrush Surface => Palette("#FAFAFA", "#18212B");
     public static IBrush Canvas => Palette("#FFFFFF", "#111820");
     public static IBrush TextColor => Palette("#000000", "#F1F5F9");
-    public static IBrush Primary => Brush.Parse(Branding.PrimaryColor);
+    public static IBrush Primary => Palette(Branding.PrimaryColor, "#80CBC4");
     public static IBrush CardSurface => Palette("#F7FAFC", "#202B36");
     public static IBrush MaterialPrimary => Primary;
     public static IBrush Muted => Palette("#666666", "#BBC5D0");
@@ -161,16 +161,25 @@ internal static class Ui
         catch (Exception ex) when (ex is IOException or ArgumentException or FormatException) { return null; }
     }
 
+    public static TextBlock LocalText(string text, double size = 14, bool bold = false, IBrush? color = null)
+    {
+        var block = Text(text, size, bold, color);
+        UiLocalization.Bind(block, TextBlock.TextProperty, text);
+        return block;
+    }
     // Performs the button action for this screen or workflow.
     public static Button Button(string label, Action? action = null, bool primary = false)
     {
         var button = new Button { Content = label, Tag = label, Command = action == null ? null : new RelayCommand(action), IsEnabled = action != null, VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment=HorizontalAlignment.Center, VerticalContentAlignment=VerticalAlignment.Center };
+        var caption = LocalText(label);
+        caption.ClearValue(TextBlock.ForegroundProperty);
+        button.Content = caption;
         var symbols = new Dictionary<string, string> { ["＋"] = "add", ["↑"] = "upload", ["↓"] = "download", ["↻"] = "refresh", ["×"] = "close", ["‹"] = "chevron_left", ["›"] = "chevron_right", ["⋯"] = "more_horiz", ["⇥"] = "logout" };
         if (label.Length > 0 && symbols.TryGetValue(label[..1], out var symbol))
         {
             var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             content.Children.Add(Icon(symbol, 18, primary ? Brushes.White : Accent));
-            if (label.Length > 1) content.Children.Add(Text(label[1..].Trim(), 14, color: primary ? Brushes.White : Accent));
+            if (label.Length > 1) content.Children.Add(LocalText(label[1..].Trim(), 14, color: primary ? Brushes.White : Accent));
             button.Content = content;
         }
         if (!primary) button.Foreground = Accent;
@@ -180,7 +189,7 @@ internal static class Ui
         return button;
     }
     // Performs the field action for this screen or workflow.
-    public static Control Field(FormField field, string? labelText = null, bool singleLine = false)
+    public static Control Field(FormField field, string? labelText = null, bool singleLine = false, bool compact = true)
     {
         var withIcon = labelText == null && field.Icon.Length > 0;
         labelText ??= field.Label;
@@ -189,15 +198,15 @@ internal static class Ui
         switch (field.Kind)
         {
             case "toggle":
-                var thumb = new Avalonia.Controls.Shapes.Ellipse { Width = 16, Height = 16, Fill = Brushes.White, Margin = new Thickness(3) };
-                var track = new Border { Width = 40, Height = 24, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Child = thumb };
+                var thumb = new Avalonia.Controls.Shapes.Ellipse { Width = compact ? 13 : 16, Height = compact ? 13 : 16, Fill = Brushes.White, Margin = new Thickness(compact ? 2 : 3) };
+                var track = new Border { Width = compact ? 32 : 40, Height = compact ? 20 : 24, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Child = thumb };
                 var toggle = new ToggleButton { Content = track, Padding = new Thickness(0), BorderThickness = new Thickness(0), Background = Brushes.Transparent, MinHeight = 32, VerticalAlignment = VerticalAlignment.Center };
                 toggle.Classes.Add("form-toggle");
                 toggle.Bind(ToggleButton.IsCheckedProperty, new Binding(nameof(FormField.IsChecked)) { Source = field, Mode = BindingMode.TwoWay });
                 void PaintToggle() { track.Background = toggle.IsChecked == true ? Brush.Parse("#8097BD") : Brushes.White; track.BorderBrush = toggle.IsChecked == true ? Brushes.Transparent : Brush.Parse("#BDBDBD"); thumb.Fill = toggle.IsChecked == true ? Primary : Brush.Parse("#BDBDBD"); thumb.HorizontalAlignment = toggle.IsChecked == true ? HorizontalAlignment.Right : HorizontalAlignment.Left; }
                 toggle.IsCheckedChanged += (_, _) => PaintToggle(); PaintToggle();
                 AutomationProperties.SetName(toggle, field.Label);
-                var caption = Stack(3, Text(labelText), Text(field.Help, 12, color: Muted)); if (field.Help.Length == 0) caption.Children[1].IsVisible = false;
+                var caption = Stack(3, LocalText(labelText), LocalText(field.Help, 12, color: Muted)); if (field.Help.Length == 0) caption.Children[1].IsVisible = false;
                 return Columns("*,12,Auto", caption, new Border(), toggle);
             case "choice":
                 var combo = new ComboBox { ItemsSource = field.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 44 };
@@ -251,13 +260,44 @@ internal static class Ui
                 else input = box;
                 break;
         }
+        if (compact)
+        {
+            void CompactInput(Control control)
+            {
+                if (control is TextBox text)
+                {
+                    text.MinHeight *= .8;
+                    var p = text.Padding == default ? new Thickness(10, 8) : text.Padding;
+                    text.Padding = new Thickness(p.Left, p.Top * .65, p.Right, p.Bottom * .65);
+                    text.VerticalContentAlignment = VerticalAlignment.Center;
+                }
+                else if (control is ComboBox choice)
+                {
+                    choice.MinHeight *= .8;
+                    choice.Padding = new Thickness(10, 5);
+                }
+                if (control is Panel panel)
+                    foreach (var child in panel.Children) CompactInput(child);
+                if (control is Button button)
+                {
+                    button.MinHeight = 30;
+                    button.Padding = new Thickness(8, 4);
+                }
+            }
+            CompactInput(input);
+        }
+        if (input is TextBox textInput) UiLocalization.Bind(textInput, TextBox.PlaceholderTextProperty, labelText);
+        else if (input is Grid inputGrid)
+            foreach (var textInputChild in inputGrid.Children.OfType<TextBox>()) UiLocalization.Bind(textInputChild, TextBox.PlaceholderTextProperty, labelText);
+        if (input is ComboBox choiceInput)
+            choiceInput.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((value, _) => LocalText(value ?? ""));
         AutomationProperties.SetName(input, field.Label);
         var error = Text("", 12, color: Brushes.Firebrick);
         error.Bind(TextBlock.TextProperty, new Binding(nameof(FormField.Error)) { Source = field });
         var errors = new Binding(nameof(FormField.Error)) { Source = field, Converter = new Avalonia.Data.Converters.FuncValueConverter<string, bool>(s => !string.IsNullOrEmpty(s)) };
         error.Bind(Visual.IsVisibleProperty, errors);
-        if (field.Kind is "file" or "slider") return Stack(5, Text(labelText, 12, color: Muted), input, error);
-        var floatLabel = new Border { Background = CardSurface, Padding = new Thickness(4, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(9, -7, 0, 0), Child = Text(labelText + (field.Required && !labelText.EndsWith("*") ? " *" : ""), 12, color: Muted), IsHitTestVisible = false };
+        if (field.Kind is "file" or "slider") return Stack(5, LocalText(labelText, 12, color: Muted), input, error);
+        var floatLabel = new Border { Background = CardSurface, Padding = new Thickness(4, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(9, -7, 0, 0), Child = LocalText(labelText + (field.Required && !labelText.EndsWith("*") ? " *" : ""), 12, color: Muted), IsHitTestVisible = false };
         var fieldGrid = new Grid(); input.Margin = new Thickness(0); fieldGrid.Children.Add(input); fieldGrid.Children.Add(floatLabel);
         void UpdateLabel() => floatLabel.IsVisible = field.Value?.Length > 0 || input.IsKeyboardFocusWithin || field.Kind is "choice" or "date";
         input.GotFocus += (_, _) => UpdateLabel(); input.LostFocus += (_, _) => UpdateLabel();
@@ -272,7 +312,7 @@ internal static class Ui
     {
         var panel = new StackPanel { Orientation = Orientation.Horizontal };
         var buttons = new List<Button>();
-        void Update() { foreach (var b in buttons) b.Background = b.Tag?.ToString() == field.Value ? Brush.Parse("#E8DEF8") : Brushes.Transparent; }
+        void Update() { foreach (var b in buttons) b.Background = b.Tag?.ToString() == field.Value ? Palette("#E8DEF8", "#3A4C69") : Brushes.Transparent; }
         foreach (var option in field.Options)
         {
             var b = Button(option, () => { field.Value = option; Update(); }); b.Padding = new Thickness(14, 8); b.MinHeight = 36; b.CornerRadius = new CornerRadius(0); buttons.Add(b); panel.Children.Add(b);
@@ -280,14 +320,14 @@ internal static class Ui
         Update(); return new Border { CornerRadius = new CornerRadius(20), ClipToBounds = true, Child = panel };
     }
     // Performs the fields action for this screen or workflow.
-    public static Control Fields(IEnumerable<FormField> fields, int columns = 1)
+    public static Control Fields(IEnumerable<FormField> fields, int columns = 1, bool compact = true)
     {
         var g = new Grid { ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Repeat("*", columns))) };
         var array = fields.ToArray();
         for (var i = 0; i < array.Length; i++)
         {
             if (i % columns == 0) g.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            var control = Field(array[i]); control.Margin = new Thickness(0, 0, i % columns < columns - 1 ? 12 : 0, i / columns < (array.Length - 1) / columns ? 16 : 0);
+            var control = Field(array[i], compact: compact); control.Margin = new Thickness(0, 0, i % columns < columns - 1 ? 12 : 0, i / columns < (array.Length - 1) / columns ? 16 : 0);
             Grid.SetColumn(control, i % columns); Grid.SetRow(control, i / columns); g.Children.Add(control);
         }
         return g;
@@ -302,10 +342,10 @@ internal static class Ui
     { using var stream = AssetLoader.Open(new Uri($"avares://LedgerNest.Desktop/Assets/{name}")); return new Bitmap(stream); }
     // Performs the empty action for this screen or workflow.
     public static Control Empty(string title, string subtitle = "", string icon = "▤")
-    { var p = Stack(12, Icon(icon == "✓" ? "check_circle" : icon == "cart" ? "shopping_cart" : title.Contains("customers") ? "person_off" : "receipt_long", icon == "cart" ? 48 : 64, Outline), Text(title, 18, color: Muted), Text(subtitle, 14, color: Muted)); p.HorizontalAlignment = HorizontalAlignment.Center; p.VerticalAlignment = VerticalAlignment.Center; foreach (var c in p.Children) c.HorizontalAlignment = HorizontalAlignment.Center; return new Border { MinHeight = 240, Padding = new Thickness(24), Child = p }; }
+    { var p = Stack(12, Icon(icon == "✓" ? "check_circle" : icon == "cart" ? "shopping_cart" : title.Contains("customers") ? "person_off" : "receipt_long", icon == "cart" ? 48 : 64, Outline), LocalText(title, 18, color: Muted), LocalText(subtitle, 14, color: Muted)); p.HorizontalAlignment = HorizontalAlignment.Center; p.VerticalAlignment = VerticalAlignment.Center; foreach (var c in p.Children) c.HorizontalAlignment = HorizontalAlignment.Center; return new Border { MinHeight = 240, Padding = new Thickness(24), Child = p }; }
     // Performs the header action for this screen or workflow.
     public static Control Header(string title, string subtitle, params Control[] actions)
-    { var a = Wrap(actions); a.HorizontalAlignment = HorizontalAlignment.Right; return Columns("*,Auto", Stack(2, Text(title, 22, true), Text(subtitle, 13, color: Muted)), a); }
+    { var a = Wrap(actions); a.HorizontalAlignment = HorizontalAlignment.Right; return Columns("*,Auto", Stack(2, LocalText(title, 22, true), LocalText(subtitle, 13, color: Muted)), a); }
     // Performs the app bar action for this screen or workflow.
     public static Control AppBar(string title, params Control[] actions)
     {
@@ -324,8 +364,8 @@ internal static class Ui
             }
             a.Children.Add(action);
         }
-        var heading = Text(title, 20, color: Brushes.White); heading.TextWrapping = TextWrapping.NoWrap; heading.TextTrimming = TextTrimming.CharacterEllipsis;
-        return new Border { Background = HeaderBand, Padding = new Thickness(20, 0), Height = 56, Child = Columns("*,Auto", heading, a) };
+        var heading = LocalText(title, 20, color: Brushes.White); heading.TextWrapping = TextWrapping.NoWrap; heading.TextTrimming = TextTrimming.CharacterEllipsis;
+        return new Border { Background = HeaderBand, Padding = new Thickness(20, 0), Height = 44.8, Child = Columns("*,Auto", heading, a) };
     }
     // Performs the stats action for this screen or workflow.
     public static Control Stats(params (string Label, string Value, string Subtitle, string Color)[] stats)
@@ -340,7 +380,7 @@ internal static class Ui
         }
         foreach (var s in stats)
         {
-            var icon = new Border { Width = 40, Height = 40, CornerRadius = new CornerRadius(10), Background = new SolidColorBrush(Color.Parse(s.Color), .12), Opacity = 1, Child = Icon(s.Label.Contains("Customer") ? "people" : s.Label.Contains("Product") ? "inventory_2" : "receipt_long", 20, Brush.Parse(s.Color)) };
+            var icon = new Border { Width = 32, Height = 32, CornerRadius = new CornerRadius(10), Background = new SolidColorBrush(Color.Parse(s.Color), .12), Opacity = 1, Child = Icon(s.Label.Contains("Customer") ? "people" : s.Label.Contains("Product") ? "inventory_2" : "receipt_long", 20, Brush.Parse(s.Color)) };
             var card = Card(Columns("*,Auto", Stack(6, Text(s.Label, 12, color: Muted), Text(s.Value, 24, true), Text(s.Subtitle, 11.5, color: Muted)), icon));
             card.Margin = new Thickness(0, 0, 12, 12); grid.Children.Add(card);
         }

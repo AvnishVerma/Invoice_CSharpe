@@ -31,7 +31,7 @@ public partial class MainWindow
         var response = new FormField("Response Code", required: true);
         var password = new FormField("New Password (min 8 characters)", kind: "password", required: true);
         var confirm = new FormField("Confirm New Password", kind: "password", required: true);
-        var body = Ui.Stack(18, Ui.Field(username), Ui.Button("Generate Challenge"), Ui.Text("Challenge Code", 13, true), new TextBox { IsReadOnly = true, PlaceholderText = "Challenge code" }, Ui.Field(response), Ui.Field(password), Ui.Field(confirm));
+        var body = Ui.Stack(14.4, Ui.Field(username), Ui.Button("Generate Challenge"), Ui.LocalText("Challenge Code", 13, true), new TextBox { IsReadOnly = true, PlaceholderText = "Challenge code" }, Ui.Field(response), Ui.Field(password), Ui.Field(confirm));
         ShowOverlay("Reset Password", new AuthenticationFormView("Recover access to your account", "Enter your username to start password recovery.", body), Ui.Wrap(Ui.Button("Back to Login", ShowLogin), Ui.Button("Reset Password")), width: 520);
     }
     // Performs the show change password action for this screen or workflow.
@@ -53,7 +53,7 @@ public partial class MainWindow
         {
             string[] names = ["Company", "Invoice", "Appearance", "You're all set!"];
             var body = step < 3 ? Ui.Fields(step == 0 ? company : step == 1 ? invoice : appearance) : Ui.Empty("You're all set!", "Start creating invoices for your business.", "✓");
-            var content = new OnboardingStepView(names[step], Ui.Wrap(Ui.Text("1  Company", 13, step == 0), Ui.Text("2  Invoice", 13, step == 1), Ui.Text("3  Appearance", 13, step == 2)), body);
+            var content = new OnboardingStepView(names[step], Ui.Wrap(Ui.LocalText("1  Company", 13, step == 0), Ui.LocalText("2  Invoice", 13, step == 1), Ui.LocalText("3  Appearance", 13, step == 2)), body);
             ShowOverlay($"Welcome to {Branding.Name}", content, Ui.Wrap(Ui.Button(step == 0 ? "Cancel" : "Back", () => { if (step == 0) CloseOverlay(); else { step--; Render(); } }), Ui.Button(step == 3 ? "Get Started" : "Continue", () =>
             {
                 if (step == 3) { if (Model.CompleteOnboarding(groups)) CloseOverlay(); else { step = company.Any(f => f.Error.Length > 0) ? 0 : 1; Render(); } return; }

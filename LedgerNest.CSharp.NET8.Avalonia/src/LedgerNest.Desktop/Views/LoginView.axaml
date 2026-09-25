@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop"
              xmlns:converters="using:Avalonia.Data.Converters"
@@ -43,8 +43,8 @@
 
   <UserControl.Styles>
     <Style Selector="TextBox.login-input">
-      <Setter Property="Height" Value="48" />
-      <Setter Property="MinHeight" Value="48" />
+      <Setter Property="Height" Value="38.4" />
+      <Setter Property="MinHeight" Value="38.4" />
       <Setter Property="Padding" Value="16,0" />
       <Setter Property="FontSize" Value="15" />
       <Setter Property="CornerRadius" Value="12" />
@@ -96,57 +96,57 @@
                 Background="{DynamicResource LoginCardSurface}"
                 BoxShadow="0 24 80 0 #24000000">
           <Grid ColumnDefinitions="380,500">
-            <Border Background="{StaticResource LoginHeroGradient}" Padding="38">
+            <Border Background="{StaticResource LoginHeroGradient}" Padding="30.4">
               <Grid RowDefinitions="*,Auto">
-                <StackPanel VerticalAlignment="Center" Spacing="22">
-                  <Border Width="72" Height="72" CornerRadius="24" Background="#26FFFFFF" HorizontalAlignment="Left">
+                <StackPanel VerticalAlignment="Center" Spacing="17.6">
+                  <Border Width="72" Height="57.6" CornerRadius="24" Background="#26FFFFFF" HorizontalAlignment="Left">
                     <TextBlock Text="✓" FontSize="38" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   </Border>
-                  <TextBlock Text="Welcome back" FontSize="34" FontWeight="Bold" Foreground="White" TextWrapping="Wrap" />
-                  <TextBlock Text="Open your secure workspace and continue managing invoices, payments, customers, and reports."
+                  <TextBlock loc:UiLocalization.Text="Welcome back" FontSize="34" FontWeight="Bold" Foreground="White" TextWrapping="Wrap" />
+                  <TextBlock loc:UiLocalization.Text="Open your secure workspace and continue managing invoices, payments, customers, and reports."
                              FontSize="16" LineHeight="24" Foreground="#E7F2FF" TextWrapping="Wrap" />
                   <WrapPanel Margin="0,8,0,0">
-                    <Border Background="#1AFFFFFF" CornerRadius="18" Padding="12,8" Margin="0,0,8,8">
-                      <TextBlock Text="Offline ready" Foreground="White" FontSize="13" />
+                    <Border Background="#1AFFFFFF" CornerRadius="18" Padding="9.6,6.4" Margin="0,0,8,8">
+                      <TextBlock loc:UiLocalization.Text="Offline ready" Foreground="White" FontSize="13" />
                     </Border>
-                    <Border Background="#1AFFFFFF" CornerRadius="18" Padding="12,8" Margin="0,0,8,8">
-                      <TextBlock Text="Local data" Foreground="White" FontSize="13" />
+                    <Border Background="#1AFFFFFF" CornerRadius="18" Padding="9.6,6.4" Margin="0,0,8,8">
+                      <TextBlock loc:UiLocalization.Text="Local data" Foreground="White" FontSize="13" />
                     </Border>
                   </WrapPanel>
                 </StackPanel>
-                <TextBlock Grid.Row="1" Text="Secure desktop access" Foreground="#CFE8FF" FontSize="12" />
+                <TextBlock Grid.Row="1" loc:UiLocalization.Text="Secure desktop access" Foreground="#CFE8FF" FontSize="12" />
               </Grid>
             </Border>
 
-            <Border Grid.Column="1" Padding="50,42">
+            <Border Grid.Column="1" Padding="40,33.6">
               <Border Width="400" MinHeight="420" HorizontalAlignment="Center" VerticalAlignment="Center" Background="Transparent">
-                <StackPanel Spacing="20">
-                  <StackPanel Spacing="8">
-                    <TextBlock Text="Sign in" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource LoginText}" />
-                    <TextBlock Text="Use your workspace credentials to continue." FontSize="14" Foreground="{DynamicResource LoginMuted}" TextWrapping="Wrap" />
+                <StackPanel Spacing="16">
+                  <StackPanel Spacing="6.4">
+                    <TextBlock loc:UiLocalization.Text="Sign in" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource LoginText}" />
+                    <TextBlock loc:UiLocalization.Text="Use your workspace credentials to continue." FontSize="14" Foreground="{DynamicResource LoginMuted}" TextWrapping="Wrap" />
                   </StackPanel>
 
-                  <Border MinHeight="42">
+                  <Border MinHeight="33.6">
                     <Border Background="{DynamicResource LoginErrorBack}"
                             BorderBrush="{DynamicResource LoginErrorBorder}"
                             BorderThickness="1"
                             CornerRadius="12"
-                            Padding="12,10"
+                            Padding="9.6,8"
                             IsVisible="{Binding Message, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}">
                       <TextBlock Text="{Binding Message}" Foreground="Firebrick" FontSize="13" TextWrapping="Wrap" />
                     </Border>
                   </Border>
 
-                  <StackPanel Spacing="7">
-                    <TextBlock Text="Username" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource LoginMuted}" />
+                  <StackPanel Spacing="5.6">
+                    <TextBlock loc:UiLocalization.Text="Username" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource LoginMuted}" />
                     <TextBox x:Name="UsernameInput" Classes="login-input" PlaceholderText="Username"
                              Text="{Binding Username.Value, Mode=TwoWay}" AutomationProperties.Name="Username" />
                     <TextBlock Text="{Binding Username.Error}" FontSize="12" Foreground="Firebrick"
                                IsVisible="{Binding Username.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
                   </StackPanel>
 
-                  <StackPanel Spacing="7">
-                    <TextBlock Text="Password" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource LoginMuted}" />
+                  <StackPanel Spacing="5.6">
+                    <TextBlock loc:UiLocalization.Text="Password" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource LoginMuted}" />
                     <TextBox Classes="login-input" PlaceholderText="Password"
                              PasswordChar="●"
                              Text="{Binding Password.Value, Mode=TwoWay}" AutomationProperties.Name="Password" />
@@ -159,7 +159,7 @@
                       <Button Grid.Column="1" Content="Forgot password?" Classes="login-link" Command="{Binding ForgotPasswordCommand}" />
                   </Grid>
 
-                  <Border Background="{DynamicResource LoginPrimaryLight}" CornerRadius="14" Padding="14">
+                  <Border Background="{DynamicResource LoginPrimaryLight}" CornerRadius="14" Padding="11.2">
                     <TextBlock Text="{Binding FirstTimeHelp}" FontSize="12" Foreground="{DynamicResource LoginPrimary}" TextWrapping="Wrap" />
                   </Border>
                 </StackPanel>

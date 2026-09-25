@@ -15,7 +15,7 @@
     </ResourceDictionary>
   </UserControl.Resources>
   <Grid>
-    <Grid x:Name="WideRoot" ColumnDefinitions="*,10,360">
+    <Grid x:Name="WideRoot" ColumnDefinitions="*,10,320">
       <ContentControl x:Name="WideLeft" Grid.Column="0" />
       <GridSplitter x:Name="Splitter"
                     Grid.Column="1"

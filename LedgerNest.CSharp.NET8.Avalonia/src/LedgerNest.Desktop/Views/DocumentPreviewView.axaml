@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.DocumentPreviewView"
              x:CompileBindings="False">
@@ -11,8 +11,8 @@
     </StackPanel>
 
     <StackPanel Spacing="10">
-      <TextBlock Text="Items:" FontSize="14" FontWeight="Bold" />
-      <TextBlock Text="No items available" FontSize="13" Foreground="#777777" IsVisible="{Binding HasNoItems}" />
+      <TextBlock loc:UiLocalization.Text="Items:" FontSize="14" FontWeight="Bold" />
+      <TextBlock loc:UiLocalization.Text="No items available" FontSize="13" Foreground="#777777" IsVisible="{Binding HasNoItems}" />
       <ItemsControl ItemsSource="{Binding Items}" IsVisible="{Binding HasItems}">
         <ItemsControl.ItemTemplate>
           <DataTemplate>
@@ -29,7 +29,7 @@
 
     <StackPanel Spacing="6">
       <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Text="Subtotal:" FontSize="13" FontWeight="Bold" />
+        <TextBlock loc:UiLocalization.Text="Subtotal:" FontSize="13" FontWeight="Bold" />
         <TextBlock Grid.Column="1" Text="{Binding SubtotalText}" FontSize="13" />
       </Grid>
       <Grid ColumnDefinitions="*,Auto">
@@ -37,7 +37,7 @@
         <TextBlock Grid.Column="1" Text="{Binding TaxText}" FontSize="13" />
       </Grid>
       <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Text="Total:" FontSize="14" FontWeight="Bold" />
+        <TextBlock loc:UiLocalization.Text="Total:" FontSize="14" FontWeight="Bold" />
         <TextBlock Grid.Column="1" Text="{Binding TotalText}" FontSize="14" FontWeight="Bold" />
       </Grid>
     </StackPanel>

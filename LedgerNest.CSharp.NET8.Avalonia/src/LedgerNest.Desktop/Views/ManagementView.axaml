@@ -21,17 +21,17 @@
     <ScrollViewer x:Name="RecordRoot"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-      <Border Padding="16">
-        <StackPanel Spacing="12">
+      <Border Padding="12.8">
+        <StackPanel Spacing="9.6">
           <ContentControl x:Name="ProductBannerHost" />
           <ContentControl x:Name="HeaderHost" />
           <ContentControl x:Name="StatsHost" />
-          <Border Padding="12"
+          <Border Padding="9.6"
                   CornerRadius="12"
                   Background="{DynamicResource ManagementCardSurface}"
                   BorderBrush="{DynamicResource ManagementOutline}"
                   BorderThickness="1">
-            <StackPanel Spacing="10">
+            <StackPanel Spacing="8">
               <Grid ColumnDefinitions="*,10,Auto">
                 <ContentControl x:Name="SearchHost" />
                 <ContentControl x:Name="ToolbarButtonsHost" Grid.Column="2" />
@@ -50,7 +50,7 @@
       <Border Grid.Row="1"
               Background="{DynamicResource ManagementSurface}">
         <Grid RowDefinitions="Auto,*">
-          <Border Padding="20,22,20,18">
+          <Border Padding="16,17.6,16,14.4">
             <Grid ColumnDefinitions="Auto,12,280,12,Auto,*,Auto">
               <ContentControl x:Name="DocumentAddHost" />
               <ContentControl x:Name="DocumentSearchHost" Grid.Column="2" />

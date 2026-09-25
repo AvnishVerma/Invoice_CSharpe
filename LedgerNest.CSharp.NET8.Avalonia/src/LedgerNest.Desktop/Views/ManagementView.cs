@@ -14,7 +14,7 @@ internal sealed partial class ManagementView : UserControl
     private readonly string kind;
     private readonly ContentControl results = new();
     private readonly ContentControl stats = new();
-    private readonly TextBox search = new() { MinWidth = 180, Height = 38, MinHeight = 38, Padding = new Thickness(12, 0), VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Stretch };
+    private readonly TextBox search = new() { MinWidth = 180, Height = 30.4, MinHeight = 30.4, Padding = new Thickness(9.6, 0), VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly ContentControl tabs = new();
     private string filter = "All";
     private string sort = "Name A–Z";
@@ -44,8 +44,8 @@ internal sealed partial class ManagementView : UserControl
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
         if (kind == "Product")
         {
-            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text("New: Customize product fields", 13, true, Ui.Primary), Ui.Text("Choose which fields show for a simpler catalog. Settings > Customize Product Details.", 12, color: Ui.Primary)), Ui.Button("Configure", () => window.OpenProductDetailsSettings())), 16);
-            banner.Background = Brush.Parse("#EFF6FF");
+            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("New: Customize product fields", 13, true, Ui.Primary), Ui.LocalText("Choose which fields show for a simpler catalog. Settings > Customize Product Details.", 12, color: Ui.Primary)), Ui.Button("Configure", () => window.OpenProductDetailsSettings())), 16);
+            banner.Background = Ui.Palette("#EFF6FF", "#202B36");
             ProductBannerHost.Content = banner;
         }
         if (Documents)
@@ -130,7 +130,7 @@ internal sealed partial class ManagementView : UserControl
     private void Columns()
     {
         var checks = Headers.Where(h => kind != "Product" || model.ProductFieldVisible(h)).Select(h => new CheckBox { Content = h, IsChecked = !hidden.Contains(h), IsEnabled = kind != "Product" || h is not ("Name / Alias" or "Price") }).ToArray();
-        window.ShowOverlay("Show Columns", Ui.Stack(10, checks), Ui.Wrap(Ui.Button("Cancel", window.CloseOverlay), Ui.Button("Apply", () => { hidden.Clear(); foreach (var c in checks.Where(c => c.IsChecked != true)) hidden.Add(c.Content!.ToString()!); Refresh(); window.CloseOverlay(); }, true)));
+        window.ShowOverlay("Show Columns", Ui.Stack(8, checks), Ui.Wrap(Ui.Button("Cancel", window.CloseOverlay), Ui.Button("Apply", () => { hidden.Clear(); foreach (var c in checks.Where(c => c.IsChecked != true)) hidden.Add(c.Content!.ToString()!); Refresh(); window.CloseOverlay(); }, true)));
     }
     // Performs the refresh action for this screen or workflow.
     private void Refresh()
@@ -161,7 +161,7 @@ internal sealed partial class ManagementView : UserControl
             controls.Add(checkbox); controls.Add(Ui.Text(record == null ? "SL. NO." : (index + 1).ToString(), 12));
             string[] values = record == null ? Headers : Documents ? [$"{record.Name}\n{record["Customer"]}", record["Title"].Length == 0 ? "—" : record["Title"], record["Date"], record["Items"], FormatMoney(record["Total"]), record["Status"], string.IsNullOrWhiteSpace(record["Outstanding"]) || record["Outstanding"] == "0" ? "—" : FormatMoney(record["Outstanding"])] : kind == "Customer" ? [$"{record.Name}\n{record["Business Name"]}", record["Phone"], record["Email"], record["GST / VAT Number"], record["Address"], record["Outstanding"].Length == 0 ? "—" : record["Outstanding"]] : kind == "Product" ? [$"{record.Name}\n{record["Alias Name (for invoice PDF)"]}", record["Sale Price"], record["HSN/SAC"], record["Purchase Price"], record["Stock"], record["Tax (%)"], record["Expiry Date"]] : [record.Name, record["Role"]];
             for (var i = 0; i < Headers.Length; i++) if (!hidden.Contains(Headers[i])) controls.Add(DocumentCell(record, values[i], i));
-            controls.Add(record == null ? Ui.Text("Actions", 12, true) : DocumentActions(record));
+            controls.Add(record == null ? Ui.LocalText("Actions", 12, true) : DocumentActions(record));
             return new Border { Background = record == null && Documents ? Brush.Parse("#243447") : Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, Documents ? 12 : 8), Child = Ui.Columns(columns, controls.ToArray()) };
         }
         body.Children.Add(TableRow(null, 0));
@@ -172,11 +172,11 @@ internal sealed partial class ManagementView : UserControl
         var pager = kind == "User"
             ? UserPager(filtered.Length, pages)
             : Documents
-            ? Ui.Columns("Auto,*,Auto", Ui.Wrap(Ui.Text("Rows per page:", 12), sizes), new Border(), Ui.Wrap(Ui.Button("‹ Previous", () => { page--; Refresh(); }), Ui.Button($"Page {page + 1} of {pages}", () => { }, true), Ui.Button("› Next", () => { page++; Refresh(); })))
-            : Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.Text("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
+            ? Ui.Columns("Auto,*,Auto", Ui.Wrap(Ui.LocalText("Rows per page:", 12), sizes), new Border(), Ui.Wrap(Ui.Button("‹ Previous", () => { page--; Refresh(); }), Ui.Button($"Page {page + 1} of {pages}", () => { }, true), Ui.Button("› Next", () => { page++; Refresh(); })))
+            : Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.LocalText("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
         body.Children.Add(new Border { Padding = Documents ? new Thickness(20, 10, 20, 0) : new Thickness(16, 8), Child = pager });
         results.Content = Documents
-            ? new ScrollViewer { Content = new Border { Padding = new Thickness(24, 0, 24, 0), MinWidth = 1120, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
+            ? new ScrollViewer { Content = new Border { Padding = new Thickness(19.2, 0, 19.2, 0), MinWidth = 1120, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }
             : Ui.Card(new ScrollViewer { Content = new Border { MinWidth = kind == "Product" ? Math.Max(800, 200 + Headers.Count(h => !hidden.Contains(h) && model.ProductFieldVisible(h)) * 130) : kind == "Customer" ? 1060 : 700, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }, 0);
     }
 
@@ -190,7 +190,7 @@ internal sealed partial class ManagementView : UserControl
     private Control UserTableRow(UiRecord? record)
     {
         if (record == null)
-            return new Border { Background = Brush.Parse("#FBF6FC"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, 10), Child = Ui.Columns("44,*,220,160", new CheckBox { IsEnabled = false }, Ui.Text("USER", 11, true, Ui.Muted), Ui.Text("ROLE", 11, true, Ui.Muted), Ui.Text("ACTIONS", 11, true, Ui.Muted)) };
+            return new Border { Background = Ui.Palette("#FBF6FC", "#202B36"), BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(9.6, 8), Child = Ui.Columns("44,*,220,160", new CheckBox { IsEnabled = false }, Ui.LocalText("USER", 11, true, Ui.Muted), Ui.LocalText("ROLE", 11, true, Ui.Muted), Ui.LocalText("ACTIONS", 11, true, Ui.Muted)) };
 
         var isAdmin = record["Role"] == "Admin";
         if (isAdmin) selected.Remove(record.Id);
@@ -202,13 +202,13 @@ internal sealed partial class ManagementView : UserControl
         initialText.HorizontalAlignment = HorizontalAlignment.Center;
         initialText.VerticalAlignment = VerticalAlignment.Center;
         initialText.TextAlignment = TextAlignment.Center;
-        var avatar = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = Brush.Parse("#F0DDF8"), VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Child = initialText };
+        var avatar = new Border { Width = 27.2, Height = 27.2, CornerRadius = new CornerRadius(17), Background = Ui.Palette("#F0DDF8", "#202B36"), VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Child = initialText };
         var nameLine = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
         nameLine.Children.Add(Ui.Text(record.Name, 14, true));
-        if (record.Name == model.CurrentUsername) nameLine.Children.Add(new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 2), VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text("You", 10, true, Ui.Primary) });
+        if (record.Name == model.CurrentUsername) nameLine.Children.Add(new Border { Background = Ui.Palette("#E3F2FD", "#202B36"), CornerRadius = new CornerRadius(4), Padding = new Thickness(4.8, 1.6), VerticalAlignment = VerticalAlignment.Center, Child = Ui.LocalText("You", 10, true, Ui.Primary) });
         var user = Ui.Columns("34,10,*", avatar, new Border(), nameLine);
-        var role = new Border { Background = Brush.Parse(record["Role"] == "Admin" ? "#F3E5F5" : "#E3F2FD"), CornerRadius = new CornerRadius(6), Padding = new Thickness(9, 4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(record["Role"], 11, false, record["Role"] == "Admin" ? Brush.Parse("#9C27B0") : Ui.Primary) };
-        return new Border { Background = Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, 10), Child = Ui.Columns("44,*,220,160", check, user, role, UserActions(record)) };
+        var role = new Border { Background = Brush.Parse(record["Role"] == "Admin" ? "#F3E5F5" : "#E3F2FD"), CornerRadius = new CornerRadius(6), Padding = new Thickness(7.2, 3.2), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(record["Role"], 11, false, record["Role"] == "Admin" ? Brush.Parse("#9C27B0") : Ui.Primary) };
+        return new Border { Background = Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(9.6, 8), Child = Ui.Columns("44,*,220,160", check, user, role, UserActions(record)) };
     }
 
     // Builds View, Edit, and Change Password actions for one user.
@@ -241,7 +241,7 @@ internal sealed partial class ManagementView : UserControl
         var checkbox = new CheckBox { IsChecked = record != null && selected.Contains(record.Id), IsVisible = record != null, VerticalAlignment = VerticalAlignment.Center };
         checkbox.IsCheckedChanged += (_, _) => { if (record == null) return; if (checkbox.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); };
         controls.Add(record == null ? new CheckBox { IsEnabled = false, VerticalAlignment = VerticalAlignment.Center } : checkbox);
-        controls.Add(record == null ? DocumentHeaderOrCell("Sl No", true) : new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(6), Padding = new Thickness(7, 4), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text((index + 1).ToString(), 12, true, Ui.Primary) });
+        controls.Add(record == null ? DocumentHeaderOrCell("Sl No", true) : new Border { Background = Ui.Palette("#E3F2FD", "#202B36"), CornerRadius = new CornerRadius(6), Padding = new Thickness(5.6, 3.2), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text((index + 1).ToString(), 12, true, Ui.Primary) });
         string[] values = record == null
             ? Headers
             : [$"{record.Name}\n{record["Customer"]}", record["Title"].Length == 0 ? "—" : record["Title"], record["Date"], record["Items"], FormatMoney(record["Total"]), record["Status"], string.IsNullOrWhiteSpace(record["Outstanding"]) || record["Outstanding"] == "0" ? "—" : FormatMoney(record["Outstanding"])];
@@ -309,7 +309,7 @@ internal sealed partial class ManagementView : UserControl
         controls.Add(record == null ? HeaderOrCell("ACTIONS", true) : CustomerActions(record));
         return new Border
         {
-            Background = record == null ? Ui.CardSurface : Brush.Parse("#FFF7FE"),
+            Background = record == null ? Ui.CardSurface : Ui.Palette("#FFF7FE", "#202B36"),
             BorderBrush = Ui.Outline,
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(14, record == null ? 8 : 10),
@@ -350,15 +350,15 @@ internal sealed partial class ManagementView : UserControl
             Child = Ui.Columns("40,*",
                 new Border
                 {
-                    Width = 36,
-                    Height = 36,
+                    Width = 28.8,
+                    Height = 28.8,
                     CornerRadius = new CornerRadius(18),
                     Background = Brush.Parse("#FFE5CC"),
                     VerticalAlignment = VerticalAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Child = initials
                 },
-                Ui.Stack(2, name, subtitle))
+                Ui.Stack(1.6, name, subtitle))
         };
     }
 
@@ -427,7 +427,7 @@ internal sealed partial class ManagementView : UserControl
         controls.Add(record == null ? new Border() : ProductActions(record));
         return new Border
         {
-            Background = record == null ? Ui.CardSurface : Brush.Parse("#FFF7FE"),
+            Background = record == null ? Ui.CardSurface : Ui.Palette("#FFF7FE", "#202B36"),
             BorderBrush = Ui.Outline,
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(14, record == null ? 8 : 14),
@@ -444,7 +444,9 @@ internal sealed partial class ManagementView : UserControl
         block.HorizontalAlignment = alignment;
         block.TextWrapping = TextWrapping.NoWrap;
         block.TextTrimming = TextTrimming.CharacterEllipsis;
-        return new Border { ClipToBounds = true, Child = block };
+        var cell = new Border { ClipToBounds = true, Padding = new Thickness(0, 0, 8, 0), Child = block };
+        ToolTip.SetTip(cell, text);
+        return cell;
     }
 
     // Performs the product cell action for this screen or workflow.
@@ -470,10 +472,10 @@ internal sealed partial class ManagementView : UserControl
         var badgeColor = type == "Service" ? "#FF7A00" : "#2E7D32";
         var badgeBack = type == "Service" ? "#FFE9D6" : "#E4F3E7";
         var alias = record["Alias Name (for invoice PDF)"];
-        var children = new List<Control> { Ui.Text(record.Name, 13, false), new Border { CornerRadius = new CornerRadius(5), Padding = new Thickness(8, 3), HorizontalAlignment = HorizontalAlignment.Left, Background = Brush.Parse(badgeBack), Child = Ui.Text(type, 11, true, Brush.Parse(badgeColor)) } };
+        var children = new List<Control> { Ui.Text(record.Name, 13, false), new Border { CornerRadius = new CornerRadius(5), Padding = new Thickness(6.4, 2.4), HorizontalAlignment = HorizontalAlignment.Left, Background = Brush.Parse(badgeBack), Child = Ui.Text(type, 11, true, Brush.Parse(badgeColor)) } };
         if (!model.ProductFieldVisible("Type")) children.RemoveAt(1);
-        if (model.ProductFieldVisible("Alias Name") && !string.IsNullOrWhiteSpace(alias)) children.Add(Ui.Text("(" + alias + ")", 11, color: Ui.Muted));
-        return Ui.Stack(4, children.ToArray());
+        if (model.ProductFieldVisible("Alias Name") && !string.IsNullOrWhiteSpace(alias)) children.Add(Ui.LocalText("(" + alias + ")", 11, color: Ui.Muted));
+        return Ui.Stack(3.2, children.ToArray());
     }
 
     // Performs the has unlimited stock action for this screen or workflow.
@@ -531,8 +533,8 @@ internal sealed partial class ManagementView : UserControl
         if (record == null) return Ui.Text(value.ToUpperInvariant(), 11, true, Brushes.White);
         return header switch
         {
-            "Invoice / Customer" => Ui.Stack(3, Ui.Text(record.Name, 13, true), Ui.Text("♙ " + record["Customer"] + "  ⓘ", 11, color: Ui.Muted)),
-            "Items" => new Border { Background = Brush.Parse("#E3F2FD"), CornerRadius = new CornerRadius(5), Padding = new Thickness(7, 3), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(value, 11, true, Brush.Parse("#1976D2")) },
+            "Invoice / Customer" => Ui.Stack(2.4, Ui.Text(record.Name, 13, true), Ui.LocalText("♙ " + record["Customer"] + "  ⓘ", 11, color: Ui.Muted)),
+            "Items" => new Border { Background = Ui.Palette("#E3F2FD", "#202B36"), CornerRadius = new CornerRadius(5), Padding = new Thickness(5.6, 2.4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(value, 11, true, Brush.Parse("#1976D2")) },
             "Status" => StatusBadge(value),
             "Total" => Ui.Text(value, 13, true, Brush.Parse("#4CAF50")),
             "Outstanding" => Ui.Text(value, 13, true, value == "—" ? Ui.Muted : Brush.Parse("#F44336")),
@@ -545,7 +547,7 @@ internal sealed partial class ManagementView : UserControl
     {
         var color = StatusBrush(status);
         var background = status switch { "Paid" => "#E8F5E9", "Partial" => "#FFF3E0", "Unpaid" => "#FFEBEE", "Overdue" => "#FFEBEE", _ => "#F5F5F5" };
-        return new Border { Background = Brush.Parse(background), BorderBrush = color, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(status, 11, false, color) };
+        return new Border { Background = Brush.Parse(background), BorderBrush = color, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(6.4, 3.2), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(status, 11, false, color) };
     }
 
     // Performs the status brush action for this screen or workflow.
@@ -656,7 +658,7 @@ internal sealed partial class ManagementView : UserControl
             return;
         }
 
-        window.ShowOverlay($"{kind} Details", Ui.Stack(12, record.Values.Select(v => Ui.Stack(4, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
+        window.ShowOverlay($"{kind} Details", Ui.Stack(9.6, record.Values.Select(v => Ui.Stack(3.2, Ui.Text(v.Key, 12, color: Ui.Muted), Ui.Text(v.Value.Length == 0 ? "—" : v.Value))).ToArray()), Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button(Documents ? "Apply Payment" : "Edit", () => { if (Documents) window.ShowPayment(record); else window.EditRecord(kind, Refresh, record); }, true)));
     }
 
 
@@ -792,7 +794,7 @@ internal sealed partial class ManagementView : UserControl
             cancel.Classes.Add("text");
             var sample = Ui.Button("Download Sample", async () => await DownloadSampleCsv());
             var choose = Ui.Button("Choose File", async () => await ChooseCsvFile(), true);
-            choose.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("folder", 18, Brushes.White), new Border(), Ui.Text("Choose File", 13, true, Brushes.White));
+            choose.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("folder", 18, Brushes.White), new Border(), Ui.LocalText("Choose File", 13, true, Brushes.White));
             window.ShowOverlay(
                 $"Import {kind}s from CSV",
                 kind == "Product" ? ProductImportGuide() : CustomerImportGuide(),
@@ -810,7 +812,7 @@ internal sealed partial class ManagementView : UserControl
         var columns = kind == "Customer"
             ? "name (required), email, phone, address, business_name, tax_number"
             : "name (required), price (required), hsn_code, description, tax_rate, stock, type, default_discount, purchase_price, alias_name, unit, unlimited_stock, price_includes_tax, storage_location, container_number, batch_number, expiry_date, manufacture_date, manufacture_name, supplier_name, sku_code, notes";
-        window.ShowOverlay($"Import {kind}s from CSV", Ui.Stack(16, Ui.Text("CSV columns", 16, true), Ui.Text(columns), Ui.Button("Download Sample CSV", async () => await DownloadSampleCsv()), Ui.Button("Choose File", async () => await ChooseCsvFile())));
+        window.ShowOverlay($"Import {kind}s from CSV", Ui.Stack(12.8, Ui.LocalText("CSV columns", 16, true), Ui.Text(columns), Ui.Button("Download Sample CSV", async () => await DownloadSampleCsv()), Ui.Button("Choose File", async () => await ChooseCsvFile())));
     }
 
     // Builds the customer CSV requirements and validation notes shown before file selection.
@@ -835,7 +837,7 @@ internal sealed partial class ManagementView : UserControl
         var noteList = Ui.Stack(7);
         foreach (var note in notes)
             noteList.Children.Add(Ui.Columns("18,*", Ui.Icon("info_outline", 15, Brush.Parse("#607D8B")), Ui.Text(note, 12)));
-        return Ui.Stack(14,
+        return Ui.Stack(11.2,
             CsvRequirementsTable(rows, "224,104,*"),
             noteList);
     }
@@ -880,7 +882,7 @@ internal sealed partial class ManagementView : UserControl
             label.TextWrapping = TextWrapping.NoWrap;
             var cell = new Border
             {
-                Padding = new Thickness(8, 4),
+                Padding = new Thickness(6.4, 3.2),
                 Background = header ? Brushes.White : Brushes.Transparent,
                 BorderBrush = Ui.Outline,
                 BorderThickness = new Thickness(column == 0 ? 0 : 1, row == 0 ? 0 : 1, 0, 0),
@@ -902,8 +904,8 @@ internal sealed partial class ManagementView : UserControl
             AddCell(index + 1, 2, item.Description);
         }
 
-        return Ui.Stack(12,
-            Ui.Text("Your CSV file must use the following column headers (exact spelling, any order):", 13),
+        return Ui.Stack(9.6,
+            Ui.LocalText("Your CSV file must use the following column headers (exact spelling, any order):", 13),
             new Border
             {
                 CornerRadius = new CornerRadius(4),
@@ -935,7 +937,7 @@ internal sealed partial class ManagementView : UserControl
         }
         var currentPage = new RadioButton { Content = "Current Page", IsChecked = true, GroupName = "export" };
         var allRecords = new RadioButton { Content = "All Records", GroupName = "export" };
-        window.ShowOverlay("Export", Ui.Stack(12, Ui.Text("Export records"), currentPage, allRecords, Ui.Button("Export CSV", async () => await ExportCsv(currentPage.IsChecked == true)), Ui.Button("Export PDF", Documents ? async () => await ExportDocumentsPdf() : null)));
+        window.ShowOverlay("Export", Ui.Stack(9.6, Ui.LocalText("Export records"), currentPage, allRecords, Ui.Button("Export CSV", async () => await ExportCsv(currentPage.IsChecked == true)), Ui.Button("Export PDF", Documents ? async () => await ExportDocumentsPdf() : null)));
     }
 
     // Exports either the visible product page or the complete active product catalog as a PDF.
@@ -1031,7 +1033,7 @@ internal sealed partial class ManagementView : UserControl
         using var reader = new StreamReader(stream, Encoding.UTF8, true);
         var imported = model.ImportCsv(kind, await reader.ReadToEndAsync());
         Refresh();
-        window.ShowOverlay("Import Complete", Ui.Stack(8, Ui.Text(imported == 0 ? model.Status : $"{model.Status} The table has been refreshed.")), Ui.Button("Close", window.CloseOverlay, true));
+        window.ShowOverlay("Import Complete", Ui.Stack(6.4, Ui.Text(imported == 0 ? model.Status : $"{model.Status} The table has been refreshed.")), Ui.Button("Close", window.CloseOverlay, true));
     }
 
     // Performs the export csv action for this screen or workflow.

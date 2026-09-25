@@ -208,8 +208,8 @@ public partial class MainWindow
         {
             Padding = new Thickness(24),
             Child = Ui.Rows("Auto,*,Auto",
-                Ui.Text("Choose a printer", 20, true),
-                new StackPanel { Spacing = 8, Margin = new Thickness(0, 20), Children = { Ui.Text("Printer", 12, true, Ui.Muted), picker } },
+                Ui.LocalText("Choose a printer", 20, true),
+                new StackPanel { Spacing = 8, Margin = new Thickness(0, 20), Children = { Ui.LocalText("Printer", 12, true, Ui.Muted), picker } },
                 new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, print } })
         };
         return await dialog.ShowDialog<(bool Confirmed, string? PrinterName)>(this);

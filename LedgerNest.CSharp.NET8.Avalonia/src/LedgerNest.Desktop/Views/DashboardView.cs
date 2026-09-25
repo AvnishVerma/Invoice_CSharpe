@@ -101,7 +101,7 @@ public partial class MainWindow
     private static string StatusBackground(string status) => status switch { "Paid" => "#E8F5E9", "Partial" => "#FFF3E0", "Unpaid" => "#FFEBEE", _ => "#FFEBEE" };
 
     // Performs the shortcuts action for this screen or workflow.
-    private void Shortcuts() => ShowOverlay("Keyboard Shortcuts", Ui.Stack(16,
+    private void Shortcuts() => ShowOverlay("Keyboard Shortcuts", Ui.Stack(12.8,
         Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + P", "Print invoice")));
 
     // Performs the shortcut row creation action for the shortcut overlay.

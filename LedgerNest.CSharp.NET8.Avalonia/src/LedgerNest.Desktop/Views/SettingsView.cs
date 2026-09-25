@@ -45,8 +45,8 @@ public partial class MainWindow
         if (name == "Invoice Settings") return InvoiceSettingsView();
         if (!Model.Settings.TryGetValue(name, out var sections)) return Ui.Empty("No settings available");
         var stack = Ui.Stack(16);
-        foreach (var section in sections) stack.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text(section.Title, 18, true), Ui.Fields(section.Fields)), 24));
-        if (name == "Accessibility") stack.Children.Add(Ui.Card(Ui.Stack(16, Ui.Text("Keyboard Shortcuts", 20, true), Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print invoice"))));
+        foreach (var section in sections) stack.Children.Add(Ui.Card(Ui.Stack(12.8, Ui.Text(section.Title, 18, true), Ui.Fields(section.Fields)), 24));
+        if (name == "Accessibility") stack.Children.Add(Ui.Card(Ui.Stack(12.8, Ui.LocalText("Keyboard Shortcuts", 20, true), Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print invoice"))));
         stack.Children.Add(Ui.Button("Save Settings", () => Model.SaveSettings(name), true));
         stack.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar(name), Ui.Scroll(stack, 28));
     }
@@ -67,8 +67,8 @@ public partial class MainWindow
             {
                 var icon = new Border
                 {
-                    Width = 40,
-                    Height = 40,
+                    Width = 32,
+                    Height = 32,
                     CornerRadius = new CornerRadius(20),
                     Background = Brush.Parse(backup.IsDatabase ? "#2196F3" : "#4CAF60"),
                     Child = Ui.Icon(backup.IsDatabase ? "storage" : "code", 23, Brushes.White)
@@ -90,12 +90,12 @@ public partial class MainWindow
                 flyout.Items.Add(share);
                 flyout.Items.Add(delete);
                 menu.Flyout = flyout;
-                var details = Ui.Stack(3,
+                var details = Ui.Stack(2.4,
                     Ui.Text(backup.Name, 15),
                     Ui.Text($"Size: {FormatFileSize(backup.Size)}", 12, color: Ui.Muted),
                     Ui.Text($"Created: {backup.CreatedAt:dd MMM yyyy HH:mm}", 12, color: Ui.Muted));
                 var card = Ui.Card(Ui.Columns("Auto,16,*,Auto", icon, new Border(), details, menu), 16);
-                card.Background = Brush.Parse("#F8F3FB");
+                card.Background = Ui.Palette("#F8F3FB", "#202B36");
                 card.MaxWidth = 870;
                 card.HorizontalAlignment = HorizontalAlignment.Stretch;
                 history.Children.Add(card);
@@ -109,8 +109,8 @@ public partial class MainWindow
         Button ActionButton(string label, string icon, Func<Task> action)
         {
             var button = Ui.Button(label, async () => await RunBackupFileAction(action));
-            button.Content = Ui.Columns("Auto,8,*", Ui.Icon(icon, 18, Brush.Parse("#6750A4")), new Border(), Ui.Text(label, 14, color: Brush.Parse("#6750A4")));
-            button.Background = Brush.Parse("#F5EFFA");
+            button.Content = Ui.Columns("Auto,8,*", Ui.Icon(icon, 18, Brush.Parse("#6750A4")), new Border(), Ui.LocalText(label, 14, color: Brush.Parse("#6750A4")));
+            button.Background = Ui.Palette("#F5EFFA", "#202B36");
             button.BorderBrush = Brush.Parse("#E2D9E8");
             button.CornerRadius = new CornerRadius(22);
             button.HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -123,7 +123,7 @@ public partial class MainWindow
             ActionButton("Export JSON", "download", CreateBackupFile),
             new Border(),
             ActionButton("Import Backup", "upload", ImportBackupFile));
-        var body = Ui.Stack(16, actions, new Separator(), history);
+        var body = Ui.Stack(12.8, actions, new Separator(), history);
         body.MaxWidth = 940;
         var refresh = Ui.Button("↻", () =>
         {
@@ -355,12 +355,12 @@ public partial class MainWindow
     // Performs the customization view action for this screen or workflow.
     private Control CustomizationView()
     {
-        var cards = Ui.Stack(20, Ui.Text("MADE FOR YOUR BUSINESS", 12, true, Ui.Primary), Ui.Text($"Customize {Branding.Name}", 28, true));
-        foreach (var (title, description) in new[] { ("Custom PDF Template", "An invoice design tailored to your business and branding."), ("Custom Fields", "Capture the additional details your business needs."), ("White Label", "Your brand, logo and identity throughout the application."), ("Industry Build", "A tailored workflow for your industry.") }) cards.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text(title, 20, true), Ui.Text(description, 14, color: Ui.Muted), Ui.Button("Request Customization")), 24));
+        var cards = Ui.Stack(16, Ui.LocalText("MADE FOR YOUR BUSINESS", 12, true, Ui.Primary), Ui.Text($"Customize {Branding.Name}", 28, true));
+        foreach (var (title, description) in new[] { ("Custom PDF Template", "An invoice design tailored to your business and branding."), ("Custom Fields", "Capture the additional details your business needs."), ("White Label", "Your brand, logo and identity throughout the application."), ("Industry Build", "A tailored workflow for your industry.") }) cards.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.LocalText(title, 20, true), Ui.Text(description, 14, color: Ui.Muted), Ui.Button("Request Customization")), 24));
         cards.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar("Customize"), Ui.Scroll(cards, 28));
     }
     // Performs the software info action for this screen or workflow.
-    private Control SoftwareInfo() => Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(Ui.Stack(24, Ui.Logo(), Ui.Card(Ui.Stack(18, Ui.Text("App Details", 18, true), Ui.Text($"App Name       {Branding.Name}"), Ui.Text("Platform          Desktop"), Ui.Text("License           See legacy LICENSE"))), Ui.Card(Ui.Stack(18, Ui.Text("Developer", 18, true), Ui.Text(Branding.Tagline), Ui.Button("Check for Updates"))), Ui.Button("Change Password", ShowChangePassword), Ui.Button("First-time Setup", ShowOnboarding)), 28));
+    private Control SoftwareInfo() => Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(Ui.Stack(19.2, Ui.Logo(), Ui.Card(Ui.Stack(14.4, Ui.LocalText("App Details", 18, true), Ui.Text($"App Name       {Branding.Name}"), Ui.LocalText("Platform          Desktop"), Ui.LocalText("License           See legacy LICENSE"))), Ui.Card(Ui.Stack(14.4, Ui.LocalText("Developer", 18, true), Ui.Text(Branding.Tagline), Ui.Button("Check for Updates"))), Ui.Button("Change Password", ShowChangePassword), Ui.Button("First-time Setup", ShowOnboarding)), 28));
 }
 
 // Describes a backup shown in the current Backup Management history.

@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.ReportsPageView"
@@ -7,23 +7,23 @@
     <local:ReportTabIconConverter x:Key="ReportTabIconConverter" />
   </UserControl.Resources>
   <Grid RowDefinitions="Auto,Auto,*">
-    <Border Background="{DynamicResource PageHeaderBrush}" Padding="18,10">
-      <Grid ColumnDefinitions="*,Auto" MinHeight="38">
-        <TextBlock Text="Reports" Foreground="White" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Left" VerticalAlignment="Center" />
-        <Button Grid.Column="1" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh reports" Background="Transparent" BorderThickness="0" Padding="8">
+    <Border Background="{DynamicResource PageHeaderBrush}" Padding="14.4,8">
+      <Grid ColumnDefinitions="*,Auto" MinHeight="30.4">
+        <TextBlock loc:UiLocalization.Text="Reports" Foreground="White" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Left" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh reports" Background="Transparent" BorderThickness="0" Padding="6.4">
           <TextBlock Text="↻" Foreground="White" FontSize="22" />
         </Button>
       </Grid>
     </Border>
 
-    <Border Grid.Row="1" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="8,6">
+    <Border Grid.Row="1" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="6.4,4.8">
       <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
         <ListBox ItemsSource="{Binding ReportTabs}"
                  SelectedItem="{Binding SelectedReport, Mode=TwoWay}"
                  Background="Transparent"
                  BorderThickness="0">
           <ListBox.ItemsPanel>
-            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="4" /></ItemsPanelTemplate>
+            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3.2" /></ItemsPanelTemplate>
           </ListBox.ItemsPanel>
           <ListBox.Styles>
             <Style Selector="ListBoxItem">
@@ -33,8 +33,8 @@
               <Setter Property="VerticalContentAlignment" Value="Center" />
             </Style>
             <Style Selector="ListBoxItem:selected">
-              <Setter Property="Background" Value="#E2E8F0" />
-              <Setter Property="Foreground" Value="#0D47A1" />
+              <Setter Property="Background" Value="{DynamicResource AppSelectedBrush}" />
+              <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
             </Style>
             <Style Selector="Button.report-tab /template/ ContentPresenter#PART_ContentPresenter">
               <Setter Property="Background" Value="Transparent" />
@@ -59,12 +59,12 @@
                       BorderThickness="0"
                       Padding="0"
                       FontSize="13">
-                <StackPanel Orientation="Horizontal" Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="6.4">
                   <TextBlock Text="{Binding Converter={StaticResource ReportTabIconConverter}}"
                              FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
                              FontSize="17"
                              VerticalAlignment="Center" />
-                  <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                  <TextBlock loc:UiLocalization.Text="{Binding}" VerticalAlignment="Center" />
                 </StackPanel>
               </Button>
             </DataTemplate>
@@ -74,18 +74,18 @@
     </Border>
 
     <Grid Grid.Row="2" ColumnDefinitions="200,*">
-      <Border Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
+      <Border Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,1,0">
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Margin="16" Spacing="8">
-            <TextBlock Text="CURRENCY" FontSize="11" FontWeight="Bold" Foreground="#777777" />
+          <StackPanel Margin="16" Spacing="6.4">
+            <TextBlock loc:UiLocalization.Text="CURRENCY" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
             <RadioButton GroupName="ReportCurrency" IsChecked="True" Margin="0,2">
-              <TextBlock Text="Current selected currency (Indian Rupee)" TextWrapping="Wrap" FontWeight="SemiBold" />
+              <TextBlock loc:UiLocalization.Text="Current selected currency (Indian Rupee)" TextWrapping="Wrap" FontWeight="SemiBold" />
             </RadioButton>
             <RadioButton GroupName="ReportCurrency" Content="All currencies" Margin="0,2" />
 
             <Separator Margin="0,8" />
 
-            <TextBlock Text="PERIOD" FontSize="11" FontWeight="Bold" Foreground="#777777" />
+            <TextBlock loc:UiLocalization.Text="PERIOD" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
             <RadioButton GroupName="ReportPeriod" Content="Last 30 days" Margin="0,2" />
             <RadioButton GroupName="ReportPeriod" Content="Last 3 months" IsChecked="{Binding IsThreeMonthPeriod, Mode=OneWay}" Margin="0,2" />
             <RadioButton GroupName="ReportPeriod" Content="Last 6 months" IsChecked="{Binding IsSixMonthPeriod, Mode=OneWay}" Margin="0,2" />

@@ -1,9 +1,9 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.DailyReportView"
              x:CompileBindings="False">
   <UserControl.Styles>
-    <Style Selector="ToggleButton.periodButton"><Setter Property="MinHeight" Value="34"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="18"/><Setter Property="Background" Value="#FBF5FF"/><Setter Property="BorderBrush" Value="#DDD6E1"/><Setter Property="Foreground" Value="#666666"/></Style>
+    <Style Selector="ToggleButton.periodButton"><Setter Property="MinHeight" Value="27.2"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="18"/><Setter Property="Background" Value="#FBF5FF"/><Setter Property="BorderBrush" Value="#DDD6E1"/><Setter Property="Foreground" Value="#666666"/></Style>
     <Style Selector="ToggleButton.periodButton:checked"><Setter Property="Background" Value="#E8EDF9"/><Setter Property="BorderBrush" Value="#1D4ED8"/><Setter Property="Foreground" Value="#1D4ED8"/></Style>
     <Style Selector="Button.exportButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="#6B6B6B"/><Setter Property="FontSize" Value="12"/><Setter Property="Padding" Value="8,4"/></Style>
     <Style Selector="TextBlock.tableHeader"><Setter Property="Foreground" Value="#6B6B6B"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
@@ -11,11 +11,11 @@
   </UserControl.Styles>
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-    <Border Background="#FBF5FF" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="12" Margin="16">
+    <Border Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="12" Margin="16">
       <StackPanel>
         <Grid ColumnDefinitions="*,Auto" Margin="20,18,14,10">
           <TextBlock Text="Daily Sales &amp; Profit" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
             <Button Classes="exportButton" Content="↓  Export CSV" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export daily report as CSV"/>
             <Button Classes="exportButton" Content="↓  Export PDF" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export daily report as PDF"/>
           </StackPanel>
@@ -26,29 +26,29 @@
           <ToggleButton Classes="periodButton" Margin="0,0,10,6" Content="Last 30 days" IsChecked="{Binding IsLastThirtyDays}" Command="{Binding SelectModeCommand}" CommandParameter="Last 30 days"/>
           <ToggleButton Classes="periodButton" Margin="0,0,10,6" Content="Month &amp; Year" IsChecked="{Binding IsMonthAndYear}" Command="{Binding SelectModeCommand}" CommandParameter="Month &amp; Year"/>
           <ToggleButton Classes="periodButton" Margin="0,0,10,6" Content="Custom Range" IsChecked="{Binding IsCustomRange}" Command="{Binding SelectModeCommand}" CommandParameter="Custom Range"/>
-          <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth, Mode=TwoWay}" MinWidth="120" MinHeight="34" Margin="0,0,8,6"/>
-          <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear, Mode=TwoWay}" MinWidth="90" MinHeight="34" Margin="0,0,0,6"/>
-          <DatePicker IsVisible="{Binding IsCustomRange}" SelectedDate="{Binding CustomStart, Mode=TwoWay}" MinWidth="150" MinHeight="34" Margin="0,0,8,6"/>
+          <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth, Mode=TwoWay}" MinWidth="120" MinHeight="27.2" Margin="0,0,8,6"/>
+          <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear, Mode=TwoWay}" MinWidth="90" MinHeight="27.2" Margin="0,0,0,6"/>
+          <DatePicker IsVisible="{Binding IsCustomRange}" SelectedDate="{Binding CustomStart, Mode=TwoWay}" MinWidth="150" MinHeight="27.2" Margin="0,0,8,6"/>
           <TextBlock IsVisible="{Binding IsCustomRange}" Text="–" VerticalAlignment="Center" Margin="0,0,8,6"/>
-          <DatePicker IsVisible="{Binding IsCustomRange}" SelectedDate="{Binding CustomEnd, Mode=TwoWay}" MinWidth="150" MinHeight="34" Margin="0,0,0,6"/>
+          <DatePicker IsVisible="{Binding IsCustomRange}" SelectedDate="{Binding CustomEnd, Mode=TwoWay}" MinWidth="150" MinHeight="27.2" Margin="0,0,0,6"/>
         </WrapPanel>
 
-        <Border IsVisible="{Binding HasMissingCosts}" Background="#FFFBEA" BorderBrush="#F4C84A" BorderThickness="1" CornerRadius="8" Margin="20,0,20,14" Padding="14,10">
+        <Border IsVisible="{Binding HasMissingCosts}" Background="{DynamicResource AppCardBrush}" BorderBrush="#F4C84A" BorderThickness="1" CornerRadius="8" Margin="20,0,20,14" Padding="11.2,8">
           <Grid ColumnDefinitions="Auto,*"><TextBlock Text="⚠" Foreground="#EA8A00" FontSize="16"/><TextBlock Grid.Column="1" Text="{Binding MissingCostMessage}" Foreground="#A85B13" FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0"/></Grid>
         </Border>
 
-        <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="20,9">
-          <Grid ColumnDefinitions="1.4*,*,1.25*,1.25*,1.25*,.7*"><TextBlock Classes="tableHeader" Text="DATE"/><TextBlock Grid.Column="1" Classes="tableHeader" Text="INVOICES" HorizontalAlignment="Right"/><TextBlock Grid.Column="2" Classes="tableHeader" Text="SALES" HorizontalAlignment="Right"/><TextBlock Grid.Column="3" Classes="tableHeader" Text="COGS" HorizontalAlignment="Right"/><TextBlock Grid.Column="4" Classes="tableHeader" Text="PROFIT" HorizontalAlignment="Right"/><TextBlock Grid.Column="5" Classes="tableHeader" Text="MARGIN" HorizontalAlignment="Right"/></Grid>
+        <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="16,7.2">
+          <Grid ColumnDefinitions="1.4*,*,1.25*,1.25*,1.25*,.7*"><TextBlock Classes="tableHeader" loc:UiLocalization.Text="DATE"/><TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="INVOICES" HorizontalAlignment="Right"/><TextBlock Grid.Column="2" Classes="tableHeader" loc:UiLocalization.Text="SALES" HorizontalAlignment="Right"/><TextBlock Grid.Column="3" Classes="tableHeader" loc:UiLocalization.Text="COGS" HorizontalAlignment="Right"/><TextBlock Grid.Column="4" Classes="tableHeader" loc:UiLocalization.Text="PROFIT" HorizontalAlignment="Right"/><TextBlock Grid.Column="5" Classes="tableHeader" loc:UiLocalization.Text="MARGIN" HorizontalAlignment="Right"/></Grid>
         </Border>
         <ItemsControl ItemsSource="{Binding Rows}">
           <ItemsControl.ItemTemplate><DataTemplate>
-            <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,13">
-              <Grid ColumnDefinitions="1.4*,*,1.25*,1.25*,1.25*,.7*"><TextBlock Classes="tableCell" Text="{Binding Date}"/><TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding InvoiceCount}" HorizontalAlignment="Right" Foreground="#777777"/><TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding Sales}" HorizontalAlignment="Right" Foreground="#1D4ED8"/><TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Cogs}" HorizontalAlignment="Right" Foreground="#777777"/><TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Profit}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="SemiBold"/><TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Margin}" HorizontalAlignment="Right" Foreground="#777777"/></Grid>
+            <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
+              <Grid ColumnDefinitions="1.4*,*,1.25*,1.25*,1.25*,.7*"><TextBlock Classes="tableCell" Text="{Binding Date}"/><TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding InvoiceCount}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding Sales}" HorizontalAlignment="Right" Foreground="#1D4ED8"/><TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Cogs}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Profit}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="SemiBold"/><TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Margin}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/></Grid>
             </Border>
           </DataTemplate></ItemsControl.ItemTemplate>
         </ItemsControl>
-        <Border IsVisible="{Binding HasNoRows}" Padding="20,24"><TextBlock Text="No invoice sales for the selected period." Foreground="#777777" HorizontalAlignment="Center"/></Border>
-        <Grid ColumnDefinitions="*,Auto" Margin="20,14"><TextBlock Text="{Binding RangeText}" FontSize="13"/><TextBlock Grid.Column="1" Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold"/></Grid>
+        <Border IsVisible="{Binding HasNoRows}" Padding="16,19.2"><TextBlock loc:UiLocalization.Text="No invoice sales for the selected period." Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center"/></Border>
+        <Grid ColumnDefinitions="*,Auto" Margin="20,14"><TextBlock Text="{Binding RangeText}" FontSize="13"/><TextBlock Grid.Column="1" loc:UiLocalization.Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold"/></Grid>
       </StackPanel>
     </Border>
   </ScrollViewer>

@@ -15,7 +15,7 @@
         <ItemsControl.ItemTemplate>
           <DataTemplate>
             <Border Background="White" BorderBrush="#D5D5D5" BorderThickness="1" Padding="4" BoxShadow="0 2 8 0 #26000000" HorizontalAlignment="Center">
-              <Image Source="{Binding}" Stretch="Uniform" MaxWidth="760" MaxHeight="{Binding DataContext.MaxPreviewHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+              <Image Source="{Binding}" Stretch="Uniform" MaxHeight="{Binding DataContext.MaxPreviewHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </Border>
           </DataTemplate>
         </ItemsControl.ItemTemplate>

@@ -3,10 +3,40 @@
              xmlns:local="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.App" RequestedThemeVariant="Default">
   <Application.Resources>
+    <ResourceDictionary>
+      <x:Double x:Key="ExpanderMinHeight">36</x:Double>
+      <x:Double x:Key="ExpanderChevronButtonSize">24</x:Double>
+      <Thickness x:Key="ExpanderHeaderPadding">10,4</Thickness>
+      <Thickness x:Key="ExpanderChevronMargin">6,0,0,0</Thickness>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="AppCanvasBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="AppSurfaceBrush">#FAFAFA</SolidColorBrush>
+          <SolidColorBrush x:Key="AppCardBrush">#FBF5FF</SolidColorBrush>
+          <SolidColorBrush x:Key="AppTextBrush">#202124</SolidColorBrush>
+          <SolidColorBrush x:Key="AppMutedBrush">#666666</SolidColorBrush>
+          <SolidColorBrush x:Key="AppOutlineBrush">#D0D0D0</SolidColorBrush>
+          <SolidColorBrush x:Key="AppAccentBrush">#083B88</SolidColorBrush>
+          <SolidColorBrush x:Key="AppSelectedBrush">#E8EEF7</SolidColorBrush>
+          <SolidColorBrush x:Key="AppHoverBrush">#EEF2F7</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="AppCanvasBrush">#111820</SolidColorBrush>
+          <SolidColorBrush x:Key="AppSurfaceBrush">#18212B</SolidColorBrush>
+          <SolidColorBrush x:Key="AppCardBrush">#202B36</SolidColorBrush>
+          <SolidColorBrush x:Key="AppTextBrush">#F1F5F9</SolidColorBrush>
+          <SolidColorBrush x:Key="AppMutedBrush">#BBC5D0</SolidColorBrush>
+          <SolidColorBrush x:Key="AppOutlineBrush">#526171</SolidColorBrush>
+          <SolidColorBrush x:Key="AppAccentBrush">#93C5FD</SolidColorBrush>
+          <SolidColorBrush x:Key="AppSelectedBrush">#293F59</SolidColorBrush>
+          <SolidColorBrush x:Key="AppHoverBrush">#263646</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
     <SolidColorBrush x:Key="PageHeaderBrush" Color="{x:Static local:Branding.HeaderColor}" />
+    </ResourceDictionary>
   </Application.Resources>
   <Application.Styles>
-    <FluentTheme />
+    <FluentTheme DensityStyle="Compact" />
     <Style Selector="ToggleButton.form-toggle /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
@@ -14,18 +44,27 @@
     <Style Selector="Window">
       <Setter Property="FontFamily" Value="avares://LedgerNest.Desktop/Assets#Roboto" />
       <Setter Property="FontSize" Value="14" />
+      <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
     </Style>
     <Style Selector="Button">
       <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="Padding" Value="14,10" />
-      <Setter Property="MinHeight" Value="38" />
+      <Setter Property="Padding" Value="11,8" />
+      <Setter Property="MinHeight" Value="30.4" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Expander /template/ ToggleButton">
+      <Setter Property="MinHeight" Value="38.4" />
+      <Setter Property="Padding" Value="10,6" />
+    </Style>
+    <Style Selector="NumericUpDown /template/ TextBox">
+      <Setter Property="MinHeight" Value="29" />
+      <Setter Property="Padding" Value="6,3" />
     </Style>
     <Style Selector="Button.outline">
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderBrush" Value="#D0D0D0" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Foreground" Value="#083B88" />
+      <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
     </Style>
     <Style Selector="Button.primary">
       <Setter Property="Background" Value="#083B88" />
@@ -40,7 +79,7 @@
     <Style Selector="Button.text">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="#083B88" />
+      <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
       <Setter Property="Padding" Value="8,6" />
     </Style>
     <Style Selector="Button.nav">
@@ -48,25 +87,38 @@
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="#666666" />
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
       <Setter Property="Margin" Value="10,2" />
-      <Setter Property="Padding" Value="12,11" />
-      <Setter Property="MinHeight" Value="42" />
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="MinHeight" Value="33.6" />
     </Style>
     <Style Selector="Button.nav.selected">
-      <Setter Property="Background" Value="#E8EEF7" />
-      <Setter Property="Foreground" Value="#083B88" />
+      <Setter Property="Background" Value="{DynamicResource AppSelectedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
+    <Style Selector="Button.nav:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+    </Style>
+    <Style Selector="Button.nav.selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppSelectedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+    </Style>
+    <Style Selector="Button.nav:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppSelectedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
+    </Style>
     <Style Selector="TextBox">
+      <Setter Property="PlaceholderForeground" Value="{DynamicResource AppMutedBrush}" />
       <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="BorderBrush" Value="#BDBDBD" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Padding" Value="12,10" />
+      <Setter Property="Padding" Value="10,8" />
     </Style>
     <Style Selector="ComboBox">
       <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="BorderBrush" Value="#BDBDBD" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
       <Setter Property="Background" Value="Transparent" />
     </Style>
   </Application.Styles>

@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.OverlayDialogView">
   <UserControl.Resources>
@@ -27,19 +27,19 @@
             Background="{DynamicResource OverlayCardSurface}"
             BorderBrush="{DynamicResource OverlayOutline}">
       <Grid RowDefinitions="Auto,*,Auto">
-        <Border Padding="18,16">
+        <Border Padding="14.4,12.8">
           <Grid ColumnDefinitions="Auto,*,Auto,Auto">
             <ContentControl x:Name="LeadingIconHost"
                             Margin="0,0,12,0"
                             VerticalAlignment="Center" />
-            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3.2">
             <TextBlock x:Name="TitleText"
                        FontSize="16"
                        FontWeight="Bold"
                        Foreground="{DynamicResource OverlayText}"
                        VerticalAlignment="Center"
                        TextWrapping="Wrap" />
-            <TextBlock x:Name="SubtitleText" IsVisible="False" Text="Enter product details" FontSize="12" Foreground="#777777" />
+            <TextBlock x:Name="SubtitleText" IsVisible="False" loc:UiLocalization.Text="Enter product details" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
             </StackPanel>
             <ContentControl x:Name="HeaderAccessoryHost"
                             Grid.Column="2"
@@ -55,12 +55,12 @@
         <ScrollViewer Grid.Row="1"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-          <Border Padding="18">
+          <Border Padding="14.4">
             <ContentControl x:Name="BodyHost" />
           </Border>
         </ScrollViewer>
         <Border Grid.Row="2"
-                Padding="18"
+                Padding="14.4"
                 BorderBrush="{DynamicResource OverlayOutline}"
                 BorderThickness="0,1,0,0">
           <ContentControl x:Name="FooterHost" HorizontalAlignment="Right" />

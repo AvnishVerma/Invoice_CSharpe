@@ -32,11 +32,11 @@ public partial class MainWindow
         Control footer;
         if (kind == "Product")
         {
-            foreach (var button in new[] { cancel, save }) { button.Height = 32; button.MinHeight = 32; button.Padding = new Thickness(12, 5); }
+            foreach (var button in new[] { cancel, save }) { button.Height = 25.6; button.MinHeight = 25.6; button.Padding = new Thickness(9.6, 4); }
             cancel.Background = Brushes.Transparent; cancel.Foreground = ProductEditorFormView.Purple;
             save.Background = ProductEditorFormView.Purple;
-            save.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("save", 17, Brushes.White), new Border(), Ui.Text("Save Product", 13, true, Brushes.White));
-            footer = Ui.Stack(12, another, Ui.Columns("*,12,2*", cancel, new Border(), save));
+            save.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("save", 17, Brushes.White), new Border(), Ui.LocalText("Save Product", 13, true, Brushes.White));
+            footer = Ui.Stack(9.6, another, Ui.Columns("*,12,2*", cancel, new Border(), save));
         }
         else footer = new RecordDialogFooterView(useDefault, another, cancel, save);
         ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, footer, true, kind == "Product" ? 550 : 520, kind == "Product" && Model.ProductFieldVisible("Type") ? ProductEditorFormView.TypeSelector(fields[0]) : null);
@@ -50,10 +50,10 @@ public partial class MainWindow
         initialText.HorizontalAlignment = HorizontalAlignment.Center;
         initialText.VerticalAlignment = VerticalAlignment.Center;
         initialText.TextAlignment = TextAlignment.Center;
-        var avatar = new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(19), Background = Brush.Parse("#F0DDF8"), Child = initialText };
-        var role = new Border { Background = Brush.Parse("#F3E5F5"), CornerRadius = new CornerRadius(6), Padding = new Thickness(9, 4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(user["Role"], 11, false, Brush.Parse("#9C27B0")) };
+        var avatar = new Border { Width = 30.4, Height = 30.4, CornerRadius = new CornerRadius(19), Background = Ui.Palette("#F0DDF8", "#202B36"), Child = initialText };
+        var role = new Border { Background = Ui.Palette("#F3E5F5", "#202B36"), CornerRadius = new CornerRadius(6), Padding = new Thickness(7.2, 3.2), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(user["Role"], 11, false, Brush.Parse("#9C27B0")) };
         var note = user.Name == Model.CurrentUsername ? "This is your account" : $"{user["Role"]} access";
-        var content = Ui.Stack(14, Ui.Columns("38,10,*", avatar, new Border(), Ui.Text(user.Name, 16, true)), role, Ui.Text(note, 12, color: Ui.Muted));
+        var content = Ui.Stack(11.2, Ui.Columns("38,10,*", avatar, new Border(), Ui.Text(user.Name, 16, true)), role, Ui.Text(note, 12, color: Ui.Muted));
         ShowOverlay("User Details", content, Ui.Button("Close", CloseOverlay, true), width: 360);
     }
 
@@ -65,9 +65,9 @@ public partial class MainWindow
         var roleControl = Ui.Field(role);
         var editingSelf = user.Name == Model.CurrentUsername;
         roleControl.IsEnabled = !editingSelf;
-        var form = Ui.Stack(18, Ui.Field(username), roleControl);
+        var form = Ui.Stack(14.4, Ui.Field(username), roleControl);
         form.Margin = new Thickness(0, 8, 0, 0);
-        if (editingSelf) form.Children.Add(Ui.Text("You can't change your own role.", 12, color: Ui.Muted));
+        if (editingSelf) form.Children.Add(Ui.LocalText("You can't change your own role.", 12, color: Ui.Muted));
         var cancel = Ui.Button("Cancel", CloseOverlay);
         var save = Ui.Button("✓  Save Changes", () =>
         {
@@ -85,8 +85,8 @@ public partial class MainWindow
         FormField[] fields = ownAccount
             ? [new("Current Password", kind: "password", required: true), new("New Password", kind: "password", required: true), new("Confirm New Password", kind: "password", required: true)]
             : [new("New Password", kind: "password", required: true), new("Confirm New Password", kind: "password", required: true)];
-        var identity = new Border { Background = Brush.Parse("#E3F2FD"), BorderBrush = Brush.Parse("#64B5F6"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Padding = new Thickness(14, 12), Child = Ui.Text($"User: {user.Name}", 14, false, Brush.Parse("#1976D2")) };
-        var body = Ui.Stack(16, identity, Ui.Fields(fields));
+        var identity = new Border { Background = Ui.Palette("#E3F2FD", "#202B36"), BorderBrush = Brush.Parse("#64B5F6"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Padding = new Thickness(11.2, 9.6), Child = Ui.Text($"User: {user.Name}", 14, false, Brush.Parse("#1976D2")) };
+        var body = Ui.Stack(12.8, identity, Ui.Fields(fields));
         var save = Ui.Button("✓  Change Password", () =>
         {
             var changed = ownAccount ? Model.ChangePassword(user.Name, fields) : Model.ResetUserPassword(user, fields);
@@ -122,9 +122,9 @@ public partial class MainWindow
         else
         {
             var amountHint = Ui.Text($"Max: {Money(outstanding)}", 11, color: Ui.Muted);
-            paymentForm = Ui.Stack(12, Ui.Fields(fields.Take(2), 2), amountHint, Ui.Fields(fields.Skip(2).Take(2), 2), Ui.Field(fields[4]));
+            paymentForm = Ui.Stack(9.6, Ui.Fields(fields.Take(2), 2), amountHint, Ui.Fields(fields.Skip(2).Take(2), 2), Ui.Field(fields[4]));
             var savePayment = Ui.Button("Save Payment", () => { if (Model.ApplyPayment(invoice, fields)) ShowPayment(invoice); }, true);
-            savePayment.Content = Ui.Columns("18,8,Auto", Ui.Icon("check_circle", 16, Brushes.White), new Border(), Ui.Text("Record Payment", 13, true, Brushes.White));
+            savePayment.Content = Ui.Columns("18,8,Auto", Ui.Icon("check_circle", 16, Brushes.White), new Border(), Ui.LocalText("Record Payment", 13, true, Brushes.White));
             footer = Ui.Wrap(Ui.Button("Close", CloseOverlay), savePayment);
         }
 

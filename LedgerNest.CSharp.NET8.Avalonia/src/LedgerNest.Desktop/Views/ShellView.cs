@@ -18,6 +18,7 @@ public partial class MainWindow
         overlay.Children.Clear();
         overlay.IsVisible = false;
         shellModel = vm;
+        ApplyAppearance(vm);
         ShowStatusToast(vm.Status);
         shellChanged = (_, e) =>
         {
@@ -26,9 +27,22 @@ public partial class MainWindow
                 if (vm.CanAccessWorkspace) BuildSidebar();
             if (e.PropertyName == nameof(vm.CanAccessWorkspace)) RefreshWorkspaceAccess();
             if (e.PropertyName == nameof(vm.Status)) ShowStatusToast(vm.Status);
+            if (e.PropertyName is nameof(vm.ThemeMode) or nameof(vm.Language)) ApplyAppearance(vm);
         };
         vm.PropertyChanged += shellChanged;
         RefreshWorkspaceAccess();
+    }
+
+    private void ApplyAppearance(MainWindowViewModel vm)
+    {
+        RequestedThemeVariant = vm.ThemeMode switch
+        {
+            "Dark" => Avalonia.Styling.ThemeVariant.Dark,
+            "System" => Avalonia.Styling.ThemeVariant.Default,
+            _ => Avalonia.Styling.ThemeVariant.Light
+        };
+        Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
+        UiLocalization.Apply(vm.Language);
     }
     // Performs the build sidebar action for this screen or workflow.
     private void BuildSidebar()

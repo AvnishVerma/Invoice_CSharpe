@@ -68,7 +68,7 @@ public partial class MainWindow
         else if (name == "Quotations")
         {
             body.Children.Add(ReportStats(("Quotations Issued", "0", "request_quote", "#0284C7"), ("Invoices in Period", report.InvoiceCount.ToString(), "receipt_long", "#16A34A"), ("Conversion Rate", "0.0%", "bar_chart", "#7C3AED")));
-            body.Children.Add(Ui.Card(Ui.Stack(12, Ui.Text("About Conversion Rate", 16, true), Ui.Text("Conversion rate = Invoices created ÷ Quotations issued × 100.", 13, color: Ui.Muted), Ui.Text("A rate above 100% means more invoices were raised than quotations in the selected period." , 13, color: Ui.Muted), Ui.Text("Note: this is a period-level ratio, not individual quote-to-invoice tracking.", 13, color: Ui.Muted)), 20));
+            body.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.LocalText("About Conversion Rate", 16, true), Ui.LocalText("Conversion rate = Invoices created ÷ Quotations issued × 100.", 13, color: Ui.Muted), Ui.LocalText("A rate above 100% means more invoices were raised than quotations in the selected period." , 13, color: Ui.Muted), Ui.LocalText("Note: this is a period-level ratio, not individual quote-to-invoice tracking.", 13, color: Ui.Muted)), 20));
         }
         else if (name == "Invoice Status")
         {
@@ -175,13 +175,13 @@ public partial class MainWindow
             var stat = stats[i];
             var tile = Ui.Card(Ui.Columns("Auto,12,*", new Border
             {
-                Width = 36,
-                Height = 36,
+                Width = 28.8,
+                Height = 28.8,
                 CornerRadius = new CornerRadius(9),
                 Background = new SolidColorBrush(Color.Parse(stat.Item4), .12),
                 Child = Ui.Icon(stat.Item3, 18, Brush.Parse(stat.Item4))
-            }, new Border(), Ui.Stack(7, Ui.Text(stat.Item1, 12, color: Ui.Muted), Ui.Text(stat.Item2, 18, true, Brush.Parse(stat.Item4)))), 16);
-            tile.Background = Brush.Parse("#FBF5FF");
+            }, new Border(), Ui.Stack(5.6, Ui.Text(stat.Item1, 12, color: Ui.Muted), Ui.Text(stat.Item2, 18, true, Brush.Parse(stat.Item4)))), 16);
+            tile.Background = Ui.Palette("#FBF5FF", "#202B36");
             Grid.SetColumn(tile, i % 3 * 2);
             Grid.SetRow(tile, i / 3 * 2);
             grid.Children.Add(tile);
@@ -197,11 +197,11 @@ public partial class MainWindow
         var pronoun = itemCount == 1 ? "that item" : "those items";
         return new Border
         {
-            Background = Brush.Parse("#FFFBEB"),
+            Background = Ui.Palette("#FFFBEB", "#202B36"),
             BorderBrush = Brush.Parse("#FDE68A"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(12, 10),
+            Padding = new Thickness(9.6, 8),
             Child = Ui.Columns("Auto,8,*", Ui.Icon("warning_amber", 18, Brush.Parse("#D97706")), new Border(),
                 Ui.Text($"{itemCount} {noun} sold in this period {verb} no purchase price set — profit/margin is understated for {pronoun} until a purchase price is added to the product.", 12, color: Brush.Parse("#92400E")))
         };
@@ -216,13 +216,13 @@ public partial class MainWindow
             var s = stats[i];
             var tile = Ui.Card(Ui.Columns("Auto,8,*", new Border
             {
-                Width = 36,
-                Height = 36,
+                Width = 28.8,
+                Height = 28.8,
                 CornerRadius = new CornerRadius(9),
                 Background = new SolidColorBrush(Color.Parse(s.Color), .12),
                 Child = Ui.Icon(s.Icon, 18, Brush.Parse(s.Color))
-            }, new Border(), Ui.Stack(5, Ui.Text(s.Label, 11, true, Ui.Muted), Ui.Text(s.Value, 15, true, Brush.Parse(s.Color)))), 12);
-            tile.Background = Brush.Parse("#FBF5FF");
+            }, new Border(), Ui.Stack(4, Ui.Text(s.Label, 11, true, Ui.Muted), Ui.Text(s.Value, 15, true, Brush.Parse(s.Color)))), 12);
+            tile.Background = Ui.Palette("#FBF5FF", "#202B36");
             tile.Margin = new Thickness(i == 0 ? 0 : 10, 0, i == stats.Length - 1 ? 0 : 10, 0);
             Grid.SetColumn(tile, i);
             grid.Children.Add(tile);
@@ -269,12 +269,12 @@ public partial class MainWindow
 
         var legend = Ui.Wrap(Legend("#3B82F6", "Billed"), Legend("#22C55E", "Collected"), Legend("#7C3AED", "Profit"));
         legend.HorizontalAlignment = HorizontalAlignment.Center;
-        var card = Ui.Card(Ui.Stack(10,
-            Ui.Columns("*,Auto", Ui.Stack(4, Ui.Text("Monthly Revenue Trend", 16, true), Ui.Text($"{report.InvoiceCount} invoices in period · INR", 12, color: Ui.Muted)),
+        var card = Ui.Card(Ui.Stack(8,
+            Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("Monthly Revenue Trend", 16, true), Ui.Text($"{report.InvoiceCount} invoices in period · INR", 12, color: Ui.Muted)),
                 Ui.Wrap(Ui.Button("↓  Export CSV", async () => await ExportReportCsv("Revenue")), Ui.Button("↓  Export PDF", async () => await ExportReportPdf("Revenue")))),
             chartContent,
             legend), 20);
-        card.Background = Brush.Parse("#FBF5FF");
+        card.Background = Ui.Palette("#FBF5FF", "#202B36");
         return card;
     }
 
@@ -291,7 +291,7 @@ public partial class MainWindow
                 Money(month.Outstanding), Money(month.Cogs), Money(month.Profit), $"{month.MarginPercent:0.#}%"]));
         }
         if (report.Months.Length == 0)
-            table.Children.Add(new Border { Padding = new Thickness(14, 18), Child = Ui.Text("No monthly revenue data for this period.", 13, color: Ui.Muted) });
+            table.Children.Add(new Border { Padding = new Thickness(11.2, 14.4), Child = Ui.LocalText("No monthly revenue data for this period.", 13, color: Ui.Muted) });
         else
         {
             var revenue = report.Months.Sum(month => month.Profit + month.Cogs);
@@ -302,8 +302,8 @@ public partial class MainWindow
                 Money(report.Months.Sum(month => month.Cogs)), Money(report.Months.Sum(month => month.Profit)), $"{totalMargin:0.#}%"], false, true));
         }
         var scroll = new ScrollViewer { Content = table, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto };
-        var card = Ui.Card(Ui.Stack(12, Ui.Text("Monthly Breakdown", 16, true), scroll), 20);
-        card.Background = Brush.Parse("#FBF5FF");
+        var card = Ui.Card(Ui.Stack(9.6, Ui.LocalText("Monthly Breakdown", 16, true), scroll), 20);
+        card.Background = Ui.Palette("#FBF5FF", "#202B36");
         return card;
     }
 
@@ -318,7 +318,7 @@ public partial class MainWindow
         return new Border
         {
             MinWidth = 820,
-            Background = header || total ? Brushes.White : Brush.Parse("#FBF5FF"),
+            Background = header || total ? Ui.Canvas : Ui.Palette("#FBF5FF", "#202B36"),
             BorderBrush = Ui.Outline,
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(14, header ? 10 : 13),
@@ -333,21 +333,21 @@ public partial class MainWindow
     private Control ReportTable(string title, string[][] rows, bool wrapInCard, string reportName = "")
     {
         var table = Ui.Stack(0);
-        if (!string.IsNullOrWhiteSpace(title)) table.Children.Add(new Border { Padding = new Thickness(0, 0, 0, 10), Child = Ui.Columns("*,Auto", Ui.Text(title, 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv(string.IsNullOrWhiteSpace(reportName) ? title : reportName)), Ui.Button("↓ Export PDF", async () => await ExportReportPdf(string.IsNullOrWhiteSpace(reportName) ? title : reportName)))) });
+        if (!string.IsNullOrWhiteSpace(title)) table.Children.Add(new Border { Padding = new Thickness(0, 0, 0, 8), Child = Ui.Columns("*,Auto", Ui.LocalText(title, 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv(string.IsNullOrWhiteSpace(reportName) ? title : reportName)), Ui.Button("↓ Export PDF", async () => await ExportReportPdf(string.IsNullOrWhiteSpace(reportName) ? title : reportName)))) });
         if (rows.Length == 0) table.Children.Add(Ui.Empty("No data for this period"));
         for (var index = 0; index < rows.Length; index++)
         {
             var row = rows[index];
             table.Children.Add(new Border
             {
-                Background = index == 0 ? Brushes.White : Brush.Parse(index % 2 == 0 ? "#FFFFFF" : "#FBF5FF"),
+                Background = index % 2 == 0 ? Ui.Canvas : Ui.CardSurface,
                 BorderBrush = Ui.Outline,
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(14, index == 0 ? 10 : 14),
                 Child = Ui.Columns(string.Join(",", row.Select(_ => "*")), row.Select((c, i) => (Control)Ui.Text(index == 0 ? c.ToUpperInvariant() : c, index == 0 ? 11 : 13, index == 0 || i == 0, index == 0 ? Ui.Muted : c.Contains("Rs.") && c.Contains("70") ? Brush.Parse("#EF4444") : c.Contains("Rs.") ? Brush.Parse("#16A34A") : null)).ToArray())
             });
         }
-        table.Children.Add(new Border { Padding = new Thickness(14, 12), Child = Ui.Columns("*,Auto", Ui.Text("Rows per page: 10      1 – 1 of 1", 13), Ui.Text("‹   Page 1 of 1   ›", 13, true)) });
+        table.Children.Add(new Border { Padding = new Thickness(11.2, 9.6), Child = Ui.Columns("*,Auto", Ui.LocalText("Rows per page: 10      1 – 1 of 1", 13), Ui.LocalText("‹   Page 1 of 1   ›", 13, true)) });
         var scroll = new ScrollViewer { Content = table, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto };
         return wrapInCard ? Ui.Card(scroll, 20) : scroll;
     }
@@ -355,7 +355,7 @@ public partial class MainWindow
     private static Control EmptyChart()
     {
         var rows = Ui.Stack(0);
-        for (var i = 4; i >= 0; i--) rows.Children.Add(new Border { Height = 42, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Child = Ui.Text(i.ToString(), 11, color: Ui.Muted) });
+        for (var i = 4; i >= 0; i--) rows.Children.Add(new Border { Height = 33.6, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Child = Ui.Text(i.ToString(), 11, color: Ui.Muted) });
         rows.Children.Add(Ui.Columns("*,*,*,*,*,*", Enumerable.Range(0, 6).Select(i => (Control)Ui.Text(DateTime.Today.AddMonths(i - 5).ToString("MMM"), 11, color: Ui.Muted)).ToArray())); return rows;
     }
 }

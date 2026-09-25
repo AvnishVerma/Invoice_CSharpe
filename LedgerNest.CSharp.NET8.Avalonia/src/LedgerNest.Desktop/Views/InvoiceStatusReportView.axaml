@@ -1,12 +1,12 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.InvoiceStatusReportView"
              x:CompileBindings="False">
   <UserControl.Styles>
     <Style Selector="Border.statusCard"><Setter Property="Background" Value="#FBF5FF"/><Setter Property="BorderBrush" Value="#E4DEE8"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="11"/><Setter Property="Padding" Value="16"/></Style>
-    <Style Selector="ToggleButton.periodButton"><Setter Property="MinHeight" Value="34"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="18"/><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#D8D2DC"/><Setter Property="Foreground" Value="#666666"/></Style>
+    <Style Selector="ToggleButton.periodButton"><Setter Property="MinHeight" Value="27.2"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="18"/><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#D8D2DC"/><Setter Property="Foreground" Value="#666666"/></Style>
     <Style Selector="ToggleButton.periodButton:checked"><Setter Property="Background" Value="#E8EDF9"/><Setter Property="BorderBrush" Value="#1D4ED8"/><Setter Property="Foreground" Value="#1D4ED8"/></Style>
-    <Style Selector="ToggleButton.filterButton"><Setter Property="MinHeight" Value="34"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="7"/><Setter Property="Background" Value="#FBF5FF"/><Setter Property="BorderBrush" Value="#DED7E2"/><Setter Property="Foreground" Value="#666666"/></Style>
+    <Style Selector="ToggleButton.filterButton"><Setter Property="MinHeight" Value="27.2"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="7"/><Setter Property="Background" Value="#FBF5FF"/><Setter Property="BorderBrush" Value="#DED7E2"/><Setter Property="Foreground" Value="#666666"/></Style>
     <Style Selector="ToggleButton.filterButton:checked"><Setter Property="Background" Value="#E8EDF9"/><Setter Property="BorderBrush" Value="#0D47A1"/><Setter Property="Foreground" Value="#0D47A1"/></Style>
     <Style Selector="Button.exportButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="#6B6B6B"/><Setter Property="FontSize" Value="12"/><Setter Property="Padding" Value="8,4"/></Style>
     <Style Selector="TextBlock.tableHeader"><Setter Property="Foreground" Value="#6B6B6B"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
@@ -14,56 +14,56 @@
   </UserControl.Styles>
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-    <StackPanel Margin="16" Spacing="16">
-      <TextBlock Text="{Binding DateRangeText}" FontSize="12" Foreground="#777777" />
-      <StackPanel Orientation="Horizontal" Spacing="10">
+    <StackPanel Margin="16" Spacing="12.8">
+      <TextBlock Text="{Binding DateRangeText}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
         <ToggleButton Classes="periodButton" Content="Last 30 days" IsChecked="{Binding IsLastThirtyDays}" Command="{Binding ShowLastThirtyDaysCommand}" />
         <ToggleButton Classes="periodButton" Content="Month &amp; Year" IsChecked="{Binding IsMonthAndYear}" Command="{Binding ShowMonthAndYearCommand}" />
-        <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth, Mode=TwoWay}" MinWidth="120" MinHeight="34" />
-        <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear, Mode=TwoWay}" MinWidth="90" MinHeight="34" />
+        <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth, Mode=TwoWay}" MinWidth="120" MinHeight="27.2" />
+        <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear, Mode=TwoWay}" MinWidth="90" MinHeight="27.2" />
       </StackPanel>
 
       <Grid ColumnDefinitions="*,14,*,14,*,14,*,14,*">
-        <Border Grid.Column="0" Classes="statusCard"><StackPanel Spacing="12"><TextBlock Text="▤   Total Invoices" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding TotalCount}" Foreground="#0D47A1" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
-        <Border Grid.Column="2" Classes="statusCard"><StackPanel Spacing="12"><TextBlock Text="✓   Paid" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding PaidCount}" Foreground="#16A34A" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
-        <Border Grid.Column="4" Classes="statusCard"><StackPanel Spacing="12"><TextBlock Text="◷   Partial" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding PartialCount}" Foreground="#F59E0B" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
-        <Border Grid.Column="6" Classes="statusCard"><StackPanel Spacing="12"><TextBlock Text="⊖   Unpaid" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding UnpaidCount}" Foreground="#777777" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
-        <Border Grid.Column="8" Classes="statusCard"><StackPanel Spacing="12"><TextBlock Text="⚠   Overdue" Foreground="#777777" FontSize="12"/><TextBlock Text="{Binding OverdueCount}" Foreground="#EF233C" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+        <Border Grid.Column="0" Classes="statusCard"><StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▤   Total Invoices" Foreground="{DynamicResource AppMutedBrush}" FontSize="12"/><TextBlock Text="{Binding TotalCount}" Foreground="#0D47A1" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+        <Border Grid.Column="2" Classes="statusCard"><StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="✓   Paid" Foreground="{DynamicResource AppMutedBrush}" FontSize="12"/><TextBlock Text="{Binding PaidCount}" Foreground="#16A34A" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+        <Border Grid.Column="4" Classes="statusCard"><StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="◷   Partial" Foreground="{DynamicResource AppMutedBrush}" FontSize="12"/><TextBlock Text="{Binding PartialCount}" Foreground="#F59E0B" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+        <Border Grid.Column="6" Classes="statusCard"><StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="⊖   Unpaid" Foreground="{DynamicResource AppMutedBrush}" FontSize="12"/><TextBlock Text="{Binding UnpaidCount}" Foreground="{DynamicResource AppMutedBrush}" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
+        <Border Grid.Column="8" Classes="statusCard"><StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="⚠   Overdue" Foreground="{DynamicResource AppMutedBrush}" FontSize="12"/><TextBlock Text="{Binding OverdueCount}" Foreground="#EF233C" FontSize="20" FontWeight="SemiBold"/></StackPanel></Border>
       </Grid>
 
-      <Border Background="#FBF5FF" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="12">
+      <Border Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="12">
         <StackPanel>
           <Grid ColumnDefinitions="*,Auto" Margin="20,14,14,10">
-            <StackPanel Orientation="Horizontal" Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="6.4">
               <ToggleButton Classes="filterButton" IsChecked="{Binding IsAllSelected}" Content="{Binding AllFilterLabel}" Command="{Binding SelectStatusCommand}" CommandParameter="All" />
               <ToggleButton Classes="filterButton" IsChecked="{Binding IsPaidSelected}" Content="{Binding PaidFilterLabel}" Command="{Binding SelectStatusCommand}" CommandParameter="Paid" />
               <ToggleButton Classes="filterButton" IsChecked="{Binding IsPartialSelected}" Content="{Binding PartialFilterLabel}" Command="{Binding SelectStatusCommand}" CommandParameter="Partial" />
               <ToggleButton Classes="filterButton" IsChecked="{Binding IsUnpaidSelected}" Content="{Binding UnpaidFilterLabel}" Command="{Binding SelectStatusCommand}" CommandParameter="Unpaid" />
               <ToggleButton Classes="filterButton" IsChecked="{Binding IsOverdueSelected}" Content="{Binding OverdueFilterLabel}" Command="{Binding SelectStatusCommand}" CommandParameter="Overdue" />
             </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
               <Button Classes="exportButton" Content="↓  Export CSV" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export invoice status report as CSV" />
               <Button Classes="exportButton" Content="↓  Export PDF" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export invoice status report as PDF" />
             </StackPanel>
           </Grid>
 
-          <Border Background="White" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="20,9">
+          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="16,7.2">
             <Grid ColumnDefinitions="32,100,120,2*,*,*,*,90">
-              <TextBlock Classes="tableHeader" Text="#"/><TextBlock Grid.Column="1" Classes="tableHeader" Text="DATE"/><TextBlock Grid.Column="2" Classes="tableHeader" Text="INVOICE ID"/><TextBlock Grid.Column="3" Classes="tableHeader" Text="CUSTOMER"/><TextBlock Grid.Column="4" Classes="tableHeader" Text="TOTAL" HorizontalAlignment="Right"/><TextBlock Grid.Column="5" Classes="tableHeader" Text="PAID" HorizontalAlignment="Right"/><TextBlock Grid.Column="6" Classes="tableHeader" Text="OUTSTANDING" HorizontalAlignment="Right"/><TextBlock Grid.Column="7" Classes="tableHeader" Text="STATUS" HorizontalAlignment="Right"/>
+              <TextBlock Classes="tableHeader" Text="#"/><TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="DATE"/><TextBlock Grid.Column="2" Classes="tableHeader" loc:UiLocalization.Text="INVOICE ID"/><TextBlock Grid.Column="3" Classes="tableHeader" loc:UiLocalization.Text="CUSTOMER"/><TextBlock Grid.Column="4" Classes="tableHeader" loc:UiLocalization.Text="TOTAL" HorizontalAlignment="Right"/><TextBlock Grid.Column="5" Classes="tableHeader" loc:UiLocalization.Text="PAID" HorizontalAlignment="Right"/><TextBlock Grid.Column="6" Classes="tableHeader" loc:UiLocalization.Text="OUTSTANDING" HorizontalAlignment="Right"/><TextBlock Grid.Column="7" Classes="tableHeader" loc:UiLocalization.Text="STATUS" HorizontalAlignment="Right"/>
             </Grid>
           </Border>
           <ItemsControl ItemsSource="{Binding VisibleRows}">
             <ItemsControl.ItemTemplate><DataTemplate>
-              <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="20,12">
+              <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,9.6">
                 <Grid ColumnDefinitions="32,100,120,2*,*,*,*,90">
-                  <TextBlock Classes="tableCell" Text="{Binding Index}" Foreground="#777777"/><TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Date}" Foreground="#777777"/><TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding InvoiceId}" Foreground="#777777"/><TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Customer}"/><TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Total}" HorizontalAlignment="Right" Foreground="#777777"/><TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Paid}" HorizontalAlignment="Right" Foreground="#16A34A"/><TextBlock Grid.Column="6" Classes="tableCell" Text="{Binding Outstanding}" HorizontalAlignment="Right" Foreground="#EF233C"/>
-                  <Border Grid.Column="7" Background="{Binding StatusBackground}" CornerRadius="5" Padding="8,4" HorizontalAlignment="Right"><TextBlock Text="{Binding Status}" Foreground="{Binding StatusForeground}" FontSize="11"/></Border>
+                  <TextBlock Classes="tableCell" Text="{Binding Index}" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Date}" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding InvoiceId}" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Customer}"/><TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Total}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Paid}" HorizontalAlignment="Right" Foreground="#16A34A"/><TextBlock Grid.Column="6" Classes="tableCell" Text="{Binding Outstanding}" HorizontalAlignment="Right" Foreground="#EF233C"/>
+                  <Border Grid.Column="7" Background="{Binding StatusBackground}" CornerRadius="5" Padding="6.4,3.2" HorizontalAlignment="Right"><TextBlock Text="{Binding Status}" Foreground="{Binding StatusForeground}" FontSize="11"/></Border>
                 </Grid>
               </Border>
             </DataTemplate></ItemsControl.ItemTemplate>
           </ItemsControl>
-          <Border IsVisible="{Binding HasNoRows}" Padding="20,24"><TextBlock Text="No invoices match the selected period and status." Foreground="#777777" HorizontalAlignment="Center"/></Border>
-          <Grid ColumnDefinitions="*,Auto" Margin="20,13"><TextBlock Text="{Binding RangeText}" FontSize="13"/><TextBlock Grid.Column="1" Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold"/></Grid>
+          <Border IsVisible="{Binding HasNoRows}" Padding="16,19.2"><TextBlock loc:UiLocalization.Text="No invoices match the selected period and status." Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center"/></Border>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,13"><TextBlock Text="{Binding RangeText}" FontSize="13"/><TextBlock Grid.Column="1" loc:UiLocalization.Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold"/></Grid>
         </StackPanel>
       </Border>
     </StackPanel>

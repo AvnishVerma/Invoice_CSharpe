@@ -72,7 +72,7 @@ public partial class MainWindowViewModel
     // Performs the set language action for this screen or workflow.
     public void SetLanguage(string value)
     {
-        Language = string.IsNullOrWhiteSpace(value) ? "English" : value;
+        Language = UiLocalization.Normalize(value);
         if (dbFactory != null)
         {
             using var db = dbFactory.CreateDbContext();
@@ -89,7 +89,7 @@ public partial class MainWindowViewModel
         if (dbFactory == null) return;
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
-        Language = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == "appearance.language")?.Value ?? "English";
+        Language = UiLocalization.Normalize(db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == "appearance.language")?.Value);
     }
 
     // Performs the set theme mode action for this screen or workflow.
