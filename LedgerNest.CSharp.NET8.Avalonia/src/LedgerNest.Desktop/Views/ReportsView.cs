@@ -261,8 +261,7 @@ public partial class MainWindow
             chart.Plot.Axes.Left.Min = Math.Min(0, (double)report.Months.Min(month => month.Profit) * 1.15);
             chart.Plot.Grid.XAxisStyle.IsVisible = false;
             chart.Plot.Legend.IsVisible = false;
-            chart.Plot.FigureBackground.Color = ScottPlot.Color.FromHex("#FBF5FF");
-            chart.Plot.DataBackground.Color = ScottPlot.Color.FromHex("#FBF5FF");
+            ReportChartTheme.Apply(chart);
             chart.Refresh();
             chartContent = chart;
         }

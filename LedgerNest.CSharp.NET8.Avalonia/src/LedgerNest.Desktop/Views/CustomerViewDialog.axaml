@@ -4,8 +4,8 @@
              x:CompileBindings="False">
   <StackPanel Spacing="11.2">
     <StackPanel Orientation="Horizontal" Spacing="8">
-      <TextBlock Text="●" FontSize="18" Foreground="#003B87" VerticalAlignment="Center" />
-      <TextBlock loc:UiLocalization.Text="View Customer" FontSize="24" Foreground="#1F1F29" VerticalAlignment="Center" />
+      <TextBlock Text="●" FontSize="18" Foreground="{DynamicResource AppAccentBrush}" VerticalAlignment="Center" />
+      <TextBlock loc:UiLocalization.Text="View Customer" FontSize="24" Foreground="{DynamicResource AppTextBrush}" VerticalAlignment="Center" />
     </StackPanel>
 
     <ItemsControl ItemsSource="{Binding Fields}">
@@ -13,10 +13,10 @@
         <DataTemplate>
           <StackPanel Margin="0,0,0,8">
             <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-            <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
+            <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
               <Grid ColumnDefinitions="28,*">
-                <TextBlock Text="{Binding Icon}" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="15" Foreground="#1F1F29" TextWrapping="Wrap" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Icon}" FontSize="18" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
               </Grid>
             </Border>
             <TextBlock Text="{Binding Counter}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Right" IsVisible="{Binding HasCounter}" Margin="0,3,10,0" />

@@ -4,20 +4,20 @@
              x:CompileBindings="False">
   <UserControl.Styles>
     <Style Selector="Border.productReportCard">
-      <Setter Property="Background" Value="#FBF5FF" />
-      <Setter Property="BorderBrush" Value="#E4DEE8" />
+      <Setter Property="Background" Value="{DynamicResource AppCardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="12" />
     </Style>
     <Style Selector="Button.exportButton">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="#6B6B6B" />
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="Padding" Value="8,4" />
     </Style>
     <Style Selector="TextBlock.tableHeader">
-      <Setter Property="Foreground" Value="#6B6B6B" />
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
       <Setter Property="FontSize" Value="11" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -35,7 +35,7 @@
           <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
             <Border Background="{DynamicResource AppCardBrush}" CornerRadius="18" Padding="9.6,5.6" VerticalAlignment="Center">
-              <TextBlock loc:UiLocalization.Text="▣  Rank: Revenue" FontSize="12" Foreground="#6B6B6B" />
+              <TextBlock loc:UiLocalization.Text="▣  Rank: Revenue" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
             </Border>
             <Button Classes="exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export product report as CSV" Content="↓  Export CSV" />
             <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export product report as PDF" Content="↓  Export PDF" />
@@ -45,7 +45,7 @@
         <Border IsVisible="{Binding HasMissingCosts}" Background="{DynamicResource AppCardBrush}" BorderBrush="#F4C84A" BorderThickness="1" CornerRadius="8" Margin="20,4,20,10" Padding="11.2,8">
           <Grid ColumnDefinitions="Auto,*">
             <TextBlock Text="⚠" Foreground="#EA8A00" FontSize="16" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{Binding MissingCostMessage}" Foreground="#A85B13" FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding MissingCostMessage}" Foreground="{DynamicResource AppTextBrush}" FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0" VerticalAlignment="Center" />
           </Grid>
         </Border>
 
@@ -54,8 +54,8 @@
             <DataTemplate>
               <Grid ColumnDefinitions="160,*,120" Margin="0,5">
                 <TextBlock Text="{Binding Name}" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                <ProgressBar Grid.Column="1" Height="16.8" Minimum="0" Maximum="{Binding MaximumRevenue}" Value="{Binding RevenueValue}" Foreground="#7C3AED" Background="{DynamicResource AppCanvasBrush}" CornerRadius="4" />
-                <TextBlock Grid.Column="2" Text="{Binding Revenue}" FontSize="13" FontWeight="SemiBold" Foreground="#7C3AED" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                <ProgressBar Grid.Column="1" Height="16.8" Minimum="0" Maximum="{Binding MaximumRevenue}" Value="{Binding RevenueValue}" Foreground="{DynamicResource AppAccentBrush}" Background="{DynamicResource AppCanvasBrush}" CornerRadius="4" />
+                <TextBlock Grid.Column="2" Text="{Binding Revenue}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" />
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
@@ -64,7 +64,7 @@
           <TextBlock loc:UiLocalization.Text="No product or service sales for this period." Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
         </Border>
 
-        <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="16,7.2">
+        <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,1" Padding="16,7.2">
           <Grid ColumnDefinitions="48,2.4*,*,1.15*,1.25*,1.15*,.65*">
             <TextBlock Classes="tableHeader" loc:UiLocalization.Text="SL" />
             <TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="PRODUCT / SERVICE" />
@@ -78,12 +78,12 @@
         <ItemsControl ItemsSource="{Binding Rows}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
+              <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="16,10.4">
                 <Grid ColumnDefinitions="48,2.4*,*,1.15*,1.25*,1.15*,.65*">
                   <TextBlock Classes="tableCell" Text="{Binding Index}" Foreground="{DynamicResource AppMutedBrush}" />
                   <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                   <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding UnitsSold}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}" />
-                  <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Revenue}" HorizontalAlignment="Right" Foreground="#7C3AED" />
+                  <TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Revenue}" HorizontalAlignment="Right" Foreground="{DynamicResource AppAccentBrush}" />
                   <TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding DiscountGiven}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}" />
                   <TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Profit}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="SemiBold" />
                   <TextBlock Grid.Column="6" Classes="tableCell" Text="{Binding Margin}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}" />

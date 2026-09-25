@@ -316,6 +316,19 @@ internal static class Program
             model.SetThemeMode("Dark"); Settle();
             Check(((Avalonia.Media.ISolidColorBrush)selectedTab.Background!).Color == darkTabColor, "Selected tab background must return to its dark color");
             model.NavigateCommand.Execute("Reports"); Capture("appearance-reports-dark");
+            var reportsModel = (ReportsPageModel)window.GetVisualDescendants().OfType<ReportsPageView>().Single().DataContext!;
+            foreach (var reportName in reportsModel.ReportTabs)
+            {
+                reportsModel.SelectedReport = reportName; Settle();
+                var cards = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Any(c => c is "reportCard" or "productReportCard" or "statusCard" or "metricCard" or "customerReportCard")).ToArray();
+                foreach (var card in cards)
+                    Check(card.Background is Avalonia.Media.ISolidColorBrush brush && brush.Color.R < 80, reportName + " cards must use dark backgrounds");
+                Capture("dark-report-" + reportName.Replace(" ", "-"));
+                model.SetThemeMode("Light"); Settle();
+                model.SetThemeMode("Dark"); Settle();
+                foreach (var chart in window.GetVisualDescendants().OfType<ScottPlot.Avalonia.AvaPlot>())
+                    Check(chart.Plot.FigureBackground.Color == ScottPlot.Color.FromHex("#202B36"), "Report charts must follow live dark theme changes");
+            }
             model.SetThemeMode("Light"); Settle();
             Check(window.ActualThemeVariant == ThemeVariant.Light, "Light mode must apply immediately");
             model.SetThemeMode("System"); Settle();
@@ -332,6 +345,11 @@ internal static class Program
             model.NavigateCommand.Execute("Customers"); Settle();
             Check(FindButton("View").Content is TextBlock { Text.Length: 1 }, "Customer actions must display icons instead of clipped words");
             Capture("appearance-customer-actions");
+            model.SetThemeMode("Dark"); Click("View"); Settle();
+            var customerDialog = window.GetVisualDescendants().OfType<CustomerViewDialog>().Single();
+            var customerValue = customerDialog.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == "Long customer name");
+            Check(customerValue.Foreground is Avalonia.Media.ISolidColorBrush customerBrush && customerBrush.Color.R > 200, "Customer values must be readable in dark mode");
+            Capture("dark-customer-dialog"); Click("Close"); model.SetThemeMode("Light"); Settle();
             foreach (var previewWidth in new[] { 1366, 800 })
             {
                 window.Width = previewWidth; Settle();

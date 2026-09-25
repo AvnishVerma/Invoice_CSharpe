@@ -3,15 +3,15 @@
              x:Class="LedgerNest.Desktop.Views.DailyReportView"
              x:CompileBindings="False">
   <UserControl.Styles>
-    <Style Selector="ToggleButton.periodButton"><Setter Property="MinHeight" Value="27.2"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="18"/><Setter Property="Background" Value="#FBF5FF"/><Setter Property="BorderBrush" Value="#DDD6E1"/><Setter Property="Foreground" Value="#666666"/></Style>
-    <Style Selector="ToggleButton.periodButton:checked"><Setter Property="Background" Value="#E8EDF9"/><Setter Property="BorderBrush" Value="#1D4ED8"/><Setter Property="Foreground" Value="#1D4ED8"/></Style>
-    <Style Selector="Button.exportButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="#6B6B6B"/><Setter Property="FontSize" Value="12"/><Setter Property="Padding" Value="8,4"/></Style>
-    <Style Selector="TextBlock.tableHeader"><Setter Property="Foreground" Value="#6B6B6B"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+    <Style Selector="ToggleButton.periodButton"><Setter Property="MinHeight" Value="27.2"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="18"/><Setter Property="Background" Value="{DynamicResource AppCardBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/></Style>
+    <Style Selector="ToggleButton.periodButton:checked"><Setter Property="Background" Value="{DynamicResource AppSelectedBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/><Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/></Style>
+    <Style Selector="Button.exportButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/><Setter Property="FontSize" Value="12"/><Setter Property="Padding" Value="8,4"/></Style>
+    <Style Selector="TextBlock.tableHeader"><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
     <Style Selector="TextBlock.tableCell"><Setter Property="FontSize" Value="13"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
   </UserControl.Styles>
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-    <Border Background="{DynamicResource AppCardBrush}" BorderBrush="#E4DEE8" BorderThickness="1" CornerRadius="12" Margin="16">
+    <Border Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="12" Margin="16">
       <StackPanel>
         <Grid ColumnDefinitions="*,Auto" Margin="20,18,14,10">
           <TextBlock Text="Daily Sales &amp; Profit" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -34,16 +34,16 @@
         </WrapPanel>
 
         <Border IsVisible="{Binding HasMissingCosts}" Background="{DynamicResource AppCardBrush}" BorderBrush="#F4C84A" BorderThickness="1" CornerRadius="8" Margin="20,0,20,14" Padding="11.2,8">
-          <Grid ColumnDefinitions="Auto,*"><TextBlock Text="⚠" Foreground="#EA8A00" FontSize="16"/><TextBlock Grid.Column="1" Text="{Binding MissingCostMessage}" Foreground="#A85B13" FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0"/></Grid>
+          <Grid ColumnDefinitions="Auto,*"><TextBlock Text="⚠" Foreground="#EA8A00" FontSize="16"/><TextBlock Grid.Column="1" Text="{Binding MissingCostMessage}" Foreground="{DynamicResource AppTextBrush}" FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0"/></Grid>
         </Border>
 
-        <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="16,7.2">
+        <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,1" Padding="16,7.2">
           <Grid ColumnDefinitions="1.4*,*,1.25*,1.25*,1.25*,.7*"><TextBlock Classes="tableHeader" loc:UiLocalization.Text="DATE"/><TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="INVOICES" HorizontalAlignment="Right"/><TextBlock Grid.Column="2" Classes="tableHeader" loc:UiLocalization.Text="SALES" HorizontalAlignment="Right"/><TextBlock Grid.Column="3" Classes="tableHeader" loc:UiLocalization.Text="COGS" HorizontalAlignment="Right"/><TextBlock Grid.Column="4" Classes="tableHeader" loc:UiLocalization.Text="PROFIT" HorizontalAlignment="Right"/><TextBlock Grid.Column="5" Classes="tableHeader" loc:UiLocalization.Text="MARGIN" HorizontalAlignment="Right"/></Grid>
         </Border>
         <ItemsControl ItemsSource="{Binding Rows}">
           <ItemsControl.ItemTemplate><DataTemplate>
-            <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
-              <Grid ColumnDefinitions="1.4*,*,1.25*,1.25*,1.25*,.7*"><TextBlock Classes="tableCell" Text="{Binding Date}"/><TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding InvoiceCount}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding Sales}" HorizontalAlignment="Right" Foreground="#1D4ED8"/><TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Cogs}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Profit}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="SemiBold"/><TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Margin}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/></Grid>
+            <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="16,10.4">
+              <Grid ColumnDefinitions="1.4*,*,1.25*,1.25*,1.25*,.7*"><TextBlock Classes="tableCell" Text="{Binding Date}"/><TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding InvoiceCount}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding Sales}" HorizontalAlignment="Right" Foreground="{DynamicResource AppAccentBrush}"/><TextBlock Grid.Column="3" Classes="tableCell" Text="{Binding Cogs}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="4" Classes="tableCell" Text="{Binding Profit}" HorizontalAlignment="Right" Foreground="#16A34A" FontWeight="SemiBold"/><TextBlock Grid.Column="5" Classes="tableCell" Text="{Binding Margin}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/></Grid>
             </Border>
           </DataTemplate></ItemsControl.ItemTemplate>
         </ItemsControl>

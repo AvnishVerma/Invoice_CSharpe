@@ -5,20 +5,20 @@
              x:CompileBindings="False">
   <UserControl.Styles>
     <Style Selector="Border.reportCard">
-      <Setter Property="Background" Value="#FBF5FF" />
-      <Setter Property="BorderBrush" Value="#E4DEE8" />
+      <Setter Property="Background" Value="{DynamicResource AppCardBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="12" />
     </Style>
     <Style Selector="Button.exportButton">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="#6B6B6B" />
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
       <Setter Property="FontSize" Value="12" />
       <Setter Property="Padding" Value="8,4" />
     </Style>
     <Style Selector="TextBlock.tableHeader">
-      <Setter Property="Foreground" Value="#6B6B6B" />
+      <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
       <Setter Property="FontSize" Value="11" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -64,7 +64,7 @@
               <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export aging summary as PDF" Content="↓  Export PDF" />
             </StackPanel>
           </Grid>
-          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="16,7.2">
+          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,1" Padding="16,7.2">
             <Grid ColumnDefinitions="1.6*,*,*,*,*,*,*,*">
               <TextBlock Classes="tableHeader" loc:UiLocalization.Text="CUSTOMER" />
               <TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="CURRENT" HorizontalAlignment="Right" />
@@ -79,7 +79,7 @@
           <ItemsControl ItemsSource="{Binding AgingRows}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
+                <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="16,10.4">
                   <Grid ColumnDefinitions="1.6*,*,*,*,*,*,*,*">
                     <TextBlock Classes="tableCell" Text="{Binding Customer}" />
                     <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding Current}" HorizontalAlignment="Right" />
@@ -94,10 +94,10 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <Border IsVisible="{Binding HasNoAgingRows}" BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,16">
+          <Border IsVisible="{Binding HasNoAgingRows}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="16,16">
             <TextBlock loc:UiLocalization.Text="No outstanding receivables for this period." Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
           </Border>
-          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
+          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="16,10.4">
             <Grid ColumnDefinitions="1.6*,*,*,*,*,*,*,*">
               <TextBlock Classes="tableCell" loc:UiLocalization.Text="Total" FontWeight="SemiBold" />
               <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding AgingTotals.Current}" HorizontalAlignment="Right" FontWeight="SemiBold" />
@@ -125,7 +125,7 @@
               <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export aged receivables as PDF" Content="↓  Export PDF" />
             </StackPanel>
           </Grid>
-          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,1,0,1" Padding="16,7.2">
+          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,1" Padding="16,7.2">
             <Grid ColumnDefinitions="1.5*,1.2*,*,*,*">
               <TextBlock Classes="tableHeader" loc:UiLocalization.Text="CUSTOMER" />
               <TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="INVOICE ID" />
@@ -137,7 +137,7 @@
           <ItemsControl ItemsSource="{Binding AgedRows}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <Border BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
+                <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="16,10.4">
                   <Grid ColumnDefinitions="1.5*,1.2*,*,*,*">
                     <TextBlock Classes="tableCell" Text="{Binding Customer}" />
                     <TextBlock Grid.Column="1" Classes="tableCell" Text="{Binding InvoiceId}" Foreground="{DynamicResource AppMutedBrush}" />
@@ -151,10 +151,10 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <Border IsVisible="{Binding HasNoAgedRows}" BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,16">
+          <Border IsVisible="{Binding HasNoAgedRows}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="16,16">
             <TextBlock loc:UiLocalization.Text="No aged receivables for this period." Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
           </Border>
-          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="#E4DEE8" BorderThickness="0,0,0,1" Padding="16,10.4">
+          <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="16,10.4">
             <Grid ColumnDefinitions="1.5*,1.2*,*,*,*">
               <TextBlock Classes="tableCell" loc:UiLocalization.Text="Total" FontWeight="SemiBold" />
               <TextBlock Grid.Column="2" Classes="tableCell" Text="{Binding AgedTotal}" HorizontalAlignment="Right" Foreground="#EF4444" FontWeight="Bold" />

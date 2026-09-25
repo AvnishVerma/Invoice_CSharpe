@@ -40,8 +40,7 @@ public sealed partial class ReceivablesReportView : UserControl
         PaymentStatusChart.Plot.Grid.XAxisStyle.IsVisible = false;
         PaymentStatusChart.Plot.Grid.YAxisStyle.IsVisible = false;
         PaymentStatusChart.Plot.Legend.IsVisible = false;
-        PaymentStatusChart.Plot.FigureBackground.Color = ScottPlot.Color.FromHex("#FBF5FF");
-        PaymentStatusChart.Plot.DataBackground.Color = ScottPlot.Color.FromHex("#FBF5FF");
+        ReportChartTheme.Apply(PaymentStatusChart);
         PaymentStatusChart.Refresh();
     }
 
