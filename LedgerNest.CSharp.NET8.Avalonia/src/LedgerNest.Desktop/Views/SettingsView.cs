@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using LedgerNest.Infrastructure;
 using LedgerNest.Desktop.Notifications;
+using LedgerNest.Desktop.Updates;
 
 namespace LedgerNest.Desktop;
 
@@ -23,7 +24,7 @@ public partial class MainWindow
         [
             new("Company Info", "business"), new("Backup", "backup"), new("Users", "people"),
             new("PDF Settings", "settings"), new("Invoice Settings", "receipt_long"), new("Product Details", "view_column"),
-            new("Customize", "tune"), new("Accessibility", "accessibility_new"), new("License", "lock"), new("Software Info", "info_outline")
+            new("Customize", "tune"), new("Accessibility", "accessibility_new"), new("License", "lock"), new("Software Info", "info_outline"), new("Publisher Console", "campaign")
         ];
         return new SettingsPageView(new SettingsPageModel(tabs, settingsTab, SettingsContent, selected => settingsTab = selected));
     }
@@ -38,6 +39,7 @@ public partial class MainWindow
         "Backup" => BackupView(),
         "Customize" => CustomizationView(),
         "Software Info" => SoftwareInfo(),
+        "Publisher Console" when Model.CurrentRole == "Admin" => PublisherConsole(),
         "License" => LicenseSettingsView(),
         _ => SettingsForm(name)
     };
@@ -379,15 +381,106 @@ public partial class MainWindow
 
         var body = Ui.Stack(16,
             Ui.Logo(),
-            Ui.Card(Ui.Stack(8, Ui.LocalText("App Details", 18, true), Ui.Text($"App name: {Branding.Name}"), Ui.Text($"Version: {Updates.AppVersion.Current}"), Ui.Text("Platform: Desktop"), Ui.Text("License: See legacy LICENSE", 12, color: Ui.Muted))),
+            Ui.Card(Ui.Stack(8, Ui.LocalText("App Details", 18, true), Ui.Text($"App name: {Branding.Name}"), Ui.Text($"Version: {Updates.AppVersion.Display}"), string.IsNullOrWhiteSpace(Updates.AppVersion.BuildId) ? new Border() : Ui.Text($"Build: {Updates.AppVersion.BuildId[..Math.Min(7, Updates.AppVersion.BuildId.Length)]}", 12, color: Ui.Muted), Ui.Text("Platform: Desktop"), Ui.Text("License: See legacy LICENSE", 12, color: Ui.Muted))),
             Ui.Card(Ui.Stack(10, Ui.LocalText("Application Updates", 18, true), Ui.Text("Configure the publisher HTTPS manifest used to announce new versions.", 12, color: Ui.Muted), manifestUrl, Ui.Wrap(Ui.Button("Save update channel", () => { if (Model.SaveUpdateManifestUrl(manifestUrl.Text)) ShowPage(); }), Ui.Button("Check for updates", async () => await CheckForUpdatesAsync())))),
-            Ui.Card(updateDetails),
+Ui.Card(updateDetails),
             Ui.Card(notifications),
             Ui.Button("Change Password", ShowChangePassword),
             Ui.Button("First-time Setup", ShowOnboarding));
         return Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(body, 28));
     }
 
+
+    // Provides an administrator-only workspace for preparing update and announcement manifests.
+    private Control PublisherConsole()
+    {
+        var version = new TextBox { Text = AppVersion.Current, PlaceholderText = "Release version, e.g. 4.5.0" };
+        var downloadUrl = new TextBox { PlaceholderText = "HTTPS installer or release page URL" };
+        var notes = new TextBox { PlaceholderText = "What changed in this release?", AcceptsReturn = true, MinHeight = 88, TextWrapping = TextWrapping.Wrap };
+        var title = new TextBox { PlaceholderText = "Announcement title" };
+        var message = new TextBox { PlaceholderText = "Message shown to every connected installation", AcceptsReturn = true, MinHeight = 76, TextWrapping = TextWrapping.Wrap };
+        var type = new ComboBox { ItemsSource = Enum.GetNames<NotificationType>(), SelectedItem = NotificationType.Information.ToString(), MinHeight = 32 };
+        var preview = new TextBox { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 180, FontFamily = FontFamily.Default, FontSize = 12 };
+
+        void RefreshPreview()
+        {
+            var notificationTitle = title.Text?.Trim() ?? "";
+            var notificationMessage = message.Text?.Trim() ?? "";
+            var notificationType = Enum.TryParse<NotificationType>(type.SelectedItem?.ToString(), out var parsed) ? parsed : NotificationType.Information;
+            IReadOnlyList<GlobalNotification>? notifications = notificationTitle.Length == 0 || notificationMessage.Length == 0
+                ? null
+                : [new GlobalNotification("generated-on-publish", notificationTitle, notificationMessage, notificationType, DateTimeOffset.UtcNow)];
+            preview.Text = HttpAppUpdateService.SerializeManifest(new AppUpdateManifest(version.Text?.Trim() ?? "0.0.0", downloadUrl.Text?.Trim(), notes.Text?.Trim(), DateTimeOffset.UtcNow, false, notifications));
+        }
+
+        foreach (var input in new Control[] { version, downloadUrl, notes, title, message })
+            ((TextBox)input).TextChanged += (_, _) => RefreshPreview();
+        type.SelectionChanged += (_, _) => RefreshPreview();
+        RefreshPreview();
+
+        var release = Ui.Card(Ui.Stack(10,
+            Ui.LocalText("Release", 18, true),
+            Ui.Text("The installed version is prefilled from LedgerNest.Desktop.dll. Use the version packaged for your next release.", 12, color: Ui.Muted),
+            Ui.LocalText("Version", 12, true, Ui.Muted), version,
+            Ui.LocalText("Download URL", 12, true, Ui.Muted), downloadUrl,
+            Ui.LocalText("Release notes", 12, true, Ui.Muted), notes));
+        var announcement = Ui.Card(Ui.Stack(10,
+            Ui.LocalText("Global Announcement", 18, true),
+            Ui.Text("Every client that checks this manifest receives this announcement once.", 12, color: Ui.Muted),
+            title, message, type));
+        var previewCard = Ui.Card(Ui.Stack(8, Ui.LocalText("Manifest Preview", 18, true), Ui.Text("Review the JSON before saving it to publish.", 12, color: Ui.Muted), preview));
+        var publish = Ui.Button("Save Global Update Manifest", async () => await SaveGlobalUpdateManifestAsync(version.Text, downloadUrl.Text, notes.Text, title.Text, message.Text, type.SelectedItem?.ToString()), true);
+        var body = Ui.Stack(16,
+            Ui.Card(Ui.Stack(6, Ui.LocalText("Publisher Console", 24, true), Ui.Text("Create an update and notification manifest for all LedgerNest installations.", 13, color: Ui.Muted))),
+            Ui.Columns("*,*", release, announcement), previewCard, publish);
+        body.MaxWidth = 1050;
+        return Ui.Rows("Auto,*", Ui.AppBar("Publisher Console"), Ui.Scroll(body, 28));
+    }
+    // Creates the publisher-controlled manifest that clients read from the configured HTTPS endpoint.
+    private async Task SaveGlobalUpdateManifestAsync(string? versionText, string? downloadUrl, string? notes, string? announcementTitle, string? announcementMessage, string? notificationType)
+    {
+        if (!Version.TryParse(versionText?.Trim(), out var version))
+        {
+            toastService.Show("Manifest not created", "Enter a valid release version, such as 4.5.0.", ToastType.Warning);
+            return;
+        }
+
+        var releaseUrl = downloadUrl?.Trim();
+        if (!string.IsNullOrWhiteSpace(releaseUrl) && (!Uri.TryCreate(releaseUrl, UriKind.Absolute, out var releaseUri) || releaseUri.Scheme != Uri.UriSchemeHttps))
+        {
+            toastService.Show("Manifest not created", "The download URL must use HTTPS.", ToastType.Warning);
+            return;
+        }
+
+        var title = announcementTitle?.Trim() ?? "";
+        var message = announcementMessage?.Trim() ?? "";
+        if ((title.Length == 0) != (message.Length == 0))
+        {
+            toastService.Show("Manifest not created", "Enter both a notification title and message, or leave both blank.", ToastType.Warning);
+            return;
+        }
+
+        var type = Enum.TryParse<NotificationType>(notificationType, out var parsedType) ? parsedType : NotificationType.Information;
+        IReadOnlyList<GlobalNotification>? notifications = title.Length == 0
+            ? null
+            : [new GlobalNotification(Guid.NewGuid().ToString("N"), title, message, type, DateTimeOffset.UtcNow)];
+        var manifest = new AppUpdateManifest(version.ToString(3), releaseUrl, notes?.Trim(), DateTimeOffset.UtcNow, false, notifications);
+        var target = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save global update manifest",
+            SuggestedFileName = "ledgernest-update-manifest.json",
+            DefaultExtension = "json",
+            FileTypeChoices = [new FilePickerFileType("Update manifest") { Patterns = ["*.json"], MimeTypes = ["application/json"] }]
+        });
+        if (target == null) return;
+
+        await using var stream = await target.OpenWriteAsync();
+        await using var writer = new StreamWriter(stream, Encoding.UTF8);
+        await writer.WriteAsync(HttpAppUpdateService.SerializeManifest(manifest));
+        Model.Status = $"Saved {target.Name}. Upload it to the configured HTTPS manifest URL to publish globally.";
+        toastService.Show("Manifest ready", "Upload the saved manifest to publish the update and announcement globally.", ToastType.Success);
+        ShowPage();
+    }
     // Opens the publisher's verified HTTPS release page after an explicit user action.
     private void OpenUpdateDownload()
     {

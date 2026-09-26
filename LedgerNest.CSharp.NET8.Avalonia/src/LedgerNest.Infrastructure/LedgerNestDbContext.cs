@@ -17,11 +17,13 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
     public DbSet<AppSetting> Settings => Set<AppSetting>();
     public DbSet<BackupHistoryEntry> BackupHistory => Set<BackupHistoryEntry>();
     public DbSet<AppUser> Users => Set<AppUser>();
+    public DbSet<DocumentSequence> DocumentSequences => Set<DocumentSequence>();
 
     // Upgrade only the C# schema; the Flutter database has different column names.
     public void EnsureCurrentSchema()
     {
         Database.EnsureCreated();
+        if (!Database.IsSqlite()) return;
         Database.OpenConnection();
         try
         {
@@ -48,6 +50,10 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                     IsDatabase INTEGER NOT NULL
                 )
                 """;
+            command.ExecuteNonQuery();
+            command.CommandText = "CREATE TABLE IF NOT EXISTS document_sequences (Type TEXT PRIMARY KEY NOT NULL, NextValue INTEGER NOT NULL)";
+            command.ExecuteNonQuery();
+            command.CommandText = "CREATE UNIQUE INDEX IF NOT EXISTS IX_invoices_Type_InvoiceNumber ON invoices(Type, InvoiceNumber)";
             command.ExecuteNonQuery();
             EnsureColumns("products", [
                 ("Type", "TEXT NOT NULL DEFAULT 'Product'"),
@@ -92,7 +98,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
     {
         modelBuilder.Entity<Customer>().ToTable("customers");
         modelBuilder.Entity<Product>().ToTable("products");
-        modelBuilder.Entity<Invoice>().ToTable("invoices");
+        modelBuilder.Entity<Invoice>().ToTable("invoices").HasIndex(i => new { i.Type, i.InvoiceNumber }).IsUnique();
         modelBuilder.Entity<Invoice>().Property(i => i.Snapshot).HasConversion(
             snapshot => JsonSerializer.Serialize(snapshot, (JsonSerializerOptions?)null),
             json => JsonSerializer.Deserialize<InvoiceSnapshot>(json, (JsonSerializerOptions?)null));
@@ -101,6 +107,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<CompanyInfo>().ToTable("company_info");
         modelBuilder.Entity<AppSetting>().ToTable("settings").HasKey(x => x.Key);
         modelBuilder.Entity<BackupHistoryEntry>().ToTable("backup_history");
+        modelBuilder.Entity<DocumentSequence>().ToTable("document_sequences").HasKey(x => x.Type);
         modelBuilder.Entity<AppUser>().ToTable("users").HasIndex(x => x.Username).IsUnique();
 
         modelBuilder.Entity<Invoice>()

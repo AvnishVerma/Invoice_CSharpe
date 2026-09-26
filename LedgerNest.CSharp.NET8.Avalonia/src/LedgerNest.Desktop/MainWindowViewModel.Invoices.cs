@@ -42,6 +42,43 @@ public partial class MainWindowViewModel
     }
 
     // Performs the next document number action for this screen or workflow.
+    // Reserves a unique document number in the shared database before a client saves its invoice.
+    private string ReserveDocumentNumber(LedgerNestDbContext db, string type)
+    {
+        ValidateDocumentType(type);
+        for (var attempt = 0; attempt < 4; attempt++)
+        {
+            using var transaction = db.Database.BeginTransaction(System.Data.IsolationLevel.Serializable);
+            try
+            {
+                var sequence = db.DocumentSequences.SingleOrDefault(item => item.Type == type);
+                if (sequence == null)
+                {
+                    var start = type == "Invoice" ? InvoiceStartingNumber() : 1;
+                    var next = NextDocumentNumber(db, type);
+                    var digits = new string(next.Where(char.IsAsciiDigit).ToArray());
+                    sequence = new DocumentSequence
+                    {
+                        Type = type,
+                        NextValue = long.TryParse(digits, out var value) ? Math.Max(value, start) : start
+                    };
+                    db.DocumentSequences.Add(sequence);
+                }
+
+                var reserved = checked(sequence.NextValue++).ToString("D8", CultureInfo.InvariantCulture);
+                db.SaveChanges();
+                transaction.Commit();
+                return reserved;
+            }
+            catch (DbUpdateException) when (attempt < 3)
+            {
+                transaction.Rollback();
+                db.ChangeTracker.Clear();
+            }
+        }
+
+        throw new InvalidOperationException("Another client is allocating document numbers. Please try again.");
+    }
     private string NextDocumentNumber(LedgerNestDbContext db, string type)
     {
         var key = SettingKey("Invoice Settings", "General", "Starting Number");
