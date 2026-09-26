@@ -61,7 +61,7 @@ public sealed class HttpAppUpdateService : IAppUpdateService
                 (!Uri.TryCreate(manifest.DownloadUrl, UriKind.Absolute, out var downloadUri) || downloadUri.Scheme != Uri.UriSchemeHttps))
                 return new(UpdateCheckState.Failed, current, "The update manifest contains an unsafe download URL.");
 
-            return availableVersion > currentVersion
+            return availableVersion.CompareTo(currentVersion) > 0
                 ? new(UpdateCheckState.Available, current, $"Version {manifest.Version} is available.", manifest)
                 : new(UpdateCheckState.Current, current, "You are using the latest version.", manifest);
         }

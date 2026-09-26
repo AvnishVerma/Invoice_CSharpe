@@ -8,6 +8,7 @@ using System.Text;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using LedgerNest.Infrastructure;
+using LedgerNest.Desktop.Notifications;
 
 namespace LedgerNest.Desktop;
 
@@ -392,7 +393,7 @@ public partial class MainWindow
     {
         if (!Uri.TryCreate(Model.LatestUpdateDownloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
         {
-            toastService.Show("Update download unavailable", "The release download link is invalid.", Notifications.ToastType.Warning);
+            toastService.Show("Update download unavailable", "The release download link is invalid.", ToastType.Warning);
             return;
         }
         try
@@ -401,7 +402,7 @@ public partial class MainWindow
         }
         catch (Exception)
         {
-            toastService.Show("Update download unavailable", "Windows could not open the release download page.", Notifications.ToastType.Error);
+            toastService.Show("Update download unavailable", "Windows could not open the release download page.", ToastType.Error);
         }
     }
 }
