@@ -20,7 +20,7 @@ public partial class MainWindow
         var previewName = Ui.Text(F("Company Name").Value, 18, true);
         previewName.Bind(TextBlock.TextProperty, new Binding(nameof(FormField.Value)) { Source = F("Company Name") });
         var logo = Ui.Button("", () => { }); logo.Width = 180; logo.Height = 180;
-        logo.Content = Ui.Stack(9.6, Ui.Icon("upload", 40, Ui.Primary), Ui.LocalText("Upload Logo", 14, color: Ui.Muted), Ui.LocalText("Click to browse", 12, color: Ui.Muted));
+        logo.Content = Ui.Stack(9.6, Ui.Icon("upload", 40, Ui.Primary), Ui.Text("Upload Logo", 14, color: Ui.Muted), Ui.Text("Click to browse", 12, color: Ui.Muted));
         Avalonia.Media.Imaging.Bitmap? logoBitmap = Ui.LoadLogo(sections[0].Fields[0].Value);
         if (logoBitmap != null) logo.Content = new Image { Source = logoBitmap, Stretch = Stretch.Uniform };
         logo.DetachedFromVisualTree += (_, _) => logoBitmap?.Dispose();
@@ -51,8 +51,8 @@ public partial class MainWindow
             businessIcon,
             new Border(),
             Ui.Stack(6.4,
-                Ui.LocalText("Business Type", 16),
-                Ui.LocalText("Controls item type options in the product list and invoices", 12, color: Ui.Muted),
+                Ui.Text("Business Type", 16),
+                Ui.Text("Controls item type options in the product list and invoices", 12, color: Ui.Muted),
                 CompanyBusinessTypeSegments(businessType))), 16);
         var qrCard = Ui.Card(Ui.Columns("Auto,16,*",
             Ui.Icon("credit_card", 25, Ui.Muted),
@@ -63,19 +63,19 @@ public partial class MainWindow
             new Border(),
             Ui.Field(sections[3].Fields[1], "Show Bank Details on Invoices")), 16);
         var details = Ui.Stack(12.8,
-            Ui.LocalText("COMPANY DETAILS", 12, true, Ui.Muted),
+            Ui.Text("COMPANY DETAILS", 12, true, Ui.Muted),
             Ui.Fields([F("Company Name"), F("GSTIN")], 2),
             Ui.Fields([F("PAN"), F("FSSAI Code")], 2),
             Ui.Fields([F("Country"), F("Phone"), F("Email")], 3),
             Ui.Field(F("Website")),
             Ui.Field(F("Address")),
             new Border { Height = 8 },
-            Ui.LocalText("BUSINESS TYPE", 12, true, Ui.Muted),
+            Ui.Text("BUSINESS TYPE", 12, true, Ui.Muted),
             businessCard,
             new Border { Height = 8 },
-            Ui.LocalText("PAYMENT SETTINGS", 12, true, Ui.Muted),
+            Ui.Text("PAYMENT SETTINGS", 12, true, Ui.Muted),
             qrCard,
-            Ui.LocalText("UPI ACCOUNTS", 12, true, Ui.Muted));
+            Ui.Text("UPI ACCOUNTS", 12, true, Ui.Muted));
 
         var upiRows = Ui.Stack(10);
         var bankRows = Ui.Stack(10);
@@ -112,7 +112,7 @@ public partial class MainWindow
         details.Children.Add(addUpi);
         details.Children.Add(new Border { Height = 12 });
         details.Children.Add(bankCard);
-        details.Children.Add(Ui.LocalText("BANK ACCOUNTS", 12, true, Ui.Muted));
+        details.Children.Add(Ui.Text("BANK ACCOUNTS", 12, true, Ui.Muted));
         details.Children.Add(bankRows);
         var addBank = Ui.Button("＋ Add Bank Account", Model.AddBankAccount);
         addBank.Classes.Add("text");
@@ -147,7 +147,7 @@ public partial class MainWindow
             button.Padding = new Thickness(9.6, 4.8);
             button.MinHeight = 25.6;
             button.CornerRadius = new CornerRadius(0);
-            button.Content = Ui.Columns("Auto,7,*", Ui.Icon(iconName, 17, Ui.TextColor), new Border(), Ui.LocalText(label, 14));
+            button.Content = Ui.Columns("Auto,7,*", Ui.Icon(iconName, 17, Ui.TextColor), new Border(), Ui.Text(label, 14));
             buttons.Add(button);
             panel.Children.Add(button);
         }
@@ -192,12 +192,12 @@ public partial class MainWindow
             }
             var controls = Ui.Stack(9.6, Ui.Columns("*,Auto", Ui.Text(selectedTemplate.Value, 18, true), PdfActiveBadge()), Ui.Text(TemplateDescription(selectedTemplate.Value), 12.5, color: Ui.Muted));
             controls.Children.Add(new Border { Height = 4 });
-            controls.Children.Add(Ui.LocalText("DISPLAY OPTIONS", 12, true, Ui.Muted));
+            controls.Children.Add(Ui.Text("DISPLAY OPTIONS", 12, true, Ui.Muted));
             if (selectedTemplate.Value is "Compact" or "Grid Classic" or "Thermal")
             {
                 var quantity = new ToggleSwitch { OnContent = null, OffContent = null, MinWidth = 0 };
                 quantity.Bind(ToggleSwitch.IsCheckedProperty, new Binding(nameof(FormField.IsChecked)) { Source = sections[2].Fields[0], Mode = BindingMode.TwoWay });
-                controls.Children.Add(Ui.Card(Ui.Columns("*,Auto", Ui.LocalText("Show total quantity row", 14), quantity), 12));
+                controls.Children.Add(Ui.Card(Ui.Columns("*,Auto", Ui.Text("Show total quantity row", 14), quantity), 12));
             }
             var orientation = sections[0].Fields[1];
             var segments = new StackPanel { Orientation = Orientation.Horizontal };
@@ -209,8 +209,8 @@ public partial class MainWindow
                 segment.Padding = new Thickness(9.6, 4); segment.MinHeight = 24; segment.CornerRadius = new CornerRadius(0);
                 segments.Children.Add(segment);
             }
-            controls.Children.Add(Ui.Card(Ui.Stack(6.4, Ui.LocalText("Orientation", 14), new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(18), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left, Child = segments }), 12));
-            controls.Children.Add(Ui.LocalText("THEME COLOR", 12, true, Ui.Muted));
+            controls.Children.Add(Ui.Card(Ui.Stack(6.4, Ui.Text("Orientation", 14), new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(18), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left, Child = segments }), 12));
+            controls.Children.Add(Ui.Text("THEME COLOR", 12, true, Ui.Muted));
             var swatches = Ui.Wrap();
             foreach (var hex in new[] { "#002E78", "#2563EB", "#047857", "#7C2D12", "#6D28D9" })
             { var b = Ui.Button("", () => { color.Value = hex; Display(); }); b.Background = Brush.Parse(hex); b.Width = 17.6; b.Height = 17.6; b.MinHeight = 17.6; b.Padding = new Thickness(0); b.CornerRadius = new CornerRadius(11); ToolTip.SetTip(b, hex); swatches.Children.Add(b); }
@@ -219,8 +219,8 @@ public partial class MainWindow
             var colorInput = new TextBox { MinHeight = 32 };
             colorInput.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = color, Mode = BindingMode.TwoWay });
             colorInput.LostFocus += (_, _) => preview.Content = InvoicePreview(selectedTemplate.Value, color.Value, orientation.Value == "Landscape");
-            controls.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.LocalText("Theme Color", 14), swatches, colorInput), 12));
-            var custom = Ui.Card(Ui.Stack(6.4, Ui.LocalText("⚒  Want a custom template?", 14, color: Ui.Primary), Ui.LocalText("Get a design that matches your brand — colors, fonts, and layout.", 12, color: Ui.Muted), Ui.Button("→  Customization Options", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 12);
+            controls.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.Text("Theme Color", 14), swatches, colorInput), 12));
+            var custom = Ui.Card(Ui.Stack(6.4, Ui.Text("⚒  Want a custom template?", 14, color: Ui.Primary), Ui.Text("Get a design that matches your brand — colors, fonts, and layout.", 12, color: Ui.Muted), Ui.Button("→  Customization Options", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 12);
             custom.Background = Ui.Palette("#EEEBF8", "#202B36"); custom.BorderBrush = Brush.Parse("#C8C1E7");
             controls.Children.Add(custom);
             controls.Children.Add(new Expander { Header = "Printing & advanced options", Content = Ui.Stack(12.8, Ui.Fields(sections[2].Fields.Skip(1)), Ui.Fields(sections.Single(section => section.Title == "PRINTING").Fields)), HorizontalAlignment = HorizontalAlignment.Stretch });
@@ -233,15 +233,15 @@ public partial class MainWindow
             button.Padding = new Thickness(7.2); button.CornerRadius = new CornerRadius(12);
             var description = Ui.Text(TemplateDescription(template), 12, color: Ui.Muted); description.MaxHeight = 36; description.TextTrimming = TextTrimming.CharacterEllipsis;
             var labels = Ui.Stack(3.2, Ui.Text(template, 16), description);
-            if (template == "Classic") labels.Children.Add(new Border { Background = Ui.Palette("#E5E5E5", "#202B36"), Padding = new Thickness(4, 0.8), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.LocalText("Default", 11, color: Ui.Muted) });
+            if (template == "Classic") labels.Children.Add(new Border { Background = Ui.Palette("#E5E5E5", "#202B36"), Padding = new Thickness(4, 0.8), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text("Default", 11, color: Ui.Muted) });
             button.Content = Ui.Columns("72,*,18", new TemplateSketch(template, Brushes.Black, false) { Width = 51.2, Height = 59.2 }, labels, Ui.Icon("check_circle", 15, Ui.Primary));
             buttons.Add(button); templateList.Children.Add(button);
         }
         var pageChoice = new ComboBox { ItemsSource = pageSize.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 32 };
         pageChoice.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((value, _) => Ui.Text(value == "A4" ? "Standard A4" : value ?? "", 15));
         pageChoice.Bind(ComboBox.SelectedItemProperty, new Binding(nameof(FormField.Value)) { Source = pageSize, Mode = BindingMode.TwoWay });
-        var templates = Ui.Card(Ui.Rows("Auto,Auto,*", Ui.Stack(6.4, Ui.LocalText("PAGE SIZE", 12, true, Ui.Muted), pageChoice), new Border { Padding = new Thickness(0, 12.8, 0, 8), Child = Ui.LocalText("TEMPLATES", 12, true, Ui.Muted) }, Ui.Scroll(templateList, 0)), 12);
-        var settings = Ui.Card(options, 0); var previewCard = Ui.Card(Ui.Rows("Auto,*,Auto", new Border { Padding = new Thickness(12.8, 8), Child = Ui.LocalText("Preview", 13, true) }, preview, new Border { Padding = new Thickness(12.8, 8), Child = Ui.LocalText("Preview may slightly differ in the final PDF.", 12, color: Ui.Muted) }), 0);
+        var templates = Ui.Card(Ui.Rows("Auto,Auto,*", Ui.Stack(6.4, Ui.Text("PAGE SIZE", 12, true, Ui.Muted), pageChoice), new Border { Padding = new Thickness(0, 12.8, 0, 8), Child = Ui.Text("TEMPLATES", 12, true, Ui.Muted) }, Ui.Scroll(templateList, 0)), 12);
+        var settings = Ui.Card(options, 0); var previewCard = Ui.Card(Ui.Rows("Auto,*,Auto", new Border { Padding = new Thickness(12.8, 8), Child = Ui.Text("Preview", 13, true) }, preview, new Border { Padding = new Thickness(12.8, 8), Child = Ui.Text("Preview may slightly differ in the final PDF.", 12, color: Ui.Muted) }), 0);
         templates.Background = settings.Background = previewCard.Background = Ui.Palette("#FDF7FF", "#25212B");
         System.ComponentModel.PropertyChangedEventHandler pageSizeChanged = (_, e) =>
         {
@@ -308,7 +308,7 @@ public partial class MainWindow
         _ => "Traditional layout with clean structure"
     };
     // Performs the invoice preview action for this screen or workflow.
-    private static Control PdfActiveBadge() => new Border { Background = Ui.Palette("#E7E2F2", "#202B36"), CornerRadius = new CornerRadius(8), Padding = new Thickness(6.4, 2.4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Columns("Auto,6,Auto", Ui.Icon("check_circle", 13, Ui.Primary), new Border(), Ui.LocalText("Active", 12, color: Ui.Primary)) };
+    private static Control PdfActiveBadge() => new Border { Background = Ui.Palette("#E7E2F2", "#202B36"), CornerRadius = new CornerRadius(8), Padding = new Thickness(6.4, 2.4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Columns("Auto,6,Auto", Ui.Icon("check_circle", 13, Ui.Primary), new Border(), Ui.Text("Active", 12, color: Ui.Primary)) };
 
     private static Control InvoicePreview(string template, string hex, bool landscape = false)
     {

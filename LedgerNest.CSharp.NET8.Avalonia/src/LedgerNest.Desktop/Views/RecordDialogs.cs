@@ -17,13 +17,13 @@ public partial class MainWindow
         if (record != null) foreach (var f in fields) { f.Value = record[f.Label]; f.IsChecked = bool.TryParse(f.Value, out var v) && v; }
         var useDefault = new CheckBox { Content = "Use as default for new invoices", IsVisible = kind == "Customer" };
         var another = new CheckBox { Content = "Add another after saving", IsVisible = record == null };
-        var cancel = Ui.Button("Cancel", CloseOverlay); cancel.CornerRadius = new CornerRadius(24); cancel.HorizontalAlignment = HorizontalAlignment.Stretch;
+        var cancel = Ui.Button("Cancel", CloseOverlay); cancel.Classes.Add("dialog-action"); cancel.HorizontalAlignment = HorizontalAlignment.Stretch;
         var save = Ui.Button($"Save {kind}", () =>
         {
             if (!Model.SaveRecord(kind, fields, record)) return;
             if (kind == "Customer" && useDefault.IsChecked == true) Model.SetDefaultCustomer(Model.Customers.Last(c => c.Name == fields[0].Value.Trim()));
             refresh(); if (another.IsChecked == true) EditRecord(kind, refresh); else CloseOverlay();
-        }, true); save.Classes.Add("material"); save.CornerRadius = new CornerRadius(24); save.HorizontalAlignment = HorizontalAlignment.Stretch;
+        }, true); save.Classes.Add("material"); save.Classes.Add("dialog-action"); save.HorizontalAlignment = HorizontalAlignment.Stretch;
         Control form = Ui.Fields(fields);
         if (kind == "Product")
         {
@@ -32,7 +32,7 @@ public partial class MainWindow
         Control footer;
         if (kind == "Product")
         {
-            foreach (var button in new[] { cancel, save }) { button.Height = 25.6; button.MinHeight = 25.6; button.Padding = new Thickness(9.6, 4); }
+            foreach (var button in new[] { cancel, save }) { button.Height = 32; button.MinHeight = 32; button.Padding = new Thickness(12, 5); }
             cancel.Background = Brushes.Transparent; cancel.Foreground = ProductEditorFormView.Purple;
             save.Background = ProductEditorFormView.Purple;
             save.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("save", 17, Brushes.White), new Border(), Ui.LocalText("Save Product", 13, true, Brushes.White));

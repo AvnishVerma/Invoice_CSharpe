@@ -341,7 +341,7 @@ internal static class Ui
         void Update() { foreach (var b in buttons) b.Background = b.Tag?.ToString() == field.Value ? Palette("#E8DEF8", "#3A4C69") : Brushes.Transparent; }
         foreach (var option in field.Options)
         {
-            var b = Button(option, () => { field.Value = option; Update(); }); b.Padding = new Thickness(14, 8); b.MinHeight = 36; b.CornerRadius = new CornerRadius(0); buttons.Add(b); panel.Children.Add(b);
+            var b = Button(option, () => { field.Value = option; Update(); }); b.Classes.Add("segment"); buttons.Add(b); panel.Children.Add(b);
         }
         Update(); return new Border { CornerRadius = new CornerRadius(20), ClipToBounds = true, Child = panel };
     }

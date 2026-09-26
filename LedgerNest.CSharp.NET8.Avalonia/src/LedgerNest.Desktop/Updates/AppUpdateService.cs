@@ -78,8 +78,34 @@ public sealed class HttpAppUpdateService : IAppUpdateService
 
 public static class AppVersion
 {
-    public static string Current =>
-        Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3)
-        ?? typeof(AppVersion).Assembly.GetName().Version?.ToString(3)
-        ?? "0.0.0";
+    private static readonly Assembly DesktopAssembly = typeof(AppVersion).Assembly;
+
+    /// <summary>Gets the version embedded in the installed Desktop DLL at build time.</summary>
+    public static string Current
+    {
+        get
+        {
+            var informationalVersion = DesktopAssembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+            if (TryFormat(informationalVersion, out var version)) return version;
+
+            var fileVersion = DesktopAssembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
+            if (TryFormat(fileVersion, out version)) return version;
+
+            return DesktopAssembly.GetName().Version?.ToString(3) ?? "0.0.0";
+        }
+    }
+
+    private static bool TryFormat(string? value, out string version)
+    {
+        var cleanValue = value?.Split('+', 2)[0];
+        if (Version.TryParse(cleanValue, out var parsed))
+        {
+            version = parsed.ToString(3);
+            return true;
+        }
+
+        version = string.Empty;
+        return false;
+    }
 }

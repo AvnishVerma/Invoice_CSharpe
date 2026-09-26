@@ -4,6 +4,10 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyTitle>LadgerNest</AssemblyTitle>
     <Product>LadgerNest</Product>
+    <Version>4.4.0</Version>
+    <AssemblyVersion>4.4.0.0</AssemblyVersion>
+    <FileVersion>4.4.0.0</FileVersion>
+    <InformationalVersion>4.4.0</InformationalVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>

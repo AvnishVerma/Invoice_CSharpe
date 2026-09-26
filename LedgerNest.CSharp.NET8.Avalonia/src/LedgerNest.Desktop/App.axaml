@@ -61,13 +61,26 @@
       <Setter Property="MinWidth" Value="{DynamicResource CompactActionHeight}" />
       <Setter Property="Padding" Value="6,3" />
     </Style>
+    <Style Selector="Button.segment">
+      <Setter Property="MinHeight" Value="{DynamicResource CompactActionHeight}" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="Button.dialog-action">
+      <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
+      <Setter Property="Padding" Value="12,5" />
+      <Setter Property="CornerRadius" Value="16" />
+    </Style>
     <Style Selector="Expander /template/ ToggleButton">
       <Setter Property="MinHeight" Value="38.4" />
       <Setter Property="Padding" Value="10,6" />
     </Style>
     <Style Selector="NumericUpDown /template/ TextBox">
-      <Setter Property="MinHeight" Value="29" />
-      <Setter Property="Padding" Value="6,3" />
+      <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
+      <Setter Property="Padding" Value="8,4" />
+    </Style>
+    <Style Selector="DatePicker">
+      <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
     </Style>
     <Style Selector="Button.outline">
       <Setter Property="Background" Value="Transparent" />
@@ -144,6 +157,10 @@
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="CheckBox">
+      <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ToggleSwitch">
       <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>

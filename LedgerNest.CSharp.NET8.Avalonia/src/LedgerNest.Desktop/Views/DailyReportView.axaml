@@ -26,11 +26,11 @@
           <ToggleButton Classes="periodButton" Margin="0,0,10,6" Content="Last 30 days" IsChecked="{Binding IsLastThirtyDays}" Command="{Binding SelectModeCommand}" CommandParameter="Last 30 days"/>
           <ToggleButton Classes="periodButton" Margin="0,0,10,6" Content="Month &amp; Year" IsChecked="{Binding IsMonthAndYear}" Command="{Binding SelectModeCommand}" CommandParameter="Month &amp; Year"/>
           <ToggleButton Classes="periodButton" Margin="0,0,10,6" Content="Custom Range" IsChecked="{Binding IsCustomRange}" Command="{Binding SelectModeCommand}" CommandParameter="Custom Range"/>
-          <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth, Mode=TwoWay}" MinWidth="120" MinHeight="27.2" Margin="0,0,8,6"/>
-          <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear, Mode=TwoWay}" MinWidth="90" MinHeight="27.2" Margin="0,0,0,6"/>
-          <DatePicker IsVisible="{Binding IsCustomRange}" SelectedDate="{Binding CustomStart, Mode=TwoWay}" MinWidth="150" MinHeight="27.2" Margin="0,0,8,6"/>
+          <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Months}" SelectedItem="{Binding SelectedMonth, Mode=TwoWay}" MinWidth="120" MinHeight="32" Margin="0,0,8,6"/>
+          <ComboBox IsVisible="{Binding IsMonthAndYear}" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear, Mode=TwoWay}" MinWidth="90" MinHeight="32" Margin="0,0,0,6"/>
+          <DatePicker IsVisible="{Binding IsCustomRange}" SelectedDate="{Binding CustomStart, Mode=TwoWay}" MinWidth="150" MinHeight="32" Margin="0,0,8,6"/>
           <TextBlock IsVisible="{Binding IsCustomRange}" Text="–" VerticalAlignment="Center" Margin="0,0,8,6"/>
-          <DatePicker IsVisible="{Binding IsCustomRange}" SelectedDate="{Binding CustomEnd, Mode=TwoWay}" MinWidth="150" MinHeight="27.2" Margin="0,0,0,6"/>
+          <DatePicker IsVisible="{Binding IsCustomRange}" SelectedDate="{Binding CustomEnd, Mode=TwoWay}" MinWidth="150" MinHeight="32" Margin="0,0,0,6"/>
         </WrapPanel>
 
         <Border IsVisible="{Binding HasMissingCosts}" Background="{DynamicResource AppCardBrush}" BorderBrush="#F4C84A" BorderThickness="1" CornerRadius="8" Margin="20,0,20,14" Padding="11.2,8">
