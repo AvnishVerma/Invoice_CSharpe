@@ -101,7 +101,7 @@ public partial class MainWindow
         // Performs the amount parsing action for this screen or workflow.
         static decimal Amount(string value) => decimal.TryParse(value, out var amount) ? amount : 0m;
         // Performs the money formatting action for this screen or workflow.
-        static string Money(decimal amount) => $"Rs. {amount:0.00}";
+        static string Money(decimal amount) => CurrencyDisplay.Format(amount, "0.00");
 
         var total = Amount(invoice["Total"]);
         var paid = Amount(invoice["Paid"]);

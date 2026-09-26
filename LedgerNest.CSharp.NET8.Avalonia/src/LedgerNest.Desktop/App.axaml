@@ -71,6 +71,14 @@
       <Setter Property="Foreground" Value="White" />
       <Setter Property="BorderThickness" Value="0" />
     </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#1555A6" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#062C66" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
     <Style Selector="Button.material">
       <Setter Property="Background" Value="#083B88" />
       <Setter Property="Foreground" Value="White" />

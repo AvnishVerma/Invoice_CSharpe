@@ -25,9 +25,9 @@ public sealed class ProductViewDialogModel
     public string AliasName { get; init; } = "—";
     public string Description { get; init; } = "—";
     public string HsnSac { get; init; } = "—";
-    public string Price { get; init; } = "Rs. 0.0";
-    public string PurchasePrice { get; init; } = "Rs. 0.0";
-    public string DefaultDiscount { get; init; } = "Rs. 0.0";
+    public string Price { get; init; } = CurrencyDisplay.Format(0, "0.0");
+    public string PurchasePrice { get; init; } = CurrencyDisplay.Format(0, "0.0");
+    public string DefaultDiscount { get; init; } = CurrencyDisplay.Format(0, "0.0");
     public string TaxRate { get; init; } = "0";
     public bool PriceIncludesTax { get; init; }
     public string Type { get; init; } = "Product";

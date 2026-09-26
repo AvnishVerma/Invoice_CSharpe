@@ -105,7 +105,7 @@ public sealed class ReceivablesReportViewModel
     private static string Range(int count) => count == 0 ? "Rows per page:  10      0 items" : $"Rows per page:  10      1 – {count} of {count}";
 
     // Formats report currency values consistently with the reference layout.
-    internal static string Money(decimal value) => value == 0 ? "—" : $"Rs. {value:0.00}";
+    internal static string Money(decimal value) => value == 0 ? "—" : CurrencyDisplay.Format(value, "0.00");
 }
 
 // Provides the formatted columns for one customer aging summary row.

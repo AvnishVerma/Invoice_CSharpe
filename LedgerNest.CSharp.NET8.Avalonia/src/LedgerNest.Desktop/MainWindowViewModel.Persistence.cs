@@ -108,6 +108,7 @@ public partial class MainWindowViewModel
                     ["Name"] = invoice.InvoiceNumber,
                     ["Customer"] = string.IsNullOrEmpty(invoice.CustomerName) ? Customers.FirstOrDefault(c => c.SourceId == invoice.CustomerId)?.Name ?? "" : invoice.CustomerName,
                     ["Type"] = invoice.Type,
+                    ["Currency"] = invoice.Snapshot?.Currency ?? InvoiceSetting("Currency").Value,
                     ["Date"] = invoice.InvoiceDate.ToString("yyyy-MM-dd"),
                     ["Due Date"] = invoice.Snapshot?.DueDate?.ToString("yyyy-MM-dd") ?? "",
                     ["Items"] = invoice.Items.Count.ToString(),
@@ -489,7 +490,7 @@ public partial class MainWindowViewModel
     }
 
     // Performs the money action for this screen or workflow.
-    private static string Money(decimal value) => $"₹ {value:0.00}";
+    private string Money(decimal value) => CurrencyDisplay.Format(value, currency: InvoiceSetting("Currency").Value);
 
     private static void AddRange<T>(DbSet<T> set, JsonObject backup, string table) where T : class
     {

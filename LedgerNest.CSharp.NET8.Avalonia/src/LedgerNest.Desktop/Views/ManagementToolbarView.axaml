@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ManagementToolbarView">
+  <Border Padding="9.6" CornerRadius="12" Background="{DynamicResource AppCardBrush}"
+          BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <StackPanel Spacing="8">
+      <Grid ColumnDefinitions="*,10,Auto">
+        <ContentControl x:Name="SearchHost" />
+        <ContentControl x:Name="ActionsHost" Grid.Column="2" />
+      </Grid>
+      <ContentControl x:Name="TabsHost" />
+    </StackPanel>
+  </Border>
+</UserControl>

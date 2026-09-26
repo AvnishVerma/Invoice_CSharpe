@@ -25,21 +25,16 @@
     </Border>
 
     <Grid Grid.Row="1"
-          Background="{DynamicResource CanvasBrush}">
+          Background="{DynamicResource AppCanvasBrush}">
       <Border Padding="0">
-        <Border Width="480"
+        <Border x:Name="SuccessCard" Width="480"
                 MinHeight="500"
                 CornerRadius="22"
                 Padding="27.2"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
-                BoxShadow="0 6 18 0 #37000000">
-          <Border.Background>
-            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-              <GradientStop Color="#EEF9F0" Offset="0" />
-              <GradientStop Color="#FFFFFF" Offset="1" />
-            </LinearGradientBrush>
-          </Border.Background>
+                Background="{DynamicResource AppCardBrush}" BoxShadow="0 6 18 0 #37000000">
+
 
           <StackPanel Spacing="16"
                       HorizontalAlignment="Center">

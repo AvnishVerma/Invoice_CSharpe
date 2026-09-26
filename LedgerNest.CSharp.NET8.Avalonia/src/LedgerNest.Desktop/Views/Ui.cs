@@ -347,43 +347,7 @@ internal static class Ui
     public static Control Header(string title, string subtitle, params Control[] actions)
     { var a = Wrap(actions); a.HorizontalAlignment = HorizontalAlignment.Right; return Columns("*,Auto", Stack(2, LocalText(title, 22, true), LocalText(subtitle, 13, color: Muted)), a); }
     // Performs the app bar action for this screen or workflow.
-    public static Control AppBar(string title, params Control[] actions)
-    {
-        var a = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
-        foreach (var action in actions)
-        {
-            if (action is Button button)
-            {
-                button.Foreground = Brushes.White;
-                button.Background = HeaderBand;
-                button.BorderThickness = new Thickness(0);
-                if (button.Content is TextBlock caption) caption.Foreground = Brushes.White;
-                if (button.Content is Panel content)
-                    foreach (var label in content.Children.OfType<TextBlock>())
-                        label.Foreground = Brushes.White;
-            }
-            a.Children.Add(action);
-        }
-        var heading = LocalText(title, 20, color: Brushes.White); heading.TextWrapping = TextWrapping.NoWrap; heading.TextTrimming = TextTrimming.CharacterEllipsis;
-        return new Border { Background = HeaderBand, Padding = new Thickness(20, 0), Height = 44.8, Child = Columns("*,Auto", heading, a) };
-    }
+    public static Control AppBar(string title, params Control[] actions) => new PageHeaderView(title, actions);
     // Performs the stats action for this screen or workflow.
-    public static Control Stats(params (string Label, string Value, string Subtitle, string Color)[] stats)
-    {
-        var grid = new Grid();
-        void Arrange(double width)
-        {
-            var count = Math.Clamp((int)((width + 12) / 182), 1, stats.Length);
-            grid.ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Repeat("*", count)));
-            grid.RowDefinitions.Clear(); for (var i = 0; i < (stats.Length + count - 1) / count; i++) grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            for (var i = 0; i < grid.Children.Count; i++) { Grid.SetColumn(grid.Children[i], i % count); Grid.SetRow(grid.Children[i], i / count); }
-        }
-        foreach (var s in stats)
-        {
-            var icon = new Border { Width = 32, Height = 32, CornerRadius = new CornerRadius(10), Background = new SolidColorBrush(Color.Parse(s.Color), .12), Opacity = 1, Child = Icon(s.Label.Contains("Customer") ? "people" : s.Label.Contains("Product") ? "inventory_2" : "receipt_long", 20, Brush.Parse(s.Color)) };
-            var card = Card(Columns("*,Auto", Stack(6, Text(s.Label, 12, color: Muted), Text(s.Value, 24, true), Text(s.Subtitle, 11.5, color: Muted)), icon));
-            card.Margin = new Thickness(0, 0, 12, 12); grid.Children.Add(card);
-        }
-        Arrange(1200); grid.SizeChanged += (_, e) => Arrange(e.NewSize.Width); return grid;
-    }
+    public static Control Stats(params (string Label, string Value, string Subtitle, string Color)[] stats) => new StatisticsView(stats);
 }

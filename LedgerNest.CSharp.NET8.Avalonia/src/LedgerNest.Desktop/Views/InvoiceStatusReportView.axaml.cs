@@ -204,5 +204,5 @@ public sealed record InvoiceStatusRowViewModel(
         row.Status switch { "Paid" => "#DDF3E6", "Partial" => "#FFF0D8", _ => "#E8E8F1" },
         row.Status switch { "Paid" => "#159447", "Partial" => "#E18A00", _ => "#526780" });
 
-    private static string Money(decimal value) => $"Rs. {value:N2}";
+    private static string Money(decimal value) => CurrencyDisplay.Format(value, "N2");
 }

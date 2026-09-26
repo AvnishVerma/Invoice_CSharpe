@@ -89,7 +89,7 @@ public sealed class InventoryReportViewModel : INotifyPropertyChanged
     }
 
     // Formats an inventory currency amount consistently.
-    private static string Money(decimal value) => $"Rs. {value:N2}";
+    private static string Money(decimal value) => CurrencyDisplay.Format(value, "N2");
 
     // Raises a property-change notification for one presentation property.
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -102,7 +102,7 @@ public sealed record InventoryReportRowViewModel(string Name, string Stock, stri
     public static InventoryReportRowViewModel From(InventoryProductSnapshot product) => new(
         product.Name,
         product.Stock.ToString("0.###"),
-        $"Rs. {product.PurchasePrice:N2}",
-        $"Rs. {product.StockValue:N2}",
-        $"Rs. {product.SaleValue:N2}");
+        CurrencyDisplay.Format(product.PurchasePrice, "N2"),
+        CurrencyDisplay.Format(product.StockValue, "N2"),
+        CurrencyDisplay.Format(product.SaleValue, "N2"));
 }

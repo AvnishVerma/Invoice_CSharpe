@@ -19,7 +19,7 @@ public partial class MainWindow
     internal void ShowDocumentPreview(UiRecord document)
     {
         // Performs the money action for this screen or workflow.
-        static string Money(string value) => decimal.TryParse(value, out var amount) ? $"Rs. {amount:0.00}" : string.IsNullOrWhiteSpace(value) ? "Rs. 0.00" : value;
+        string Money(string value) => decimal.TryParse(value, out var amount) ? CurrencyDisplay.Format(amount, currency: document["Currency"]) : string.IsNullOrWhiteSpace(value) ? CurrencyDisplay.Format(0, currency: document["Currency"]) : value;
         var preview = new DocumentPreviewModel
         {
             Title = $"Invoice #{document.Name}",
@@ -32,7 +32,7 @@ public partial class MainWindow
         };
         foreach (var item in Model.PreviewItemsFor(document))
         {
-            preview.Items.Add(new DocumentPreviewItemModel($"{item.Description} x{item.Quantity:0.###}", $"Rs. {item.LineTotal:0.00}"));
+            preview.Items.Add(new DocumentPreviewItemModel($"{item.Description} x{item.Quantity:0.###}", CurrencyDisplay.Format(item.LineTotal, currency: document["Currency"])));
         }
         ShowOverlay("", new DocumentPreviewView(preview), Ui.Button("Close", CloseOverlay, true), width: 650);
     }

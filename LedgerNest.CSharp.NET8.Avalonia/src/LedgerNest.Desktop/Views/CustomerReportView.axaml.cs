@@ -25,6 +25,8 @@ public sealed partial class CustomerReportView : UserControl
 // Exposes customer overview and statement state to the AXAML report view.
 public sealed class CustomerReportViewModel : INotifyPropertyChanged
 {
+    public string CurrencyCode => CurrencyDisplay.Code();
+    public string OpeningAmount => CurrencyDisplay.Format(0);
     private bool isStatement;
     private CustomerStatementOptionViewModel? selectedCustomer;
 
@@ -101,7 +103,7 @@ public sealed class CustomerReportViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
     // Formats customer report currency values consistently.
-    internal static string Money(decimal value) => $"Rs. {value:0.00}";
+    internal static string Money(decimal value) => CurrencyDisplay.Format(value, "0.00");
 }
 
 // Provides one customer ranking row for the overview chart and table.

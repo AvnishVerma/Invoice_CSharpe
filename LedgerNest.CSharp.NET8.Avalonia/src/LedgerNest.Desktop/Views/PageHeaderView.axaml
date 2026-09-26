@@ -1,0 +1,11 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.PageHeaderView">
+  <Border Background="{DynamicResource PageHeaderBrush}" Padding="20,0" Height="44.8">
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock x:Name="Heading" FontSize="20" Foreground="White" VerticalAlignment="Center"
+                 TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+      <StackPanel x:Name="Actions" Grid.Column="1" Orientation="Horizontal" Spacing="12"
+                  HorizontalAlignment="Right" VerticalAlignment="Center" />
+    </Grid>
+  </Border>
+</UserControl>

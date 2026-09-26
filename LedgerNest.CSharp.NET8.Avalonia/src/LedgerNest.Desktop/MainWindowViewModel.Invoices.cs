@@ -15,6 +15,7 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindowViewModel
 {
+    public string EditorCurrency => editingSnapshot?.Currency ?? InvoiceSetting("Currency").Value;
     // Performs the peek next document number action for this screen or workflow.
     public string PeekNextDocumentNumber(string type)
     {

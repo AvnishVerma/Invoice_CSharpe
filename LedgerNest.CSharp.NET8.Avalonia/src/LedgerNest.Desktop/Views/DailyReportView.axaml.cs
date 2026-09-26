@@ -152,5 +152,5 @@ public sealed record DailyReportRowViewModel(string Date, int InvoiceCount, stri
         return new(day.Date.ToString("dd/MM/yyyy"), day.InvoiceCount, Money(day.Sales), Money(day.Cogs), Money(day.Profit), $"{margin:0.#}%");
     }
 
-    private static string Money(decimal value) => $"Rs. {value:N2}";
+    private static string Money(decimal value) => CurrencyDisplay.Format(value, "N2");
 }

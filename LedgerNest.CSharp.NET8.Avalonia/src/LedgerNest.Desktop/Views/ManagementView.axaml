@@ -18,31 +18,22 @@
     </ResourceDictionary>
   </UserControl.Resources>
   <Grid>
-    <ScrollViewer x:Name="RecordRoot"
+    <Grid x:Name="RecordRoot" RowDefinitions="Auto,*">
+      <ContentControl x:Name="HeaderHost" />
+      <ScrollViewer Grid.Row="1"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
       <Border Padding="12.8">
         <StackPanel Spacing="9.6">
           <ContentControl x:Name="ProductBannerHost" />
-          <ContentControl x:Name="HeaderHost" />
+
           <ContentControl x:Name="StatsHost" />
-          <Border Padding="9.6"
-                  CornerRadius="12"
-                  Background="{DynamicResource ManagementCardSurface}"
-                  BorderBrush="{DynamicResource ManagementOutline}"
-                  BorderThickness="1">
-            <StackPanel Spacing="8">
-              <Grid ColumnDefinitions="*,10,Auto">
-                <ContentControl x:Name="SearchHost" />
-                <ContentControl x:Name="ToolbarButtonsHost" Grid.Column="2" />
-              </Grid>
-              <ContentControl x:Name="TabsHost" />
-            </StackPanel>
-          </Border>
+          <ContentControl x:Name="ToolbarHost" />
           <ContentControl x:Name="RecordResultsHost" />
         </StackPanel>
       </Border>
-    </ScrollViewer>
+      </ScrollViewer>
+    </Grid>
     <Grid x:Name="DocumentRoot"
           IsVisible="False"
           RowDefinitions="Auto,*">

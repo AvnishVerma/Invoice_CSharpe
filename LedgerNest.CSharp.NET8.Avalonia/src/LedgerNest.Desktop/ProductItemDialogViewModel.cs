@@ -37,10 +37,10 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
         this.close = close;
         this.acceptLine = acceptLine;
         this.allowFractional = allowFractional;
-        Title = $"{product.Name} (Rs. {draft.Price:0.0#})";
+        Title = $"{product.Name} ({CurrencyDisplay.Format(draft.Price, "0.0#")})";
         var hasUnlimitedStock = bool.TryParse(product["Unlimited stock"], out var unlimitedStock) && unlimitedStock;
         StockText = hasUnlimitedStock ? "Unlimited Stock" : $"Available Stock: {product["Stock"]}";
-        DefaultPriceText = $"Default: Rs.{draft.Price:0.00}";
+        DefaultPriceText = $"Default: {CurrencyDisplay.Format(draft.Price)}";
         Unit = new FormField("Unit (override)", draft.Unit, "choice",
             new[] { "None", "pcs", "kg", "g", "l", "m", "box", draft.Unit }.Distinct().ToArray());
         Discount = new FormField("Discount", draft.Discount.ToString(), "number", required: true);

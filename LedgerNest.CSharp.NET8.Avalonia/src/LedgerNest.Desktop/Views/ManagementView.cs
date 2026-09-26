@@ -64,12 +64,12 @@ internal sealed partial class ManagementView : UserControl
             DocumentRoot.IsVisible = false;
             HeaderHost.Content = header;
             StatsHost.Content = stats;
-            SearchHost.Content = search;
-            ToolbarButtonsHost.Content = kind == "User"
+
+            Control toolbarActions = kind == "User"
                 ? MenuButton("Role: All ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); })
                 : Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
-            TabsHost.Content = tabs;
-            TabsHost.IsVisible = kind != "User";
+            ToolbarHost.Content = new ManagementToolbarView(search, toolbarActions, tabs, kind != "User");
+
             RecordResultsHost.Content = results;
         }
         if (Documents && kind == "Invoice")
@@ -159,7 +159,7 @@ internal sealed partial class ManagementView : UserControl
             var checkbox = new CheckBox { IsChecked = record != null && selected.Contains(record.Id), IsVisible = record != null };
             checkbox.IsCheckedChanged += (_, _) => { if (record == null) return; if (checkbox.IsChecked == true) selected.Add(record.Id); else selected.Remove(record.Id); };
             controls.Add(checkbox); controls.Add(Ui.Text(record == null ? "SL. NO." : (index + 1).ToString(), 12));
-            string[] values = record == null ? Headers : Documents ? [$"{record.Name}\n{record["Customer"]}", record["Title"].Length == 0 ? "—" : record["Title"], record["Date"], record["Items"], FormatMoney(record["Total"]), record["Status"], string.IsNullOrWhiteSpace(record["Outstanding"]) || record["Outstanding"] == "0" ? "—" : FormatMoney(record["Outstanding"])] : kind == "Customer" ? [$"{record.Name}\n{record["Business Name"]}", record["Phone"], record["Email"], record["GST / VAT Number"], record["Address"], record["Outstanding"].Length == 0 ? "—" : record["Outstanding"]] : kind == "Product" ? [$"{record.Name}\n{record["Alias Name (for invoice PDF)"]}", record["Sale Price"], record["HSN/SAC"], record["Purchase Price"], record["Stock"], record["Tax (%)"], record["Expiry Date"]] : [record.Name, record["Role"]];
+            string[] values = record == null ? Headers : Documents ? [$"{record.Name}\n{record["Customer"]}", record["Title"].Length == 0 ? "—" : record["Title"], record["Date"], record["Items"], FormatMoney(record["Total"], record["Currency"]), record["Status"], string.IsNullOrWhiteSpace(record["Outstanding"]) || record["Outstanding"] == "0" ? "—" : FormatMoney(record["Outstanding"], record["Currency"])] : kind == "Customer" ? [$"{record.Name}\n{record["Business Name"]}", record["Phone"], record["Email"], record["GST / VAT Number"], record["Address"], record["Outstanding"].Length == 0 ? "—" : record["Outstanding"]] : kind == "Product" ? [$"{record.Name}\n{record["Alias Name (for invoice PDF)"]}", record["Sale Price"], record["HSN/SAC"], record["Purchase Price"], record["Stock"], record["Tax (%)"], record["Expiry Date"]] : [record.Name, record["Role"]];
             for (var i = 0; i < Headers.Length; i++) if (!hidden.Contains(Headers[i])) controls.Add(DocumentCell(record, values[i], i));
             controls.Add(record == null ? Ui.LocalText("Actions", 12, true) : DocumentActions(record));
             return new Border { Background = record == null && Documents ? Brush.Parse("#243447") : Ui.CardSurface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(12, Documents ? 12 : 8), Child = Ui.Columns(columns, controls.ToArray()) };
@@ -244,7 +244,7 @@ internal sealed partial class ManagementView : UserControl
         controls.Add(record == null ? DocumentHeaderOrCell("Sl No", true) : new Border { Background = Ui.Palette("#E3F2FD", "#202B36"), CornerRadius = new CornerRadius(6), Padding = new Thickness(5.6, 3.2), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = Ui.Text((index + 1).ToString(), 12, true, Ui.Primary) });
         string[] values = record == null
             ? Headers
-            : [$"{record.Name}\n{record["Customer"]}", record["Title"].Length == 0 ? "—" : record["Title"], record["Date"], record["Items"], FormatMoney(record["Total"]), record["Status"], string.IsNullOrWhiteSpace(record["Outstanding"]) || record["Outstanding"] == "0" ? "—" : FormatMoney(record["Outstanding"])];
+            : [$"{record.Name}\n{record["Customer"]}", record["Title"].Length == 0 ? "—" : record["Title"], record["Date"], record["Items"], FormatMoney(record["Total"], record["Currency"]), record["Status"], string.IsNullOrWhiteSpace(record["Outstanding"]) || record["Outstanding"] == "0" ? "—" : FormatMoney(record["Outstanding"], record["Currency"])];
         for (var i = 0; i < Headers.Length; i++)
             if (!hidden.Contains(Headers[i])) controls.Add(DocumentCell(record, values[i], i));
         controls.Add(record == null ? DocumentHeaderOrCell("Actions", true) : DocumentActions(record));
@@ -394,7 +394,7 @@ internal sealed partial class ManagementView : UserControl
     }
 
     // Performs the outstanding text action for this screen or workflow.
-    private static string OutstandingText(string value) => decimal.TryParse(value, out var amount) && amount != 0 ? $"Rs. {amount:0.00}" : "—";
+    private static string OutstandingText(string value) => decimal.TryParse(value, out var amount) && amount != 0 ? CurrencyDisplay.Format(amount, "0.00") : "—";
     // Performs the outstanding brush action for this screen or workflow.
     private static IBrush OutstandingBrush(string value) => decimal.TryParse(value, out var amount) && amount > 0 ? Brush.Parse("#F57C00") : Ui.Muted;
 
@@ -489,7 +489,7 @@ internal sealed partial class ManagementView : UserControl
     {
         if (!decimal.TryParse(value, out var amount)) return string.IsNullOrWhiteSpace(value) ? "—" : value;
         if (dashWhenZero && amount == 0) return "—";
-        return $"Rs.{amount:0.00}";
+        return CurrencyDisplay.Format(amount, "0.00");
     }
 
     // Performs the product actions action for this screen or workflow.
@@ -524,7 +524,7 @@ internal sealed partial class ManagementView : UserControl
     }
 
     // Performs the format money action for this screen or workflow.
-    private static string FormatMoney(string value) => decimal.TryParse(value, out var amount) ? $"Rs. {amount:0.00}" : value;
+    private static string FormatMoney(string value, string? currency = null) => decimal.TryParse(value, out var amount) ? CurrencyDisplay.Format(amount, currency: currency) : value;
 
     // Performs the document cell action for this screen or workflow.
     private Control DocumentCell(UiRecord? record, string value, int index)

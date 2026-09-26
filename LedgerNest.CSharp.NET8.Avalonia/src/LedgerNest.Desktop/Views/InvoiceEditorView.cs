@@ -95,7 +95,7 @@ public partial class MainWindow
             void AddTotal(string label, decimal amount, bool primary = false)
             {
                 rows.Children.Add(new Border { Margin = new Thickness(0, 0, 16, 3), Child = Ui.Stack(2,
-                    Ui.LocalText(label, 11, color: Ui.Muted), Ui.Text($"Rs. {amount:0.00}", primary ? 19 : 14, true)) });
+                    Ui.LocalText(label, 11, color: Ui.Muted), Ui.Text(CurrencyDisplay.Format(amount, currency: Model.EditorCurrency), primary ? 19 : 14, true)) });
             }
             AddTotal("Subtotal", t.Subtotal); AddTotal("Tax", t.Tax);
             if (t.ItemDiscount != 0) AddTotal("Item discount", t.ItemDiscount);
@@ -185,7 +185,7 @@ public partial class MainWindow
             bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited;
         var name = Ui.Text(product.Name, 13, false, hasStock ? Ui.TextColor : Brush.Parse("#D32F2F"));
         name.TextWrapping = TextWrapping.NoWrap;
-        var price = decimal.TryParse(product["Sale Price"], out var amount) ? $"Rs.{amount:0.00}" : "Rs.0.00";
+        var price = decimal.TryParse(product["Sale Price"], out var amount) ? CurrencyDisplay.Format(amount, "0.00") : CurrencyDisplay.Format(0);
         var stockText = bool.TryParse(product["Unlimited stock"], out unlimited) && unlimited ? "∞" : product["Stock"].Length == 0 ? "0" : product["Stock"];
         var hsn = product["HSN/SAC"].Length == 0 ? "—" : product["HSN/SAC"];
         var metadata = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
@@ -227,7 +227,7 @@ public partial class MainWindow
         overlay.Children.Add(new ProductItemDialogView { DataContext = dialog });
     }
     // Performs the total row action for this screen or workflow.
-    private static Control TotalRow(string label, decimal value, bool bold = false) => Ui.Columns("*,Auto", Ui.LocalText(label, bold ? 18 : 13, bold), Ui.Text($"Rs.{value:0.00}", bold ? 22 : 14, bold, bold ? Brush.Parse("#4CAF50") : null));
+    private Control TotalRow(string label, decimal value, bool bold = false) => Ui.Columns("*,Auto", Ui.LocalText(label, bold ? 18 : 13, bold), Ui.Text(CurrencyDisplay.Format(value, currency: Model.EditorCurrency), bold ? 22 : 14, bold, bold ? Brush.Parse("#4CAF50") : null));
     // Performs the select customer action for this screen or workflow.
     private void SelectCustomer()
     {
@@ -255,7 +255,7 @@ public partial class MainWindow
         var invoiceId = document.Name.TrimStart('#').Replace("[", "").Replace("]", "");
         return new InvoiceCreatedView(
             invoiceId,
-            Model.EditorDocumentNumber,
+            invoiceId,
             applyPayment.IsEnabled,
             () => ShowDocumentPreview(document),
             () => ShowPdfPreviewAsync(document),

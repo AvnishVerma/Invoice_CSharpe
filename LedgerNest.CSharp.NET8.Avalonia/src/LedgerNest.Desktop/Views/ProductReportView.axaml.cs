@@ -49,7 +49,7 @@ public sealed class ProductReportViewModel
     }
 
     // Formats a monetary value for the product report.
-    internal static string Money(decimal value) => $"Rs. {value:N2}";
+    internal static string Money(decimal value) => CurrencyDisplay.Format(value, "N2");
 }
 
 // Provides one formatted product row for the revenue chart and detail table.

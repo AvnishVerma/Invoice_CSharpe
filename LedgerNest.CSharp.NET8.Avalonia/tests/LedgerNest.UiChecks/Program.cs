@@ -322,7 +322,7 @@ internal static class Program
                 reportsModel.SelectedReport = reportName; Settle();
                 var cards = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Any(c => c is "reportCard" or "productReportCard" or "statusCard" or "metricCard" or "customerReportCard")).ToArray();
                 foreach (var card in cards)
-                    Check(card.Background is Avalonia.Media.ISolidColorBrush brush && brush.Color.R < 80, reportName + " cards must use dark backgrounds");
+                    Check(card.Background is Avalonia.Media.ISolidColorBrush cardBrush && cardBrush.Color.R < 80, reportName + " cards must use dark backgrounds");
                 Capture("dark-report-" + reportName.Replace(" ", "-"));
                 model.SetThemeMode("Light"); Settle();
                 model.SetThemeMode("Dark"); Settle();
@@ -345,6 +345,22 @@ internal static class Program
             model.NavigateCommand.Execute("Customers"); Settle();
             Check(FindButton("View").Content is TextBlock { Text.Length: 1 }, "Customer actions must display icons instead of clipped words");
             Capture("appearance-customer-actions");
+            foreach (var route in new[] { "Customers", "Products" })
+            {
+                model.NavigateCommand.Execute(route); Settle();
+                var management = window.GetVisualDescendants().OfType<ManagementView>().Single();
+                var header = management.GetVisualDescendants().OfType<PageHeaderView>().Single();
+                Check(header.TranslatePoint(default, management)!.Value.Y == 0, "Management header must sit at the top");
+                Check(!header.GetVisualAncestors().OfType<ScrollViewer>().Any(), "Management header must stay outside scrolling content");
+                Capture("fixed-header-" + route);
+            }
+            model.InvoiceSetting("Currency").Value = LegacyChoices.Currencies.Single(c => c.Contains("USD —"));
+            Check(CurrencyDisplay.Format(25) == "$ 25.00", "Amounts must use the selected USD currency");
+            model.InvoiceSetting("Currency").Value = LegacyChoices.Currencies.Single(c => c.Contains("EUR —"));
+            Check(CurrencyDisplay.Format(25).StartsWith("€ "), "Currency formatter must follow changes without restarting");
+            Check(CurrencyDisplay.Format(25, currency: LegacyChoices.Currencies[0]).StartsWith("Rs. "), "Saved document currency must override the current selection");
+            model.InvoiceSetting("Currency").Value = LegacyChoices.Currencies[0];
+            model.NavigateCommand.Execute("Customers"); Settle();
             model.SetThemeMode("Dark"); Click("View"); Settle();
             var customerDialog = window.GetVisualDescendants().OfType<CustomerViewDialog>().Single();
             var customerValue = customerDialog.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == "Long customer name");
@@ -427,6 +443,15 @@ internal static class Program
             Check(model.Lines.Count == 1 && model.InvoiceCustomer[0].Value == "Acme Trading", "Responsive reflow must preserve the draft");
             Click("Create Invoice (Ctrl+S)"); Settle();
             Check(model.LastSavedDocument != null && model.Invoices.Count == 1, "Redesigned editor must save the invoice");
+            model.SetThemeMode("Dark"); Settle();
+            var success = window.GetVisualDescendants().OfType<InvoiceCreatedView>().Single();
+            var successCard = success.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "SuccessCard");
+            Check(successCard.Background is Avalonia.Media.ISolidColorBrush successBrush && successBrush.Color.R < 80, "Success card must use the dark theme");
+            Check(success.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "InvoiceNumberText").Text!.Contains(model.LastSavedDocument!.Name), "Success header must show the saved invoice number");
+            var createNext = FindButton("Create New Invoice");
+            window.MouseMove(createNext.TranslatePoint(new Point(20, 15), window)!.Value); Settle();
+            Check(createNext.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().Any(p => p.Background is Avalonia.Media.ISolidColorBrush hoverBrush && hoverBrush.Color == Avalonia.Media.Color.Parse("#1555A6")), "Success button must retain a visible blue background on hover");
+            Capture("invoice-success-dark-hover");
             Console.WriteLine($"Invoice editor checks passed: {assertions} assertions. Screenshots: {output}");
             window.Close(); return;
         }

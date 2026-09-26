@@ -151,7 +151,7 @@ public partial class MainWindow
     }
 
     // Performs the money action for this screen or workflow.
-    private static string Money(decimal value) => $"Rs. {value:0.00}";
+    private static string Money(decimal value) => CurrencyDisplay.Format(value, "0.00");
 
     // Builds the six KPI tiles shown at the top of the revenue report.
     private static Control RevenueStats(RevenueReportSnapshot report)
@@ -343,7 +343,7 @@ public partial class MainWindow
                 BorderBrush = Ui.Outline,
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(14, index == 0 ? 10 : 14),
-                Child = Ui.Columns(string.Join(",", row.Select(_ => "*")), row.Select((c, i) => (Control)Ui.Text(index == 0 ? c.ToUpperInvariant() : c, index == 0 ? 11 : 13, index == 0 || i == 0, index == 0 ? Ui.Muted : c.Contains("Rs.") && c.Contains("70") ? Brush.Parse("#EF4444") : c.Contains("Rs.") ? Brush.Parse("#16A34A") : null)).ToArray())
+                Child = Ui.Columns(string.Join(",", row.Select(_ => "*")), row.Select((c, i) => (Control)Ui.Text(index == 0 ? c.ToUpperInvariant() : c, index == 0 ? 11 : 13, index == 0 || i == 0, index == 0 ? Ui.Muted : c.Contains(CurrencyDisplay.Symbol()) && c.Contains("70") ? Brush.Parse("#EF4444") : c.Contains(CurrencyDisplay.Symbol()) ? Brush.Parse("#16A34A") : null)).ToArray())
             });
         }
         table.Children.Add(new Border { Padding = new Thickness(11.2, 9.6), Child = Ui.Columns("*,Auto", Ui.LocalText("Rows per page: 10      1 – 1 of 1", 13), Ui.LocalText("‹   Page 1 of 1   ›", 13, true)) });

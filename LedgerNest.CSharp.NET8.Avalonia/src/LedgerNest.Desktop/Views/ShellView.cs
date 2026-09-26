@@ -18,6 +18,7 @@ public partial class MainWindow
         overlay.Children.Clear();
         overlay.IsVisible = false;
         shellModel = vm;
+        CurrencyDisplay.SelectedCurrency = () => vm.InvoiceSetting("Currency").Value;
         ApplyAppearance(vm);
         ShowStatusToast(vm.Status);
         shellChanged = (_, e) =>

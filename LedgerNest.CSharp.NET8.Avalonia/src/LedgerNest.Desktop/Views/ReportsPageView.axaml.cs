@@ -58,6 +58,7 @@ public sealed class ReportsPageModel : INotifyPropertyChanged
     private Control currentContent;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+    public string CurrencyLabel => $"Current selected currency ({CurrencyDisplay.Current.Split('—').Last().Trim()})";
     public ObservableCollection<string> ReportTabs { get; }
     public ICommand RefreshCommand { get; }
     public ICommand SelectReportCommand { get; }
