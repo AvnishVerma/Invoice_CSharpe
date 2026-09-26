@@ -13,7 +13,7 @@
     </Style>
   </UserControl.Styles>
   <Grid RowDefinitions="Auto,*,Auto">
-    <Border Background="{DynamicResource PageHeaderBrush}" Padding="18,10">
+    <Border Background="{DynamicResource PageHeaderBrush}" Height="44.8" Padding="20,0">
       <Grid ColumnDefinitions="*,Auto" MinHeight="34">
         <TextBlock Text="{Binding Title}" Foreground="White" FontSize="20" VerticalAlignment="Center" />
         <TextBlock Grid.Column="1" Text="{Binding NumberText}" Foreground="White" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,0" />

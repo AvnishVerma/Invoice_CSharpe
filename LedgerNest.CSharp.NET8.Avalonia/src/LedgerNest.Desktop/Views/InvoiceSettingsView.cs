@@ -78,7 +78,7 @@ public partial class MainWindow
             rail.Height = narrow ? 190 : double.NaN; promo.IsVisible = !narrow;
         };
         Select(0);
-        return Ui.Rows("Auto,*", new Border { Height = 44.8, Background = InvoiceSettingsBlue, Padding = new Thickness(12.8, 0), Child = Ui.LocalText("Invoice Settings", 22, color: Brushes.White) }, layout);
+        return Ui.Rows("Auto,*", Ui.AppBar("Invoice Settings"), layout);
     }
 
     private Control InvoiceGeneralSettings()

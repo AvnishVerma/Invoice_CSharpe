@@ -2,6 +2,8 @@
 
 LedgerNest is a cross-platform invoicing and business-management desktop application migrated from the legacy Flutter implementation.
 
+New contributors: start with the [Developer guide](docs/DEVELOPER_GUIDE.md) for the code structure, startup flow, UI patterns, settings, persistence, and verification commands.
+
 ## Technology
 
 - .NET 10, pinned through `global.json`

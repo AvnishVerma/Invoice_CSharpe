@@ -2,8 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.SettingsPageView"
              x:CompileBindings="False">
-    <Grid RowDefinitions="Auto,*">
-        <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Background="{DynamicResource AppSurfaceBrush}" Padding="6,4">
+    <Grid RowDefinitions="Auto,Auto,*">
+        <ContentControl Content="{Binding CurrentHeader}" />
+        <Border Grid.Row="1" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Background="{DynamicResource AppSurfaceBrush}" Padding="6,4">
             <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Tabs}">
                     <ItemsControl.ItemsPanel>
@@ -39,6 +40,6 @@
             </ScrollViewer>
         </Border>
 
-        <ContentControl Grid.Row="1" Content="{Binding CurrentContent}" />
+        <ContentControl Grid.Row="2" Content="{Binding CurrentContent}" />
     </Grid>
 </UserControl>

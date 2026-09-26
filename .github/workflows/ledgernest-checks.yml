@@ -9,30 +9,35 @@ jobs:
   headless:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v6
+      - name: Prepare evidence directory
+        run: |
+          mkdir -p artifacts/ui
+          uname -a > artifacts/runner.log
+      - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '8.0.x'
+          global-json-file: LedgerNest.CSharp.NET8.Avalonia/global.json
       - name: Record toolchain
-        run: dotnet --info
+        working-directory: LedgerNest.CSharp.NET8.Avalonia
+        run: dotnet --info 2>&1 | tee ../artifacts/toolchain.log
       - name: Restore solution and checks
         run: |
-          dotnet restore LedgerNest.CSharp.NET8.Avalonia/LedgerNest.CSharp.sln
-          dotnet restore LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks/LedgerNest.UiChecks.csproj
+          dotnet restore LedgerNest.CSharp.NET8.Avalonia/LedgerNest.CSharp.sln 2>&1 | tee artifacts/restore-solution.log
+          dotnet restore LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks/LedgerNest.UiChecks.csproj 2>&1 | tee artifacts/restore-checks.log
       - name: Build solution and checks
         run: |
-          dotnet build LedgerNest.CSharp.NET8.Avalonia/LedgerNest.CSharp.sln --no-restore
-          dotnet build LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks/LedgerNest.UiChecks.csproj --no-restore
+          dotnet build LedgerNest.CSharp.NET8.Avalonia/LedgerNest.CSharp.sln --no-restore 2>&1 | tee artifacts/build-solution.log
+          dotnet build LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks/LedgerNest.UiChecks.csproj --no-restore 2>&1 | tee artifacts/build-checks.log
       - name: Run regression checks
-        shell: bash
         run: |
-          set -o pipefail
-          mkdir -p artifacts/ui
           dotnet run --no-build --project LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks -- artifacts/ui 2>&1 | tee artifacts/checks.log
       - name: Retain evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ledgernest-checks-${{ github.sha }}
           path: artifacts/

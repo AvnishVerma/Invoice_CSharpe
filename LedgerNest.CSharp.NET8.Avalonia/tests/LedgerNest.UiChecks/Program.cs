@@ -307,6 +307,17 @@ internal static class Program
             model.SetThemeMode("Dark"); Settle();
             Check(window.ActualThemeVariant == ThemeVariant.Dark, "Model theme changes must immediately reach the window");
             model.NavigateCommand.Execute("Settings"); Capture("appearance-settings-dark");
+            var settingsShell = window.GetVisualDescendants().OfType<SettingsPageView>().Single();
+            var settingsNavigation = (SettingsPageModel)settingsShell.DataContext!;
+            foreach (var settingTab in settingsNavigation.Tabs)
+            {
+                settingsNavigation.SelectedTab = settingTab.Label; Settle();
+                var pageHeader = settingsShell.GetVisualDescendants().OfType<PageHeaderView>().First();
+                Check(Math.Abs(pageHeader.Bounds.Height - 44.8) < 1, "Settings headers must use the standard height");
+                Check(pageHeader.TranslatePoint(default, settingsShell)!.Value.Y == 0, "Settings header must precede navigation tabs");
+                Check(FindButton(settingTab.Label).TranslatePoint(default, settingsShell)!.Value.Y >= 44, "Settings tabs must sit below the header");
+            }
+            settingsNavigation.SelectedTab = "Company Info"; Capture("settings-header-above-tabs");
             var selectedTab = FindButton("Company Info");
             var nextTab = FindButton("Backup");
             Check(selectedTab.TranslatePoint(default, window) is { } selectedPosition && nextTab.TranslatePoint(default, window) is { } nextPosition && Math.Abs(selectedPosition.Y - nextPosition.Y) < 1 && nextPosition.X > selectedPosition.X, "Settings navigation must be horizontal at the top");
@@ -603,6 +614,14 @@ internal static class Program
                 foreach (var route in new[] { "Dashboard", "New Invoice", "Customers", "Settings", "Reports" })
                 {
                     model.NavigateCommand.Execute(route); Capture($"compact-{route.Replace(" ", "-")}-{width}");
+                    var headerBand = window.GetVisualDescendants().OfType<Border>().First(b => b.IsEffectivelyVisible && b.Background is Avalonia.Media.ISolidColorBrush headerBrush && headerBrush.Color == Avalonia.Media.Color.Parse(Branding.HeaderColor));
+                    Check(Math.Abs(headerBand.Bounds.Height - 44.8) < 1, "Header height must stay consistent on " + route);
+                    if (route == "Dashboard")
+                    {
+                        var dashboard = window.GetVisualDescendants().OfType<DashboardPageView>().Single();
+                        var dashboardBody = dashboard.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Name == "DashboardContent");
+                        Check(Math.Abs(dashboardBody.TranslatePoint(default, dashboard)!.Value.X - 12.8) < 1, "Dashboard content must align with the left page gutter");
+                    }
                 }
             }
             window.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;

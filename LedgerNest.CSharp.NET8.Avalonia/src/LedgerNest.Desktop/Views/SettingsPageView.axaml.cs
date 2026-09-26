@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using Avalonia.Controls;
+using Avalonia.LogicalTree;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -39,6 +40,7 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
     private readonly Action<string> selectedChanged;
     private string selectedTab;
     private Control currentContent;
+    public Control? CurrentHeader { get; private set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<SettingsTabModel> Tabs { get; }
@@ -54,7 +56,9 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
             selectedTab = value;
             foreach (var tab in Tabs) tab.IsSelected = tab.Label == value;
             selectedChanged(value);
-            CurrentContent = contentFactory(value);
+            var content = contentFactory(value);
+            ExtractHeader(content);
+            CurrentContent = content;
             OnPropertyChanged();
         }
     }
@@ -79,10 +83,28 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
         this.selectedTab = selectedTab;
         foreach (var tab in Tabs) tab.IsSelected = tab.Label == selectedTab;
         currentContent = contentFactory(selectedTab);
+        ExtractHeader(currentContent);
         SelectTabCommand = new RelayCommand<string>(tab =>
         {
             if (!string.IsNullOrWhiteSpace(tab)) SelectedTab = tab;
         });
+    }
+
+    // Keep each page's existing header actions while hosting its header above navigation.
+    private void ExtractHeader(Control content)
+    {
+        var header = content.GetLogicalDescendants().OfType<PageHeaderView>().FirstOrDefault();
+        if (header != null)
+        {
+            switch (header.GetLogicalParent())
+            {
+                case Panel panel: panel.Children.Remove(header); break;
+                case ContentControl host: host.Content = null; break;
+                case Decorator decorator: decorator.Child = null; break;
+            }
+        }
+        CurrentHeader = header;
+        OnPropertyChanged(nameof(CurrentHeader));
     }
 
     // Performs the property changed notification action for this screen or workflow.
