@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Application;
 using LedgerNest.Domain;
 using LedgerNest.Infrastructure;
+using LedgerNest.Desktop.Updates;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.Sqlite;
 
@@ -23,6 +24,11 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] private string status = "";
     [ObservableProperty] private string themeMode = "Light";
     [ObservableProperty] private string language = "English";
+    [ObservableProperty] private string updateManifestUrl = "";
+    [ObservableProperty] private string updateStatus = "Update checks are not configured.";
+    [ObservableProperty] private string latestUpdateVersion = "";
+    [ObservableProperty] private string latestUpdateNotes = "";
+    [ObservableProperty] private string latestUpdateDownloadUrl = "";
     public HashSet<Guid> DeletedRecords { get; } = [];
     public ObservableCollection<UiRecord> Customers { get; } = [];
     public ObservableCollection<UiRecord> Products { get; } = [];
@@ -33,6 +39,8 @@ public partial class MainWindowViewModel : ObservableObject
     public string PendingInvoiceCustomerFilter { get; private set; } = "";
     public string PendingReportCustomerFilter { get; private set; } = "";
     public ObservableCollection<InvoiceLineViewModel> Lines { get; } = [];
+    public ObservableCollection<AppNotification> Notifications { get; } = [];
+    public int UnreadNotificationCount => Notifications.Count(notification => !notification.IsRead);
     public Dictionary<string, FormSection[]> Settings { get; } = FormCatalog.Settings();
     public ObservableCollection<FormField[]> UpiAccounts { get; } = [];
     public ObservableCollection<FormField[]> BankAccounts { get; } = [];
@@ -97,6 +105,54 @@ public partial class MainWindowViewModel : ObservableObject
     {
         QueueCustomerReportFilter(customerName);
         NavigateCommand.Execute("Reports");
+    }
+
+    // Persists the publisher-controlled endpoint used for update checks.
+    public bool SaveUpdateManifestUrl(string? value)
+    {
+        var url = value?.Trim() ?? "";
+        if (url.Length > 0 && (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps))
+        {
+            Status = "The update manifest URL must use HTTPS.";
+            return false;
+        }
+
+        UpdateManifestUrl = url;
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            SetSetting(db, "updates.manifest_url", url);
+            db.SaveChanges();
+        }
+        Status = url.Length == 0 ? "Update checks disabled." : "Update channel saved.";
+        return true;
+    }
+
+    // Applies an update result to the persistent view-model state and notification center.
+    public void ApplyUpdateCheck(UpdateCheckResult result)
+    {
+        UpdateStatus = result.Message;
+        LatestUpdateVersion = result.Manifest?.Version ?? "";
+        LatestUpdateNotes = result.Manifest?.ReleaseNotes ?? "";
+        LatestUpdateDownloadUrl = result.Manifest?.DownloadUrl ?? "";
+        if (result.IsUpdateAvailable && result.Manifest != null)
+            PublishNotification("Update available", $"Version {result.Manifest.Version} is ready to download.", NotificationType.Update);
+    }
+
+    // Adds an in-app notification and updates the unread badge count.
+    public void PublishNotification(string title, string message, NotificationType type = NotificationType.Information)
+    {
+        if (string.IsNullOrWhiteSpace(message)) return;
+        Notifications.Insert(0, new AppNotification(title, message.Trim(), type, DateTimeOffset.Now));
+        OnPropertyChanged(nameof(UnreadNotificationCount));
+    }
+
+    // Marks all in-app notifications as read.
+    public void MarkNotificationsRead()
+    {
+        foreach (var notification in Notifications) notification.IsRead = true;
+        OnPropertyChanged(nameof(UnreadNotificationCount));
     }
 
     // Performs the pending invoice customer filter consumption action for invoice management.

@@ -8,15 +8,23 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <LedgerNestLicensePublicKeyFile Condition="'$(LedgerNestLicensePublicKeyFile)' == ''">$(MSBuildProjectDirectory)/Licensing/public-key.pem</LedgerNestLicensePublicKeyFile>
+    <ApplicationIcon>logo.ico</ApplicationIcon>
+    <PackageIcon>SHYM 1.jpg</PackageIcon>
+    <PackAsTool>True</PackAsTool>
   </PropertyGroup>
   <ItemGroup>
     <!-- Keep the application entry XAML explicitly compiled into every build and publish configuration. -->
     <AvaloniaXaml Remove="App.axaml" />
     <AvaloniaXaml Include="App.axaml" />
     <AvaloniaResource Include="Assets/**" />
+    <Content Include="logo.ico" />
     <EmbeddedResource Include="Assets/Roboto-Regular.ttf" LogicalName="LedgerNest.Pdf.Regular" />
     <EmbeddedResource Include="Assets/Roboto-Bold.ttf" LogicalName="LedgerNest.Pdf.Bold" />
     <EmbeddedResource Include="$(LedgerNestLicensePublicKeyFile)" LogicalName="LedgerNest.Licensing.PublicKey" Condition="Exists('$(LedgerNestLicensePublicKeyFile)')" />
+    <None Include="..\..\..\..\..\..\Downloads\ERP-23-09-2026\ERP\Images\SHYM 1.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <PackageReference Include="Docnet.Core" Version="2.6.0" />
     <PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.12" />

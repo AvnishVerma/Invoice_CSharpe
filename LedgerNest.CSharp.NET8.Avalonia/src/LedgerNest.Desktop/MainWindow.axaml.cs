@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Desktop.Views;
 using LedgerNest.Desktop.Printing;
 using LedgerNest.Desktop.Notifications;
+using LedgerNest.Desktop.Updates;
 
 namespace LedgerNest.Desktop;
 
@@ -16,19 +17,26 @@ public partial class MainWindow : Window
     private readonly IPrintService printService;
     private readonly IPdfGenerator pdfGenerator;
     private readonly IToastService toastService;
+    private readonly IAppUpdateService updateService;
     private MainWindowViewModel Model => (MainWindowViewModel)DataContext!;
     private bool invoiceCompletionVisible;
     private readonly Avalonia.Threading.DispatcherTimer licenseTimer = new() { Interval = TimeSpan.FromMinutes(1) };
-    public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator(), new AvaloniaToastService())
+    public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator(), new AvaloniaToastService(), new HttpAppUpdateService())
     {
     }
 
     // Creates the main window with application-scoped PDF generation and native printing services.
     public MainWindow(IPrintService printService, IPdfGenerator pdfGenerator, IToastService toastService)
+        : this(printService, pdfGenerator, toastService, new HttpAppUpdateService())
+    {
+    }
+
+    internal MainWindow(IPrintService printService, IPdfGenerator pdfGenerator, IToastService toastService, IAppUpdateService updateService)
     {
         this.printService = printService;
         this.pdfGenerator = pdfGenerator;
         this.toastService = toastService;
+        this.updateService = updateService;
         InitializeComponent();
         InitializeToasts();
         Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
@@ -40,7 +48,11 @@ public partial class MainWindow : Window
         };
         Activated += (_, _) => { if (DataContext is MainWindowViewModel vm) { vm.ValidateSession(); vm.RefreshLicense(); } };
         licenseTimer.Tick += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.RefreshLicense(); };
-        Opened += (_, _) => licenseTimer.Start();
+        Opened += async (_, _) =>
+        {
+            licenseTimer.Start();
+            await CheckForUpdatesAsync(silent: true);
+        };
         Closed += (_, _) =>
         {
             if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
@@ -120,6 +132,19 @@ public partial class MainWindow : Window
             .FirstOrDefault(t => t.PlaceholderText == "Search & add a product or service (Ctrl+F)");
         search?.Focus();
         search?.SelectAll();
+    }
+
+    // Checks the configured publisher endpoint and announces a newly available release.
+    private async Task CheckForUpdatesAsync(bool silent = false)
+    {
+        var result = await updateService.CheckAsync(Model.UpdateManifestUrl);
+        Model.ApplyUpdateCheck(result);
+        if (result.IsUpdateAvailable)
+            toastService.Show("Update available", result.Message, ToastType.Info, isPersistent: true);
+        else if (!silent)
+            toastService.Show(result.State == UpdateCheckState.Failed ? "Update check failed" : "Updates", result.Message,
+                result.State == UpdateCheckState.Failed ? ToastType.Warning : ToastType.Success);
+        if (Model.Title == "Settings") ShowPage();
     }
 
 }

@@ -6,6 +6,7 @@ using LedgerNest.Desktop.Views;
 using Avalonia.Platform.Storage;
 using System.Text;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using LedgerNest.Infrastructure;
 
 namespace LedgerNest.Desktop;
@@ -359,8 +360,50 @@ public partial class MainWindow
         foreach (var (title, description) in new[] { ("Custom PDF Template", "An invoice design tailored to your business and branding."), ("Custom Fields", "Capture the additional details your business needs."), ("White Label", "Your brand, logo and identity throughout the application."), ("Industry Build", "A tailored workflow for your industry.") }) cards.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.LocalText(title, 20, true), Ui.Text(description, 14, color: Ui.Muted), Ui.Button("Request Customization")), 24));
         cards.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar("Customize"), Ui.Scroll(cards, 28));
     }
-    // Performs the software info action for this screen or workflow.
-    private Control SoftwareInfo() => Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(Ui.Stack(19.2, Ui.Logo(), Ui.Card(Ui.Stack(14.4, Ui.LocalText("App Details", 18, true), Ui.Text($"App Name       {Branding.Name}"), Ui.LocalText("Platform          Desktop"), Ui.LocalText("License           See legacy LICENSE"))), Ui.Card(Ui.Stack(14.4, Ui.LocalText("Developer", 18, true), Ui.Text(Branding.Tagline), Ui.Button("Check for Updates"))), Ui.Button("Change Password", ShowChangePassword), Ui.Button("First-time Setup", ShowOnboarding)), 28));
+    // Shows application identity, release-channel configuration, and in-app notifications.
+    private Control SoftwareInfo()
+    {
+        var manifestUrl = new TextBox { Text = Model.UpdateManifestUrl, PlaceholderText = "HTTPS update manifest URL" };
+        var updateDetails = Ui.Stack(8,
+            Ui.LocalText("Update status", 12, true, Ui.Muted),
+            Ui.Text(Model.UpdateStatus),
+            string.IsNullOrWhiteSpace(Model.LatestUpdateVersion) ? Ui.Text("No release information has been received yet.", 12, color: Ui.Muted) : Ui.LocalText($"Available version: {Model.LatestUpdateVersion}", 14, true, Ui.Primary));
+        if (!string.IsNullOrWhiteSpace(Model.LatestUpdateNotes)) updateDetails.Children.Add(Ui.Text(Model.LatestUpdateNotes, 12, color: Ui.Muted));
+        if (!string.IsNullOrWhiteSpace(Model.LatestUpdateDownloadUrl)) updateDetails.Children.Add(Ui.Button("Download update", OpenUpdateDownload, true));
+
+        var notifications = Ui.Stack(8, Ui.Columns("*,Auto", Ui.LocalText("Notifications", 18, true), Ui.Button($"Mark read ({Model.UnreadNotificationCount})", () => { Model.MarkNotificationsRead(); ShowPage(); })));
+        if (Model.Notifications.Count == 0) notifications.Children.Add(Ui.Text("No application notifications.", 12, color: Ui.Muted));
+        foreach (var notification in Model.Notifications.Take(5))
+            notifications.Children.Add(Ui.Card(Ui.Stack(3, Ui.LocalText(notification.Title, 14, true, notification.IsRead ? Ui.Muted : Ui.Primary), Ui.Text(notification.Message, 12), Ui.Text(notification.CreatedAt.ToLocalTime().ToString("g"), 11, color: Ui.Muted)), 10));
+
+        var body = Ui.Stack(16,
+            Ui.Logo(),
+            Ui.Card(Ui.Stack(8, Ui.LocalText("App Details", 18, true), Ui.Text($"App name: {Branding.Name}"), Ui.Text($"Version: {Updates.AppVersion.Current}"), Ui.Text("Platform: Desktop"), Ui.Text("License: See legacy LICENSE", 12, color: Ui.Muted))),
+            Ui.Card(Ui.Stack(10, Ui.LocalText("Application Updates", 18, true), Ui.Text("Configure the publisher HTTPS manifest used to announce new versions.", 12, color: Ui.Muted), manifestUrl, Ui.Wrap(Ui.Button("Save update channel", () => { if (Model.SaveUpdateManifestUrl(manifestUrl.Text)) ShowPage(); }), Ui.Button("Check for updates", async () => await CheckForUpdatesAsync())))),
+            Ui.Card(updateDetails),
+            Ui.Card(notifications),
+            Ui.Button("Change Password", ShowChangePassword),
+            Ui.Button("First-time Setup", ShowOnboarding));
+        return Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(body, 28));
+    }
+
+    // Opens the publisher's verified HTTPS release page after an explicit user action.
+    private void OpenUpdateDownload()
+    {
+        if (!Uri.TryCreate(Model.LatestUpdateDownloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+        {
+            toastService.Show("Update download unavailable", "The release download link is invalid.", Notifications.ToastType.Warning);
+            return;
+        }
+        try
+        {
+            Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+        }
+        catch (Exception)
+        {
+            toastService.Show("Update download unavailable", "Windows could not open the release download page.", Notifications.ToastType.Error);
+        }
+    }
 }
 
 // Describes a backup shown in the current Backup Management history.
