@@ -9,6 +9,10 @@
       {
         "Path": "tools\\LedgerNest.LicenseManager\\LedgerNest.LicenseManager.csproj",
         "Action": "Start"
+      },
+      {
+        "Path": "src\\LedgerNest.UpdateServer\\LedgerNest.UpdateServer.csproj",
+        "Action": "Start"
       }
     ]
   }
