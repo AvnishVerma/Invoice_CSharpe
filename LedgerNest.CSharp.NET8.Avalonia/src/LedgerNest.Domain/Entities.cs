@@ -157,3 +157,9 @@ public sealed record InvoiceCustomerSnapshot(
     string Name, string BusinessName, string Phone, string Email, string GstNumber, string Address);
 
 public sealed record InvoiceAdditionalCost(string Description, decimal Amount);
+
+public sealed class DocumentSequence
+{
+    public string Type { get; set; } = "Invoice";
+    public long NextValue { get; set; } = 1;
+}

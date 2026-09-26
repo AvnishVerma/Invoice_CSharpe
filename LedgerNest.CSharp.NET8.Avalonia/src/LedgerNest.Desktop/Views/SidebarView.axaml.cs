@@ -51,7 +51,7 @@ public sealed partial class SidebarView : UserControl
         logoutButton.Padding = new Thickness(4);
         logoutButton.MinHeight = 30;
         FooterHost.Content = expanded
-            ? Ui.Stack(8, Ui.Columns("30,10,*,Auto", avatar, new Border(), Ui.Stack(2, Ui.Text(model.CurrentUsername ?? "Not signed in", 13), Ui.Text(model.CurrentRole, 11, color: Ui.Muted)), logoutButton), new TextBlock { Text = "v"+ AppVersion.Current, FontSize = 12, Foreground = Ui.Outline, HorizontalAlignment = HorizontalAlignment.Center })
+            ? Ui.Stack(8, Ui.Columns("30,10,*,Auto", avatar, new Border(), Ui.Stack(2, Ui.Text(model.CurrentUsername ?? "Not signed in", 13), Ui.Text(model.CurrentRole, 11, color: Ui.Muted)), logoutButton), new TextBlock { Text = "v"+ AppVersion.Display, FontSize = 12, Foreground = Ui.Outline, HorizontalAlignment = HorizontalAlignment.Center })
             : Ui.Stack(8, avatar, logoutButton);
     }
 }

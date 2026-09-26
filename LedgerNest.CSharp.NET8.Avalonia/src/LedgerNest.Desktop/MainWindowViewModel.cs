@@ -40,6 +40,7 @@ public partial class MainWindowViewModel : ObservableObject
     public string PendingReportCustomerFilter { get; private set; } = "";
     public ObservableCollection<InvoiceLineViewModel> Lines { get; } = [];
     public ObservableCollection<AppNotification> Notifications { get; } = [];
+    private readonly HashSet<string> receivedGlobalNotificationIds = [];
     public int UnreadNotificationCount => Notifications.Count(notification => !notification.IsRead);
     public Dictionary<string, FormSection[]> Settings { get; } = FormCatalog.Settings();
     public ObservableCollection<FormField[]> UpiAccounts { get; } = [];
@@ -138,6 +139,12 @@ public partial class MainWindowViewModel : ObservableObject
         LatestUpdateDownloadUrl = result.Manifest?.DownloadUrl ?? "";
         if (result.IsUpdateAvailable && result.Manifest != null)
             PublishNotification("Update available", $"Version {result.Manifest.Version} is ready to download.", NotificationType.Update);
+
+        foreach (var notification in result.Manifest?.Notifications ?? [])
+        {
+            if (string.IsNullOrWhiteSpace(notification.Id) || notification.ExpiresAt < DateTimeOffset.UtcNow || !receivedGlobalNotificationIds.Add(notification.Id)) continue;
+            PublishNotification(notification.Title, notification.Message, notification.Type);
+        }
     }
 
     // Adds an in-app notification and updates the unread badge count.

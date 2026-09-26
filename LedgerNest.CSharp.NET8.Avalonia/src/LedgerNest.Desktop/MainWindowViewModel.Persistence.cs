@@ -300,7 +300,6 @@ public partial class MainWindowViewModel
         if (dbFactory == null) return 0;
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
-        using var transaction = db.Database.BeginTransaction();
         Invoice? existing = null;
         if (editingDocument != null)
         {
@@ -312,7 +311,8 @@ public partial class MainWindowViewModel
             if (values["Type"] != existing.Type)
             { Status = "Changing document type during editing is not supported."; return -1; }
         }
-        values["Name"] = existing?.InvoiceNumber ?? NextDocumentNumber(db, values["Type"]);
+        values["Name"] = existing?.InvoiceNumber ?? ReserveDocumentNumber(db, values["Type"]);
+        using var transaction = db.Database.BeginTransaction();
         var customerName = InvoiceCustomer[0].Value.Trim();
         var customerId = db.Customers.AsNoTracking().FirstOrDefault(c => c.Name == customerName)?.Id;
         var invoice = new Invoice

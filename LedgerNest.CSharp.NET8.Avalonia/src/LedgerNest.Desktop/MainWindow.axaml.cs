@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private MainWindowViewModel Model => (MainWindowViewModel)DataContext!;
     private bool invoiceCompletionVisible;
     private readonly Avalonia.Threading.DispatcherTimer licenseTimer = new() { Interval = TimeSpan.FromMinutes(1) };
+    private readonly Avalonia.Threading.DispatcherTimer updateTimer = new() { Interval = TimeSpan.FromMinutes(30) };
     public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator(), new AvaloniaToastService(), new HttpAppUpdateService())
     {
     }
@@ -48,6 +49,7 @@ public partial class MainWindow : Window
         };
         Activated += (_, _) => { if (DataContext is MainWindowViewModel vm) { vm.ValidateSession(); vm.RefreshLicense(); } };
         licenseTimer.Tick += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.RefreshLicense(); };
+        updateTimer.Tick += async (_, _) => await CheckForUpdatesAsync(silent: true);
         Opened += async (_, _) =>
         {
             licenseTimer.Start();
