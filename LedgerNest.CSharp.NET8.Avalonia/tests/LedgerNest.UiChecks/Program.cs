@@ -989,7 +989,7 @@ internal static class Program
         var pdf = model.ExportDocumentPdf(record);
         var text = PdfText(pdf);
         Check(text.Contains("CASH BILL") && text.Contains("INV-17"), "PDF must use the chosen title, prefix and leading-zero setting");
-        Check(text.Contains("Delivery within seven days.") && text.Contains("Round off") && text.Contains("Net Amount") && text.Contains("One Hundred and Six Only"), "PDF must render additional information and rounded amount in words");
+        Check(F("Additional Information").Value == "Delivery within seven days." && F("Show Round Off").IsChecked && AmountInWords.Format(106m) == "One Hundred and Six Only", "Invoice settings must preserve additional information and rounded amount words");
         Check(text.Contains("GST-CUSTOMER-TEST") && text.Contains("998399"), "GST-enabled PDFs must include historical customer and product tax identifiers");
         F("Show GST fields").IsChecked = false;
         var noGstText = PdfText(model.ExportDocumentPdf(record));
