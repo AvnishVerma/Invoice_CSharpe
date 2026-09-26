@@ -8,6 +8,9 @@
       <x:Double x:Key="ExpanderChevronButtonSize">24</x:Double>
       <Thickness x:Key="ExpanderHeaderPadding">10,4</Thickness>
       <Thickness x:Key="ExpanderChevronMargin">6,0,0,0</Thickness>
+      <x:Double x:Key="StandardControlHeight">32</x:Double>
+      <x:Double x:Key="CompactActionHeight">28</x:Double>
+      <Thickness x:Key="StandardControlPadding">10,5</Thickness>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="AppCanvasBrush">#FFFFFF</SolidColorBrush>
@@ -48,9 +51,15 @@
     </Style>
     <Style Selector="Button">
       <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="Padding" Value="11,8" />
-      <Setter Property="MinHeight" Value="30.4" />
+      <Setter Property="Padding" Value="{DynamicResource StandardControlPadding}" />
+      <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.compact-action">
+      <Setter Property="MinHeight" Value="{DynamicResource CompactActionHeight}" />
+      <Setter Property="MinWidth" Value="{DynamicResource CompactActionHeight}" />
+      <Setter Property="Padding" Value="6,3" />
     </Style>
     <Style Selector="Expander /template/ ToggleButton">
       <Setter Property="MinHeight" Value="38.4" />
@@ -88,7 +97,7 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}" />
-      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="Padding" Value="8,4" />
     </Style>
     <Style Selector="Button.nav">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -122,12 +131,21 @@
       <Setter Property="CornerRadius" Value="10" />
       <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
+      <Setter Property="Padding" Value="{DynamicResource StandardControlPadding}" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="ComboBox">
       <Setter Property="CornerRadius" Value="10" />
       <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
       <Setter Property="Background" Value="Transparent" />
+      <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
+      <Setter Property="Padding" Value="{DynamicResource StandardControlPadding}" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="MinHeight" Value="{DynamicResource StandardControlHeight}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
   </Application.Styles>
 </Application>

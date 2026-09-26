@@ -122,7 +122,7 @@ table{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:auto
             var amount = invoice.GrandTotal + options.PreviousBalance;
             var rounded = decimal.Round(amount, 0, MidpointRounding.AwayFromZero);
             html.Append(Summary("Round off", Money(rounded - amount))).Append(Summary("Net Amount", Money(rounded), true));
-            html.Append("<div>").Append(E(LedgerNest.Application.AmountInWords.Format(rounded, invoice.Snapshot?.Currency.Contains("INR", StringComparison.Ordinal) != false))).Append("</div>");
+            html.Append("<div>").Append(E(LedgerNest.Application.AmountInWords.Format(rounded, CurrencyDisplay.UsesIndianNumbering(invoice.Snapshot?.Currency)))).Append("</div>");
         }
         html.Append(Summary("Paid", Money(invoice.PaidAmount))).Append(Summary("Balance due", Money(Math.Max(0, invoice.GrandTotal - invoice.PaidAmount)), true)).Append("</section>");
         if (options.PreviousBalance > 0) html.Append(Summary("Total due", Money(Math.Max(0, invoice.GrandTotal - invoice.PaidAmount) + options.PreviousBalance), true));

@@ -185,7 +185,7 @@ public partial class MainWindow
             bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited;
         var name = Ui.Text(product.Name, 13, false, hasStock ? Ui.TextColor : Brush.Parse("#D32F2F"));
         name.TextWrapping = TextWrapping.NoWrap;
-        var price = decimal.TryParse(product["Sale Price"], out var amount) ? CurrencyDisplay.Format(amount, "0.00") : CurrencyDisplay.Format(0);
+        var price = decimal.TryParse(product["Sale Price"], out var amount) ? CurrencyDisplay.Format(amount, currency: Model.EditorCurrency) : CurrencyDisplay.Format(0, currency: Model.EditorCurrency);
         var stockText = bool.TryParse(product["Unlimited stock"], out unlimited) && unlimited ? "∞" : product["Stock"].Length == 0 ? "0" : product["Stock"];
         var hsn = product["HSN/SAC"].Length == 0 ? "—" : product["HSN/SAC"];
         var metadata = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };

@@ -422,7 +422,7 @@ internal static class DocumentPdf
             var rounded = decimal.Round(amount, 0, MidpointRounding.AwayFromZero);
             Total("Round off", rounded - amount);
             Total("Net Amount", rounded, true);
-            Paragraph(LedgerNest.Application.AmountInWords.Format(rounded, invoice.Snapshot?.Currency.Contains("INR", StringComparison.Ordinal) != false));
+            Paragraph(LedgerNest.Application.AmountInWords.Format(rounded, CurrencyDisplay.UsesIndianNumbering(invoice.Snapshot?.Currency)));
         }
         Total("Paid", invoice.PaidAmount);
         Total("Balance due", invoice.GrandTotal - invoice.PaidAmount, true);

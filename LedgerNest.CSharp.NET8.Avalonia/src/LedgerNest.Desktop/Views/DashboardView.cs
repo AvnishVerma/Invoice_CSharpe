@@ -17,7 +17,7 @@ public partial class MainWindow
         var tiles = new[]
         {
             Tile("Revenue Collected", ShortMoney(paid), "account_balance_wallet", "#8A2BE2"),
-            Tile("Outstanding", CurrencyDisplay.Symbol() + " " + outstanding.ToString("0.00"), "hourglass_top", "#D32F2F"),
+            Tile("Outstanding", CurrencyDisplay.Format(outstanding), "hourglass_top", "#D32F2F"),
             Tile("Total Invoices", invoices.Length.ToString(), "receipt_long", "#F97316"),
             Tile("Customers", Model.Customers.Count.ToString(), "people", "#1976D2"),
             Tile("Products", Model.Products.Count.ToString(), "inventory_2", "#2E7D32")
@@ -65,7 +65,7 @@ public partial class MainWindow
         var outOfStock = Model.Products.FirstOrDefault(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
         var outOfStockCount = Model.Products.Count(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
 
-        return new DashboardPageView(new DashboardPageModel(tiles, recent, quickActions, topCustomers, topProducts, ShortMoney(paid), CurrencyDisplay.Symbol() + " " + outstanding.ToString("0.00"), outOfStockCount.ToString(), outOfStock?.Name ?? "No product", () => page.Content = Dashboard(), dashboardLayout, selected => dashboardLayout = selected));
+        return new DashboardPageView(new DashboardPageModel(tiles, recent, quickActions, topCustomers, topProducts, ShortMoney(paid), CurrencyDisplay.Format(outstanding), outOfStockCount.ToString(), outOfStock?.Name ?? "No product", () => page.Content = Dashboard(), dashboardLayout, selected => dashboardLayout = selected));
     }
 
     // Performs the quick action creation action for dashboard shortcut cards.
@@ -83,7 +83,7 @@ public partial class MainWindow
     }
 
     // Performs the compact money formatting action for dashboard values.
-    private static string ShortMoney(decimal value) => value >= 1000m ? CurrencyDisplay.Symbol() + " " + (value / 1000m).ToString("0.#") + "K" : CurrencyDisplay.Symbol() + " " + value.ToString("0.00");
+    private static string ShortMoney(decimal value) => value >= 1000m ? $"{CurrencyDisplay.Symbol()} {(value / 1000m):0.#}K" : CurrencyDisplay.Format(value);
 
     // Performs the product unit summary action for dashboard values.
     private static string ProductUnits(UiRecord product) => HasUnlimitedStock(product) ? "∞ units" : (decimal.TryParse(product["Stock"], out var stock) ? stock.ToString("0.###") : "0") + " units";

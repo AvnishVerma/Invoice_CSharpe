@@ -209,10 +209,24 @@ internal static class Ui
                 var caption = Stack(3, LocalText(labelText), LocalText(field.Help, 12, color: Muted)); if (field.Help.Length == 0) caption.Children[1].IsVisible = false;
                 return Columns("*,12,Auto", caption, new Border(), toggle);
             case "choice":
-                var combo = new ComboBox { ItemsSource = field.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 44 };
+                var combo = new ComboBox
+                {
+                    ItemsSource = field.Options,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    MinHeight = compact ? 32 : 40,
+                    Padding = new Thickness(10, compact ? 5 : 7),
+                    VerticalContentAlignment = VerticalAlignment.Center
+                };
                 combo.Bind(SelectingItemsControl.SelectedItemProperty, binding); input = combo; break;
             case "date":
-                var dateText = new TextBox { IsReadOnly = true, PlaceholderText = labelText, MinHeight = 48, Padding = new Thickness(12, 12, 44, 12) };
+                var dateText = new TextBox
+                {
+                    IsReadOnly = true,
+                    PlaceholderText = labelText,
+                    MinHeight = compact ? 32 : 40,
+                    Padding = new Thickness(10, compact ? 5 : 7, 36, compact ? 5 : 7),
+                    VerticalContentAlignment = VerticalAlignment.Center
+                };
                 dateText.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = field, Converter = new Avalonia.Data.Converters.FuncValueConverter<string, string>(value => DateTime.TryParse(value, out var parsed) ? parsed.ToString("dd/MM/yyyy") : "") });
                 var calendar = new Calendar { SelectedDate = DateTime.TryParse(field.Value, out var d) ? d : null, DisplayDate = DateTime.TryParse(field.Value, out var initial) ? initial : DateTime.Today };
                 var flyout = new Flyout { Content = calendar };
@@ -248,14 +262,26 @@ internal static class Ui
                 };
                 input = Wrap(browse, selected, Button("Remove", () => { field.Value = ""; selected.Text = "No image selected"; })); break;
             default:
-                var box = new TextBox { PlaceholderText = labelText, MinHeight = 48, MaxLength = field.MaxLength, AcceptsReturn = field.Kind == "multiline" && !singleLine, TextWrapping = TextWrapping.Wrap, PasswordChar = field.Kind == "password" ? '●' : '\0' };
-                if (field.Kind == "multiline" && !singleLine) box.MinHeight = 104;
+                var box = new TextBox
+                {
+                    PlaceholderText = labelText,
+                    MinHeight = compact ? 32 : 40,
+                    MaxLength = field.MaxLength,
+                    AcceptsReturn = field.Kind == "multiline" && !singleLine,
+                    TextWrapping = TextWrapping.Wrap,
+                    PasswordChar = field.Kind == "password" ? '●' : '\0',
+                    Padding = new Thickness(10, compact ? 5 : 7),
+                    VerticalContentAlignment = VerticalAlignment.Center
+                };
+                if (field.Kind == "multiline" && !singleLine) box.MinHeight = compact ? 84 : 104;
                 box.Bind(TextBox.TextProperty, binding);
                 if (withIcon)
                 {
-                    box.MinHeight = field.Kind == "multiline" ? 104 : 56; box.Padding = new Thickness(50, 14, 12, 14); box.FontSize = 16;
+                    box.MinHeight = field.Kind == "multiline" ? (compact ? 84 : 104) : (compact ? 36 : 44);
+                    box.Padding = new Thickness(compact ? 38 : 44, compact ? 5 : 7, 10, compact ? 5 : 7);
+                    box.FontSize = compact ? 14 : 16;
                     var container = new Grid(); container.Children.Add(box);
-                    var icon = Icon(field.Icon, 24); icon.HorizontalAlignment = HorizontalAlignment.Left; icon.Margin = new Thickness(14, 0, 0, 0); icon.IsHitTestVisible = false; container.Children.Add(icon); input = container;
+                    var icon = Icon(field.Icon, compact ? 18 : 20); icon.HorizontalAlignment = HorizontalAlignment.Left; icon.Margin = new Thickness(compact ? 10 : 12, 0, 0, 0); icon.IsHitTestVisible = false; container.Children.Add(icon); input = container;
                 }
                 else input = box;
                 break;
@@ -266,14 +292,14 @@ internal static class Ui
             {
                 if (control is TextBox text)
                 {
-                    text.MinHeight *= .8;
-                    var p = text.Padding == default ? new Thickness(10, 8) : text.Padding;
-                    text.Padding = new Thickness(p.Left, p.Top * .65, p.Right, p.Bottom * .65);
+                    text.MinHeight = Math.Min(text.MinHeight, text.AcceptsReturn ? 84 : 36);
+                    var p = text.Padding == default ? new Thickness(10, 5) : text.Padding;
+                    text.Padding = new Thickness(p.Left, Math.Min(p.Top, 5), p.Right, Math.Min(p.Bottom, 5));
                     text.VerticalContentAlignment = VerticalAlignment.Center;
                 }
                 else if (control is ComboBox choice)
                 {
-                    choice.MinHeight *= .8;
+                    choice.MinHeight = Math.Min(choice.MinHeight, 32);
                     choice.Padding = new Thickness(10, 5);
                 }
                 if (control is Panel panel)

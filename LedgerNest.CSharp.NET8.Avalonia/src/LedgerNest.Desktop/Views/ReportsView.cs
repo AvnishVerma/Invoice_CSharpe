@@ -269,7 +269,7 @@ public partial class MainWindow
         var legend = Ui.Wrap(Legend("#3B82F6", "Billed"), Legend("#22C55E", "Collected"), Legend("#7C3AED", "Profit"));
         legend.HorizontalAlignment = HorizontalAlignment.Center;
         var card = Ui.Card(Ui.Stack(8,
-            Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("Monthly Revenue Trend", 16, true), Ui.Text($"{report.InvoiceCount} invoices in period · INR", 12, color: Ui.Muted)),
+            Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("Monthly Revenue Trend", 16, true), Ui.Text($"{report.InvoiceCount} invoices in period · {CurrencyDisplay.Code()}", 12, color: Ui.Muted)),
                 Ui.Wrap(Ui.Button("↓  Export CSV", async () => await ExportReportCsv("Revenue")), Ui.Button("↓  Export PDF", async () => await ExportReportPdf("Revenue")))),
             chartContent,
             legend), 20);
