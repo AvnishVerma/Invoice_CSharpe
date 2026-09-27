@@ -1757,7 +1757,7 @@ internal static class Program
             Check(invoice["Paid"] == paid && invoice["Outstanding"] == outstanding && invoice["Status"] == status, "Invoice balance fields must match payment state");
             Check(loaded.BuildReport("Revenue").Outstanding == balance, "Revenue summary must reflect outstanding immediately");
             var report = loaded.BuildReport("Receivables");
-            Check(balance > 0 ? report.Rows.Length == 2 && report.Rows[1][3] == $"₹ {balance:0.00}" : report.Rows.Length == 1, "Receivables must include only unpaid balances");
+            Check(balance > 0 ? report.Rows.Length == 2 && report.Rows[1][3] == CurrencyDisplay.Format(balance) : report.Rows.Length == 1, "Receivables must include only unpaid balances");
             var aging = loaded.BuildReceivablesReport();
             Check(aging.InvoiceCount == 1 && aging.PaidCount == (balance == 0 ? 1 : 0), "Receivables status summary must calculate paid invoices from the remaining balance");
             Check(aging.PartialCount == (paid == "0.00" || balance == 0 ? 0 : 1) && aging.UnpaidCount == (paid == "0.00" && balance > 0 ? 1 : 0), "Receivables status summary must distinguish partial and unpaid invoices");
@@ -1816,13 +1816,13 @@ internal static class Program
             Check(report.Rows.Length == 2 && report.Rows[0][1] == "Tax" && report.Rows[1][1] == amount, "Tax report must sum actual invoice tax rather than infer an 18 percent rate");
             Check(loaded.ExportReportCsv("Tax").Contains(amount), "Tax CSV must use the same actual tax totals");
         }
-        Verify(model, "₹ 48.00");
-        Verify(CreateModel(factory, path), "₹ 48.00");
+        Verify(model, CurrencyDisplay.Format(48m));
+        Verify(CreateModel(factory, path), CurrencyDisplay.Format(48m));
         var backup = model.CreateJsonBackup();
         Check(model.RestoreJsonBackup(backup), "Tax report backup must restore");
-        Verify(model, "₹ 48.00");
+        Verify(model, CurrencyDisplay.Format(48m));
         Check(model.SetDocumentTrash(model.Invoices.Single(i => i.SourceId == mixed.SourceId), true), "Tax test invoice must move to trash");
-        Verify(CreateModel(factory, path), "₹ 25.00");
+        Verify(CreateModel(factory, path), CurrencyDisplay.Format(25m));
     }
 
     private static void CheckRevenueReport()
