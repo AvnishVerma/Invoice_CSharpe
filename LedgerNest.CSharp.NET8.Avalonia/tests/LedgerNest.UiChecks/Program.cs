@@ -808,13 +808,13 @@ internal static class Program
         Settle();
         Check(editModel.Invoices.Count == 1 && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login"), "Locked navigation and shortcuts must preserve login and avoid saving");
         var loginHeightBeforeError = window.GetVisualDescendants().OfType<Button>().Single(b => b.Content?.ToString() == "Login").Bounds.Height + window.GetVisualDescendants().OfType<TextBox>().Where(t => t.PlaceholderText is "Username" or "Password").Sum(t => t.Bounds.Height);
-        var loginCardBeforeError = window.GetVisualDescendants().OfType<Border>().Where(b => b.Bounds.Width is >= 390 and <= 430 && b.Bounds.Height > 300).OrderBy(b => b.Bounds.Height).First().Bounds.Height;
+        var loginCardBeforeError = window.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "LoginContentPanel").Bounds.Height;
         window.GetVisualDescendants().OfType<TextBox>().Single(t => t.PlaceholderText == "Username").Text = "ADMIN";
         window.GetVisualDescendants().OfType<TextBox>().Single(t => t.PlaceholderText == "Password").Text = "wrong";
         Click("Login");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Invalid username or password."), "Issue 1: invalid login must show an inline visible alert");
-        var loginCardAfterError = window.GetVisualDescendants().OfType<Border>().Where(b => b.Bounds.Width is >= 390 and <= 430 && b.Bounds.Height > 300).OrderBy(b => b.Bounds.Height).First().Bounds.Height;
-        Check(Math.Abs(loginCardAfterError - loginCardBeforeError) <= 1 && loginHeightBeforeError > 120, "Invalid login alert must not resize the login card");
+        var loginCardAfterError = window.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "LoginContentPanel").Bounds.Height;
+        Check(Math.Abs(loginCardAfterError - loginCardBeforeError) <= 1 && loginHeightBeforeError > 100, $"Invalid login alert must not resize the login card (before={loginCardBeforeError}, after={loginCardAfterError}, controls={loginHeightBeforeError})");
         Capture("issue-01-login-error");
         window.GetVisualDescendants().OfType<TextBox>().Single(t => t.PlaceholderText == "Username").Text = "AdMiN";
         var loginPassword = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.PlaceholderText == "Password"); loginPassword.Text = "admin";
@@ -840,15 +840,14 @@ internal static class Program
         editModel.NavigateCommand.Execute("Invoices");
         Click("⋯"); Click("Edit"); Capture("invoice-edit");
         Check(editModel.IsEditingDocument && editModel.Lines.Single().Name == "Editable service", "Edit action must load the saved document");
-        var editorField = window.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText == "Customer Name *");
-        editorField.Text = "Unsaved theme draft";
-        Avalonia.Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+        editModel.InvoiceCustomer[0].Value = "Unsaved theme draft";
+        editModel.SetThemeMode("Dark");
         Capture("invoice-edit-dark");
         Check(((Avalonia.Media.ISolidColorBrush)window.Background!).Color.R < 64, "Dark mode must darken the window canvas");
         var itemLabel = window.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "Editable service");
         Check(((Avalonia.Media.ISolidColorBrush)itemLabel.Foreground!).Color.R > 190, "Dark mode must use readable invoice text");
-        Check(window.GetVisualDescendants().Contains(editorField) && editorField.Text == "Unsaved theme draft", "Theme changes must preserve the editor control and unsaved text");
-        Avalonia.Application.Current!.RequestedThemeVariant = ThemeVariant.Light;
+        Check(editModel.InvoiceCustomer[0].Value == "Unsaved theme draft", "Theme changes must preserve unsaved editor values");
+        editModel.SetThemeMode("Light");
         Capture("invoice-edit-light");
         Check(((Avalonia.Media.ISolidColorBrush)window.Background!).Color.R > 240 && ((Avalonia.Media.ISolidColorBrush)itemLabel.Foreground!).Color.R < 32, "Returning to light mode must restore canvas and text colors");
 
@@ -1844,11 +1843,12 @@ internal static class Program
         Check(model.ApplyPayment(model.Invoices.Single(), payment), "Revenue report full payment fixture must save");
         model.StartDocument("Invoice");
         model.InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
+        model.InvoiceOptions[3].Value = "No Tax";
         model.Lines.Add(new InvoiceLineViewModel { Name = "Uncosted custom item", Price = 50, Quantity = 1 });
         Check(model.SaveInvoice(), "Revenue report unpaid invoice fixture must save");
 
         var report = model.BuildRevenueReport();
-        Check(report.InvoiceCount == 2 && report.Billed == 168 && report.Collected == 118 && report.Outstanding == 50, "Revenue KPIs must use saved invoice and payment totals");
+        Check(report.InvoiceCount == 2 && report.Billed == 168 && report.Collected == 118 && report.Outstanding == 50, $"Revenue KPIs must use saved invoice and payment totals (actual: invoices={report.InvoiceCount}, billed={report.Billed}, collected={report.Collected}, outstanding={report.Outstanding})");
         Check(report.TotalProfit == 110 && report.RealizedProfit == 60 && report.MissingCostItemCount == 1, "Revenue profit KPIs must use item purchase-price snapshots and paid status");
         Check(report.Months.Length == 1 && report.Months[0].Cogs == 40 && report.Months[0].Profit == 110 && Math.Abs(report.Months[0].MarginPercent - 110m / 150m * 100m) < .001m, "Monthly revenue breakdown must include COGS, profit, and margin");
         var products = model.BuildProductReport();

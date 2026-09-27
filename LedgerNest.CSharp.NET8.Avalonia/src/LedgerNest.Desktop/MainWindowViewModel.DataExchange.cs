@@ -221,11 +221,13 @@ public partial class MainWindowViewModel
                 db.EnsureCurrentSchema();
             }
 
-            // The destination must be disposed before reading it. On Windows,
-            // SQLite otherwise retains an exclusive handle and the following
-            // File.ReadAllBytes call fails with "being used by another process".
-            using (var source = new SqliteConnection($"Data Source={databasePath}"))
-            using (var destination = new SqliteConnection($"Data Source={backupPath}"))
+            // Disable pooling for this temporary backup file. A pooled SQLite
+            // connection can otherwise retain a Windows file handle after it
+            // has been disposed, preventing the completed backup from being read.
+            var sourceConnection = new SqliteConnectionStringBuilder { DataSource = databasePath, Pooling = false }.ToString();
+            var destinationConnection = new SqliteConnectionStringBuilder { DataSource = backupPath, Pooling = false }.ToString();
+            using (var source = new SqliteConnection(sourceConnection))
+            using (var destination = new SqliteConnection(destinationConnection))
             {
                 source.Open();
                 destination.Open();

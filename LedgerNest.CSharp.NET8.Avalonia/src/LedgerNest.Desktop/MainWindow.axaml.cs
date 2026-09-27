@@ -40,7 +40,6 @@ public partial class MainWindow : Window
         InitializeComponent();
         InitializeToasts();
         Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
-        Background = Ui.Canvas;
         PropertyChanged += (_, e) =>
         {
             if (e.Property == ActualThemeVariantProperty)

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="LedgerNest.Desktop.MainWindow"
         Width="1440" Height="900" MinWidth="640" MinHeight="480"
-        Title="LadgerNest" Background="White">
+        Title="LadgerNest" Background="{DynamicResource AppCanvasBrush}">
   <Grid x:Name="Root">
     <Grid>
       <Grid x:Name="Body" ColumnDefinitions="Auto,*">
