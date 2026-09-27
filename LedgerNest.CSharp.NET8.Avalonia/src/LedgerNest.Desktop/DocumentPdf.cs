@@ -56,7 +56,7 @@ internal static class DocumentPdf
     }
 
     // Performs the create action for this screen or workflow.
-    public static byte[] Create(Invoice invoice, InvoiceItem[] items, Business business, string pageSize, bool landscape, string template = "Classic", string themeColor = "#0F766E", PdfExportOptions? options = null)
+    public static byte[] Create(Invoice invoice, InvoiceItem[] items, Business business, string pageSize, bool landscape, string template = "Classic", string themeColor = "#0B4A9A", PdfExportOptions? options = null)
     {
         options ??= new PdfExportOptions("dd MMM yyyy", "24 hour", false, "Qty", true, false, true, true, true, true, true, true, true, true, true, true, true, true, true);
         template = string.IsNullOrWhiteSpace(template) ? "Classic" : template.Trim();
@@ -97,7 +97,7 @@ internal static class DocumentPdf
         using var pdf = SKDocument.CreatePdf(output);
         SKCanvas canvas = null!;
         var page = 0; float y = 0;
-        var ink = SKColor.Parse("#172B3A"); var muted = SKColor.Parse("#52616B"); var ruleColor = SKColor.Parse("#DDE5E7"); var soft = SKColor.Parse("#F7F2FA"); var accent = ParseColor(themeColor, "#0F766E");
+        var ink = SKColor.Parse("#172B3A"); var muted = SKColor.Parse("#52616B"); var ruleColor = SKColor.Parse("#DDE5E7"); var soft = SKColor.Parse("#F7F2FA"); var accent = ParseColor(themeColor, "#0B4A9A");
         // Performs the parse color action for this screen or workflow.
         static SKColor ParseColor(string value, string fallback)
         {

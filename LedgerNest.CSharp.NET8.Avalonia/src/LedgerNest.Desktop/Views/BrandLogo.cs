@@ -29,7 +29,7 @@ public sealed class BrandLogo : StackPanel
         Children.Add(mark);
         if (!compact)
         {
-            Children.Add(Ui.Text(Branding.Name, 18, true, Ui.Palette(Branding.InkColor, "#E7F7F3")));
+            Children.Add(Ui.Text(Branding.Name, 18, true, Ui.Palette(Branding.InkColor, "#DBEAFE")));
         }
         Avalonia.Automation.AutomationProperties.SetName(this, Branding.Name);
     }

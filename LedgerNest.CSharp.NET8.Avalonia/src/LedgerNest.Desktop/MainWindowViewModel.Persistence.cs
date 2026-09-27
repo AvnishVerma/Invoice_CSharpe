@@ -312,7 +312,6 @@ public partial class MainWindowViewModel
             { Status = "Changing document type during editing is not supported."; return -1; }
         }
         values["Name"] = existing?.InvoiceNumber ?? ReserveDocumentNumber(db, values["Type"]);
-        using var transaction = db.Database.BeginTransaction();
         var customerName = InvoiceCustomer[0].Value.Trim();
         var customerId = db.Customers.AsNoTracking().FirstOrDefault(c => c.Name == customerName)?.Id;
         var invoice = new Invoice
@@ -366,7 +365,6 @@ public partial class MainWindowViewModel
         }
         db.SaveChanges();
         if (editingDocument != null) editingFingerprint = Fingerprint(db.Invoices.AsNoTracking().Include(i => i.Items).Single(i => i.Id == invoice.Id));
-        transaction.Commit();
         return invoice.Id;
     }
 

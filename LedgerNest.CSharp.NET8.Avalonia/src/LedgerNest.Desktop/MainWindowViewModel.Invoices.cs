@@ -46,38 +46,41 @@ public partial class MainWindowViewModel
     private string ReserveDocumentNumber(LedgerNestDbContext db, string type)
     {
         ValidateDocumentType(type);
-        for (var attempt = 0; attempt < 4; attempt++)
+        // NextValue is configured as an optimistic-concurrency token. This avoids
+        // user-created transactions, which SQL Server retrying strategies reject,
+        // while SaveChanges still reserves one number atomically across clients.
+        return db.Database.CreateExecutionStrategy().Execute(() =>
         {
-            using var transaction = db.Database.BeginTransaction(System.Data.IsolationLevel.Serializable);
-            try
+            for (var attempt = 0; attempt < 4; attempt++)
             {
-                var sequence = db.DocumentSequences.SingleOrDefault(item => item.Type == type);
-                if (sequence == null)
+                try
                 {
-                    var start = type == "Invoice" ? InvoiceStartingNumber() : 1;
-                    var next = NextDocumentNumber(db, type);
-                    var digits = new string(next.Where(char.IsAsciiDigit).ToArray());
-                    sequence = new DocumentSequence
+                    var sequence = db.DocumentSequences.SingleOrDefault(item => item.Type == type);
+                    if (sequence == null)
                     {
-                        Type = type,
-                        NextValue = long.TryParse(digits, out var value) ? Math.Max(value, start) : start
-                    };
-                    db.DocumentSequences.Add(sequence);
+                        var start = type == "Invoice" ? InvoiceStartingNumber() : 1;
+                        var next = NextDocumentNumber(db, type);
+                        var digits = new string(next.Where(char.IsAsciiDigit).ToArray());
+                        sequence = new DocumentSequence
+                        {
+                            Type = type,
+                            NextValue = long.TryParse(digits, out var value) ? Math.Max(value, start) : start
+                        };
+                        db.DocumentSequences.Add(sequence);
+                    }
+
+                    var reserved = checked(sequence.NextValue++).ToString("D8", CultureInfo.InvariantCulture);
+                    db.SaveChanges();
+                    return reserved;
                 }
-
-                var reserved = checked(sequence.NextValue++).ToString("D8", CultureInfo.InvariantCulture);
-                db.SaveChanges();
-                transaction.Commit();
-                return reserved;
+                catch (DbUpdateException) when (attempt < 3)
+                {
+                    db.ChangeTracker.Clear();
+                }
             }
-            catch (DbUpdateException) when (attempt < 3)
-            {
-                transaction.Rollback();
-                db.ChangeTracker.Clear();
-            }
-        }
 
-        throw new InvalidOperationException("Another client is allocating document numbers. Please try again.");
+            throw new InvalidOperationException("Another client is allocating document numbers. Please try again.");
+        });
     }
     private string NextDocumentNumber(LedgerNestDbContext db, string type)
     {

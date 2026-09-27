@@ -44,7 +44,7 @@ internal sealed partial class ManagementView : UserControl
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
         if (kind == "Product")
         {
-            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("New: Customize product fields", 13, true, Ui.Primary), Ui.LocalText("Choose which fields show for a simpler catalog. Settings > Customize Product Details.", 12, color: Ui.Primary)), Ui.Button("Configure", () => window.OpenProductDetailsSettings())), 16);
+            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("Product fields", 13, true, Ui.Primary), Ui.LocalText("Choose the details shown in your product catalog from Settings > Product Details.", 12, color: Ui.Primary)), Ui.Button("Open Product Details", () => window.OpenProductDetailsSettings())), 16);
             banner.Background = Ui.Palette("#EFF6FF", "#202B36");
             ProductBannerHost.Content = banner;
         }

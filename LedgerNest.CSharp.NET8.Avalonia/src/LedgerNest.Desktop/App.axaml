@@ -97,6 +97,16 @@
       <Setter Property="Background" Value="#1555A6" />
       <Setter Property="Foreground" Value="White" />
     </Style>
+    <Style Selector="Button.header-action">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="BorderBrush" Value="#AFFFFFFF" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.header-action:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#26FFFFFF" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
     <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="#062C66" />
       <Setter Property="Foreground" Value="White" />

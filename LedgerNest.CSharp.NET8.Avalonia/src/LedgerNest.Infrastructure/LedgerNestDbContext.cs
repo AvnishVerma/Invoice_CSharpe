@@ -108,6 +108,9 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<AppSetting>().ToTable("settings").HasKey(x => x.Key);
         modelBuilder.Entity<BackupHistoryEntry>().ToTable("backup_history");
         modelBuilder.Entity<DocumentSequence>().ToTable("document_sequences").HasKey(x => x.Type);
+        // An increment is guarded by the previously-read value, so simultaneous
+        // desktop clients retry instead of reserving the same document number.
+        modelBuilder.Entity<DocumentSequence>().Property(x => x.NextValue).IsConcurrencyToken();
         modelBuilder.Entity<AppUser>().ToTable("users").HasIndex(x => x.Username).IsUnique();
 
         modelBuilder.Entity<Invoice>()

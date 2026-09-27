@@ -36,7 +36,7 @@
       </LinearGradientBrush>
       <LinearGradientBrush x:Key="LoginHeroGradient" StartPoint="0%,0%" EndPoint="100%,100%">
         <GradientStop Color="#003B8F" Offset="0" />
-        <GradientStop Color="#0F766E" Offset="1" />
+        <GradientStop Color="#1555A6" Offset="1" />
       </LinearGradientBrush>
     </ResourceDictionary>
   </UserControl.Resources>

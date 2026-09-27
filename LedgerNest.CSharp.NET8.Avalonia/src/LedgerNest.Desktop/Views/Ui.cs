@@ -121,11 +121,11 @@ internal static class Ui
         foreach (var entry in palette)
             entry.Value.Color = Color.Parse(dark ? entry.Key.Dark : entry.Key.Light);
     }
-    public static IBrush Accent => Palette("#0F766E", "#5EEAD4");
+    public static IBrush Accent => Palette(Branding.PrimaryColor, "#93C5FD");
     public static IBrush Surface => Palette("#FAFAFA", "#18212B");
     public static IBrush Canvas => Palette("#FFFFFF", "#111820");
     public static IBrush TextColor => Palette("#000000", "#F1F5F9");
-    public static IBrush Primary => Palette(Branding.PrimaryColor, "#80CBC4");
+    public static IBrush Primary => Palette(Branding.PrimaryColor, "#93C5FD");
     public static IBrush CardSurface => Palette("#F7FAFC", "#202B36");
     public static IBrush MaterialPrimary => Primary;
     public static IBrush Muted => Palette("#666666", "#BBC5D0");

@@ -19,7 +19,7 @@ internal static class DocumentHtml
         string themeColor,
         DocumentPdf.PdfExportOptions options)
     {
-        var accent = IsHexColor(themeColor) ? themeColor : "#0F766E";
+        var accent = IsHexColor(themeColor) ? themeColor : "#0B4A9A";
         var templateClass = CssClass(string.IsNullOrWhiteSpace(template) ? "Classic" : template);
         var thermal = template.Equals("Thermal", StringComparison.OrdinalIgnoreCase) || pageSize.StartsWith("Thermal", StringComparison.OrdinalIgnoreCase);
         var pageRule = PageRule(pageSize, landscape, thermal);
