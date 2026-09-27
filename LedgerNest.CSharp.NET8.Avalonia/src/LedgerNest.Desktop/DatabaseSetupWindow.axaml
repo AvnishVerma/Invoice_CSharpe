@@ -2,29 +2,66 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="LedgerNest.Desktop.DatabaseSetupWindow"
         x:CompileBindings="False"
-        Title="Choose Database"
-        Width="620" Height="440" MinHeight="380" MinWidth="480"
+        Title="Database setup"
+        Width="680" Height="500" MinWidth="500" MinHeight="400"
         CanResize="True"
+        Background="{DynamicResource AppCanvasBrush}"
         WindowStartupLocation="CenterScreen">
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <Border Padding="28">
-      <StackPanel Spacing="14">
-        <TextBlock Text="Database setup" FontSize="24" FontWeight="SemiBold" />
-        <TextBlock Text="Choose where LedgerNest stores shared business data. This is shown only before the first connection."
-                   FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
-        <TextBlock Text="Database provider" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}" />
-        <ComboBox x:Name="ProviderBox" SelectedIndex="0" MinHeight="32" SelectionChanged="ProviderChanged">
-          <ComboBoxItem Content="SQLite" />
-          <ComboBoxItem Content="MySQL" />
-          <ComboBoxItem Content="SQL Server" />
-        </ComboBox>
-        <TextBlock Text="Connection string" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}" />
-        <TextBox x:Name="ConnectionBox" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="74" />
-        <TextBlock x:Name="HelpText" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
-        <TextBlock x:Name="StatusText" FontSize="12" Foreground="IndianRed" TextWrapping="Wrap" />
-        <Border Height="8" />
-        <Button Content="Continue" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Classes="primary" Click="ContinueClicked" />
+  <Grid RowDefinitions="Auto,*,Auto">
+    <Border Background="{DynamicResource PageHeaderBrush}" Padding="28,19">
+      <StackPanel Spacing="4">
+        <TextBlock Text="FIRST-RUN SETUP" FontSize="11" FontWeight="Bold" Foreground="#BFE9DE" LetterSpacing="1.2" />
+        <TextBlock Text="Choose where your business data lives" FontSize="23" FontWeight="SemiBold" Foreground="White" />
+        <TextBlock Text="You can use this computer or connect every LedgerNest client to a shared database server."
+                   FontSize="13" Foreground="#E0F2EC" TextWrapping="Wrap" />
       </StackPanel>
     </Border>
-  </ScrollViewer>
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <Border Margin="24,20,24,12" Padding="20" CornerRadius="14"
+              Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+            <Border Width="28" Height="28" CornerRadius="14" Background="#D7F2E8">
+              <TextBlock Text="1" FontWeight="Bold" Foreground="#087D63" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="2">
+              <TextBlock Text="Select a database provider" FontSize="16" FontWeight="SemiBold" />
+              <TextBlock Text="SQLite is ideal for one computer. MySQL and SQL Server support a shared team database."
+                         FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Grid>
+
+          <ComboBox x:Name="ProviderBox" SelectedIndex="0" MinHeight="38" SelectionChanged="ProviderChanged">
+            <ComboBoxItem Content="SQLite — this computer" />
+            <ComboBoxItem Content="MySQL — shared server" />
+            <ComboBoxItem Content="SQL Server — shared server" />
+          </ComboBox>
+
+          <Border Padding="12" CornerRadius="9" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+            <StackPanel Spacing="4">
+              <TextBlock Text="Connection details" FontSize="14" FontWeight="SemiBold" />
+              <TextBlock Text="LedgerNest creates its schema when it successfully connects for the first time."
+                         FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+              <TextBox x:Name="ConnectionBox" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="78" Margin="0,5,0,0" />
+            </StackPanel>
+          </Border>
+
+          <Border Padding="10" CornerRadius="8" Background="#EAF6F1">
+            <TextBlock x:Name="HelpText" FontSize="12" Foreground="#17634F" TextWrapping="Wrap" />
+          </Border>
+          <TextBlock x:Name="StatusText" FontSize="12" Foreground="#C62828" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+    </ScrollViewer>
+
+    <Border Grid.Row="2" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,0" Padding="24,12">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <TextBlock Text="You can change the connection later in application settings." FontSize="12"
+                   Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        <Button Grid.Column="1" Content="Continue" MinWidth="138" MinHeight="36" Classes="primary"
+                HorizontalContentAlignment="Center" Click="ContinueClicked" />
+      </Grid>
+    </Border>
+  </Grid>
 </Window>

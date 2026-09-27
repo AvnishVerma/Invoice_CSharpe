@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.PublisherConsoleFormView">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="28" Spacing="16" MaxWidth="1050" HorizontalAlignment="Left">
+      <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+        <StackPanel Spacing="6">
+          <TextBlock Text="Publisher Console" FontSize="24" FontWeight="SemiBold" />
+          <TextBlock Text="Create an update and notification manifest for all LedgerNest installations."
+                     FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+        <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+          <ContentControl x:Name="ReleaseHost" />
+        </Border>
+        <Border Grid.Column="1" Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+          <ContentControl x:Name="AnnouncementHost" />
+        </Border>
+      </Grid>
+      <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+        <ContentControl x:Name="PreviewHost" />
+      </Border>
+      <ContentControl x:Name="PublishHost" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

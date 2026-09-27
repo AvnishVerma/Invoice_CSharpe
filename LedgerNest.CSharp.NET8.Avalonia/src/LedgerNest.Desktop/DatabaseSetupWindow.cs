@@ -29,7 +29,8 @@ public sealed partial class DatabaseSetupWindow : Window
 
     private void ProviderChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (ProviderBox.SelectedIndex < 0) return;
+        // Avalonia can raise SelectionChanged while InitializeComponent is still assigning x:Name fields.
+        if (ProviderBox is null || ConnectionBox is null || HelpText is null || StatusText is null || ProviderBox.SelectedIndex < 0) return;
         ConnectionBox.Text = ProviderBox.SelectedIndex switch
         {
             1 => "Server=localhost;Database=ledgernest;User ID=ledgernest;Password=",

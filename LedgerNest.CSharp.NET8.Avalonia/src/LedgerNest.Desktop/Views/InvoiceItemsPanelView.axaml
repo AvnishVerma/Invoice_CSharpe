@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceItemsPanelView">
+  <Border Padding="10" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <Grid RowDefinitions="Auto,Auto,*">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="Items" FontSize="16" FontWeight="SemiBold" />
+        <ContentControl x:Name="CountHost" Grid.Column="1" />
+      </Grid>
+      <Border Grid.Row="1" Padding="0,10,0,6">
+        <ContentControl x:Name="QuickAddHost" />
+      </Border>
+      <ContentControl x:Name="LinesHost" Grid.Row="2" />
+    </Grid>
+  </Border>
+</UserControl>

@@ -1,0 +1,20 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.SettingsNavigationShellView">
+  <Grid x:Name="ShellGrid" ColumnDefinitions="240,*">
+    <Border x:Name="Rail" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,1,0">
+      <Grid RowDefinitions="*,Auto,Auto">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,12">
+          <ContentControl x:Name="NavigationHost" />
+        </ScrollViewer>
+        <Border x:Name="PromoBorder" Grid.Row="1" Padding="13">
+          <ContentControl x:Name="PromoHost" />
+        </Border>
+        <Border Grid.Row="2" Padding="13,0,13,13">
+          <ContentControl x:Name="SaveHost" />
+        </Border>
+      </Grid>
+    </Border>
+    <ContentControl x:Name="ContentHost" Grid.Column="1" />
+  </Grid>
+</UserControl>

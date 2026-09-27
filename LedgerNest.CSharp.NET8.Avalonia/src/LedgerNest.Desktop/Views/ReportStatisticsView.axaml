@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ReportStatisticsView"
+             x:CompileBindings="False">
+  <ItemsControl ItemsSource="{Binding Statistics}">
+    <ItemsControl.ItemsPanel>
+      <ItemsPanelTemplate>
+        <WrapPanel />
+      </ItemsPanelTemplate>
+    </ItemsControl.ItemsPanel>
+    <ItemsControl.ItemTemplate>
+      <DataTemplate>
+        <Border Width="250" MinHeight="76" Margin="0,0,12,12" Padding="16" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+          <Grid ColumnDefinitions="Auto,12,*">
+            <Border Width="29" Height="29" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Grid.Column="2" Spacing="5">
+              <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+              <TextBlock Text="{Binding Value}" FontSize="18" FontWeight="Bold" Foreground="{Binding Accent}" />
+            </StackPanel>
+          </Grid>
+        </Border>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</UserControl>

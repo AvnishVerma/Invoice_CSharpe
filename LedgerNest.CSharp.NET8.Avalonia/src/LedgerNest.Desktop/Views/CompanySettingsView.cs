@@ -220,9 +220,6 @@ public partial class MainWindow
             colorInput.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = color, Mode = BindingMode.TwoWay });
             colorInput.LostFocus += (_, _) => preview.Content = InvoicePreview(selectedTemplate.Value, color.Value, orientation.Value == "Landscape");
             controls.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.Text("Theme Color", 14), swatches, colorInput), 12));
-            var custom = Ui.Card(Ui.Stack(6.4, Ui.Text("⚒  Want a custom template?", 14, color: Ui.Primary), Ui.Text("Get a design that matches your brand — colors, fonts, and layout.", 12, color: Ui.Muted), Ui.Button("→  Customization Options", () => { settingsTab = "Customize"; page.Content = SettingsView(); })), 12);
-            custom.Background = Ui.Palette("#EEEBF8", "#202B36"); custom.BorderBrush = Brush.Parse("#C8C1E7");
-            controls.Children.Add(custom);
             controls.Children.Add(new Expander { Header = "Printing & advanced options", Content = Ui.Stack(12.8, Ui.Fields(sections[2].Fields.Skip(1)), Ui.Fields(sections.Single(section => section.Title == "PRINTING").Fields)), HorizontalAlignment = HorizontalAlignment.Stretch });
             options.Content = Ui.Scroll(controls, 16);
             preview.Content = InvoicePreview(selectedTemplate.Value, color.Value, orientation.Value == "Landscape");

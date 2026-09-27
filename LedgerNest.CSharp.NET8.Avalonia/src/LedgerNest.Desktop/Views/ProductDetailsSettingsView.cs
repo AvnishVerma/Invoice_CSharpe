@@ -61,15 +61,7 @@ public partial class MainWindow
         var rail = new Border { Background = Ui.Surface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0),
             Child = Ui.Rows("*,Auto", new Border(), new Border { Padding = new Thickness(12.8), Child = save }) };
         var scroll = Ui.Scroll(fields, 28);
-        var layout = Ui.Columns("240,*", rail, scroll);
-        layout.SizeChanged += (_, e) =>
-        {
-            var narrow = e.NewSize.Width < 760;
-            layout.ColumnDefinitions = new ColumnDefinitions(narrow ? "*" : "240,*");
-            layout.RowDefinitions = new RowDefinitions(narrow ? "*,Auto" : "*");
-            Grid.SetColumn(scroll, narrow ? 0 : 1);
-            Grid.SetRow(rail, narrow ? 1 : 0);
-        };
+        var layout = new SettingsWorkspaceView(rail, scroll, railAfterContentOnNarrow: true);
         return new ScreenScaffoldView(Ui.AppBar("Customize Product Details"), layout);
     }
 }

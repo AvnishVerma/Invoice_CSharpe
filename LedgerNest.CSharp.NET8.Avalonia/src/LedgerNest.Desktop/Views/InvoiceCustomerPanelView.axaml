@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceCustomerPanelView">
+  <Border Padding="13" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <StackPanel Spacing="8">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="Bill to" FontSize="16" FontWeight="SemiBold" />
+        <ContentControl x:Name="SelectCustomerHost" Grid.Column="1" />
+      </Grid>
+      <ContentControl x:Name="CustomerFieldsHost" />
+      <ContentControl x:Name="CustomerDetailsHost" />
+    </StackPanel>
+  </Border>
+</UserControl>

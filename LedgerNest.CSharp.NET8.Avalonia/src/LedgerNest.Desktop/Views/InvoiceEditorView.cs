@@ -29,8 +29,7 @@ public partial class MainWindow
         var customerFields = Fields(new[] { editorModel.InvoiceCustomer[0], editorModel.InvoiceCustomer[2] }, 2);
         var extraCustomerFields = editorModel.InvoiceCustomer.Where((_, index) => index is not (0 or 2) && (index != 4 || editorModel.InvoiceSetting("Show GST fields").IsChecked));
         var customerMore = new Expander { Header = "Business, address & contact details", Content = Ui.Stack(10, Fields(extraCustomerFields, 2), saveCustomer), HorizontalAlignment = HorizontalAlignment.Stretch };
-        var customerHeader = Ui.Columns("*,Auto", Ui.LocalText("Bill to", 16, true), EditorButton("Select customer", SelectCustomer));
-        var customer = Ui.Card(Ui.Stack(8, customerHeader, customerFields, customerMore), 13);
+        var customer = new InvoiceCustomerPanelView(EditorButton("Select customer", SelectCustomer), customerFields, customerMore);
         var productSearch = new TextBox { PlaceholderText = "Search & add a product or service (Ctrl+F)", MinWidth = 120, MinHeight = 32, Height = 32, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(10, 5), Background = Ui.Canvas };
         var suggestions = new ListBox
         {
@@ -81,7 +80,7 @@ public partial class MainWindow
             var matches = exact.Length > 0 ? exact : editorModel.Products.Where(p => Matches(p, query)).ToArray();
             if (matches.Length == 1) SelectProduct(matches[0]);
         };
-        var lineHost = new ContentControl(); var totals = new ContentControl(); var count = Ui.LocalText("0 items", 11, true, Ui.Muted);
+        var lineHost = new InvoiceLineItemsView(); var totals = new InvoiceTotalsView(); var count = Ui.LocalText("0 items", 11, true, Ui.Muted);
         totals.Name = "InvoiceFooterTotals";
         var create = EditorButton($"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (!invoiceCompletionVisible && editorModel.SaveInvoice()) ShowInvoiceSuccess(); }, true);
         create.Background = Ui.HeaderBand; create.MinHeight = 32;
@@ -91,44 +90,27 @@ public partial class MainWindow
         void UpdateTotals()
         {
             var t = editorModel.Totals;
-            var rows = new WrapPanel { Orientation = Orientation.Horizontal };
-            void AddTotal(string label, decimal amount, bool primary = false)
+            var rows = new List<InvoiceTotalLine>
             {
-                rows.Children.Add(new Border { Margin = new Thickness(0, 0, 16, 3), Child = Ui.Stack(2,
-                    Ui.LocalText(label, 11, color: Ui.Muted), Ui.Text(CurrencyDisplay.Format(amount, currency: Model.EditorCurrency), primary ? 19 : 14, true)) });
-            }
-            AddTotal("Subtotal", t.Subtotal); AddTotal("Tax", t.Tax);
-            if (t.ItemDiscount != 0) AddTotal("Item discount", t.ItemDiscount);
-            if (t.AdditionalCosts != 0) AddTotal("Charges & adjustments", t.AdditionalCosts);
-            if (t.InvoiceDiscount != 0) AddTotal("Invoice discount", t.InvoiceDiscount);
-            AddTotal("Total", t.Total, true);
-            totals.Content = rows;
+                new("Subtotal", CurrencyDisplay.Format(t.Subtotal, currency: Model.EditorCurrency), 14),
+                new("Tax", CurrencyDisplay.Format(t.Tax, currency: Model.EditorCurrency), 14)
+            };
+            if (t.ItemDiscount != 0) rows.Add(new InvoiceTotalLine("Item discount", CurrencyDisplay.Format(t.ItemDiscount, currency: Model.EditorCurrency), 14));
+            if (t.AdditionalCosts != 0) rows.Add(new InvoiceTotalLine("Charges & adjustments", CurrencyDisplay.Format(t.AdditionalCosts, currency: Model.EditorCurrency), 14));
+            if (t.InvoiceDiscount != 0) rows.Add(new InvoiceTotalLine("Invoice discount", CurrencyDisplay.Format(t.InvoiceDiscount, currency: Model.EditorCurrency), 14));
+            rows.Add(new InvoiceTotalLine("Total", CurrencyDisplay.Format(t.Total, currency: Model.EditorCurrency), 19));
+            totals.SetTotals(rows);
         }
         void RefreshLines()
         {
             count.Text = $"{editorModel.Lines.Count} items";
-            if (editorModel.Lines.Count == 0) lineHost.Content = Ui.Empty("No items added yet", "Search above to add a product, or add a custom item.", "cart");
-            else
-            {
-                var rows = Ui.Stack(0, new Border { Padding = new Thickness(6), Child = Ui.Columns("*,70,85,60,80,90,40", Ui.LocalText("ITEM", 11, true), Ui.LocalText("QTY", 11, true), Ui.LocalText("PRICE", 11, true), Ui.LocalText("TAX %", 11, true), Ui.LocalText("DISCOUNT", 11, true), Ui.LocalText("TOTAL", 11, true), Ui.LocalText("")) });
-                foreach (var line in editorModel.Lines)
-                {
-                    NumericUpDown Number(string property, decimal min = 0)
-                    { var n = new NumericUpDown { Minimum = min, Maximum = 1000000000, Increment = 1, FormatString = "0.##", ShowButtonSpinner = false, Margin = new Thickness(2), MinWidth = 0, MinHeight = 29, Padding = new Thickness(6, 3) }; n.Bind(NumericUpDown.ValueProperty, new Binding(property) { Source = line, Mode = BindingMode.TwoWay }); return n; }
-                    var total = Ui.Text(line.Total.ToString("0.00"), 12, true); total.Bind(TextBlock.TextProperty, new Binding(nameof(line.Total)) { Source = line, StringFormat = "{0:0.00}" });
-                    var name = Ui.Stack(2, Ui.Text(line.Name, 13, true), Ui.Text(line.Unit == "None" ? "" : line.Unit, 11, color: Ui.Muted));
-                    if (editorModel.InvoiceSetting("Show Product / Service Tag").IsChecked) name.Children.Add(Ui.Text(line.ProductType, 11, color: Ui.Muted));
-                    rows.Children.Add(new Border { BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(6), Child = Ui.Columns("*,70,85,60,80,90,40", name, Number(nameof(line.Quantity), .001m), Number(nameof(line.Price)), Number(nameof(line.TaxRate)), Number(nameof(line.Discount)), total, EditorButton("×", () => editorModel.Lines.Remove(line))) });
-                }
-                lineHost.Content = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, Content = new Border { MinWidth = 650, Child = rows } };
-            }
+            lineHost.SetLines(editorModel.Lines, editorModel.InvoiceSetting("Show Product / Service Tag").IsChecked, line => editorModel.Lines.Remove(line));
             UpdateTotals(); create.IsEnabled = editorModel.Lines.Count > 0;
         }
         var quickAdd = Ui.Card(Ui.Stack(8, Ui.Columns("*,8,Auto", productSearch, new Border(), EditorButton("＋ Custom Item", ShowCustomItem)), suggestions), 8); quickAdd.Background = Ui.Palette("#F1F5FB", "#1E2C40"); quickAdd.BorderBrush = Ui.Outline;
-        var items = Ui.Card(Ui.Rows("Auto,Auto,*", Ui.Columns("*,Auto", Ui.LocalText("Items", 16, true), count), new Border { Padding = new Thickness(0, 10, 0, 6), Child = quickAdd }, lineHost), 10);
+        var items = new InvoiceItemsPanelView(count, quickAdd, lineHost);
         var detailFields = Ui.Stack(8, Fields(editorModel.InvoiceDetails.Take(3), 2), new Expander { Header = "Document title & numbering", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(10, Field(editorModel.InvoiceDetails[3]), Field(editorModel.HideInvoiceNumber)) });
-        var detailHeading = Ui.LocalText("Document details", 16, true);
-        var details = Ui.Card(Ui.Stack(13, detailHeading, detailFields), 10);
+        var details = new InvoiceDocumentDetailsPanelView(detailFields);
         var additional = Ui.Stack(8);
         void AddCost(FormField[] fields) => additional.Children.Add(Ui.Columns("*,Auto", Fields(fields, 2), EditorButton("×", () => { editorModel.AdditionalCosts.Remove(fields); additional.Children.Clear(); foreach (var cost in editorModel.AdditionalCosts) AddCost(cost); })));
         foreach (var cost in editorModel.AdditionalCosts) AddCost(cost);
@@ -140,7 +122,7 @@ public partial class MainWindow
         {
             options.Children.Insert(0, new Expander { Header = "Custom fields", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Fields(editorModel.InvoiceCustomFields.Select(field => field.Field)) });
         }
-        var optionsCard = Ui.Card(Ui.Scroll(options, 10), 0);
+        var optionsCard = new InvoiceOptionsPanelView(options);
         var left = Ui.Rows("Auto,8,*", customer, new Border(), items); var right = Ui.Rows("Auto,8,*", details, new Border(), optionsCard);
         var viewport = new InvoiceWorkspace(left, right, items, optionsCard);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };

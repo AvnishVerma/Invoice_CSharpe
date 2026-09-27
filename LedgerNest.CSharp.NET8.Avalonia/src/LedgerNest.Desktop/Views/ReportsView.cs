@@ -165,28 +165,7 @@ public partial class MainWindow
             ("Total Profit", Money(report.TotalProfit), "savings", report.TotalProfit < 0 ? "#E53935" : "#16A34A"),
             ("Realized Profit", Money(report.RealizedProfit), "payments", report.RealizedProfit < 0 ? "#E53935" : "#16A34A")
         };
-        var grid = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("*,12,*,12,*"),
-            RowDefinitions = new RowDefinitions("Auto,12,Auto")
-        };
-        for (var i = 0; i < stats.Length; i++)
-        {
-            var stat = stats[i];
-            var tile = Ui.Card(Ui.Columns("Auto,12,*", new Border
-            {
-                Width = 28.8,
-                Height = 28.8,
-                CornerRadius = new CornerRadius(9),
-                Background = new SolidColorBrush(Color.Parse(stat.Item4), .12),
-                Child = Ui.Icon(stat.Item3, 18, Brush.Parse(stat.Item4))
-            }, new Border(), Ui.Stack(5.6, Ui.Text(stat.Item1, 12, color: Ui.Muted), Ui.Text(stat.Item2, 18, true, Brush.Parse(stat.Item4)))), 16);
-            tile.Background = Ui.Palette("#FBF5FF", "#202B36");
-            Grid.SetColumn(tile, i % 3 * 2);
-            Grid.SetRow(tile, i / 3 * 2);
-            grid.Children.Add(tile);
-        }
-        return grid;
+        return new ReportStatisticsView(stats.Select(stat => Statistic(stat.Item1, stat.Item2, stat.Item3, stat.Item4)));
     }
 
     // Builds the purchase-price warning shown when profit is based on incomplete cost data.
@@ -210,24 +189,13 @@ public partial class MainWindow
     // Performs the report stats action for this screen or workflow.
     private static Control ReportStats(params (string Label, string Value, string Icon, string Color)[] stats)
     {
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions(string.Join(",", stats.Select(_ => "*"))) };
-        for (var i = 0; i < stats.Length; i++)
-        {
-            var s = stats[i];
-            var tile = Ui.Card(Ui.Columns("Auto,8,*", new Border
-            {
-                Width = 28.8,
-                Height = 28.8,
-                CornerRadius = new CornerRadius(9),
-                Background = new SolidColorBrush(Color.Parse(s.Color), .12),
-                Child = Ui.Icon(s.Icon, 18, Brush.Parse(s.Color))
-            }, new Border(), Ui.Stack(4, Ui.Text(s.Label, 11, true, Ui.Muted), Ui.Text(s.Value, 15, true, Brush.Parse(s.Color)))), 12);
-            tile.Background = Ui.Palette("#FBF5FF", "#202B36");
-            tile.Margin = new Thickness(i == 0 ? 0 : 10, 0, i == stats.Length - 1 ? 0 : 10, 0);
-            Grid.SetColumn(tile, i);
-            grid.Children.Add(tile);
-        }
-        return grid;
+        return new ReportStatisticsView(stats.Select(stat => Statistic(stat.Label, stat.Value, stat.Icon, stat.Color)));
+    }
+
+    private static ReportStatisticModel Statistic(string label, string value, string icon, string color)
+    {
+        var accent = Brush.Parse(color);
+        return new ReportStatisticModel(label, value, icon, accent, new SolidColorBrush(Color.Parse(color), .12));
     }
 
     // Builds the grouped monthly chart using the ScottPlot Avalonia NuGet control.

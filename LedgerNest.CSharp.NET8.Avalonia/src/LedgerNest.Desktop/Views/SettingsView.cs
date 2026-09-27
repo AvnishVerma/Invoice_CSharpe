@@ -24,7 +24,7 @@ public partial class MainWindow
         [
             new("Company Info", "business"), new("Backup", "backup"), new("Users", "people"),
             new("PDF Settings", "settings"), new("Invoice Settings", "receipt_long"), new("Product Details", "view_column"),
-            new("Customize", "tune"), new("Accessibility", "accessibility_new"), new("License", "lock"), new("Software Info", "info_outline"), new("Publisher Console", "campaign")
+            new("Accessibility", "accessibility_new"), new("License", "lock"), new("Software Info", "info_outline")
         ];
         return new SettingsPageView(new SettingsPageModel(tabs, settingsTab, SettingsContent, selected => settingsTab = selected));
     }
@@ -37,9 +37,7 @@ public partial class MainWindow
         "Product Details" => ProductDetailsSettingsView(),
         "Users" => new ManagementView(Model, "User", this),
         "Backup" => BackupView(),
-        "Customize" => CustomizationView(),
         "Software Info" => SoftwareInfo(),
-        "Publisher Console" when Model.CurrentRole == "Admin" => PublisherConsole(),
         "License" => LicenseSettingsView(),
         _ => SettingsForm(name)
     };
@@ -127,8 +125,6 @@ public partial class MainWindow
             ActionButton("Export JSON", "download", CreateBackupFile),
             new Border(),
             ActionButton("Import Backup", "upload", ImportBackupFile));
-        var body = Ui.Stack(12.8, actions, new Separator(), history);
-        body.MaxWidth = 940;
         var refresh = Ui.Button("↻", () =>
         {
             ReloadBackupHistory();
@@ -139,7 +135,7 @@ public partial class MainWindow
         refresh.Foreground = Brushes.White;
         refresh.FontSize = 22;
         ToolTip.SetTip(refresh, "Refresh backup history");
-        return new ScreenScaffoldView(Ui.AppBar("Backup Management", refresh), Ui.Scroll(body, 16));
+        return new ScreenScaffoldView(Ui.AppBar("Backup Management", refresh), new BackupManagementView(actions, history));
     }
 
     // Formats a backup byte length for the history cards.
@@ -359,9 +355,7 @@ public partial class MainWindow
     // Performs the customization view action for this screen or workflow.
     private Control CustomizationView()
     {
-        var cards = Ui.Stack(16, Ui.LocalText("MADE FOR YOUR BUSINESS", 12, true, Ui.Primary), Ui.Text($"Customize {Branding.Name}", 28, true));
-        foreach (var (title, description) in new[] { ("Custom PDF Template", "An invoice design tailored to your business and branding."), ("Custom Fields", "Capture the additional details your business needs."), ("White Label", "Your brand, logo and identity throughout the application."), ("Industry Build", "A tailored workflow for your industry.") }) cards.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.LocalText(title, 20, true), Ui.Text(description, 14, color: Ui.Muted), Ui.Button("Request Customization")), 24));
-        cards.MaxWidth = 900; return new ScreenScaffoldView(Ui.AppBar("Customize"), Ui.Scroll(cards, 28));
+        return new ScreenScaffoldView(Ui.AppBar("Customize"), new CustomizationOffersView(Branding.Name));
     }
     // Shows application identity, release-channel configuration, and in-app notifications.
     private Control SoftwareInfo()
@@ -379,15 +373,22 @@ public partial class MainWindow
         foreach (var notification in Model.Notifications.Take(5))
             notifications.Children.Add(Ui.Card(Ui.Stack(3, Ui.LocalText(notification.Title, 14, true, notification.IsRead ? Ui.Muted : Ui.Primary), Ui.Text(notification.Message, 12), Ui.Text(notification.CreatedAt.ToLocalTime().ToString("g"), 11, color: Ui.Muted)), 10));
 
-        var body = Ui.Stack(16,
-            Ui.Logo(),
-            Ui.Card(Ui.Stack(8, Ui.LocalText("App Details", 18, true), Ui.Text($"App name: {Branding.Name}"), Ui.Text($"Version: {Updates.AppVersion.Display}"), string.IsNullOrWhiteSpace(Updates.AppVersion.BuildId) ? new Border() : Ui.Text($"Build: {Updates.AppVersion.BuildId[..Math.Min(7, Updates.AppVersion.BuildId.Length)]}", 12, color: Ui.Muted), Ui.Text("Platform: Desktop"), Ui.Text("License: See legacy LICENSE", 12, color: Ui.Muted))),
-            Ui.Card(Ui.Stack(10, Ui.LocalText("Application Updates", 18, true), Ui.Text("Configure the publisher HTTPS manifest used to announce new versions.", 12, color: Ui.Muted), manifestUrl, Ui.Wrap(Ui.Button("Save update channel", () => { if (Model.SaveUpdateManifestUrl(manifestUrl.Text)) ShowPage(); }), Ui.Button("Check for updates", async () => await CheckForUpdatesAsync())))),
-Ui.Card(updateDetails),
-            Ui.Card(notifications),
-            Ui.Button("Change Password", ShowChangePassword),
-            Ui.Button("First-time Setup", ShowOnboarding));
-        return new ScreenScaffoldView(Ui.AppBar("Software Information"), Ui.Scroll(body, 28));
+        var details = Ui.Stack(8,
+            Ui.LocalText("App Details", 18, true),
+            Ui.Text($"App name: {Branding.Name}"),
+            Ui.Text($"Version: {Updates.AppVersion.Display}"),
+            string.IsNullOrWhiteSpace(Updates.AppVersion.BuildId) ? new Border() : Ui.Text($"Build: {Updates.AppVersion.BuildId[..Math.Min(7, Updates.AppVersion.BuildId.Length)]}", 12, color: Ui.Muted),
+            Ui.Text("Platform: Desktop"),
+            Ui.Text("License: See legacy LICENSE", 12, color: Ui.Muted));
+        var updates = Ui.Stack(10,
+            Ui.LocalText("Application Updates", 18, true),
+            Ui.Text("Configure the publisher HTTPS manifest used to announce new versions.", 12, color: Ui.Muted),
+            manifestUrl,
+            Ui.Wrap(Ui.Button("Save update channel", () => { if (Model.SaveUpdateManifestUrl(manifestUrl.Text)) ShowPage(); }), Ui.Button("Check for updates", async () => await CheckForUpdatesAsync())),
+            updateDetails);
+        return new ScreenScaffoldView(
+            Ui.AppBar("Software Information"),
+            new SoftwareInformationView(Ui.Logo(), details, updates, notifications, Ui.Wrap(Ui.Button("Change Password", ShowChangePassword), Ui.Button("First-time Setup", ShowOnboarding))));
     }
 
 
@@ -430,11 +431,7 @@ Ui.Card(updateDetails),
             title, message, type));
         var previewCard = Ui.Card(Ui.Stack(8, Ui.LocalText("Manifest Preview", 18, true), Ui.Text("Review the JSON before saving it to publish.", 12, color: Ui.Muted), preview));
         var publish = Ui.Button("Save Global Update Manifest", async () => await SaveGlobalUpdateManifestAsync(version.Text, downloadUrl.Text, notes.Text, title.Text, message.Text, type.SelectedItem?.ToString()), true);
-        var body = Ui.Stack(16,
-            Ui.Card(Ui.Stack(6, Ui.LocalText("Publisher Console", 24, true), Ui.Text("Create an update and notification manifest for all LedgerNest installations.", 13, color: Ui.Muted))),
-            Ui.Columns("*,*", release, announcement), previewCard, publish);
-        body.MaxWidth = 1050;
-        return new ScreenScaffoldView(Ui.AppBar("Publisher Console"), Ui.Scroll(body, 28));
+        return new ScreenScaffoldView(Ui.AppBar("Publisher Console"), new PublisherConsoleFormView(release, announcement, previewCard, publish));
     }
     // Creates the publisher-controlled manifest that clients read from the configured HTTPS endpoint.
     private async Task SaveGlobalUpdateManifestAsync(string? versionText, string? downloadUrl, string? notes, string? announcementTitle, string? announcementMessage, string? notificationType)

@@ -30,7 +30,7 @@ public partial class MainWindow
                 ? "Trial active · Expires " + model.LicenseStatus.Claims?.ExpiresAtUtc?.ToLocalTime().ToString("dd MMM yyyy")
                 : "Read-only · Activate a license to create or change business records.";
         }
-        var root = Ui.Rows("Auto,*", notice, body);
+        var root = new LicenseWorkspaceView(notice, body);
         System.ComponentModel.PropertyChangedEventHandler changed = (_, e) => { if (e.PropertyName == nameof(model.LicenseStatus)) Refresh(); };
         root.AttachedToVisualTree += (_, _) => model.PropertyChanged += changed;
         root.DetachedFromVisualTree += (_, _) => model.PropertyChanged -= changed;
@@ -97,13 +97,14 @@ public partial class MainWindow
             { model.Status = "The license file could not be opened. Check the file and try again."; }
             finally { import.IsEnabled = true; }
         };
-        var content = Ui.Stack(16, summary,
-            Ui.Card(Ui.Stack(9.6, Ui.LocalText("Activate this device", 18, true),
-                Ui.LocalText("Send this Device ID to your software provider to receive a trial, paid or renewal license.", 14, color: Ui.Muted),
-                device, copy, import), 22),
-            Ui.Card(Ui.Stack(9.6, Ui.LocalText("Or paste your license", 18, true), paste, activate), 22),
+        var content = new LicenseActivationFormView(
+            summary,
+            device,
+            copy,
+            import,
+            paste,
+            activate,
             Ui.Button("Refresh License Status", model.RefreshLicense));
-        content.MaxWidth = 820;
         System.ComponentModel.PropertyChangedEventHandler changed = (_, e) => { if (e.PropertyName == nameof(model.LicenseStatus)) RenderStatus(); };
         content.AttachedToVisualTree += (_, _) => model.PropertyChanged += changed;
         content.DetachedFromVisualTree += (_, _) => model.PropertyChanged -= changed;

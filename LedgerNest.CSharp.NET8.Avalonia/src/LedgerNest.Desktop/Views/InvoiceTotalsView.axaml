@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceTotalsView"
+             x:CompileBindings="False">
+  <ItemsControl ItemsSource="{Binding Totals}">
+    <ItemsControl.ItemsPanel>
+      <ItemsPanelTemplate>
+        <WrapPanel Orientation="Horizontal" />
+      </ItemsPanelTemplate>
+    </ItemsControl.ItemsPanel>
+    <ItemsControl.ItemTemplate>
+      <DataTemplate>
+        <Border Margin="0,0,16,3">
+          <StackPanel Spacing="2">
+            <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}" />
+            <TextBlock Text="{Binding Amount}" FontSize="{Binding FontSize}" FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</UserControl>

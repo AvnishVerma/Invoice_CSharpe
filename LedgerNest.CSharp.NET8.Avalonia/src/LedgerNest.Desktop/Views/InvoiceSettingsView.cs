@@ -66,17 +66,7 @@ public partial class MainWindow
         var save = Ui.Button("Save", () => Model.SaveSettings("Invoice Settings"), true);
         save.Background = InvoiceSettingsBlue; save.HorizontalAlignment = HorizontalAlignment.Stretch; save.MinHeight = 25.6;
         save.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("save", 17, Brushes.White), new Border(), Ui.LocalText("Save", 13, true, Brushes.White));
-        var rail = new Border { Background = Ui.Surface, BorderBrush = Ui.Outline, BorderThickness = new Thickness(0, 0, 1, 0),
-            Child = Ui.Rows("*,Auto,Auto", Ui.Scroll(nav, 12), new Border { Padding = new Thickness(12.8), Child = promo }, new Border { Padding = new Thickness(12.8, 0, 12.8, 12.8), Child = save }) };
-        var layout = Ui.Columns("240,*", rail, content);
-        layout.SizeChanged += (_, e) =>
-        {
-            var narrow = e.NewSize.Width < 760;
-            layout.ColumnDefinitions = new ColumnDefinitions(narrow ? "*" : "240,*");
-            layout.RowDefinitions = new RowDefinitions(narrow ? "Auto,*" : "*");
-            Grid.SetColumn(content, narrow ? 0 : 1); Grid.SetRow(content, narrow ? 1 : 0);
-            rail.Height = narrow ? 190 : double.NaN; promo.IsVisible = !narrow;
-        };
+        var layout = new SettingsNavigationShellView(nav, promo, save, content);
         Select(0);
         return new ScreenScaffoldView(Ui.AppBar("Invoice Settings"), layout);
     }

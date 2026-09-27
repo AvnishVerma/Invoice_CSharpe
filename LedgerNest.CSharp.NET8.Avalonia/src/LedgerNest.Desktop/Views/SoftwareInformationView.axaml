@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.SoftwareInformationView">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="28" Spacing="16" MaxWidth="900" HorizontalAlignment="Left">
+      <ContentControl x:Name="LogoHost" />
+      <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+        <ContentControl x:Name="DetailsHost" />
+      </Border>
+      <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+        <ContentControl x:Name="UpdatesHost" />
+      </Border>
+      <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+        <ContentControl x:Name="NotificationsHost" />
+      </Border>
+      <ContentControl x:Name="ActionsHost" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

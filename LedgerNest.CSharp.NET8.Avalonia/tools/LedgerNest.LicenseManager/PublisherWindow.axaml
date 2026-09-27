@@ -3,23 +3,36 @@
         xmlns:local="using:LedgerNest.LicenseManager"
         x:Class="LedgerNest.LicenseManager.PublisherWindow"
         x:DataType="local:PublisherViewModel"
-        Title="LedgerNest License Manager" Width="1040" Height="700" MinWidth="760" MinHeight="560" MaxHeight="760"
+        Title="LedgerNest License Manager" Width="1080" Height="680" MinWidth="820" MinHeight="540" MaxHeight="760"
         Background="#F3F6FA" WindowStartupLocation="CenterScreen">
+  <Window.Styles>
+    <Style Selector="TextBox">
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="10,6" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="MinHeight" Value="36" />
+    </Style>
+    <Style Selector="NumericUpDown">
+      <Setter Property="MinHeight" Value="36" />
+    </Style>
+  </Window.Styles>
   <Grid RowDefinitions="Auto,*,Auto">
-    <Border Background="#153E7E" Padding="32,18">
-      <StackPanel Spacing="5">
+    <Border Background="#153E7E" Padding="28,14">
+      <StackPanel Spacing="3">
         <TextBlock Text="LEDGERNEST  /  PUBLISHER TOOLS" FontSize="11" Foreground="#BFD2F0" LetterSpacing="1.5" />
-        <TextBlock Text="License Manager" FontSize="28" FontWeight="SemiBold" Foreground="White" />
-        <TextBlock Text="Create signed licenses for your customers’ Windows installations." Foreground="#DEE8F8" />
+        <TextBlock Text="License Manager" FontSize="25" FontWeight="SemiBold" Foreground="White" />
+        <TextBlock Text="Issue signed licenses and manage the keys your customer installations trust." FontSize="13" Foreground="#DEE8F8" />
       </StackPanel>
     </Border>
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-      <Grid Margin="28,16" ColumnDefinitions="*,260" ColumnSpacing="20">
+      <Grid Margin="24,12" ColumnDefinitions="*,280" ColumnSpacing="20">
         <TabControl x:Name="Sections" IsEnabled="{Binding IsIdle}">
           <TabItem Header="Issue license">
-            <Border Classes="card" Margin="0,16,0,0">
-              <StackPanel Spacing="10">
-                <TextBlock Text="Customer license" FontSize="21" FontWeight="SemiBold" />
+            <Border Classes="card" Margin="0,10,0,0" Padding="20">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Issue a customer license" FontSize="20" FontWeight="SemiBold" />
+                <TextBlock Classes="hint" Text="Enter the customer identity and Device ID from their LedgerNest installation." />
                 <StackPanel Spacing="6">
                   <TextBlock Text="Encrypted signing key" FontWeight="SemiBold" />
                   <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
@@ -40,7 +53,7 @@
                   <TextBox x:Name="DeviceId" Text="{Binding DeviceId}" PlaceholderText="Paste the 64-character Device ID" FontFamily="Consolas" FontSize="12" />
                   <TextBlock Classes="hint" Text="Ask the customer to copy this from Settings → License in LedgerNest." />
                 </StackPanel>
-                <Grid ColumnDefinitions="*,140" ColumnSpacing="16">
+                <Grid ColumnDefinitions="*,140" ColumnSpacing="12">
                   <StackPanel Spacing="6">
                     <TextBlock Text="License type" FontWeight="SemiBold" />
                     <ComboBox x:Name="LicenseType" SelectedIndex="{Binding LicenseKindIndex}" HorizontalAlignment="Stretch" MinHeight="40">
@@ -60,9 +73,9 @@
             </Border>
           </TabItem>
           <TabItem Header="Signing keys">
-            <Border Classes="card" Margin="0,16,0,0">
-              <StackPanel Spacing="14">
-                <TextBlock Text="Create your signing keys" FontSize="21" FontWeight="SemiBold" />
+            <Border Classes="card" Margin="0,10,0,0" Padding="20">
+              <StackPanel Spacing="10">
+                <TextBlock Text="Create signing keys" FontSize="20" FontWeight="SemiBold" />
                 <TextBlock Classes="hint" Text="Set up once, then reuse the same signing key for every customer. Existing customer apps only accept licenses signed with the key that matches their embedded public key." />
                 <StackPanel Spacing="6">
                   <TextBlock Text="New signing password" FontWeight="SemiBold" />
@@ -82,17 +95,17 @@
             </Border>
           </TabItem>
         </TabControl>
-        <StackPanel Grid.Column="1" Spacing="16" Margin="0,55,0,0">
-          <Border Classes="card" Padding="20">
-            <StackPanel Spacing="16">
-              <TextBlock Text="From setup to activation" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" />
+        <StackPanel Grid.Column="1" Spacing="12" Margin="0,43,0,0">
+          <Border Classes="card" Padding="18">
+            <StackPanel Spacing="10">
+              <TextBlock Text="Issue a license in four steps" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" />
               <TextBlock Text="1. Create or select your signing key." TextWrapping="Wrap" />
               <TextBlock Text="2. Build the customer app with the matching public-key.pem." TextWrapping="Wrap" />
               <TextBlock Text="3. Enter the customer’s Device ID and issue their license." TextWrapping="Wrap" />
               <TextBlock Text="4. Send the .ledgerlicense file. The customer imports it in Settings → License." TextWrapping="Wrap" />
             </StackPanel>
           </Border>
-          <Border Background="#E7EEF9" CornerRadius="10" Padding="20">
+          <Border Background="#E7EEF9" CornerRadius="10" Padding="18">
             <StackPanel Spacing="8">
               <TextBlock Text="Publisher use only" FontWeight="SemiBold" Foreground="#153E7E" />
               <TextBlock Classes="hint" Text="Keep this app, your private key, and its password with you. Only the public key belongs in the customer app." />
@@ -102,8 +115,8 @@
         </StackPanel>
       </Grid>
     </ScrollViewer>
-    <Border Grid.Row="2" Background="White" BorderBrush="#DCE3ED" BorderThickness="0,1,0,0" Padding="28,15">
-      <StackPanel Spacing="7">
+    <Border Grid.Row="2" Background="White" BorderBrush="#DCE3ED" BorderThickness="0,1,0,0" Padding="24,10">
+      <StackPanel Spacing="5">
         <ProgressBar IsVisible="{Binding IsBusy}" IsIndeterminate="True" Height="3" />
         <TextBlock x:Name="StatusMessage" Text="{Binding Status}" FontWeight="SemiBold" TextWrapping="Wrap" Foreground="#153E7E" />
         <ScrollViewer MaxHeight="140" VerticalScrollBarVisibility="Auto">
