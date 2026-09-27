@@ -78,7 +78,7 @@ public partial class MainWindow
             rail.Height = narrow ? 190 : double.NaN; promo.IsVisible = !narrow;
         };
         Select(0);
-        return Ui.Rows("Auto,*", Ui.AppBar("Invoice Settings"), layout);
+        return new ScreenScaffoldView(Ui.AppBar("Invoice Settings"), layout);
     }
 
     private Control InvoiceGeneralSettings()

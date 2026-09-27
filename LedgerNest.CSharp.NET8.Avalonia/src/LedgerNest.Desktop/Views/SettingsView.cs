@@ -52,7 +52,7 @@ public partial class MainWindow
         foreach (var section in sections) stack.Children.Add(Ui.Card(Ui.Stack(12.8, Ui.Text(section.Title, 18, true), Ui.Fields(section.Fields)), 24));
         if (name == "Accessibility") stack.Children.Add(Ui.Card(Ui.Stack(12.8, Ui.LocalText("Keyboard Shortcuts", 20, true), Shortcut("Ctrl + Q", "New invoice"), Shortcut("Ctrl + S", "Save invoice"), Shortcut("Ctrl + F", "Search products"), Shortcut("Ctrl + M", "Add custom item"), Shortcut("Ctrl + O", "Preview PDF"), Shortcut("Ctrl + P", "Print invoice"))));
         stack.Children.Add(Ui.Button("Save Settings", () => Model.SaveSettings(name), true));
-        stack.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar(name), Ui.Scroll(stack, 28));
+        stack.MaxWidth = 900; return new ScreenScaffoldView(Ui.AppBar(name), Ui.Scroll(stack, 28));
     }
     // Builds the backup management screen and keeps its history list synchronized with completed file operations.
     private Control BackupView()
@@ -139,7 +139,7 @@ public partial class MainWindow
         refresh.Foreground = Brushes.White;
         refresh.FontSize = 22;
         ToolTip.SetTip(refresh, "Refresh backup history");
-        return Ui.Rows("Auto,*", Ui.AppBar("Backup Management", refresh), Ui.Scroll(body, 16));
+        return new ScreenScaffoldView(Ui.AppBar("Backup Management", refresh), Ui.Scroll(body, 16));
     }
 
     // Formats a backup byte length for the history cards.
@@ -361,7 +361,7 @@ public partial class MainWindow
     {
         var cards = Ui.Stack(16, Ui.LocalText("MADE FOR YOUR BUSINESS", 12, true, Ui.Primary), Ui.Text($"Customize {Branding.Name}", 28, true));
         foreach (var (title, description) in new[] { ("Custom PDF Template", "An invoice design tailored to your business and branding."), ("Custom Fields", "Capture the additional details your business needs."), ("White Label", "Your brand, logo and identity throughout the application."), ("Industry Build", "A tailored workflow for your industry.") }) cards.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.LocalText(title, 20, true), Ui.Text(description, 14, color: Ui.Muted), Ui.Button("Request Customization")), 24));
-        cards.MaxWidth = 900; return Ui.Rows("Auto,*", Ui.AppBar("Customize"), Ui.Scroll(cards, 28));
+        cards.MaxWidth = 900; return new ScreenScaffoldView(Ui.AppBar("Customize"), Ui.Scroll(cards, 28));
     }
     // Shows application identity, release-channel configuration, and in-app notifications.
     private Control SoftwareInfo()
@@ -387,7 +387,7 @@ Ui.Card(updateDetails),
             Ui.Card(notifications),
             Ui.Button("Change Password", ShowChangePassword),
             Ui.Button("First-time Setup", ShowOnboarding));
-        return Ui.Rows("Auto,*", Ui.AppBar("Software Information"), Ui.Scroll(body, 28));
+        return new ScreenScaffoldView(Ui.AppBar("Software Information"), Ui.Scroll(body, 28));
     }
 
 
@@ -434,7 +434,7 @@ Ui.Card(updateDetails),
             Ui.Card(Ui.Stack(6, Ui.LocalText("Publisher Console", 24, true), Ui.Text("Create an update and notification manifest for all LedgerNest installations.", 13, color: Ui.Muted))),
             Ui.Columns("*,*", release, announcement), previewCard, publish);
         body.MaxWidth = 1050;
-        return Ui.Rows("Auto,*", Ui.AppBar("Publisher Console"), Ui.Scroll(body, 28));
+        return new ScreenScaffoldView(Ui.AppBar("Publisher Console"), Ui.Scroll(body, 28));
     }
     // Creates the publisher-controlled manifest that clients read from the configured HTTPS endpoint.
     private async Task SaveGlobalUpdateManifestAsync(string? versionText, string? downloadUrl, string? notes, string? announcementTitle, string? announcementMessage, string? notificationType)

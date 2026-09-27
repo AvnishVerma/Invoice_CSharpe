@@ -167,14 +167,12 @@ public partial class MainWindowViewModel
         {
             using var db = dbFactory.CreateDbContext();
             db.EnsureCurrentSchema();
-            using var transaction = db.Database.BeginTransaction();
             foreach (var update in updates) SetSetting(db, update.Key, update.Value);
             var company = db.CompanyInfos.OrderBy(c => c.Id).FirstOrDefault() ?? new CompanyInfo();
             company.Name = groups[0].Single(f => f.Label == "Company Name").Value.Trim();
             if (company.Id == 0) db.CompanyInfos.Add(company);
             SetSetting(db, "onboarding.completed", "true");
             db.SaveChanges();
-            transaction.Commit();
         }
         foreach (var update in updates)
         {

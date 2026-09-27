@@ -15,7 +15,7 @@ internal sealed partial class ManagementView : UserControl
     private readonly ContentControl results = new();
     private readonly ContentControl stats = new();
     private readonly TextBox search = new() { MinWidth = 180, Height = 30.4, MinHeight = 30.4, Padding = new Thickness(9.6, 0), VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Stretch };
-    private readonly ContentControl tabs = new();
+    private readonly ManagementFilterTabsView tabs = new();
     private string filter = "All";
     private string sort = "Name A–Z";
     private int page;
@@ -39,7 +39,7 @@ internal sealed partial class ManagementView : UserControl
             : Documents
             ? new Control[] { Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, trashButton, Ui.Button("↻", Refresh) }
             : [Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add];
-        var header = Ui.AppBar($"{kind} Management", headerActions);
+        var header = new ManagementActionBarView($"{kind} Management", headerActions);
         var filterButton = MenuButton("Filter ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); });
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
         if (kind == "Product")
@@ -52,7 +52,12 @@ internal sealed partial class ManagementView : UserControl
         {
             RecordRoot.IsVisible = false;
             DocumentRoot.IsVisible = true;
-            DocumentAppBarHost.Content = Ui.AppBar($"{kind} Management", TopIconAction("download", "Export PDF", async () => await ExportDocumentsPdf()), TopIconAction("download", "Export", Export), TopIconAction("delete", "Trash", () => { trash = !trash; Refresh(); }), TopIconAction("refresh", "Refresh", Refresh));
+            DocumentAppBarHost.Content = new ManagementActionBarView(
+                $"{kind} Management",
+                TopIconAction("download", "Export PDF", async () => await ExportDocumentsPdf()),
+                TopIconAction("download", "Export", Export),
+                TopIconAction("delete", "Trash", () => { trash = !trash; Refresh(); }),
+                TopIconAction("refresh", "Refresh", Refresh));
             DocumentAddHost.Content = add;
             DocumentSearchHost.Content = search;
             DocumentToolbarHost.Content = Ui.Wrap(CustomerMenu(), filterButton, sortButton);
@@ -137,13 +142,12 @@ internal sealed partial class ManagementView : UserControl
     {
         var total = Records.Count();
         string[] tabNames = Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "With Outstanding", "Without GST"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
-        var chips = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        foreach (var tab in tabNames)
+        var tabCounts = tabNames.Select(tab =>
         {
             var oldFilter = filter; filter = tab; var count = Filtered().Count(); filter = oldFilter;
-            var chip = Ui.Button($"{tab} ({count})", () => { filter = tab; page = 0; Refresh(); }, tab == filter); chips.Children.Add(chip);
-        }
-        tabs.Content = new ScrollViewer { Content = chips, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+            return (tab, count);
+        }).ToArray();
+        tabs.SetItems(tabCounts, filter, tab => { filter = tab; page = 0; Refresh(); });
         stats.Content = Documents ? DocumentStats(total) : kind == "User" ? UserStats(total) : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(($"Total {kind}s", total.ToString(), "Total items", "#002E78"), ("Products", Records.Count(r => r["Type"] == "Product").ToString(), "", "#4CAF50"), ("Services", Records.Count(r => r["Type"] == "Service").ToString(), "", "#673AB7"));
         var filtered = Filtered().ToArray();
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)pageSize)); page = Math.Clamp(page, 0, pages - 1);
@@ -172,8 +176,14 @@ internal sealed partial class ManagementView : UserControl
         var pager = kind == "User"
             ? UserPager(filtered.Length, pages)
             : Documents
-            ? Ui.Columns("Auto,*,Auto", Ui.Wrap(Ui.LocalText("Rows per page:", 12), sizes), new Border(), Ui.Wrap(Ui.Button("‹ Previous", () => { page--; Refresh(); }), Ui.Button($"Page {page + 1} of {pages}", () => { }, true), Ui.Button("› Next", () => { page++; Refresh(); })))
-            : Ui.Columns("*,Auto", Ui.Text($"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}", 12, color: Ui.Muted), Ui.Wrap(Ui.LocalText("Rows per page", 12), sizes, Ui.Button("‹", () => { page--; Refresh(); }), Ui.Text($"{page + 1} of {pages}", 12), Ui.Button("›", () => { page++; Refresh(); })));
+            ? new ManagementPaginationView(
+                Ui.Wrap(Ui.LocalText("Rows per page:", 12), sizes),
+                $"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}",
+                page, pages, () => { page--; Refresh(); }, () => { page++; Refresh(); })
+            : new ManagementPaginationView(
+                Ui.Wrap(Ui.LocalText("Rows per page:", 12), sizes),
+                $"Showing {(filtered.Length == 0 ? 0 : page * pageSize + 1)} to {Math.Min((page + 1) * pageSize, filtered.Length)} of {filtered.Length}",
+                page, pages, () => { page--; Refresh(); }, () => { page++; Refresh(); });
         body.Children.Add(new Border { Padding = Documents ? new Thickness(20, 10, 20, 0) : new Thickness(16, 8), Child = pager });
         results.Content = Documents
             ? new ScrollViewer { Content = new Border { Padding = new Thickness(19.2, 0, 19.2, 0), MinWidth = 1120, Child = body }, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto }

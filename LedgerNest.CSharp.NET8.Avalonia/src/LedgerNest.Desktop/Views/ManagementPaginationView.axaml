@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ManagementPaginationView" x:CompileBindings="False">
+  <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+    <ContentControl x:Name="PageSizeHost" VerticalAlignment="Center" />
+    <TextBlock Grid.Column="1" Text="{Binding Summary}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
+    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+      <Button Content="‹" Command="{Binding PreviousCommand}" IsEnabled="{Binding CanGoPrevious}" />
+      <TextBlock Text="{Binding PageLabel}" VerticalAlignment="Center" />
+      <Button Content="›" Command="{Binding NextCommand}" IsEnabled="{Binding CanGoNext}" />
+    </StackPanel>
+  </Grid>
+</UserControl>

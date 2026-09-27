@@ -70,6 +70,6 @@ public partial class MainWindow
             Grid.SetColumn(scroll, narrow ? 0 : 1);
             Grid.SetRow(rail, narrow ? 1 : 0);
         };
-        return Ui.Rows("Auto,*", Ui.AppBar("Customize Product Details"), layout);
+        return new ScreenScaffoldView(Ui.AppBar("Customize Product Details"), layout);
     }
 }

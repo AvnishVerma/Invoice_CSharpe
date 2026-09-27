@@ -3,7 +3,7 @@
         xmlns:local="using:LedgerNest.LicenseManager"
         x:Class="LedgerNest.LicenseManager.PublisherWindow"
         x:DataType="local:PublisherViewModel"
-        Title="LedgerNest License Manager" Width="1040" Height="850" MinWidth="760" MinHeight="660"
+        Title="LedgerNest License Manager" Width="1040" Height="700" MinWidth="760" MinHeight="560" MaxHeight="760"
         Background="#F3F6FA" WindowStartupLocation="CenterScreen">
   <Grid RowDefinitions="Auto,*,Auto">
     <Border Background="#153E7E" Padding="32,18">

@@ -108,6 +108,6 @@ public partial class MainWindow
         content.AttachedToVisualTree += (_, _) => model.PropertyChanged += changed;
         content.DetachedFromVisualTree += (_, _) => model.PropertyChanged -= changed;
         RenderStatus();
-        return Ui.Rows("Auto,*", Ui.AppBar("License & Activation"), Ui.Scroll(content, 28));
+        return new ScreenScaffoldView(Ui.AppBar("License & Activation"), Ui.Scroll(content, 28));
     }
 }

@@ -1,0 +1,30 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="LedgerNest.Desktop.DatabaseSetupWindow"
+        x:CompileBindings="False"
+        Title="Choose Database"
+        Width="620" Height="440" MinHeight="380" MinWidth="480"
+        CanResize="True"
+        WindowStartupLocation="CenterScreen">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Border Padding="28">
+      <StackPanel Spacing="14">
+        <TextBlock Text="Database setup" FontSize="24" FontWeight="SemiBold" />
+        <TextBlock Text="Choose where LedgerNest stores shared business data. This is shown only before the first connection."
+                   FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+        <TextBlock Text="Database provider" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}" />
+        <ComboBox x:Name="ProviderBox" SelectedIndex="0" MinHeight="32" SelectionChanged="ProviderChanged">
+          <ComboBoxItem Content="SQLite" />
+          <ComboBoxItem Content="MySQL" />
+          <ComboBoxItem Content="SQL Server" />
+        </ComboBox>
+        <TextBlock Text="Connection string" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}" />
+        <TextBox x:Name="ConnectionBox" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="74" />
+        <TextBlock x:Name="HelpText" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+        <TextBlock x:Name="StatusText" FontSize="12" Foreground="IndianRed" TextWrapping="Wrap" />
+        <Border Height="8" />
+        <Button Content="Continue" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Classes="primary" Click="ContinueClicked" />
+      </StackPanel>
+    </Border>
+  </ScrollViewer>
+</Window>
