@@ -68,7 +68,12 @@ public partial class MainWindow
         else if (name == "Quotations")
         {
             body.Children.Add(ReportStats(("Quotations Issued", "0", "request_quote", "#0284C7"), ("Invoices in Period", report.InvoiceCount.ToString(), "receipt_long", "#16A34A"), ("Conversion Rate", "0.0%", "bar_chart", "#7C3AED")));
-            body.Children.Add(Ui.Card(Ui.Stack(9.6, Ui.LocalText("About Conversion Rate", 16, true), Ui.LocalText("Conversion rate = Invoices created ÷ Quotations issued × 100.", 13, color: Ui.Muted), Ui.LocalText("A rate above 100% means more invoices were raised than quotations in the selected period." , 13, color: Ui.Muted), Ui.LocalText("Note: this is a period-level ratio, not individual quote-to-invoice tracking.", 13, color: Ui.Muted)), 20));
+            body.Children.Add(new ReportInformationPanelView("About Conversion Rate",
+            [
+                "Conversion rate = Invoices created ÷ Quotations issued × 100.",
+                "A rate above 100% means more invoices were raised than quotations in the selected period.",
+                "Note: this is a period-level ratio, not individual quote-to-invoice tracking."
+            ]));
         }
         else if (name == "Invoice Status")
         {
@@ -174,16 +179,11 @@ public partial class MainWindow
         var noun = itemCount == 1 ? "item" : "items";
         var verb = itemCount == 1 ? "has" : "have";
         var pronoun = itemCount == 1 ? "that item" : "those items";
-        return new Border
-        {
-            Background = Ui.Palette("#FFFBEB", "#202B36"),
-            BorderBrush = Brush.Parse("#FDE68A"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(9.6, 8),
-            Child = Ui.Columns("Auto,8,*", Ui.Icon("warning_amber", 18, Brush.Parse("#D97706")), new Border(),
-                Ui.Text($"{itemCount} {noun} sold in this period {verb} no purchase price set — profit/margin is understated for {pronoun} until a purchase price is added to the product.", 12, color: Brush.Parse("#92400E")))
-        };
+        return new ReportNoticeView(
+            "warning_amber",
+            $"{itemCount} {noun} sold in this period {verb} no purchase price set — profit/margin is understated for {pronoun} until a purchase price is added to the product.",
+            Brush.Parse("#D97706"),
+            Brush.Parse("#FDE68A"));
     }
 
     // Performs the report stats action for this screen or workflow.
@@ -236,13 +236,10 @@ public partial class MainWindow
 
         var legend = Ui.Wrap(Legend("#3B82F6", "Billed"), Legend("#22C55E", "Collected"), Legend("#7C3AED", "Profit"));
         legend.HorizontalAlignment = HorizontalAlignment.Center;
-        var card = Ui.Card(Ui.Stack(8,
-            Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("Monthly Revenue Trend", 16, true), Ui.Text($"{report.InvoiceCount} invoices in period · {CurrencyDisplay.Code()}", 12, color: Ui.Muted)),
-                Ui.Wrap(Ui.Button("↓  Export CSV", async () => await ExportReportCsv("Revenue")), Ui.Button("↓  Export PDF", async () => await ExportReportPdf("Revenue")))),
-            chartContent,
-            legend), 20);
-        card.Background = Ui.Palette("#FBF5FF", "#202B36");
-        return card;
+        var actions = Ui.Wrap(
+            Ui.Button("↓  Export CSV", async () => await ExportReportCsv("Revenue")),
+            Ui.Button("↓  Export PDF", async () => await ExportReportPdf("Revenue")));
+        return new RevenueChartPanelView($"{report.InvoiceCount} invoices in period · {CurrencyDisplay.Code()}", actions, chartContent, legend);
     }
 
     // Builds the monthly revenue breakdown and totals table beneath the chart.
@@ -268,10 +265,7 @@ public partial class MainWindow
                 Money(report.Months.Sum(month => month.Collected)), Money(report.Months.Sum(month => month.Outstanding)),
                 Money(report.Months.Sum(month => month.Cogs)), Money(report.Months.Sum(month => month.Profit)), $"{totalMargin:0.#}%"], false, true));
         }
-        var scroll = new ScrollViewer { Content = table, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto };
-        var card = Ui.Card(Ui.Stack(9.6, Ui.LocalText("Monthly Breakdown", 16, true), scroll), 20);
-        card.Background = Ui.Palette("#FBF5FF", "#202B36");
-        return card;
+        return new RevenueBreakdownPanelView(table);
     }
 
     // Builds one aligned header, detail, or total row for the monthly breakdown.
@@ -300,7 +294,6 @@ public partial class MainWindow
     private Control ReportTable(string title, string[][] rows, bool wrapInCard, string reportName = "")
     {
         var table = Ui.Stack(0);
-        if (!string.IsNullOrWhiteSpace(title)) table.Children.Add(new Border { Padding = new Thickness(0, 0, 0, 8), Child = Ui.Columns("*,Auto", Ui.LocalText(title, 16, true), Ui.Wrap(Ui.Button("↓ Export CSV", async () => await ExportReportCsv(string.IsNullOrWhiteSpace(reportName) ? title : reportName)), Ui.Button("↓ Export PDF", async () => await ExportReportPdf(string.IsNullOrWhiteSpace(reportName) ? title : reportName)))) });
         if (rows.Length == 0) table.Children.Add(Ui.Empty("No data for this period"));
         for (var index = 0; index < rows.Length; index++)
         {
@@ -314,9 +307,13 @@ public partial class MainWindow
                 Child = Ui.Columns(string.Join(",", row.Select(_ => "*")), row.Select((c, i) => (Control)Ui.Text(index == 0 ? c.ToUpperInvariant() : c, index == 0 ? 11 : 13, index == 0 || i == 0, index == 0 ? Ui.Muted : c.Contains(CurrencyDisplay.Symbol()) && c.Contains("70") ? Brush.Parse("#EF4444") : c.Contains(CurrencyDisplay.Symbol()) ? Brush.Parse("#16A34A") : null)).ToArray())
             });
         }
-        table.Children.Add(new Border { Padding = new Thickness(11.2, 9.6), Child = Ui.Columns("*,Auto", Ui.LocalText("Rows per page: 10      1 – 1 of 1", 13), Ui.LocalText("‹   Page 1 of 1   ›", 13, true)) });
-        var scroll = new ScrollViewer { Content = table, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto };
-        return wrapInCard ? Ui.Card(scroll, 20) : scroll;
+        Control actions = string.IsNullOrWhiteSpace(title)
+            ? new Border()
+            : Ui.Wrap(
+                Ui.Button("↓ Export CSV", async () => await ExportReportCsv(string.IsNullOrWhiteSpace(reportName) ? title : reportName)),
+                Ui.Button("↓ Export PDF", async () => await ExportReportPdf(string.IsNullOrWhiteSpace(reportName) ? title : reportName)));
+        var footer = Ui.Columns("*,Auto", Ui.LocalText("Rows per page: 10      1 – 1 of 1", 13), Ui.LocalText("‹   Page 1 of 1   ›", 13, true));
+        return new ReportTableView(title, actions, table, footer, wrapInCard);
     }
     // Performs the empty chart action for this screen or workflow.
     private static Control EmptyChart()

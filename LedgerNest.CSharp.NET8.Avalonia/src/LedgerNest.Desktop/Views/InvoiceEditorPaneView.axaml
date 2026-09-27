@@ -1,0 +1,8 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceEditorPaneView">
+  <Grid RowDefinitions="Auto,8,*">
+    <ContentControl x:Name="TopHost" />
+    <ContentControl x:Name="BottomHost" Grid.Row="2" />
+  </Grid>
+</UserControl>

@@ -1,0 +1,10 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ReportNoticeView">
+  <Border x:Name="Frame" Padding="12,10" CornerRadius="8" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <Grid ColumnDefinitions="Auto,10,*">
+      <TextBlock x:Name="IconText" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" VerticalAlignment="Center" />
+      <TextBlock x:Name="MessageText" Grid.Column="2" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+    </Grid>
+  </Border>
+</UserControl>

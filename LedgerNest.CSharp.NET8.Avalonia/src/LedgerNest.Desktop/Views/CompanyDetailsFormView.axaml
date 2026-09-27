@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.CompanyDetailsFormView">
+  <StackPanel Spacing="13">
+    <TextBlock Text="COMPANY DETAILS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
+    <ContentControl x:Name="CompanyFieldsHost" />
+    <Border Height="8" />
+    <TextBlock Text="BUSINESS TYPE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
+    <ContentControl x:Name="BusinessTypeHost" />
+    <Border Height="8" />
+    <TextBlock Text="PAYMENT SETTINGS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
+    <ContentControl x:Name="QrHost" />
+    <TextBlock Text="UPI ACCOUNTS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
+    <ContentControl x:Name="UpiRowsHost" />
+    <ContentControl x:Name="AddUpiHost" />
+    <Border Height="8" />
+    <ContentControl x:Name="BankSettingsHost" />
+    <TextBlock Text="BANK ACCOUNTS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
+    <ContentControl x:Name="BankRowsHost" />
+    <ContentControl x:Name="AddBankHost" />
+  </StackPanel>
+</UserControl>

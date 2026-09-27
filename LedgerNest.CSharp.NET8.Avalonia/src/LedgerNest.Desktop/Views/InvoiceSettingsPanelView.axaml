@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceSettingsPanelView">
+  <ScrollViewer Padding="28" HorizontalScrollBarVisibility="Disabled">
+    <Border x:Name="SettingsCard" MaxWidth="900" HorizontalAlignment="Stretch" VerticalAlignment="Top" Padding="32" CornerRadius="18" Background="{DynamicResource AppSurfaceBrush}">
+      <StackPanel Spacing="26">
+        <Grid ColumnDefinitions="4,12,*">
+          <Border Height="20" Background="{DynamicResource AppHeaderBrush}" CornerRadius="2" VerticalAlignment="Center" />
+          <TextBlock x:Name="HeadingText" Grid.Column="2" FontSize="20" FontWeight="SemiBold" />
+        </Grid>
+        <ContentControl x:Name="FieldsHost" />
+      </StackPanel>
+    </Border>
+  </ScrollViewer>
+</UserControl>

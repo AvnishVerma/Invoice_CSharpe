@@ -14,7 +14,7 @@
       <Setter Property="MinHeight" Value="36" />
     </Style>
     <Style Selector="NumericUpDown">
-      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="MinHeight" Value="30" />
     </Style>
   </Window.Styles>
   <Grid RowDefinitions="Auto,*,Auto">
@@ -26,8 +26,8 @@
       </StackPanel>
     </Border>
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-      <Grid Margin="24,12" ColumnDefinitions="*,280" ColumnSpacing="20">
-        <TabControl x:Name="Sections" IsEnabled="{Binding IsIdle}">
+      <Grid Margin="2,1\2" ColumnDefinitions="*,250" ColumnSpacing="20" >
+        <TabControl x:Name="Sections" IsEnabled="{Binding IsIdle}" >
           <TabItem Header="Issue license">
             <Border Classes="card" Margin="0,10,0,0" Padding="20">
               <StackPanel Spacing="8">

@@ -62,20 +62,12 @@ public partial class MainWindow
             Ui.Icon("account_balance", 25, Ui.Muted),
             new Border(),
             Ui.Field(sections[3].Fields[1], "Show Bank Details on Invoices")), 16);
-        var details = Ui.Stack(12.8,
-            Ui.Text("COMPANY DETAILS", 12, true, Ui.Muted),
+        var companyFields = Ui.Stack(12.8,
             Ui.Fields([F("Company Name"), F("GSTIN")], 2),
             Ui.Fields([F("PAN"), F("FSSAI Code")], 2),
             Ui.Fields([F("Country"), F("Phone"), F("Email")], 3),
             Ui.Field(F("Website")),
-            Ui.Field(F("Address")),
-            new Border { Height = 8 },
-            Ui.Text("BUSINESS TYPE", 12, true, Ui.Muted),
-            businessCard,
-            new Border { Height = 8 },
-            Ui.Text("PAYMENT SETTINGS", 12, true, Ui.Muted),
-            qrCard,
-            Ui.Text("UPI ACCOUNTS", 12, true, Ui.Muted));
+            Ui.Field(F("Address")));
 
         var upiRows = Ui.Stack(10);
         var bankRows = Ui.Stack(10);
@@ -103,21 +95,15 @@ public partial class MainWindow
         RenderBankRows();
         System.Collections.Specialized.NotifyCollectionChangedEventHandler upiChanged = (_, _) => RenderUpiRows();
         System.Collections.Specialized.NotifyCollectionChangedEventHandler bankChanged = (_, _) => RenderBankRows();
-        details.AttachedToVisualTree += (_, _) => { Model.UpiAccounts.CollectionChanged += upiChanged; Model.BankAccounts.CollectionChanged += bankChanged; };
-        details.DetachedFromVisualTree += (_, _) => { Model.UpiAccounts.CollectionChanged -= upiChanged; Model.BankAccounts.CollectionChanged -= bankChanged; };
-        details.Children.Add(upiRows);
         var addUpi = Ui.Button("＋ Add UPI Account", Model.AddUpiAccount);
         addUpi.Classes.Add("text");
         addUpi.HorizontalAlignment = HorizontalAlignment.Left;
-        details.Children.Add(addUpi);
-        details.Children.Add(new Border { Height = 12 });
-        details.Children.Add(bankCard);
-        details.Children.Add(Ui.Text("BANK ACCOUNTS", 12, true, Ui.Muted));
-        details.Children.Add(bankRows);
         var addBank = Ui.Button("＋ Add Bank Account", Model.AddBankAccount);
         addBank.Classes.Add("text");
         addBank.HorizontalAlignment = HorizontalAlignment.Left;
-        details.Children.Add(addBank);
+        var details = new CompanyDetailsFormView(companyFields, businessCard, qrCard, upiRows, addUpi, bankCard, bankRows, addBank);
+        details.AttachedToVisualTree += (_, _) => { Model.UpiAccounts.CollectionChanged += upiChanged; Model.BankAccounts.CollectionChanged += bankChanged; };
+        details.DetachedFromVisualTree += (_, _) => { Model.UpiAccounts.CollectionChanged -= upiChanged; Model.BankAccounts.CollectionChanged -= bankChanged; };
         var language = new ComboBox { ItemsSource = UiLocalization.Languages, SelectedItem = Model.Language, MinWidth = 145, MinHeight = 32, Padding = new Thickness(10, 5), Background = Ui.Canvas, Foreground = Ui.TextColor };
         language.SelectionChanged += (_, _) => Model.SetLanguage(language.SelectedItem?.ToString() ?? "English");
         Avalonia.Automation.AutomationProperties.SetName(language, "Language");
@@ -237,9 +223,9 @@ public partial class MainWindow
         var pageChoice = new ComboBox { ItemsSource = pageSize.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 32 };
         pageChoice.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((value, _) => Ui.Text(value == "A4" ? "Standard A4" : value ?? "", 15));
         pageChoice.Bind(ComboBox.SelectedItemProperty, new Binding(nameof(FormField.Value)) { Source = pageSize, Mode = BindingMode.TwoWay });
-        var templates = Ui.Card(Ui.Rows("Auto,Auto,*", Ui.Stack(6.4, Ui.Text("PAGE SIZE", 12, true, Ui.Muted), pageChoice), new Border { Padding = new Thickness(0, 12.8, 0, 8), Child = Ui.Text("TEMPLATES", 12, true, Ui.Muted) }, Ui.Scroll(templateList, 0)), 12);
-        var settings = Ui.Card(options, 0); var previewCard = Ui.Card(Ui.Rows("Auto,*,Auto", new Border { Padding = new Thickness(12.8, 8), Child = Ui.Text("Preview", 13, true) }, preview, new Border { Padding = new Thickness(12.8, 8), Child = Ui.Text("Preview may slightly differ in the final PDF.", 12, color: Ui.Muted) }), 0);
-        templates.Background = settings.Background = previewCard.Background = Ui.Palette("#FDF7FF", "#25212B");
+        var templates = new PdfTemplateSelectorView(pageChoice, templateList);
+        var settings = new PdfOptionsPanelView(options);
+        var previewCard = new PdfPreviewPanelView(preview);
         System.ComponentModel.PropertyChangedEventHandler pageSizeChanged = (_, e) =>
         {
             if (e.PropertyName != nameof(FormField.Value)) return;

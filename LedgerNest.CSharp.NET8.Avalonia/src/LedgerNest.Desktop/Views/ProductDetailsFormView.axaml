@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ProductDetailsFormView">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="28" Spacing="6" MaxWidth="900" HorizontalAlignment="Left">
+      <TextBlock Text="Choose which fields appear on the product add/edit forms, the product list, and invoice line items. Name and Price are always required."
+                 FontSize="14" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8" />
+      <ContentControl x:Name="RequiredRowsHost" />
+      <TextBlock Text="Product fields" FontSize="14" FontWeight="SemiBold" Margin="0,10,0,0" />
+      <ContentControl x:Name="ProductRowsHost" />
+      <ContentControl x:Name="MetadataHost" />
+      <TextBlock Text="Invoice" FontSize="14" FontWeight="SemiBold" Margin="0,10,0,0" />
+      <ContentControl x:Name="InvoiceRowsHost" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

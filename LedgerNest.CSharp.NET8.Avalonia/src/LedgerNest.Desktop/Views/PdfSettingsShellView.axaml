@@ -2,10 +2,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.PdfSettingsShellView">
   <Grid RowDefinitions="Auto,*">
-    <Border Background="{DynamicResource PageHeaderBrush}">
-      <ContentControl x:Name="HeaderHost" />
-    </Border>
-
-    <ContentControl x:Name="ResponsiveHost" Grid.Row="1" />
+    <ContentControl x:Name="HeaderHost" />
+    <Grid Grid.Row="1">
+      <Grid x:Name="WideLayout" Margin="12" ColumnDefinitions="260,12,320,12,*">
+        <ContentControl x:Name="WideTemplatesHost" />
+        <ContentControl x:Name="WideSettingsHost" Grid.Column="2" />
+        <ContentControl x:Name="WidePreviewHost" Grid.Column="4" />
+      </Grid>
+      <ScrollViewer x:Name="NarrowLayout" Margin="12" IsVisible="False" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12">
+          <ContentControl x:Name="NarrowTemplatesHost" />
+          <ContentControl x:Name="NarrowSettingsHost" />
+          <ContentControl x:Name="NarrowPreviewHost" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
   </Grid>
 </UserControl>

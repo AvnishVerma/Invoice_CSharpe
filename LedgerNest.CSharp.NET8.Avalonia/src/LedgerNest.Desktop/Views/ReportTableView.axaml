@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.ReportTableView">
+  <Border x:Name="Card" Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock x:Name="TitleText" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <ContentControl x:Name="ActionsHost" Grid.Column="1" />
+      </Grid>
+      <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
+        <ContentControl x:Name="RowsHost" />
+      </ScrollViewer>
+      <ContentControl x:Name="FooterHost" Grid.Row="2" />
+    </Grid>
+  </Border>
+</UserControl>

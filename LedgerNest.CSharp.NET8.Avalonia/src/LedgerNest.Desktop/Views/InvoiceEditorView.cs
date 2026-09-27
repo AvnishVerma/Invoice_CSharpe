@@ -107,7 +107,7 @@ public partial class MainWindow
             lineHost.SetLines(editorModel.Lines, editorModel.InvoiceSetting("Show Product / Service Tag").IsChecked, line => editorModel.Lines.Remove(line));
             UpdateTotals(); create.IsEnabled = editorModel.Lines.Count > 0;
         }
-        var quickAdd = Ui.Card(Ui.Stack(8, Ui.Columns("*,8,Auto", productSearch, new Border(), EditorButton("＋ Custom Item", ShowCustomItem)), suggestions), 8); quickAdd.Background = Ui.Palette("#F1F5FB", "#1E2C40"); quickAdd.BorderBrush = Ui.Outline;
+        var quickAdd = new InvoiceQuickAddView(productSearch, EditorButton("＋ Custom Item", ShowCustomItem), suggestions);
         var items = new InvoiceItemsPanelView(count, quickAdd, lineHost);
         var detailFields = Ui.Stack(8, Fields(editorModel.InvoiceDetails.Take(3), 2), new Expander { Header = "Document title & numbering", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(10, Field(editorModel.InvoiceDetails[3]), Field(editorModel.HideInvoiceNumber)) });
         var details = new InvoiceDocumentDetailsPanelView(detailFields);
@@ -123,9 +123,9 @@ public partial class MainWindow
             options.Children.Insert(0, new Expander { Header = "Custom fields", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Fields(editorModel.InvoiceCustomFields.Select(field => field.Field)) });
         }
         var optionsCard = new InvoiceOptionsPanelView(options);
-        var left = Ui.Rows("Auto,8,*", customer, new Border(), items); var right = Ui.Rows("Auto,8,*", details, new Border(), optionsCard);
+        var left = new InvoiceEditorPaneView(customer, items); var right = new InvoiceEditorPaneView(details, optionsCard);
         var viewport = new InvoiceWorkspace(left, right, items, optionsCard);
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var actions = new InvoiceDocumentActionsView();
         foreach (var (label, icon) in new[] { ("View", "visibility"), ("Preview", "picture_as_pdf"), ("Download", "download"), ("Print", "print") })
         {
             var button = label switch
@@ -137,7 +137,7 @@ public partial class MainWindow
                 _ => EditorButton(label)
             };
             button.Content = Ui.Columns("13,5,Auto", Ui.Icon(icon, 13), new Border(), Ui.LocalText(label, 12)); button.MinHeight = 28; button.Padding = new Thickness(8, 4);
-            button.IsEnabled = editorModel.LastSavedDocument != null; ToolTip.SetTip(button, "Open the last saved document. Save this invoice first to include your changes."); actions.Children.Add(button);
+            button.IsEnabled = editorModel.LastSavedDocument != null; ToolTip.SetTip(button, "Open the last saved document. Save this invoice first to include your changes."); actions.Add(button);
         }
         var shellModel = new InvoiceEditorShellModel();
         void UpdateHeader()

@@ -1,0 +1,11 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.PdfPreviewPanelView">
+  <Border CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <Border Padding="13,8"><TextBlock Text="Preview" FontSize="13" FontWeight="Bold" /></Border>
+      <ContentControl x:Name="PreviewHost" Grid.Row="1" />
+      <Border Grid.Row="2" Padding="13,8"><TextBlock Text="Preview may slightly differ in the final PDF." FontSize="12" Foreground="{DynamicResource AppMutedBrush}" /></Border>
+    </Grid>
+  </Border>
+</UserControl>

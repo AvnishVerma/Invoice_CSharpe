@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.RevenueBreakdownPanelView">
+  <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <StackPanel Spacing="12">
+      <TextBlock Text="Monthly Breakdown" FontSize="16" FontWeight="SemiBold" />
+      <ScrollViewer HorizontalScrollBarVisibility="Auto">
+        <ContentControl x:Name="RowsHost" />
+      </ScrollViewer>
+    </StackPanel>
+  </Border>
+</UserControl>

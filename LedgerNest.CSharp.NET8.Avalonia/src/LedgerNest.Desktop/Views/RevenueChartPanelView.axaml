@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.RevenueChartPanelView">
+  <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <StackPanel Spacing="12">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="3">
+          <TextBlock Text="Monthly Revenue Trend" FontSize="16" FontWeight="SemiBold" />
+          <TextBlock x:Name="SubtitleText" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+        </StackPanel>
+        <ContentControl x:Name="ActionsHost" Grid.Column="1" />
+      </Grid>
+      <ContentControl x:Name="ChartHost" />
+      <ContentControl x:Name="LegendHost" HorizontalContentAlignment="Center" />
+    </StackPanel>
+  </Border>
+</UserControl>

@@ -37,14 +37,7 @@ public partial class MainWindow
                 _ => Ui.Stack(16, Model.Settings["Invoice Settings"].Single(section => section.Title == keys[index]).Fields
                     .Select(field => field.Kind == "toggle" ? InvoiceToggle(field, field.Label, field.Help, icons[index]) : Ui.Field(field)).ToArray())
             };
-            var heading = Ui.Columns("4,12,*", new Border { Height = 19.2, Background = InvoiceSettingsBlue, CornerRadius = new CornerRadius(2) }, new Border(), Ui.LocalText(labels[index], 20, true));
-            var card = InvoiceSettingsCard(Ui.Stack(25.6, heading, fields), 32);
-            card.Background = Ui.Surface;
-            card.BorderThickness = new Thickness(0);
-            card.CornerRadius = new CornerRadius(18);
-            card.MaxWidth = 900;
-            card.VerticalAlignment = VerticalAlignment.Top;
-            content.Content = Ui.Scroll(card, 28);
+            content.Content = new InvoiceSettingsPanelView(labels[index], fields);
         }
         for (var i = 0; i < labels.Length; i++)
         {
@@ -152,6 +145,9 @@ public partial class MainWindow
 
     private static Control InvoiceToggle(FormField field, string title, string help, string icon, bool compact = false, bool leading = false)
     {
+        if (!compact && !leading)
+            return new InvoiceToggleSettingView(field, title, help, icon);
+
         var track = new Border { Width = 41.6, Height = 25.6, CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(2), Padding = new Thickness(3.2) };
         var thumb = new Avalonia.Controls.Shapes.Ellipse { Width = 16, Height = 16 };
         track.Child = thumb;

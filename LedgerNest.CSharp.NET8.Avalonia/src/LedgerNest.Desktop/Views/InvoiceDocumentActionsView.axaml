@@ -1,0 +1,5 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceDocumentActionsView">
+  <StackPanel x:Name="ActionsHost" Orientation="Horizontal" Spacing="8" />
+</UserControl>
