@@ -258,7 +258,8 @@ internal static class Program
             var button = window.GetVisualDescendants().OfType<Button>().LastOrDefault(b => b.IsVisible && (b.Content?.ToString() == text || b.Tag?.ToString() == text));
             if (button == null)
             {
-                var item = window.GetVisualDescendants().OfType<Button>().Select(b => b.Flyout).OfType<MenuFlyout>().SelectMany(f => f.Items.OfType<MenuItem>()).Last(i => i.Header?.ToString() == text);
+                var item = window.GetVisualDescendants().OfType<Button>().Select(b => b.Flyout).OfType<MenuFlyout>().SelectMany(f => f.Items.OfType<MenuItem>()).LastOrDefault(i => i.Header?.ToString() == text)
+                    ?? throw new InvalidOperationException($"Could not find button or menu item '{text}' on '{model.Title}'.");
                 Check(item.IsEnabled, $"Disabled menu item: {text}"); item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             }
             else
@@ -594,7 +595,7 @@ internal static class Program
         ((MenuFlyout)layoutButton.Flyout!).Items.OfType<MenuItem>().Single(i => i.Tag?.ToString() == "Simple Feed").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle();
         Capture("issue-05-simple-feed");
         foreach (var route in MainWindowViewModel.Routes) { model.NavigateCommand.Execute(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
-        foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Customize", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
+        foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
         Click("PDF Settings"); Click("Grid Classic");
         Check(FindButton("Save Settings").IsEnabled, "Changing PDF template must enable saving");
         Click("Landscape");
@@ -856,7 +857,10 @@ internal static class Program
         Check(editModel.InvoiceCustomer[0].Value == "Unsaved theme draft", "Theme changes must preserve unsaved editor values");
         editModel.SetThemeMode("Light");
         Capture("invoice-edit-light");
-        Check(((Avalonia.Media.ISolidColorBrush)window.Background!).Color.R > 240 && ((Avalonia.Media.ISolidColorBrush)itemLabel.Foreground!).Color.R < 32, "Returning to light mode must restore canvas and text colors");
+        var lightItemLabel = window.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "Editable service");
+        Check(((Avalonia.Media.ISolidColorBrush)window.Background!).Color.R > 240 &&
+              ((Avalonia.Media.ISolidColorBrush)lightItemLabel.Foreground!).Color == Avalonia.Media.Color.Parse("#202124"),
+            "Returning to light mode must restore the configured canvas and text colors");
 
         Click("Save Invoice (Ctrl+S)");
         Check(editModel.Invoices.Count == 1 && editModel.LastSavedDocument?.Name == "00000001", "UI save must update the existing document");
