@@ -38,6 +38,7 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 throw new InvalidOperationException("This database is not a LedgerNest C# database.");
             if (!columns.Contains("Type"))
                 Database.ExecuteSqlRaw("ALTER TABLE invoices ADD COLUMN Type TEXT NOT NULL DEFAULT 'Invoice'");
+            NormalizeLegacyDuplicateDocumentNumbers();
             EnsureColumns("invoices", [("DeletedAt", "TEXT NULL"), ("CustomerName", "TEXT NOT NULL DEFAULT ''"), ("Snapshot", "TEXT NULL")]);
             EnsureColumns("customers", [("BusinessName", "TEXT NOT NULL DEFAULT ''")]);
             command.CommandText = """
@@ -84,6 +85,42 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                         command.CommandText = $"ALTER TABLE {table} ADD COLUMN {column.Name} {column.Definition}";
                         command.ExecuteNonQuery();
                     }
+            }
+
+            void NormalizeLegacyDuplicateDocumentNumbers()
+            {
+                // Earlier C# databases had no Type column. Adding it assigns all
+                // rows to Invoice, which can expose colliding numbers that were
+                // previously independent invoice, quotation, and receipt values.
+                command.CommandText = "SELECT Id, Type, InvoiceNumber FROM invoices ORDER BY Id";
+                var documents = new List<(int Id, string Type, string Number)>();
+                using (var reader = command.ExecuteReader())
+                    while (reader.Read()) documents.Add((reader.GetInt32(0), reader.GetString(1), reader.GetString(2)));
+
+                foreach (var group in documents.GroupBy(document => (document.Type, document.Number)))
+                {
+                    var duplicates = group.Skip(1).ToArray();
+                    if (duplicates.Length == 0) continue;
+
+                    var next = documents
+                        .Where(document => document.Type == group.Key.Type)
+                        .Select(document => new string(document.Number.Where(char.IsAsciiDigit).ToArray()))
+                        .Select(number => long.TryParse(number, out var value) ? value : 0)
+                        .DefaultIfEmpty(0)
+                        .Max();
+
+                    foreach (var duplicate in duplicates)
+                    {
+                        var replacement = (++next).ToString("D8");
+                        command.CommandText = "UPDATE invoices SET InvoiceNumber = $number WHERE Id = $id";
+                        command.Parameters.Clear();
+                        var number = command.CreateParameter(); number.ParameterName = "$number"; number.Value = replacement;
+                        var id = command.CreateParameter(); id.ParameterName = "$id"; id.Value = duplicate.Id;
+                        command.Parameters.Add(number); command.Parameters.Add(id);
+                        command.ExecuteNonQuery();
+                    }
+                }
+                command.Parameters.Clear();
             }
             transaction.Commit();
         }
