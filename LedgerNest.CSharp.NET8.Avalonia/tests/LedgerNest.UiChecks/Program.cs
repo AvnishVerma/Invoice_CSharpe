@@ -197,6 +197,13 @@ internal static class Program
         var invoiceEditorOnly = args.Contains("--invoice-editor-only");
         var compactUiOnly = args.Contains("--compact-ui-only");
         var appearanceOnly = args.Contains("--appearance-only");
+        var documentTypesOnly = args.Contains("--document-types-only");
+        if (documentTypesOnly)
+        {
+            CheckDocumentTypes();
+            Console.WriteLine("Document type migration checks passed.");
+            return;
+        }
         if (invoiceEditorOnly) { CheckTotals(); CheckServiceTotals(); }
         if (productSettingsOnly) CheckProductSettingsBehavior();
         if (licensingOnly) CheckLicensing();
