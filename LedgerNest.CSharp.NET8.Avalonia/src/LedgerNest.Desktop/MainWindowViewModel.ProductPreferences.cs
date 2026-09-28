@@ -1,7 +1,30 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace LedgerNest.Desktop;
 
 public partial class MainWindowViewModel
 {
+    private const string ProductDetailsNoticeDismissedKey = "product_details_notice.dismissed";
+
+    /// <summary>Returns whether the optional Product Details notice has not yet been opened.</summary>
+    public bool ShouldShowProductDetailsNotice()
+    {
+        if (dbFactory == null) return true;
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        return db.Settings.AsNoTracking().FirstOrDefault(setting => setting.Key == ProductDetailsNoticeDismissedKey)?.Value != "true";
+    }
+
+    /// <summary>Persists that the user has opened Product Details from its management notice.</summary>
+    public void DismissProductDetailsNotice()
+    {
+        if (dbFactory == null) return;
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        SetSetting(db, ProductDetailsNoticeDismissedKey, "true");
+        db.SaveChanges();
+    }
+
     public FormField ProductSetting(string label) => Settings["Product Details"].SelectMany(s => s.Fields).Single(f => f.Label == label);
 
     public bool ProductFieldVisible(string label)

@@ -42,9 +42,15 @@ internal sealed partial class ManagementView : UserControl
         var header = new ManagementActionBarView($"{kind} Management", headerActions);
         var filterButton = MenuButton("Filter ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); });
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
-        if (kind == "Product")
+        if (kind == "Product" && model.ShouldShowProductDetailsNotice())
         {
-            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("Product fields", 13, true, Ui.Primary), Ui.LocalText("Choose the details shown in your product catalog from Settings > Product Details.", 12, color: Ui.Primary)), Ui.Button("Open Product Details", () => window.OpenProductDetailsSettings())), 16);
+            void OpenProductDetails()
+            {
+                model.DismissProductDetailsNotice();
+                ProductBannerHost.Content = null;
+                window.OpenProductDetailsSettings();
+            }
+            var banner = Ui.Card(Ui.Columns("*,Auto", Ui.Stack(3.2, Ui.LocalText("Product fields", 13, true, Ui.Primary), Ui.LocalText("Choose the details shown in your product catalog from Settings > Product Details.", 12, color: Ui.Primary)), Ui.Button("Open Product Details", OpenProductDetails)), 16);
             banner.Background = Ui.Palette("#EFF6FF", "#202B36");
             ProductBannerHost.Content = banner;
         }
@@ -129,7 +135,7 @@ internal sealed partial class ManagementView : UserControl
             "Admin" or "User" => query.Where(r => r["Role"] == filter), "Paid" or "Partial" or "Unpaid" or "Overdue" => query.Where(r => r["Status"] == filter), _ => query };
         return sort switch { "Name A–Z" => query.OrderBy(r => r.Name), "Name Z–A" => query.OrderByDescending(r => r.Name), "Newest" => query.Reverse(), _ => query };
     }
-    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Expiry Date", "Description", "Default Discount", "Unit", "Storage Location", "Container Number", "Batch Number", "Manufacture Date", "Manufacturer Name", "Supplier Name", "SKU Code", "Notes"] : ["Username", "Role"];
+    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Stock", "Tax Rate"] : ["Username", "Role"];
     private readonly HashSet<string> hidden = [];
     // Performs the columns action for this screen or workflow.
     private void Columns()
@@ -422,19 +428,19 @@ internal sealed partial class ManagementView : UserControl
             ["Tax Rate"] = ".95*",
             ["Expiry Date"] = "1.25*"
         };
-        return string.Join(",", new[] { "56" }.Concat(Headers.Where(h => !hidden.Contains(h) && (kind != "Product" || model.ProductFieldVisible(h))).Select(h => widths.GetValueOrDefault(h, "1.3*"))).Append("122"));
+        return string.Join(",", Headers.Where(h => !hidden.Contains(h)).Select(h => widths.GetValueOrDefault(h, "1.3*")).Append("122"));
     }
 
     // Performs the product table row action for this screen or workflow.
     private Control ProductTableRow(UiRecord? record, int index)
     {
-        var controls = new List<Control> { HeaderOrCell(record == null ? "SL. NO." : (index + 1).ToString(), record == null, false) };
+        var controls = new List<Control>();
         string[] values = record == null
             ? Headers
             : Headers.Select(h => h switch { "Name / Alias" => record.Name, "Price" => record["Sale Price"], "Stock" => ProductStock(record), "Tax Rate" => record["Tax (%)"], _ => record[h] }).ToArray();
         for (var i = 0; i < Headers.Length; i++)
-            if (!hidden.Contains(Headers[i]) && model.ProductFieldVisible(Headers[i])) controls.Add(ProductCell(record, Headers[i], values[i]));
-        controls.Add(record == null ? new Border() : ProductActions(record));
+            if (!hidden.Contains(Headers[i])) controls.Add(ProductCell(record, Headers[i], values[i]));
+        controls.Add(record == null ? HeaderOrCell("ACTIONS", true) : ProductActions(record));
         return new Border
         {
             Background = record == null ? Ui.CardSurface : Ui.Palette("#FFF7FE", "#202B36"),
