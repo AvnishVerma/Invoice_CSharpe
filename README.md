@@ -2,6 +2,7 @@
 
 LedgerNest is a cross-platform invoicing and business-management desktop application built with .NET 10, Avalonia UI, MVVM, EF Core, and SQLite. The active solution is located in `LedgerNest.CSharp.NET8.Avalonia/`; the directory name is retained to avoid disrupting existing development paths.
 
+[![LedgerNest checks](https://github.com/AvnishVerma/Invoice_CSharpe/actions/workflows/ledgernest-checks.yml/badge.svg)](https://github.com/AvnishVerma/Invoice_CSharpe/actions/workflows/ledgernest-checks.yml)
 ## Requirements
 
 - .NET SDK 10.0.200 or a compatible later feature band
@@ -36,3 +37,4 @@ The verification project covers UI rendering, invoice calculations, persistence,
 - `LedgerNest.CSharp.NET8.Avalonia/src/LedgerNest.Desktop` — Avalonia desktop application
 - `LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks` — headless UI and behavior checks
 - `LedgerNest.CSharp.NET8.Avalonia/invoiso-main` — legacy Flutter reference application
+
