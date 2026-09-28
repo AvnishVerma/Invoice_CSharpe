@@ -2076,7 +2076,12 @@ internal static class Program
         Check(model.RestoreJsonBackup(backup), "Document backup must restore");
         Verify(CreateModel(factory, path));
         using (var db = factory.CreateDbContext())
+        {
+            // SQLite cannot drop a column while an index still references it.
+            // EnsureCurrentSchema recreates this unique index after upgrading.
+            db.Database.ExecuteSqlRaw("DROP INDEX IF EXISTS IX_invoices_Type_InvoiceNumber");
             db.Database.ExecuteSqlRaw("ALTER TABLE invoices DROP COLUMN Type");
+        }
         var upgraded = CreateModel(factory, path);
         Check(upgraded.Invoices.Count == 3 && upgraded.Invoices.All(i => i["Type"] == "Invoice"), "Pre-type C# databases must upgrade without losing invoices");
         Check(CreateModel(factory, path).Invoices.Count == 3, "Schema upgrade must be repeatable");

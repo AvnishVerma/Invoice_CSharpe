@@ -8,7 +8,7 @@
         <TextBlock x:Name="TitleText" FontSize="16" />
         <TextBlock x:Name="HelpText" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
       </StackPanel>
-      <ToggleButton x:Name="Toggle" Grid.Column="4" Padding="0" BorderThickness="0" Background="Transparent" VerticalAlignment="Center">
+      <ToggleButton x:Name="Toggle" Classes="form-toggle" Grid.Column="4" Padding="0" BorderThickness="0" Background="Transparent" VerticalAlignment="Center">
         <Border x:Name="Track" Width="42" Height="26" CornerRadius="18" BorderThickness="2" Padding="3">
           <Ellipse x:Name="Thumb" Width="16" Height="16" />
         </Border>
