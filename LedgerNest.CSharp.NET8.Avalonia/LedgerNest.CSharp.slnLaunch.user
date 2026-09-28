@@ -12,7 +12,8 @@
       },
       {
         "Path": "src\\LedgerNest.UpdateServer\\LedgerNest.UpdateServer.csproj",
-        "Action": "Start"
+        "Action": "Start",
+        "DebugTarget": "IIS Express"
       }
     ]
   }
