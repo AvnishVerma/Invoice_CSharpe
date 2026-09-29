@@ -198,6 +198,13 @@ internal static class Program
         var compactUiOnly = args.Contains("--compact-ui-only");
         var appearanceOnly = args.Contains("--appearance-only");
         var documentTypesOnly = args.Contains("--document-types-only");
+        var documentNumberingOnly = args.Contains("--document-numbering-only");
+        if (documentNumberingOnly)
+        {
+            CheckDocumentNumbering();
+            Console.WriteLine("Document numbering checks passed.");
+            return;
+        }
         if (documentTypesOnly)
         {
             CheckDocumentTypes();
@@ -2042,19 +2049,20 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-numbering-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        model.Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Invoice Prefix").Value = "INV";
         model.Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Starting Number").Value = "27";
         Check(model.SaveSettings("Invoice Settings"), "Starting number must persist");
-        Check(model.PeekNextDocumentNumber("Invoice") == "00000027" && model.PeekNextDocumentNumber("Invoice") == "00000027", "Number preview must honor settings without consuming a number");
+        Check(model.PeekNextDocumentNumber("Invoice") == "INV-00000027" && model.PeekNextDocumentNumber("Invoice") == "INV-00000027", "Number preview must honor the invoice prefix and settings without consuming a number");
         Check(model.PeekNextDocumentNumber("Quotation") == "00000001" && model.PeekNextDocumentNumber("Receipt") == "00000001", "Quotation and receipt sequences must start independently at one");
         var stale = CreateModel(factory, path);
         model.Lines.Add(new InvoiceLineViewModel { Name = "Numbered item", Price = 1 });
         stale.Lines.Add(new InvoiceLineViewModel { Name = "Numbered item", Price = 1 });
         Check(model.SaveInvoice() && stale.SaveInvoice(), "Two already-open editors must save distinct numbers");
         using (var db = factory.CreateDbContext())
-            Check(db.Invoices.Select(i => i.InvoiceNumber).ToArray().Order().SequenceEqual(new[] { "00000027", "00000028" }), "Save must derive its number from current database rows");
+            Check(db.Invoices.Select(i => i.InvoiceNumber).ToArray().Order().SequenceEqual(new[] { "INV-00000027", "INV-00000028" }), "Save must persist the configured invoice prefix and derive its number from current database rows");
         model.InvoiceDetails[0].Value = "Quotation";
         Check(model.SaveInvoice() && model.Invoices.Last().Name == "00000001", "Quotation must use its own sequence");
-        Check(CreateModel(factory, path).PeekNextDocumentNumber("Invoice") == "00000029", "Invoice sequence must continue across restart");
+        Check(CreateModel(factory, path).PeekNextDocumentNumber("Invoice") == "INV-00000029", "Prefixed invoice sequence must continue across restart");
         var backup = model.CreateJsonBackup();
         Check(model.RestoreJsonBackup(backup) && model.PeekNextDocumentNumber("Quotation") == "00000002", "Number sequence must survive backup restore");
         using (var db = factory.CreateDbContext())

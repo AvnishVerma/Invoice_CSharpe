@@ -3,12 +3,14 @@
              x:Class="LedgerNest.Desktop.Views.InvoiceCustomerPanelView">
   <Border Padding="13" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
     <StackPanel Spacing="8">
-      <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Text="Bill to" FontSize="16" FontWeight="SemiBold" />
-        <ContentControl x:Name="SelectCustomerHost" Grid.Column="1" />
+      <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,12,*,12,*,12,Auto,6,Auto">
+        <TextBlock Text="Bill to" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <ContentControl x:Name="CustomerNameHost" Grid.Column="2" />
+        <ContentControl x:Name="CustomerPhoneHost" Grid.Column="4" />
+        <ContentControl x:Name="SelectCustomerHost" Grid.Column="6" VerticalContentAlignment="Center" />
+        <ContentControl x:Name="DetailsToggleHost" Grid.Column="8" VerticalContentAlignment="Center" />
+        <ContentControl x:Name="CustomerDetailsHost" Grid.Row="1" Grid.ColumnSpan="9" Margin="0,8,0,0" />
       </Grid>
-      <ContentControl x:Name="CustomerFieldsHost" />
-      <ContentControl x:Name="CustomerDetailsHost" />
     </StackPanel>
   </Border>
 </UserControl>

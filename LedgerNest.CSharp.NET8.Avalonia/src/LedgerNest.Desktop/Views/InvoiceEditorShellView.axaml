@@ -28,7 +28,8 @@
             BorderThickness="0,1,0,0"
             Padding="16,8">
       <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-        <ContentControl x:Name="TotalsHost" Grid.ColumnSpan="2" Margin="0,0,0,6" HorizontalContentAlignment="Stretch" />
+        <ContentControl x:Name="TotalsHost" Grid.ColumnSpan="2" Margin="0,0,0,8"
+                        HorizontalAlignment="Right" HorizontalContentAlignment="Right" />
         <ContentControl x:Name="ActionsHost" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Center" />
         <ContentControl x:Name="CreateHost" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" />
       </Grid>

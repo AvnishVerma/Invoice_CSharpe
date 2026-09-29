@@ -50,9 +50,16 @@ internal static class DocumentPdf
     internal static string DisplayNumber(Invoice invoice, PdfExportOptions options)
     {
         if (invoice.Snapshot?.HideInvoiceNumber == true) return invoice.Snapshot.CustomInvoiceNumber.Trim();
-        var number = invoice.InvoiceNumber;
+        var number = invoice.InvoiceNumber.Trim();
+        if (!invoice.Type.Equals("Invoice", StringComparison.OrdinalIgnoreCase)) return number;
+        var prefix = options.InvoicePrefix.Trim();
+        var normalizedPrefix = prefix.TrimEnd('-', '/', ' ');
+        if (normalizedPrefix.Length > 0 && number.StartsWith(normalizedPrefix, StringComparison.OrdinalIgnoreCase))
+            number = number[normalizedPrefix.Length..].TrimStart('-', '/', ' ');
         if (long.TryParse(number, out var numeric)) number = numeric.ToString(options.LeadingZeros ? "D8" : "0", CultureInfo.InvariantCulture);
-        return (string.IsNullOrWhiteSpace(options.InvoicePrefix) ? "" : options.InvoicePrefix.Trim() + "-") + number;
+        if (prefix.Length == 0) return number;
+        var separator = prefix.EndsWith('-') || prefix.EndsWith('/') || prefix.EndsWith(' ') ? "" : "-";
+        return prefix + separator + number;
     }
 
     // Performs the create action for this screen or workflow.

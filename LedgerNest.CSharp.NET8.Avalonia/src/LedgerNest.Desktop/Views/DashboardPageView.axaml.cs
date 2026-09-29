@@ -49,6 +49,7 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
     public string OutstandingText { get; }
     public string OutOfStockCount { get; }
     public string OutOfStockProduct { get; }
+    public string Username { get; }
     public bool IsDefaultLayout => Layout == "Default";
     public bool IsClassicLayout => Layout == "Classic";
     public bool IsBentoLayout => Layout == "Bento";
@@ -92,6 +93,7 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
         string outstandingText,
         string outOfStockCount,
         string outOfStockProduct,
+        string username,
         Action refresh,
         string initialLayout = "Default",
         Action<string>? layoutChanged = null)
@@ -106,6 +108,7 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
         OutstandingText = outstandingText;
         OutOfStockCount = outOfStockCount;
         OutOfStockProduct = outOfStockProduct;
+        Username = string.IsNullOrWhiteSpace(username) ? "User" : username.Trim();
         RefreshCommand = new RelayCommand(refresh);
         SelectLayoutCommand = new RelayCommand<string>(SelectLayout);
         layout = initialLayout;

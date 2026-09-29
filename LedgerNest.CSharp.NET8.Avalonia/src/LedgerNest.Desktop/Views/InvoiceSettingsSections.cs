@@ -93,7 +93,7 @@ public partial class MainWindow
                 var box = new TextBox { MinHeight = 38.4, MaxLength = 100, Background = Ui.Palette("#FFFFFF", "#252525") };
                 box.Bind(TextBox.TextProperty, new Binding(nameof(InvoiceCustomFieldDefinition.Label)) { Source = field, Mode = BindingMode.TwoWay });
                 AutomationProperties.SetName(box, "Field label " + field.Id);
-                var input = new Grid(); input.Children.Add(box);
+                var input = new Grid { Margin = new Thickness(0, 8, 0, 0) }; input.Children.Add(box);
                 input.Children.Add(new Border { Background = Ui.Surface, Padding = new Thickness(3.2, 0), Margin = new Thickness(9, -8, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Child = Ui.LocalText("Field label", 12, color: Ui.Muted) });
                 rows.Children.Add(Ui.Columns("30,30,8,*,8,32", up, down, new Border(), input, new Border(), Action("Delete field", "delete", () => Model.RemoveInvoiceCustomField(field))));
             }

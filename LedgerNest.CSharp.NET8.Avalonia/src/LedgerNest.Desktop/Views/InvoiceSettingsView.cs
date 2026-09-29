@@ -193,7 +193,7 @@ public partial class MainWindow
             input = box;
         }
         AutomationProperties.SetName(input, field.Label);
-        var grid = new Grid(); grid.Children.Add(input);
+        var grid = new Grid { Margin = new Thickness(0, 8, 0, 0) }; grid.Children.Add(input);
         if (icon.Length > 0) grid.Children.Add(new Border { Padding = new Thickness(8, 0), HorizontalAlignment = HorizontalAlignment.Left, IsHitTestVisible = false, Child = Ui.Icon(icon, 22) });
         if (label.Length > 0) grid.Children.Add(new Border { Background = Ui.CardSurface, Padding = new Thickness(3.2, 0), Margin = new Thickness(12, -8, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Child = Ui.LocalText(label, 12, color: Ui.Muted) });
         var error = Ui.LocalText("", 12, color: Brushes.Firebrick);

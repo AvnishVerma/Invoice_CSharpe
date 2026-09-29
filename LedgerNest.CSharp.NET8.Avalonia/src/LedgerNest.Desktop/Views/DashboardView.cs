@@ -65,7 +65,7 @@ public partial class MainWindow
         var outOfStock = Model.Products.FirstOrDefault(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
         var outOfStockCount = Model.Products.Count(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
 
-        return new DashboardPageView(new DashboardPageModel(tiles, recent, quickActions, topCustomers, topProducts, ShortMoney(paid), CurrencyDisplay.Format(outstanding), outOfStockCount.ToString(), outOfStock?.Name ?? "No product", () => page.Content = Dashboard(), dashboardLayout, selected => dashboardLayout = selected));
+        return new DashboardPageView(new DashboardPageModel(tiles, recent, quickActions, topCustomers, topProducts, ShortMoney(paid), CurrencyDisplay.Format(outstanding), outOfStockCount.ToString(), outOfStock?.Name ?? "No product", Model.CurrentUsername ?? "User", () => page.Content = Dashboard(), dashboardLayout, selected => dashboardLayout = selected));
     }
 
     // Performs the quick action creation action for dashboard shortcut cards.

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -26,10 +27,25 @@ public partial class MainWindow
         invoiceCompletionVisible = false;
         var editorModel = Model;
         var saveCustomer = EditorButton("Save customer", () => editorModel.SaveRecord("Customer", editorModel.InvoiceCustomer)); saveCustomer.Classes.Add("text");
-        var customerFields = Fields(new[] { editorModel.InvoiceCustomer[0], editorModel.InvoiceCustomer[2] }, 2);
         var extraCustomerFields = editorModel.InvoiceCustomer.Where((_, index) => index is not (0 or 2) && (index != 4 || editorModel.InvoiceSetting("Show GST fields").IsChecked));
-        var customerMore = new Expander { Header = "Business, address & contact details", Content = Ui.Stack(10, Fields(extraCustomerFields, 2), saveCustomer), HorizontalAlignment = HorizontalAlignment.Stretch };
-        var customer = new InvoiceCustomerPanelView(EditorButton("Select customer", SelectCustomer), customerFields, customerMore);
+        var customerMore = Ui.Stack(10, Fields(extraCustomerFields, 2), saveCustomer);
+        customerMore.IsVisible = false;
+        var customerMoreToggle = new ToggleButton
+        {
+            Content = Ui.Icon("expand_more", 19),
+            Padding = new Thickness(5),
+            MinWidth = 32,
+            MinHeight = 32,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(customerMoreToggle, "Show business, address, and contact details");
+        customerMoreToggle.Classes.Add("outline");
+        customerMoreToggle.IsCheckedChanged += (_, _) =>
+        {
+            customerMore.IsVisible = customerMoreToggle.IsChecked == true;
+            ((TextBlock)customerMoreToggle.Content!).Text = customerMoreToggle.IsChecked == true ? "expand_less" : "expand_more";
+        };
+        var customer = new InvoiceCustomerPanelView(EditorButton("Select customer", SelectCustomer), Field(editorModel.InvoiceCustomer[0]), Field(editorModel.InvoiceCustomer[2]), customerMoreToggle, customerMore);
         var productSearch = new TextBox { PlaceholderText = "Search & add a product or service (Ctrl+F)", MinWidth = 120, MinHeight = 32, Height = 32, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(10, 5), Background = Ui.Canvas };
         var suggestions = new ListBox
         {
@@ -93,11 +109,10 @@ public partial class MainWindow
             var rows = new List<InvoiceTotalLine>
             {
                 new("Subtotal", CurrencyDisplay.Format(t.Subtotal, currency: Model.EditorCurrency), 14),
+                new("Discount", CurrencyDisplay.Format(t.ItemDiscount + t.InvoiceDiscount, currency: Model.EditorCurrency), 14),
                 new("Tax", CurrencyDisplay.Format(t.Tax, currency: Model.EditorCurrency), 14)
             };
-            if (t.ItemDiscount != 0) rows.Add(new InvoiceTotalLine("Item discount", CurrencyDisplay.Format(t.ItemDiscount, currency: Model.EditorCurrency), 14));
             if (t.AdditionalCosts != 0) rows.Add(new InvoiceTotalLine("Charges & adjustments", CurrencyDisplay.Format(t.AdditionalCosts, currency: Model.EditorCurrency), 14));
-            if (t.InvoiceDiscount != 0) rows.Add(new InvoiceTotalLine("Invoice discount", CurrencyDisplay.Format(t.InvoiceDiscount, currency: Model.EditorCurrency), 14));
             rows.Add(new InvoiceTotalLine("Total", CurrencyDisplay.Format(t.Total, currency: Model.EditorCurrency), 19));
             totals.SetTotals(rows);
         }
@@ -213,11 +228,12 @@ public partial class MainWindow
     // Performs the select customer action for this screen or workflow.
     private void SelectCustomer()
     {
-        var list = new ListBox { ItemsSource = Model.Customers.Select(c => c.Name).ToArray(), MinHeight = 180 };
-        var search = new TextBox { PlaceholderText = "Search customer" };
-        search.TextChanged += (_, _) => list.ItemsSource = Model.Customers.Where(c => c.Name.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)).Select(c => c.Name).ToArray();
-        var useDefault = new CheckBox { Content = "Use as default for new invoices" };
-        ShowOverlay("Select Customer", Ui.Stack(12, search, list, useDefault, Ui.Button("Clear default customer", () => Model.SetDefaultCustomer(null))), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Select", () => { var c = Model.Customers.FirstOrDefault(c => c.Name == list.SelectedItem?.ToString()); if (c == null) return; foreach (var f in Model.InvoiceCustomer) f.Value = c[f.Label]; if (useDefault.IsChecked == true) Model.SetDefaultCustomer(c); CloseOverlay(); }, true)));
+        void Apply(UiRecord customer)
+        {
+            foreach (var field in Model.InvoiceCustomer) field.Value = customer[field.Label];
+            CloseOverlay();
+        }
+        ShowOverlay("Choose a customer", new CustomerChooserView(Model.Customers, Apply), new Border(), width: 420);
     }
     // Performs the show invoice success action for this screen or workflow.
     private void ShowInvoiceSuccess()

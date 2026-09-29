@@ -205,7 +205,7 @@
     <Border Grid.Row="1" Background="{DynamicResource DashboardSurface}">
       <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel x:Name="DashboardContent" Margin="12.8" Spacing="16" HorizontalAlignment="Stretch">
-          <Border CornerRadius="16" Padding="22.4,19.2" MinHeight="83.2" IsVisible="{Binding ShowHero}" BoxShadow="0 8 22 0 #16000000">
+          <Border CornerRadius="16" Padding="22.4,19.2" MinHeight="83.2" BoxShadow="0 8 22 0 #16000000">
             <Border.Background>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
                 <GradientStop Color="#1E293B" Offset="0" />
@@ -213,7 +213,10 @@
               </LinearGradientBrush>
             </Border.Background>
             <StackPanel Spacing="4.8">
-              <TextBlock loc:UiLocalization.Text="Welcome back, admin" FontSize="22" FontWeight="Bold" Foreground="White" />
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock loc:UiLocalization.Text="Welcome back," FontSize="22" FontWeight="Bold" Foreground="White" />
+                <TextBlock Text="{Binding Username}" FontSize="22" FontWeight="Bold" Foreground="White" />
+              </StackPanel>
               <TextBlock loc:UiLocalization.Text="Here's your business at a glance" FontSize="13" Foreground="#D6E3F3" />
             </StackPanel>
           </Border>

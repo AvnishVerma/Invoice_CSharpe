@@ -129,7 +129,7 @@ internal sealed class ProductEditorFormView : UserControl
             input = text;
         }
         AutomationProperties.SetName(input, field.Label);
-        var grid = new Grid(); grid.Children.Add(input);
+        var grid = new Grid { Margin = new Thickness(0, 7, 0, 0) }; grid.Children.Add(input);
         if (icon.Length > 0)
         {
             var glyph = Ui.Icon(icon, 23); glyph.HorizontalAlignment = HorizontalAlignment.Left;

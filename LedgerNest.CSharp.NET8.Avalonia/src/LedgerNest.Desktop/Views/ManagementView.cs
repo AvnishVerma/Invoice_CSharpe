@@ -39,7 +39,6 @@ internal sealed partial class ManagementView : UserControl
             : Documents
             ? new Control[] { Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, trashButton, Ui.Button("↻", Refresh) }
             : [Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add];
-        var header = new ManagementActionBarView($"{kind} Management", headerActions);
         var filterButton = MenuButton("Filter ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); });
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
         if (kind == "Product" && model.ShouldShowProductDetailsNotice())
@@ -73,11 +72,22 @@ internal sealed partial class ManagementView : UserControl
         {
             RecordRoot.IsVisible = true;
             DocumentRoot.IsVisible = false;
-            HeaderHost.Content = header;
+            if (kind == "Product")
+            {
+                HeaderHost.IsVisible = false;
+                ProductHeaderRoot.IsVisible = true;
+                foreach (var action in headerActions) ProductHeaderActionsHost.Children.Add(action);
+            }
+            else
+            {
+                HeaderHost.Content = new ManagementActionBarView($"{kind} Management", headerActions);
+            }
             StatsHost.Content = stats;
 
             Control toolbarActions = kind == "User"
                 ? MenuButton("Role: All ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); })
+                : kind == "Product"
+                ? Ui.Wrap(filterButton, sortButton, Ui.Button("☷  Customize Product Columns", window.OpenProductDetailsSettings), Ui.Button("Show Columns ▾", Columns), Ui.Button("visibility", () => stats.IsVisible = !stats.IsVisible))
                 : Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
             ToolbarHost.Content = new ManagementToolbarView(search, toolbarActions, tabs, kind != "User");
 
@@ -131,11 +141,11 @@ internal sealed partial class ManagementView : UserControl
             "Businesses" => query.Where(r => r["Business Name"].Length > 0), "Individuals" => query.Where(r => r["Business Name"].Length == 0),
             "Without GST" => query.Where(r => r["GST / VAT Number"].Length == 0), "With Outstanding" => query.Where(r => decimal.TryParse(r["Outstanding"], out var outstanding) && outstanding > 0), "Expired" => query.Where(r => DateTime.TryParse(r["Expiry Date"], out var expiry) && expiry < DateTime.Today),
             "GST Registered" => query.Where(r => r["GST / VAT Number"].Length > 0), "Services" => query.Where(r => r["Type"] == "Service"), "Products" => query.Where(r => r["Type"] == "Product"),
-            "Low Stock" => query.Where(r => !HasUnlimitedStock(r) && decimal.TryParse(r["Stock"], out var s) && s <= 5), "Out of Stock" => query.Where(r => !HasUnlimitedStock(r) && decimal.TryParse(r["Stock"], out var s) && s <= 0),
+            "Low Stock" => query.Where(r => !HasUnlimitedStock(r) && decimal.TryParse(r["Stock"], out var s) && s > 0 && s <= 5), "Out of Stock" => query.Where(r => !HasUnlimitedStock(r) && decimal.TryParse(r["Stock"], out var s) && s <= 0),
             "Admin" or "User" => query.Where(r => r["Role"] == filter), "Paid" or "Partial" or "Unpaid" or "Overdue" => query.Where(r => r["Status"] == filter), _ => query };
         return sort switch { "Name A–Z" => query.OrderBy(r => r.Name), "Name Z–A" => query.OrderByDescending(r => r.Name), "Newest" => query.Reverse(), _ => query };
     }
-    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Stock", "Tax Rate"] : ["Username", "Role"];
+    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Expiry Date"] : ["Username", "Role"];
     private readonly HashSet<string> hidden = [];
     // Performs the columns action for this screen or workflow.
     private void Columns()
@@ -154,7 +164,7 @@ internal sealed partial class ManagementView : UserControl
             return (tab, count);
         }).ToArray();
         tabs.SetItems(tabCounts, filter, tab => { filter = tab; page = 0; Refresh(); });
-        stats.Content = Documents ? DocumentStats(total) : kind == "User" ? UserStats(total) : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(($"Total {kind}s", total.ToString(), "Total items", "#002E78"), ("Products", Records.Count(r => r["Type"] == "Product").ToString(), "", "#4CAF50"), ("Services", Records.Count(r => r["Type"] == "Service").ToString(), "", "#673AB7"));
+        stats.Content = Documents ? DocumentStats(total) : kind == "User" ? UserStats(total) : kind == "Customer" ? Ui.Stats(("Total Customers", total.ToString(), "All customers", "#002E78"), ("Businesses", Records.Count(r => r["Business Name"].Length > 0).ToString(), "Registered businesses", "#4CAF50"), ("Individuals", Records.Count(r => r["Business Name"].Length == 0).ToString(), "Individual customers", "#673AB7"), ("GST Registered", Records.Count(r => r["GST / VAT Number"].Length > 0).ToString(), "With GST number", "#FF9800")) : Ui.Stats(("All Products", total.ToString(), "Total items", "#0B4A9A"), ("Products", Records.Count(r => r["Type"] == "Product").ToString(), "Tangible products", "#4CAF50"), ("Services", Records.Count(r => r["Type"] == "Service").ToString(), "Non-tangible services", "#FF9800"), ("Low Stock", Records.Count(r => !HasUnlimitedStock(r) && decimal.TryParse(r["Stock"], out var stock) && stock > 0 && stock <= 5).ToString(), "Need attention", "#F44336"));
         var filtered = Filtered().ToArray();
         var pages = Math.Max(1, (int)Math.Ceiling(filtered.Length / (double)pageSize)); page = Math.Clamp(page, 0, pages - 1);
         if (Documents && DocumentPageSummaryHost != null) DocumentPageSummaryHost.Content = Ui.Text($"Total: {filtered.Length}   ·   Page {page + 1}/{pages}", 12, color: Ui.Muted);

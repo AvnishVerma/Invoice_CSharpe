@@ -10,11 +10,13 @@ public sealed partial class InvoiceCustomerPanelView : UserControl
         InitializeComponent();
     }
 
-    public InvoiceCustomerPanelView(Control selectCustomer, Control fields, Control details)
+    public InvoiceCustomerPanelView(Control selectCustomer, Control customerName, Control customerPhone, Control detailsToggle, Control details)
         : this()
     {
         SelectCustomerHost.Content = selectCustomer;
-        CustomerFieldsHost.Content = fields;
+        CustomerNameHost.Content = customerName;
+        CustomerPhoneHost.Content = customerPhone;
+        DetailsToggleHost.Content = detailsToggle;
         CustomerDetailsHost.Content = details;
     }
 }

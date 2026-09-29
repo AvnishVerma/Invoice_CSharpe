@@ -22,6 +22,7 @@ internal static class Ui
         ["straighten"] = "\ue41c",
         ["factory"] = "\uebbc",
         ["expand_more"] = "\ue5cf",
+        ["expand_less"] = "\ue5ce",
         ["local_shipping"] = "\ue558",
         ["lightbulb"] = "\ue0f0",
         ["description"] = "\ue873",
@@ -324,7 +325,13 @@ internal static class Ui
         error.Bind(Visual.IsVisibleProperty, errors);
         if (field.Kind is "file" or "slider") return Stack(5, LocalText(labelText, 12, color: Muted), input, error);
         var floatLabel = new Border { Background = CardSurface, Padding = new Thickness(4, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(9, -7, 0, 0), Child = LocalText(labelText + (field.Required && !labelText.EndsWith("*") ? " *" : ""), 12, color: Muted), IsHitTestVisible = false };
-        var fieldGrid = new Grid(); input.Margin = new Thickness(0); fieldGrid.Children.Add(input); fieldGrid.Children.Add(floatLabel);
+        // Reserve the same space above the input that the floating caption uses.
+        // Without it, first-row captions are rendered outside their layout slot
+        // and are clipped by cards, dialogs, and scroll viewers.
+        var fieldGrid = new Grid { Margin = new Thickness(0, 7, 0, 0) };
+        input.Margin = new Thickness(0);
+        fieldGrid.Children.Add(input);
+        fieldGrid.Children.Add(floatLabel);
         void UpdateLabel() => floatLabel.IsVisible = field.Value?.Length > 0 || input.IsKeyboardFocusWithin || field.Kind is "choice" or "date";
         input.GotFocus += (_, _) => UpdateLabel(); input.LostFocus += (_, _) => UpdateLabel();
         System.ComponentModel.PropertyChangedEventHandler changed = (_, e) => { if (e.PropertyName == nameof(FormField.Value)) UpdateLabel(); };

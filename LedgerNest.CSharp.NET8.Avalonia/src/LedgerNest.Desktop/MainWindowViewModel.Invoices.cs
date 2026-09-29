@@ -21,7 +21,7 @@ public partial class MainWindowViewModel
     {
         ValidateDocumentType(type);
         if (dbFactory == null)
-            return NextDocumentNumber(type, Invoices.Where(i => i["Type"] == type).Select(i => i.Name), InvoiceStartingNumber());
+            return ApplyDocumentPrefix(type, NextDocumentNumber(type, Invoices.Where(i => i["Type"] == type).Select(i => i.Name), InvoiceStartingNumber()));
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
         return NextDocumentNumber(db, type);
@@ -39,6 +39,15 @@ public partial class MainWindowViewModel
     {
         var field = Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Starting Number");
         return long.TryParse(field.Value, out var start) && start > 0 ? start : 1;
+    }
+
+    private string ApplyDocumentPrefix(string type, string number)
+    {
+        if (type != "Invoice") return number;
+        var prefix = InvoiceSetting("Invoice Prefix").Value.Trim();
+        if (prefix.Length == 0) return number;
+        var separator = prefix.EndsWith('-') || prefix.EndsWith('/') || prefix.EndsWith(' ') ? "" : "-";
+        return prefix + separator + number;
     }
 
     // Performs the next document number action for this screen or workflow.
@@ -60,7 +69,7 @@ public partial class MainWindowViewModel
                     {
                         var start = type == "Invoice" ? InvoiceStartingNumber() : 1;
                         var next = NextDocumentNumber(db, type);
-                        var digits = new string(next.Where(char.IsAsciiDigit).ToArray());
+                        var digits = NumericSuffix(next);
                         sequence = new DocumentSequence
                         {
                             Type = type,
@@ -71,7 +80,7 @@ public partial class MainWindowViewModel
 
                     var reserved = checked(sequence.NextValue++).ToString("D8", CultureInfo.InvariantCulture);
                     db.SaveChanges();
-                    return reserved;
+                    return ApplyDocumentPrefix(type, reserved);
                 }
                 catch (DbUpdateException) when (attempt < 3)
                 {
@@ -87,7 +96,7 @@ public partial class MainWindowViewModel
         var key = SettingKey("Invoice Settings", "General", "Starting Number");
         var setting = db.Settings.AsNoTracking().FirstOrDefault(s => s.Key == key)?.Value;
         var start = long.TryParse(setting, out var parsed) && parsed > 0 ? parsed : InvoiceStartingNumber();
-        return NextDocumentNumber(type, db.Invoices.AsNoTracking().Where(i => i.Type == type).Select(i => i.InvoiceNumber).ToArray(), start);
+        return ApplyDocumentPrefix(type, NextDocumentNumber(type, db.Invoices.AsNoTracking().Where(i => i.Type == type).Select(i => i.InvoiceNumber).ToArray(), start));
     }
 
     // Performs the next document number action for this screen or workflow.
@@ -96,12 +105,15 @@ public partial class MainWindowViewModel
         // Earlier C# records used INV-0001; keep their numeric suffix in the sequence.
         var maximum = existing.Select(number =>
         {
-            var digits = new string(number.Where(char.IsAsciiDigit).ToArray());
+            var digits = NumericSuffix(number);
             return long.TryParse(digits, out var value) ? value : 0;
         }).DefaultIfEmpty(0).Max();
         var next = maximum > 0 ? checked(maximum + 1) : type == "Invoice" ? start : 1;
         return next.ToString("D8", CultureInfo.InvariantCulture);
     }
+
+    private static string NumericSuffix(string number)
+        => new(number.Trim().Reverse().TakeWhile(char.IsAsciiDigit).Reverse().ToArray());
 
     private UiRecord? editingDocument;
     private string? editingFingerprint;

@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.CustomerChooserView"
+             x:CompileBindings="False">
+  <Grid RowDefinitions="Auto,*" RowSpacing="12">
+    <Grid ColumnDefinitions="Auto,10,*">
+      <TextBlock Text="search" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="19" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
+      <TextBox x:Name="SearchBox" Grid.Column="2" PlaceholderText="Search customer" MinHeight="38" />
+    </Grid>
+    <ListBox x:Name="CustomersList" Grid.Row="1" BorderThickness="0" Background="Transparent" MinHeight="220" MaxHeight="420">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <Border Padding="12,9" CornerRadius="9" Margin="0,0,0,3" Background="Transparent">
+            <Grid ColumnDefinitions="42,12,*">
+              <Border Width="40" Height="40" CornerRadius="20" Background="#0B4A9A" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Initial}" FontSize="16" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <StackPanel Grid.Column="2" Spacing="3" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Details}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </Grid>
+</UserControl>
