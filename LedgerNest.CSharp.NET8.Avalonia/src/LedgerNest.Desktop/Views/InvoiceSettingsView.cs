@@ -203,16 +203,7 @@ public partial class MainWindow
     }
 
     private static Control InvoiceSizeChoice(FormField field, string label, bool signature)
-    {
-        // Keep existing numeric settings compatible while presenting the legacy size names.
-        var sizes = signature ? new[] { ("Small", "35"), ("Medium", "50"), ("Large", "70") } : new[] { ("X-Small", "40"), ("Small", "60"), ("Medium", "90"), ("Large", "120") };
-        var value = sizes.FirstOrDefault(size => size.Item2 == field.Value).Item1;
-        var names = sizes.Select(size => size.Item1).ToList();
-        if (value == null) { value = "Custom (" + field.Value + ")"; names.Add(value); }
-        var choice = new FormField(field.Label, value, "choice", names.ToArray());
-        choice.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(FormField.Value) && sizes.FirstOrDefault(size => size.Item1 == choice.Value) is var selected && selected.Item2 != null) field.Value = selected.Item2; };
-        return InvoiceInput(choice, label, "");
-    }
+        => new InvoiceSizeChoiceView(field, label, signature);
 
     private Control InvoiceLongText(FormField field, string icon)
     {

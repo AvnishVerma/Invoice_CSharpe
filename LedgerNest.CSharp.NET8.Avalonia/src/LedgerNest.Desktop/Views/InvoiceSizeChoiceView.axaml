@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.InvoiceSizeChoiceView">
+  <Grid Margin="0,8,0,0">
+    <ComboBox x:Name="SizeSelector"
+              HorizontalAlignment="Stretch"
+              MinHeight="38.4"
+              Padding="10,8"
+              Background="{DynamicResource AppCardBrush}" />
+    <Border Background="{DynamicResource AppCardBrush}"
+            Padding="3.2,0"
+            Margin="12,-8,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            IsHitTestVisible="False">
+      <TextBlock x:Name="CaptionText"
+                 FontSize="12"
+                 Foreground="{DynamicResource AppMutedBrush}" />
+    </Border>
+  </Grid>
+</UserControl>

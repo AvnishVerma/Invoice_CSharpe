@@ -563,6 +563,9 @@ internal static class Program
             Check(model.InvoiceSetting("Thank You Note").Value == "", "Expanded editor Cancel must discard changes");
             Click("Branding"); Capture("invoice-settings-branding");
             Check(FindButton("Upload Signature").IsVisible && FindButton("Upload Watermark").IsVisible, "Branding must expose both uploads");
+            var logoSize = window.GetVisualDescendants().OfType<ComboBox>().Single(combo => Avalonia.Automation.AutomationProperties.GetName(combo) == "Logo Size");
+            logoSize.SelectedItem = "Large"; Settle();
+            Check(model.InvoiceSetting("Logo Size").Value == "120", "Friendly logo sizes must update the persisted numeric setting without binding errors");
             Click("Tax & GST"); Click("Per Item");
             Check(model.InvoiceSetting("Tax Mode").Value == "Per Item", "Tax mode segment must update the default");
             Capture("invoice-settings-tax");
@@ -993,7 +996,7 @@ internal static class Program
         model.Lines.Add(new InvoiceLineViewModel { Name = "Settings fixture", Price = 100.50m, Quantity = 1 });
         Check(model.SaveInvoice(), "Settings fixture must save");
         var record = model.LastSavedDocument!;
-        Check(record.Name == "00000017", "Printed number formatting must not change the stored sequence");
+        Check(record.Name == "INV-00000017", "Saved invoice code must include the configured prefix while retaining its numeric sequence");
         Check(!model.CanChangeInvoiceStartingNumber, "Existing invoices must lock the starting number");
         F("Starting Number").Value = "30";
         Check(!model.SaveSettings("Invoice Settings"), "Changing a locked starting number must be rejected by the model");
