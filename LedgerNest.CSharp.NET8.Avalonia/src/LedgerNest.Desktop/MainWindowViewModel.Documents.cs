@@ -108,6 +108,17 @@ public partial class MainWindowViewModel
             ShowRoundOff = Checked("Invoice Settings", "Show Round Off"),
             ShowAliasName = Checked("Invoice Settings", "Show Alias Name"),
             ShowProductServiceTag = Checked("Invoice Settings", "Show Product / Service Tag") && Setting("Company Info", "Business Type") == "Both",
+            ShowPaymentQr = Checked("Company Info", "Show QR code on invoice"),
+            ShowBankDetails = Checked("Company Info", "Show bank details on invoice"),
+            ShowInvoiceNumberQr = Checked("Invoice Settings", "Show Invoice Number QR Code"),
+            UpiAccounts = UpiAccounts
+                .Where(account => !string.IsNullOrWhiteSpace(account[1].Value))
+                .Select(account => new DocumentPdf.UpiPaymentAccount(account[0].Value.Trim(), account[1].Value.Trim()))
+                .ToArray(),
+            BankAccounts = BankAccounts
+                .Where(account => !string.IsNullOrWhiteSpace(account[2].Value))
+                .Select(account => new DocumentPdf.BankPaymentAccount(account[0].Value.Trim(), account[1].Value.Trim(), account[2].Value.Trim(), account[3].Value.Trim()))
+                .ToArray(),
             MetadataColumns = InvoiceMetadataLabels.Where(label => Checked("Invoice Settings", "Metadata: " + label)).ToArray(),
             PreviousBalance = PreviousBalanceFor(invoice)
         };

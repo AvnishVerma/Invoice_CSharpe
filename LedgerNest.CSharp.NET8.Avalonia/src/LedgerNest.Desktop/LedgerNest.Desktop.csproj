@@ -33,6 +33,7 @@
       <PackagePath>\</PackagePath>
     </None>
     <PackageReference Include="Docnet.Core" Version="2.6.0" />
+    <PackageReference Include="QRCoder" Version="1.8.0" />
     <PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.12" />
     <ProjectReference Include="..\LedgerNest.Application\LedgerNest.Application.csproj">

@@ -1,5 +1,6 @@
 using System.Globalization;
 using LedgerNest.Domain;
+using QRCoder;
 using SkiaSharp;
 
 namespace LedgerNest.Desktop;
@@ -7,6 +8,8 @@ namespace LedgerNest.Desktop;
 internal static class DocumentPdf
 {
     internal sealed record Business(string Name, string Address, string Phone, string Email, string TaxId, string Logo, string Note);
+    internal sealed record UpiPaymentAccount(string Label, string UpiId);
+    internal sealed record BankPaymentAccount(string Label, string BankName, string AccountNumber, string IfscCode);
     internal sealed record PdfExportOptions(
         string DateFormat,
         string TimeFormat,
@@ -43,6 +46,11 @@ internal static class DocumentPdf
         public bool ShowRoundOff { get; init; }
         public bool ShowAliasName { get; init; }
         public bool ShowProductServiceTag { get; init; }
+        public bool ShowPaymentQr { get; init; }
+        public bool ShowBankDetails { get; init; }
+        public bool ShowInvoiceNumberQr { get; init; }
+        public UpiPaymentAccount[] UpiAccounts { get; init; } = [];
+        public BankPaymentAccount[] BankAccounts { get; init; } = [];
         public string[] MetadataColumns { get; init; } = [];
         public decimal PreviousBalance { get; init; }
     }
@@ -60,6 +68,36 @@ internal static class DocumentPdf
         if (prefix.Length == 0) return number;
         var separator = prefix.EndsWith('-') || prefix.EndsWith('/') || prefix.EndsWith(' ') ? "" : "-";
         return prefix + separator + number;
+    }
+
+    internal static string UpiPaymentUri(UpiPaymentAccount account, Business business, Invoice invoice, string displayNumber)
+    {
+        var currency = invoice.Snapshot?.Currency?.Split('—')[0].Trim().ToUpperInvariant() ?? "";
+        if (currency.Length != 3) currency = "INR";
+        var payeeName = string.IsNullOrWhiteSpace(business.Name) ? account.Label : business.Name;
+        var parameters = new[]
+        {
+            ("pa", account.UpiId.Trim()),
+            ("pn", payeeName.Trim()),
+            ("am", invoice.GrandTotal.ToString("0.00", CultureInfo.InvariantCulture)),
+            ("cu", currency),
+            ("tn", "Invoice " + displayNumber)
+        };
+        return "upi://pay?" + string.Join("&", parameters.Select(parameter => parameter.Item1 + "=" + Uri.EscapeDataString(parameter.Item2)));
+    }
+
+    private static SKBitmap? CreateQrBitmap(string payload)
+    {
+        try
+        {
+            using var data = QRCodeGenerator.GenerateQrCode(payload, QRCodeGenerator.ECCLevel.Q);
+            using var qr = new PngByteQRCode(data);
+            return SKBitmap.Decode(qr.GetGraphic(8));
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     // Performs the create action for this screen or workflow.
@@ -434,6 +472,47 @@ internal static class DocumentPdf
         Total("Paid", invoice.PaidAmount);
         Total("Balance due", invoice.GrandTotal - invoice.PaidAmount, true);
         if (options.PreviousBalance > 0) Total("Total due", Math.Max(0, invoice.GrandTotal - invoice.PaidAmount) + options.PreviousBalance, true);
+        var bankAccounts = options.ShowBankDetails ? options.BankAccounts : [];
+        var upiAccounts = options.ShowPaymentQr ? options.UpiAccounts : [];
+        var paymentRows = Math.Max(bankAccounts.Length, upiAccounts.Length);
+        for (var index = 0; index < paymentRows; index++)
+        {
+            y += 8;
+            Ensure(100);
+            var rowTop = y;
+            if (index < bankAccounts.Length)
+            {
+                var account = bankAccounts[index];
+                if (!string.IsNullOrWhiteSpace(account.Label)) { Text(account.Label, margin, y, size, true); y += 19; }
+                if (!string.IsNullOrWhiteSpace(account.BankName)) { Text("Bank: " + account.BankName, margin, y, size); y += 17; }
+                Text("Account number: " + account.AccountNumber, margin, y, size); y += 17;
+                if (!string.IsNullOrWhiteSpace(account.IfscCode)) { Text("IFSC: " + account.IfscCode, margin, y, size); y += 17; }
+            }
+            if (index < upiAccounts.Length)
+            {
+                var upiAccount = upiAccounts[index];
+                using var qr = CreateQrBitmap(UpiPaymentUri(upiAccount, business, invoice, displayNumber));
+                if (qr != null)
+                {
+                    var qrLeft = width - margin - 82;
+                    var qrTitle = string.IsNullOrWhiteSpace(upiAccount.Label) ? "Scan to pay" : upiAccount.Label;
+                    Text(qrTitle, width - margin, rowTop + size, size, true, right: true);
+                    canvas.DrawBitmap(qr, new SKRect(qrLeft, rowTop + 16, qrLeft + 82, rowTop + 98));
+                }
+            }
+            y = Math.Max(y, rowTop + 106);
+        }
+        if (options.ShowInvoiceNumberQr && !string.IsNullOrWhiteSpace(displayNumber))
+        {
+            y += 8;
+            using var qr = CreateQrBitmap(displayNumber);
+            if (qr != null)
+            {
+                Ensure(90);
+                canvas.DrawBitmap(qr, new SKRect(margin, y, margin + 82, y + 82));
+                y += 90;
+            }
+        }
         y += 8; Paragraph(invoice.Snapshot?.Notes); Paragraph(options.AdditionalInformation); Paragraph(business.Note);
         using var signature = DecodeImage(options.SignatureImage);
         if (signature != null)

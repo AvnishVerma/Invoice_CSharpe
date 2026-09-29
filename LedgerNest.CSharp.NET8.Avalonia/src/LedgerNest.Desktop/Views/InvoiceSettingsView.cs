@@ -80,7 +80,9 @@ public partial class MainWindow
             InvoicePair(InvoiceToggle(F("Show time in PDF"), "Show Time on PDF", "Append the invoice creation time next to the date on PDFs and thermal receipts", "schedule"),
                 Ui.Stack(4.8, InvoiceInput(F("Quantity Column"), "Quantity Column Label", "tag"), Ui.LocalText("Leave blank to use default \"Qty\"", 12, color: Ui.Muted))),
             InvoiceLongText(F("Additional Information"), "info_outline"), InvoiceLongText(F("Thank You Note"), "favorite_border"),
-            InvoiceToggle(F("Hide Invoice Number"), "Hide Invoice Number by Default", "Enable \"Hide invoice number in PDF\" by default when creating new invoices.", "confirmation_number"));
+            InvoicePair(
+                InvoiceToggle(F("Hide Invoice Number"), "Hide Invoice Number by Default", "Enable \"Hide invoice number in PDF\" by default when creating new invoices.", "confirmation_number"),
+                InvoiceToggle(F("Show Invoice Number QR Code"), "Invoice Number QR Code", "Print a scannable QR code containing the displayed invoice number on generated PDFs.", "qr_code")));
     }
 
     private Control InvoiceTaxSettings()

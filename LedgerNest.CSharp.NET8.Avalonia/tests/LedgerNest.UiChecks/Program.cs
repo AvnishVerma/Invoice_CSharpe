@@ -981,6 +981,7 @@ internal static class Program
         F("Leading Zeros").IsChecked = false;
         F("Additional Information").Value = "Delivery within seven days.";
         F("Show Round Off").IsChecked = true;
+        F("Show Invoice Number QR Code").IsChecked = true;
         F("Show time in PDF").IsChecked = true;
         F("Time Format").Value = "24 hour";
         Check(model.SaveSettings("Invoice Settings"), "Invoice defaults must persist");
@@ -1006,11 +1007,29 @@ internal static class Program
             using var reader = Docnet.Core.DocLib.Instance.GetDocReader(bytes, new Docnet.Core.Models.PageDimensions(1));
             return string.Join("\n", Enumerable.Range(0, reader.GetPageCount()).Select(index => { using var page = reader.GetPageReader(index); return page.GetText(); }));
         }
+        var paymentSettings = model.Settings["Company Info"].Single(section => section.Title == "PAYMENT SETTINGS");
+        paymentSettings.Fields.Single(field => field.Label == "Show QR code on invoice").IsChecked = true;
+        paymentSettings.Fields.Single(field => field.Label == "Show bank details on invoice").IsChecked = true;
+        model.Settings["Company Info"].Single(section => section.Title == "COMPANY DETAILS").Fields.Single(field => field.Label == "Company Name").Value = "LedgerNest Test";
+        model.AddUpiAccount();
+        model.UpiAccounts[^1][0].Value = "Scan Here for payment";
+        model.UpiAccounts[^1][1].Value = "billing@upi";
+        model.AddBankAccount();
+        model.BankAccounts[^1][0].Value = "Bank Transfer";
+        model.BankAccounts[^1][1].Value = "ICICI";
+        model.BankAccounts[^1][2].Value = "801601515858";
+        model.BankAccounts[^1][3].Value = "ICIC00810";
+        Check(model.SaveSettings("Company Info"), "Payment settings must save");
         var pdf = model.ExportDocumentPdf(record);
         var text = PdfText(pdf);
         Check(text.Contains("CASH BILL") && text.Contains("INV-17"), "PDF must use the chosen title, prefix and leading-zero setting");
         Check(F("Additional Information").Value == "Delivery within seven days." && F("Show Round Off").IsChecked && AmountInWords.Format(106m) == "One Hundred and Six Only", "Invoice settings must preserve additional information and rounded amount words");
         Check(text.Contains("GST-CUSTOMER-TEST") && text.Contains("998399"), "GST-enabled PDFs must include historical customer and product tax identifiers");
+        Check(DocumentPdf.UpiPaymentUri(new DocumentPdf.UpiPaymentAccount("Scan Here", "billing@upi"), new DocumentPdf.Business("LedgerNest Test", "", "", "", "", "", ""), new LedgerNest.Domain.Invoice { GrandTotal = 106m }, "INV-17").StartsWith("upi://pay?pa=billing%40upi&pn=LedgerNest%20Test&am=106.00&cu=INR&tn=Invoice%20INV-17", StringComparison.Ordinal), "UPI QR must contain a standards-compatible payment URI");
+        Check(!text.Contains("upi://pay?") && !text.Contains("UPI ID:"), "PDF must not print technical UPI data beside the payment QR code");
+        Check(text.Contains("Scan Here for payment"), "PDF must print the configured UPI account label as the QR title");
+        Check(text.Contains("ICICI") && text.Contains("801601515858") && text.Contains("ICIC00810"), "PDF must render enabled bank details");
+        Check(!text.Contains("INVOICE NUMBER QR CODE") && !text.Contains("Invoice number: INV-17"), "PDF must not print redundant text above the invoice-number QR code");
         F("Show GST fields").IsChecked = false;
         var noGstText = PdfText(model.ExportDocumentPdf(record));
         Check(!noGstText.Contains("GST-CUSTOMER-TEST") && !noGstText.Contains("998399"), "GST-disabled PDFs must omit tax identifiers");
