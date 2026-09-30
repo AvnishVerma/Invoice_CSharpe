@@ -22,7 +22,7 @@ public partial class MainWindow
     {
         SettingsTabModel[] tabs =
         [
-            new("Company Info", "business"), new("Backup", "backup"), new("Users", "people"),
+            new("Company Info", "business"), new("Backup", "backup"), new("Users", "people"), new("Permissions", "admin_panel_settings"),
             new("PDF Settings", "settings"), new("Invoice Settings", "receipt_long"), new("Product Details", "view_column"),
             new("Accessibility", "accessibility_new"), new("License", "lock"), new("Software Info", "info_outline")
         ];
@@ -36,6 +36,7 @@ public partial class MainWindow
         "PDF Settings" => PdfSettingsView(),
         "Product Details" => ProductDetailsSettingsView(),
         "Users" => new ManagementView(Model, "User", this),
+        "Permissions" => new PermissionManagementView { DataContext = Model.PermissionManagement },
         "Backup" => BackupView(),
         "Software Info" => SoftwareInfo(),
         "License" => LicenseSettingsView(),

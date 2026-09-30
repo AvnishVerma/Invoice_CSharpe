@@ -45,6 +45,7 @@ public partial class MainWindowViewModel
                     ["Email"] = customer.Email ?? "",
                     ["GST / VAT Number"] = customer.GstNumber ?? "",
                     ["Address"] = customer.Address ?? ""
+                    ,["Customer ID"] = customer.CustomerCode ?? ""
                 }
             });
         }
@@ -79,6 +80,8 @@ public partial class MainWindowViewModel
                     ["Purchase Price"] = product.PurchasePrice.ToString("0.##"),
                     ["Tax (%)"] = product.TaxRate.ToString("0.##"),
                     ["Stock"] = product.StockQuantity.ToString("0.###")
+                    ,["Product ID"] = product.ProductCode ?? ""
+                    ,["Barcode"] = product.Barcode ?? ""
                 }
             });
         }
@@ -198,6 +201,11 @@ public partial class MainWindowViewModel
         if (kind == "Customer")
         {
             var customer = sourceId > 0 ? db.Customers.Find(sourceId) ?? new Customer() : new Customer();
+            var customerCode = values.GetValueOrDefault("Customer ID", "").Trim();
+            if (customer.Id == 0 && customerCode.Length == 0)
+                customerCode = new NumberSeriesService(dbFactory).ReserveAsync("Customer", "CUS", 1, 1, 6).GetAwaiter().GetResult();
+            if (db.Customers.Any(item => item.Id != sourceId && item.CustomerCode == customerCode)) { Status = "Customer ID is already in use."; return -1; }
+            customer.CustomerCode = customerCode;
             customer.Name = values.GetValueOrDefault("Name", "");
             customer.BusinessName = values.GetValueOrDefault("Business Name", "");
             customer.Phone = values.GetValueOrDefault("Phone");
@@ -212,6 +220,12 @@ public partial class MainWindowViewModel
         if (kind == "Product")
         {
             var product = sourceId > 0 ? db.Products.Find(sourceId) ?? new Product() : new Product();
+            var productCode = values.GetValueOrDefault("Product ID", "").Trim();
+            if (product.Id == 0 && productCode.Length == 0)
+                productCode = new NumberSeriesService(dbFactory).ReserveAsync("Product", "PRD", 1, 1, 6).GetAwaiter().GetResult();
+            if (db.Products.Any(item => item.Id != sourceId && item.ProductCode == productCode)) { Status = "Product ID is already in use."; return -1; }
+            product.ProductCode = productCode;
+            product.Barcode = values.GetValueOrDefault("Barcode");
             product.Name = values.GetValueOrDefault("Name", "");
             product.Code = values.GetValueOrDefault("SKU Code");
             product.HsnCode = values.GetValueOrDefault("HSN/SAC");
@@ -226,6 +240,7 @@ public partial class MainWindowViewModel
             product.PriceIncludesTax = bool.TryParse(values.GetValueOrDefault("Price includes tax"), out var priceIncludesTax) && priceIncludesTax;
             product.UnlimitedStock = bool.TryParse(values.GetValueOrDefault("Unlimited stock"), out var unlimitedStock) && unlimitedStock;
             product.Unit = values.GetValueOrDefault("Unit", "None");
+            product.BaseUnitId = db.Units.Where(unit => unit.Code == product.Unit).Select(unit => (int?)unit.Id).SingleOrDefault();
             product.CustomUnit = values.GetValueOrDefault("Custom unit", "");
             product.StorageLocation = values.GetValueOrDefault("Storage Location", "");
             product.ContainerNumber = values.GetValueOrDefault("Container Number", "");
@@ -323,7 +338,7 @@ public partial class MainWindowViewModel
             CustomerId = customerId,
             CustomerName = customerName,
             Snapshot = CaptureInvoiceSnapshot(),
-            Status = "Unpaid",
+            Status = values["Status"],
             SubTotal = Totals.Subtotal,
             TaxTotal = Totals.Tax,
             DiscountTotal = Totals.ItemDiscount + Totals.InvoiceDiscount,
@@ -334,6 +349,10 @@ public partial class MainWindowViewModel
                 return new InvoiceItem
                 {
                     ProductId = line.ProductKey.StartsWith("id:", StringComparison.Ordinal) && int.TryParse(line.ProductKey[3..], out var productId) ? productId : null,
+                    SellingUnitId = line.SellingUnitId,
+                    SellingUnitCode = line.Unit,
+                    UnitConversionFactor = line.UnitConversionFactor <= 0 ? 1 : line.UnitConversionFactor,
+                    BaseQuantity = line.Quantity * (line.UnitConversionFactor <= 0 ? 1 : line.UnitConversionFactor),
                     Description = line.Name,
                     ProductDescription = historicalLines.TryGetValue(line, out var original) ? original.ProductDescription : product?["Description"] ?? line.Name,
                     Quantity = line.Quantity,
@@ -362,6 +381,37 @@ public partial class MainWindowViewModel
             existing.DiscountTotal = invoice.DiscountTotal;
             existing.GrandTotal = invoice.GrandTotal;
             invoice = existing;
+        }
+        if (invoice.Type == "Invoice")
+        {
+            var priorMovements = db.InventoryTransactions
+                .Where(movement => movement.SourceType == "Invoice" && movement.Reference == invoice.InvoiceNumber).ToArray();
+            foreach (var movement in priorMovements)
+            {
+                var priorProduct = db.Products.SingleOrDefault(product => product.Id == movement.ProductId);
+                if (priorProduct != null && !priorProduct.UnlimitedStock)
+                    priorProduct.StockQuantity -= movement.BaseQuantityChange;
+            }
+            db.InventoryTransactions.RemoveRange(priorMovements);
+
+            foreach (var item in invoice.Items.Where(item => item.ProductId != null && item.BaseQuantity > 0))
+            {
+                var product = db.Products.Single(product => product.Id == item.ProductId);
+                if (product.Type == "Service" || product.UnlimitedStock) continue;
+                // Invoice entry records the real movement even when stock is already
+                // negative; replenishment and inventory review can then reconcile it.
+                product.StockQuantity = InventoryRules.Apply(product.StockQuantity, -item.BaseQuantity, allowNegative: true);
+                db.InventoryTransactions.Add(new InventoryTransaction
+                {
+                    ProductId = product.Id,
+                    TransactionType = "Sale",
+                    BaseQuantityChange = -item.BaseQuantity,
+                    SourceType = "Invoice",
+                    Reference = invoice.InvoiceNumber,
+                    Notes = $"{item.Quantity:0.###} {item.SellingUnitCode}",
+                    CreatedBy = CurrentUsername ?? "system"
+                });
+            }
         }
         db.SaveChanges();
         if (editingDocument != null) editingFingerprint = Fingerprint(db.Invoices.AsNoTracking().Include(i => i.Items).Single(i => i.Id == invoice.Id));

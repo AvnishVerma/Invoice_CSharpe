@@ -162,8 +162,8 @@ public partial class MainWindowViewModel
             AdditionalCosts.Add([new("Description", cost.Description), new("Amount", cost.Amount.ToString(CultureInfo.CurrentCulture), "number")]);
         foreach (var item in invoice.Items)
         {
-            var line = new InvoiceLineViewModel { ProductKey = item.ProductId is int productId ? $"id:{productId}" : "", ProductType = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count)?.ProductType ?? "Product", SavedPresentation = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count), Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
-            line.Unit = snapshot.LineUnits?.ElementAtOrDefault(Lines.Count) ?? "None";
+            var line = new InvoiceLineViewModel { ProductKey = item.ProductId is int productId ? $"id:{productId}" : "", ProductType = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count)?.ProductType ?? "Product", SavedPresentation = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count), SellingUnitId = item.SellingUnitId, UnitConversionFactor = item.UnitConversionFactor <= 0 ? 1 : item.UnitConversionFactor, Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
+            line.Unit = string.IsNullOrWhiteSpace(item.SellingUnitCode) ? snapshot.LineUnits?.ElementAtOrDefault(Lines.Count) ?? "None" : item.SellingUnitCode;
             Lines.Add(line);
         }
         InitializeInvoiceCustomValues(snapshot);
@@ -182,6 +182,8 @@ public partial class MainWindowViewModel
         if (invoice == null || invoice.DeletedAt != null) { Status = "Document is unavailable or in trash."; return false; }
         if (invoice.PaidAmount != 0 || db.Payments.Any(p => p.InvoiceId == invoice.Id))
         { Status = "Documents with payments cannot be edited yet."; return false; }
+        if (invoice.Status == "Cancelled")
+        { Status = "Cancelled quotations cannot be edited."; return false; }
         if (invoice.Snapshot is not { Version: 1 } snapshot)
         { Status = "This document lacks a supported historical snapshot and cannot be safely edited."; return false; }
         editingDocument = record;
@@ -207,8 +209,8 @@ public partial class MainWindowViewModel
             AdditionalCosts.Add([new("Description", cost.Description), new("Amount", cost.Amount.ToString(CultureInfo.CurrentCulture), "number")]);
         foreach (var item in invoice.Items)
         {
-            var line = new InvoiceLineViewModel { ProductKey = item.ProductId is int productId ? $"id:{productId}" : "", ProductType = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count)?.ProductType ?? "Product", SavedPresentation = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count), Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
-            line.Unit = snapshot.LineUnits?.ElementAtOrDefault(Lines.Count) ?? "None";
+            var line = new InvoiceLineViewModel { ProductKey = item.ProductId is int productId ? $"id:{productId}" : "", ProductType = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count)?.ProductType ?? "Product", SavedPresentation = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count), SellingUnitId = item.SellingUnitId, UnitConversionFactor = item.UnitConversionFactor <= 0 ? 1 : item.UnitConversionFactor, Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
+            line.Unit = string.IsNullOrWhiteSpace(item.SellingUnitCode) ? snapshot.LineUnits?.ElementAtOrDefault(Lines.Count) ?? "None" : item.SellingUnitCode;
             historicalLines.Add(line, item);
             Lines.Add(line);
         }
@@ -220,6 +222,7 @@ public partial class MainWindowViewModel
     // Performs the save invoice action for this screen or workflow.
     public bool SaveInvoice()
     {
+        if (!HasPermission("Invoice", IsEditingDocument ? "Edit" : "Add")) { Status = "Your role cannot save this invoice."; return false; }
         if (!RequireBusinessLicense()) return false;
         if (Lines.Count == 0) { Status = "Add at least one item before creating an invoice."; return false; }
         if (!InvoiceSetting("Allow Fractional Quantity").IsChecked && Lines.Any(line => decimal.Truncate(line.Quantity) != line.Quantity))
@@ -228,13 +231,14 @@ public partial class MainWindowViewModel
         { Status = "Duplicate products are disabled in Invoice Settings."; return false; }
         if (Lines.Any(l => string.IsNullOrWhiteSpace(l.Name) || l.Quantity <= 0 || l.Price < 0 || l.TaxRate < 0 || l.Discount < 0))
         { Status = "Check item names, quantities, prices, tax and discounts."; return false; }
+        var documentStatus = InvoiceDetails[0].Value == "Quotation" ? "Open" : "Unpaid";
         var values = new Dictionary<string, string> {
             ["Name"] = PeekNextDocumentNumber(InvoiceDetails[0].Value), ["Customer"] = InvoiceCustomer[0].Value,
             ["Type"] = InvoiceDetails[0].Value, ["Date"] = InvoiceDetails[1].Value,
             ["Due Date"] = InvoiceDetails[2].Value,
             ["Tax"] = Totals.Tax.ToString(CultureInfo.InvariantCulture),
             ["Paid"] = "0.00", ["Outstanding"] = Totals.Total.ToString("0.00"),
-            ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = "Unpaid"
+            ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = documentStatus
         };
         var sourceId = SaveInvoiceToDatabase(values);
         if (sourceId < 0) return false;

@@ -47,6 +47,13 @@ public partial class MainWindowViewModel
     public FormField[] ProductEditorFields(UiRecord? record = null)
     {
         var fields = FormCatalog.Product();
+        var currentUnit = record?["Unit"] ?? "None";
+        fields.Single(field => field.Label == "Unit").Options = new[] { "None" }
+            .Concat(UnitMaster.Units.Where(unit => unit.IsActive).Select(unit => unit.Code))
+            .Append(currentUnit)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
         if (record != null)
             foreach (var field in fields)
             {
@@ -61,5 +68,40 @@ public partial class MainWindowViewModel
             if (!ProductFieldVisible("Stock")) fields.Single(f => f.Label == "Unlimited stock").IsChecked = true;
         }
         return fields;
+    }
+
+    public string[] ActiveUnitCodes(string current = "None") => new[] { "None" }
+        .Concat(UnitMaster.Units.Where(unit => unit.IsActive).Select(unit => unit.Code))
+        .Append(current)
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    public SellingUnitChoice[] SellingUnitChoices(UiRecord product)
+    {
+        var baseUnit = product["Unit"] == "Custom…" ? product["Custom unit"] : product["Unit"];
+        var fallback = new SellingUnitChoice(null, string.IsNullOrWhiteSpace(baseUnit) ? "None" : baseUnit, 1, ParseDecimal(product["Sale Price"]));
+        if (dbFactory == null || product.SourceId <= 0) return [fallback];
+
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var units = (from sellingUnit in db.ProductSellingUnits.AsNoTracking()
+                     join unit in db.Units.AsNoTracking() on sellingUnit.UnitId equals unit.Id
+                     where sellingUnit.ProductId == product.SourceId && sellingUnit.IsActive && unit.IsActive
+                     select new { SellingUnit = sellingUnit, unit.Code }).ToArray();
+        if (units.Length == 0) return [fallback];
+        var unitIds = units.Select(item => item.SellingUnit.Id).ToArray();
+        var effectivePrices = db.ProductPrices.AsNoTracking()
+            .Where(price => unitIds.Contains(price.SellingUnitId) && price.IsActive && price.EffectiveDate <= DateTime.UtcNow)
+            .OrderByDescending(price => price.EffectiveDate).ThenByDescending(price => price.Id).ToArray()
+            .GroupBy(price => price.SellingUnitId).ToDictionary(group => group.Key, group => group.First().SellingPrice);
+        var productSalePrice = ParseDecimal(product["Sale Price"]);
+        return units.Select(item => new SellingUnitChoice(item.SellingUnit.Id, item.Code,
+                item.SellingUnit.ConversionFactor <= 0 ? 1 : item.SellingUnit.ConversionFactor,
+                effectivePrices.TryGetValue(item.SellingUnit.Id, out var masterPrice)
+                    ? masterPrice
+                    : item.SellingUnit.SellingPrice > 0 ? item.SellingUnit.SellingPrice : productSalePrice))
+            .Append(fallback)
+            .GroupBy(choice => choice.Code, StringComparer.OrdinalIgnoreCase).Select(group => group.First()).ToArray();
     }
 }

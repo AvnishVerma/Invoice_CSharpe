@@ -3,6 +3,7 @@ namespace LedgerNest.Domain;
 public sealed class Customer
 {
     public int Id { get; set; }
+    public string? CustomerCode { get; set; }
     public string Name { get; set; } = "";
     public string BusinessName { get; set; } = "";
     public string? Phone { get; set; }
@@ -14,6 +15,9 @@ public sealed class Customer
 public sealed class Product
 {
     public int Id { get; set; }
+    public string? ProductCode { get; set; }
+    public string? Barcode { get; set; }
+    public int? BaseUnitId { get; set; }
     public string Name { get; set; } = "";
     public string? Code { get; set; }
     public string? HsnCode { get; set; }
@@ -50,6 +54,9 @@ public sealed class Invoice
     public string CustomerName { get; set; } = "";
     public InvoiceSnapshot? Snapshot { get; set; }
     public string Status { get; set; } = "Draft";
+    public string? CancellationReason { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
     public decimal SubTotal { get; set; }
     public decimal TaxTotal { get; set; }
     public decimal DiscountTotal { get; set; }
@@ -64,6 +71,10 @@ public sealed class InvoiceItem
     public int Id { get; set; }
     public int InvoiceId { get; set; }
     public int? ProductId { get; set; }
+    public int? SellingUnitId { get; set; }
+    public string SellingUnitCode { get; set; } = "";
+    public decimal UnitConversionFactor { get; set; } = 1;
+    public decimal BaseQuantity { get; set; }
     public string Description { get; set; } = "";
     public string ProductDescription { get; set; } = "";
     public decimal Quantity { get; set; }
@@ -162,4 +173,102 @@ public sealed class DocumentSequence
 {
     public string Type { get; set; } = "Invoice";
     public long NextValue { get; set; } = 1;
+}
+
+public sealed class UnitOfMeasure
+{
+    public int Id { get; set; }
+    public string Code { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Description { get; set; } = "";
+    public bool IsActive { get; set; } = true;
+    public string CreatedBy { get; set; } = "";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string ModifiedBy { get; set; } = "";
+    public DateTime? ModifiedAt { get; set; }
+}
+
+public sealed class ProductSellingUnit
+{
+    public int Id { get; set; }
+    public int ProductId { get; set; }
+    public int UnitId { get; set; }
+    public decimal ConversionFactor { get; set; } = 1;
+    public decimal SellingPrice { get; set; }
+    public bool IsDefault { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public sealed class ProductPrice
+{
+    public long Id { get; set; }
+    public int ProductId { get; set; }
+    public int SellingUnitId { get; set; }
+    public string PriceList { get; set; } = "Default";
+    public decimal SellingPrice { get; set; }
+    public DateTime EffectiveDate { get; set; } = DateTime.UtcNow;
+    public bool IsActive { get; set; } = true;
+    public string CreatedBy { get; set; } = "";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string ModifiedBy { get; set; } = "";
+    public DateTime? ModifiedAt { get; set; }
+}
+
+public sealed class NumberSeries
+{
+    public string EntityType { get; set; } = "";
+    public string Prefix { get; set; } = "";
+    public long NextValue { get; set; } = 1;
+    public int Increment { get; set; } = 1;
+    public int NumberLength { get; set; } = 6;
+}
+
+public sealed class InventoryTransaction
+{
+    public long Id { get; set; }
+    public int ProductId { get; set; }
+    public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
+    public string TransactionType { get; set; } = "Adjustment";
+    public decimal BaseQuantityChange { get; set; }
+    public string SourceType { get; set; } = "";
+    public long? SourceId { get; set; }
+    public string Reference { get; set; } = "";
+    public string Notes { get; set; } = "";
+    public string CreatedBy { get; set; } = "";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public sealed class InvoiceRefund
+{
+    public long Id { get; set; }
+    public int InvoiceId { get; set; }
+    public string RefundNumber { get; set; } = "";
+    public DateTime RefundDate { get; set; } = DateTime.UtcNow;
+    public string Reason { get; set; } = "";
+    public decimal SubTotal { get; set; }
+    public decimal TaxTotal { get; set; }
+    public decimal GrandTotal { get; set; }
+    public string CreatedBy { get; set; } = "";
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public List<InvoiceRefundLine> Lines { get; set; } = [];
+}
+
+public sealed class InvoiceRefundLine
+{
+    public long Id { get; set; }
+    public long InvoiceRefundId { get; set; }
+    public int InvoiceItemId { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal TaxRate { get; set; }
+    public decimal LineTotal { get; set; }
+}
+
+public sealed class RolePermission
+{
+    public long Id { get; set; }
+    public string Role { get; set; } = "";
+    public string Resource { get; set; } = "";
+    public string Action { get; set; } = "";
+    public bool IsAllowed { get; set; }
 }

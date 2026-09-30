@@ -57,14 +57,10 @@ public partial class MainWindow
             CornerRadius = new CornerRadius(8),
             ItemTemplate = new FuncDataTemplate<UiRecord>((product, _) => ProductSearchSuggestion(product, editorModel.InvoiceSetting("Show GST fields").IsChecked), true)
         };
-        bool Matches(UiRecord p, string query) => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
-            || p["SKU Code"].Contains(query, StringComparison.OrdinalIgnoreCase)
-            || p["Alias Name (for invoice PDF)"].Contains(query, StringComparison.OrdinalIgnoreCase)
-            || p["HSN/SAC"].Contains(query, StringComparison.OrdinalIgnoreCase);
         productSearch.TextChanged += (_, _) =>
         {
             var query = productSearch.Text?.Trim() ?? "";
-            suggestions.ItemsSource = editorModel.Products.Where(p => Matches(p, query)).ToArray();
+            suggestions.ItemsSource = editorModel.SearchProducts(query);
             suggestions.IsVisible = query.Length > 0;
         };
         var selectingProduct = false;
@@ -92,8 +88,8 @@ public partial class MainWindow
             e.Handled = true;
             var query = productSearch.Text?.Trim() ?? "";
             if (query.Length == 0) return;
-            var exact = editorModel.Products.Where(p => p["SKU Code"].Equals(query, StringComparison.OrdinalIgnoreCase)).ToArray();
-            var matches = exact.Length > 0 ? exact : editorModel.Products.Where(p => Matches(p, query)).ToArray();
+            var exact = editorModel.ExactProductCodeMatches(query);
+            var matches = exact.Length > 0 ? exact : editorModel.SearchProducts(query);
             if (matches.Length == 1) SelectProduct(matches[0]);
         };
         var lineHost = new InvoiceLineItemsView(); var totals = new InvoiceTotalsView(); var count = Ui.LocalText("0 items", 11, true, Ui.Muted);
@@ -217,7 +213,8 @@ public partial class MainWindow
         {
             CloseOverlay();
             search.Focus();
-        }, Model.TryAddInvoiceLine, Model.InvoiceSetting("Allow Fractional Quantity").IsChecked, Model.ProductFieldVisible);
+        }, Model.TryAddInvoiceLine, Model.InvoiceSetting("Allow Fractional Quantity").IsChecked, Model.ProductFieldVisible,
+            Model.ActiveUnitCodes(product["Unit"]), Model.SellingUnitChoices(product));
         overlay.Children.Clear();
         overlay.Margin = new Thickness(0);
         overlay.IsVisible = true;

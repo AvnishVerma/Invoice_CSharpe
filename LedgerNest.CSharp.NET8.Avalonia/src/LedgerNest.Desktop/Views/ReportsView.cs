@@ -5,6 +5,7 @@ using Avalonia.Media;
 using LedgerNest.Desktop.Views;
 using Avalonia.Platform.Storage;
 using System.Text;
+using LedgerNest.Domain;
 
 namespace LedgerNest.Desktop;
 
@@ -21,7 +22,7 @@ public partial class MainWindow
             reportTab = "Customers";
             reportCustomerFilter = pendingCustomer;
         }
-        string[] names = ["Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report", "Inventory"];
+        string[] names = ["Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report", "Inventory", "Barcodes"];
         return new ReportsPageView(new ReportsPageModel(names, reportTab, ReportContent, selected => { reportTab = selected; if (selected != "Customers") reportCustomerFilter = ""; }));
     }
     // Performs the report content action for this screen or workflow.
@@ -96,12 +97,31 @@ public partial class MainWindow
                 () => ExportReportCsv("Inventory"),
                 () => ExportReportPdf("Inventory")));
         }
+        else if (name == "Barcodes")
+        {
+            return new BarcodeReportView(new BarcodeReportViewModel(Model.Products, ExportBarcodeLabelsPdf));
+        }
         else
         {
             body.Children.Add(ReportTable(name, report.Rows, true, name));
         }
 
         return Ui.Scroll(body, 18);
+    }
+
+    private async Task ExportBarcodeLabelsPdf(BarcodeLabelData[] labels)
+    {
+        var bytes = BarcodeLabelPdf.Create(labels, Model.InvoiceSetting("Currency").Value);
+        if (OperatingSystem.IsMacOS())
+        {
+            var path = FilePickerHelpers.MacDownloadsPdfPath("ledgernest-barcode-labels");
+            await File.WriteAllBytesAsync(path, bytes); Model.Status = $"Saved PDF to {path}"; return;
+        }
+        var file = await StorageProvider.SaveFilePickerAsync(FilePickerHelpers.PdfSaveOptions("Export Barcode Labels", "ledgernest-barcode-labels"));
+        if (file == null) return;
+        await using var stream = await file.OpenWriteAsync();
+        await stream.WriteAsync(bytes);
+        ShowOverlay("Barcode Labels Exported", Ui.Text($"Saved {labels.Length} labels to {file.Name}."), Ui.Button("Close", CloseOverlay, true));
     }
 
     // Performs the export report csv action for this screen or workflow.

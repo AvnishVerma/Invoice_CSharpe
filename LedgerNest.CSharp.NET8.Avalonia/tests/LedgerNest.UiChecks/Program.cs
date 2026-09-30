@@ -713,6 +713,28 @@ internal static class Program
         Capture("product-export-pdf");
         Click("Cancel");
         Click("＋ New Product"); Capture("product-form"); Click("Cancel");
+        model.NavigateCommand.Execute("Units"); Settle();
+        var unitMasterView = window.GetVisualDescendants().OfType<UnitMasterView>().Single();
+        Check(unitMasterView.Bounds.Width > 0, "Unit Master route must render its AXAML view");
+        Check(window.GetVisualDescendants().OfType<ListBox>().Single().Bounds.Width > unitMasterView.Bounds.Width * .85,
+            "Unit list must expand across the workspace while its editor is closed");
+        Check(FindButton("+ New Unit").IsVisible && !FindButton("+ New Unit").IsEnabled && FindButton("Refresh").IsVisible,
+            "Unit Master must expose refresh while disabling mutations without administrator permission");
+        model.UnitMaster.NewCommand.Execute(null); Settle();
+        Check(window.GetVisualDescendants().OfType<TextBox>().Any(box => box.PlaceholderText == "Unit code") &&
+              window.GetVisualDescendants().OfType<TextBox>().Any(box => box.PlaceholderText == "Unit name"),
+            "New Unit must show the bound editor fields");
+        Capture("unit-master-editor");
+        Click("Cancel");
+        model.NavigateCommand.Execute("Products"); Settle();
+        var productHeader = window.GetVisualDescendants().OfType<ManagementActionBarView>().Single();
+        Check(Math.Abs(productHeader.Bounds.Height - 44.8) < 1, "Product Management must use the same standard header height as Customer Management");
+        model.NavigateCommand.Execute("Prices"); Settle();
+        Check(window.GetVisualDescendants().OfType<ProductPriceMasterView>().Any(), "Prices route must render the Product Price Master AXAML view");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text?.Contains("Configure a selling unit", StringComparison.Ordinal) == true) &&
+              window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text?.Contains("Schedule a price", StringComparison.Ordinal) == true),
+            "Product Price Master must expose selling-unit and effective-price workflows");
+        Capture("product-price-master");
         model.NavigateCommand.Execute("New Invoice"); Settle();
         Shortcut(Key.M);
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Add Custom Item") && window.GetVisualDescendants().OfType<TextBox>().Any(t => t.PlaceholderText == "Name"), "Ctrl+M must open the custom item dialog");

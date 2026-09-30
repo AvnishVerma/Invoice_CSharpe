@@ -24,7 +24,7 @@ public sealed partial class SidebarView : UserControl
             : Ui.Stack(2, Ui.Logo(true), Ui.Button("›", toggleSidebar));
 
         var nav = Ui.Stack(0);
-        string[] icons = ["dashboard", "receipt", "receipt_long", "request_quote", "point_of_sale", "people", "inventory_2", "bar_chart", "settings"];
+        string[] icons = ["dashboard", "receipt", "receipt_long", "request_quote", "point_of_sale", "people", "inventory_2", "straighten", "payments", "warehouse", "bar_chart", "settings"];
         for (var i = 0; i < MainWindowViewModel.Routes.Length; i++)
         {
             var route = MainWindowViewModel.Routes[i];

@@ -11,6 +11,7 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
     private readonly Func<InvoiceLineViewModel, bool>? acceptLine;
     private readonly bool allowFractional;
     private bool completed;
+    private readonly Dictionary<string, SellingUnitChoice> sellingUnits;
 
     public string Title { get; }
     public string StockText { get; }
@@ -26,7 +27,7 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
     public FormField ExtraCost { get; } = new("Extra Cost (optional)", "", "number");
     [ObservableProperty] private bool discountPerUnit = true;
 
-    public ProductItemDialogViewModel(UiRecord product, Action<InvoiceLineViewModel> addLine, Action close, Func<InvoiceLineViewModel, bool>? acceptLine = null, bool allowFractional = true, Func<string, bool>? fieldVisible = null)
+    public ProductItemDialogViewModel(UiRecord product, Action<InvoiceLineViewModel> addLine, Action close, Func<InvoiceLineViewModel, bool>? acceptLine = null, bool allowFractional = true, Func<string, bool>? fieldVisible = null, IEnumerable<string>? unitOptions = null, IEnumerable<SellingUnitChoice>? sellingUnitOptions = null)
     {
         ShowStock = fieldVisible?.Invoke("Stock") ?? true;
         ShowUnit = fieldVisible?.Invoke("Unit") ?? true;
@@ -41,10 +42,17 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
         var hasUnlimitedStock = bool.TryParse(product["Unlimited stock"], out var unlimitedStock) && unlimitedStock;
         StockText = hasUnlimitedStock ? "Unlimited Stock" : $"Available Stock: {product["Stock"]}";
         DefaultPriceText = $"Default: {CurrencyDisplay.Format(draft.Price)}";
+        sellingUnits = (sellingUnitOptions ?? []).GroupBy(choice => choice.Code, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
         Unit = new FormField("Unit (override)", draft.Unit, "choice",
-            new[] { "None", "pcs", "kg", "g", "l", "m", "box", draft.Unit }.Distinct().ToArray());
+            (sellingUnits.Count > 0 ? sellingUnits.Keys : unitOptions ?? new[] { "None", draft.Unit }).Append(draft.Unit).Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
         Discount = new FormField("Discount", draft.Discount.ToString(), "number", required: true);
         Price = new FormField("Unit Price (override)", draft.Price.ToString(), "number", required: true);
+        Unit.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(FormField.Value) && sellingUnits.TryGetValue(Unit.Value, out var choice))
+                Price.Value = choice.Price.ToString(System.Globalization.CultureInfo.CurrentCulture);
+        };
     }
 
     [RelayCommand]
@@ -57,6 +65,11 @@ public sealed partial class ProductItemDialogViewModel : ObservableObject
         if (!allowFractional && decimal.Truncate(Quantity.Number) != Quantity.Number) { Quantity.Error = "Enter a whole-number quantity."; return; }
         draft.Quantity = Quantity.Number;
         draft.Unit = Unit.Value;
+        if (sellingUnits.TryGetValue(Unit.Value, out var choice))
+        {
+            draft.SellingUnitId = choice.SellingUnitId;
+            draft.UnitConversionFactor = choice.ConversionFactor;
+        }
         draft.Discount = Discount.Number;
         draft.DiscountPerUnit = DiscountPerUnit;
         draft.Price = Price.Number;

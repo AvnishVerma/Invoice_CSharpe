@@ -27,6 +27,13 @@ public static class DependencyInjection
                     throw new ArgumentOutOfRangeException(nameof(profile.Provider));
             }
         });
+        services.AddSingleton<NumberSeriesService>();
+        services.AddSingleton<UnitMasterService>();
+        services.AddSingleton<ProductPricingService>();
+        services.AddSingleton<InventoryService>();
+        services.AddSingleton<InvoiceRefundService>();
+        services.AddSingleton<AuthorizationService>();
+        services.AddSingleton<QuotationService>();
         return services;
     }
 }

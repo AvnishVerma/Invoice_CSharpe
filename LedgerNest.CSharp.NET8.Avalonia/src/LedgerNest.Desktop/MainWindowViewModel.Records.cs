@@ -31,7 +31,7 @@ public partial class MainWindowViewModel
         if (original != null && !records.Contains(original)) { Status = "Record no longer exists in this view."; return false; }
         if (kind == "User")
         {
-            if (values.GetValueOrDefault("Role") is not ("Admin" or "User"))
+            if (values.GetValueOrDefault("Role") is not ("Admin" or "Manager" or "Sales" or "User"))
             { Status = "Select a valid user role."; return false; }
             if (dbFactory == null && Users.Any(u => u != original && u.Name.Equals(values["Username"], StringComparison.OrdinalIgnoreCase)))
             { Status = "Username is already in use."; return false; }
@@ -42,6 +42,7 @@ public partial class MainWindowViewModel
         if (sourceId < 0) return false;
         var record = new UiRecord { SourceId = sourceId, Values = values };
         if (original != null) records[records.IndexOf(original)] = record; else records.Add(record);
+        if (kind == "User") PermissionManagement.RefreshUsers();
         if (kind == "User" && original != null && CurrentUsername == original.Name)
         {
             SetSession(null, "", false);
@@ -78,6 +79,10 @@ public partial class MainWindowViewModel
                 var product = db.Products.Find(record.SourceId);
                 if (product == null) return false;
                 foreach (var item in db.InvoiceItems.Where(i => i.ProductId == product.Id)) item.ProductId = null;
+                var sellingUnitIds = db.ProductSellingUnits.Where(unit => unit.ProductId == product.Id).Select(unit => unit.Id).ToArray();
+                db.ProductPrices.RemoveRange(db.ProductPrices.Where(price => price.ProductId == product.Id || sellingUnitIds.Contains(price.SellingUnitId)));
+                db.ProductSellingUnits.RemoveRange(db.ProductSellingUnits.Where(unit => unit.ProductId == product.Id));
+                db.InventoryTransactions.RemoveRange(db.InventoryTransactions.Where(movement => movement.ProductId == product.Id));
                 db.Products.Remove(product);
             }
             else
@@ -90,6 +95,7 @@ public partial class MainWindowViewModel
             transaction.Commit();
         }
         records.Remove(record);
+        if (kind == "User") PermissionManagement.RefreshUsers();
         DeletedRecords.Remove(record.Id);
         if (kind == "User" && CurrentUsername == record.Name)
         {

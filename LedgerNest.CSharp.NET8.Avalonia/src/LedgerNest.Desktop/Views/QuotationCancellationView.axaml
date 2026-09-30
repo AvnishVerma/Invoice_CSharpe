@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.QuotationCancellationView"
+             x:DataType="vm:QuotationCancellationViewModel">
+  <StackPanel Spacing="14">
+    <Border Padding="12" CornerRadius="10" Background="{DynamicResource AppBackgroundBrush}">
+      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,6,Auto">
+        <TextBlock Text="Quotation" Foreground="{DynamicResource AppMutedBrush}"/>
+        <TextBlock Grid.Column="1" Text="{Binding QuotationNumber}" FontWeight="SemiBold"/>
+        <TextBlock Grid.Row="2" Text="Customer" Foreground="{DynamicResource AppMutedBrush}"/>
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Customer}"/>
+      </Grid>
+    </Border>
+    <TextBlock Text="Cancelling preserves the quotation and its audit history. The quotation cannot be edited after cancellation." TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
+    <TextBox Text="{Binding Reason}" PlaceholderText="Reason for cancellation" AcceptsReturn="True" MinHeight="90" MaxLength="500"/>
+    <TextBlock Text="{Binding Error}" Foreground="#C62828" TextWrapping="Wrap"/>
+    <Grid ColumnDefinitions="*,10,*">
+      <Button Content="Keep Quotation" Command="{Binding CloseCommand}"/>
+      <Button Grid.Column="2" Content="Cancel Quotation" Command="{Binding CancelQuotationCommand}" Classes="danger" IsEnabled="{Binding !IsBusy}"/>
+    </Grid>
+    <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
+  </StackPanel>
+</UserControl>

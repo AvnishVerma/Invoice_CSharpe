@@ -31,6 +31,7 @@ public sealed partial class FormField : ObservableObject
 }
 
 public sealed record FormSection(string Title, FormField[] Fields);
+public sealed record SellingUnitChoice(int? SellingUnitId, string Code, decimal ConversionFactor, decimal Price);
 public sealed class UiRecord
 {
     public Guid Id { get; } = Guid.NewGuid();
@@ -45,6 +46,8 @@ public sealed partial class InvoiceLineViewModel : ObservableObject
     public string ProductKey { get; init; } = "";
     public string ProductType { get; init; } = "Product";
     public LedgerNest.Domain.InvoiceLinePresentation? SavedPresentation { get; init; }
+    public int? SellingUnitId { get; set; }
+    public decimal UnitConversionFactor { get; set; } = 1;
     [ObservableProperty] private string name = "";
     [ObservableProperty] private string unit = "None";
     [ObservableProperty] private decimal quantity = 1;
@@ -54,6 +57,7 @@ public sealed partial class InvoiceLineViewModel : ObservableObject
     [ObservableProperty] private bool priceIncludesTax;
     [ObservableProperty] private bool discountPerUnit;
     [ObservableProperty] private decimal extraCost;
+    public decimal BaseQuantity => Quantity * UnitConversionFactor;
     public decimal Total => Quantity * Price - (DiscountPerUnit ? Discount * Quantity : Discount) + ExtraCost;
     // Performs the on discount per unit changed action for this screen or workflow.
     partial void OnDiscountPerUnitChanged(bool value) => OnPropertyChanged(nameof(Total));

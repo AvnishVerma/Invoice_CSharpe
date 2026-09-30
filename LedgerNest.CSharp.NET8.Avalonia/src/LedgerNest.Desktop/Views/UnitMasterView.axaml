@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop"
+             xmlns:domain="using:LedgerNest.Domain"
+             x:Class="LedgerNest.Desktop.Views.UnitMasterView"
+             x:DataType="vm:UnitMasterViewModel"
+             Foreground="{DynamicResource AppTextBrush}">
+  <UserControl.Styles>
+    <Style Selector="ListBoxItem">
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppSelectedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AppHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+    </Style>
+  </UserControl.Styles>
+  <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppCanvasBrush}">
+    <Border Background="{DynamicResource PageHeaderBrush}" Height="44.8" Padding="20,0">
+      <Grid ColumnDefinitions="*,Auto,10,Auto">
+        <StackPanel VerticalAlignment="Center"><TextBlock Text="Unit Management" FontSize="20" Foreground="White"/><TextBlock Text="Reusable units for products, pricing and invoices" FontSize="11" Foreground="#DCE8FA"/></StackPanel>
+        <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" Classes="header-action" VerticalAlignment="Center" />
+        <Button Grid.Column="3" Content="+ New Unit" Command="{Binding NewCommand}" Classes="primary" IsEnabled="{Binding CanManage}" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,20,Auto" Margin="12.8">
+      <Border Padding="16" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+        <Grid RowDefinitions="Auto,8,Auto,8,*">
+          <Grid ColumnDefinitions="*,Auto,8,Auto">
+            <TextBlock Text="Units" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="Edit" Classes="outline" Command="{Binding EditSelectedCommand}" IsEnabled="{Binding CanManage}" />
+            <Button Grid.Column="3" Content="Delete" Classes="outline" Command="{Binding DeleteSelectedCommand}" IsEnabled="{Binding CanManage}" />
+          </Grid>
+          <TextBlock Grid.Row="2" Text="Select a row to edit or delete it. Inactive units remain on historical invoices but cannot be selected for new products." TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
+          <Grid Grid.Row="4" RowDefinitions="Auto,*"><Grid ColumnDefinitions="100,*,120,150" Margin="12,8"><TextBlock Text="CODE"/><TextBlock Grid.Column="1" Text="NAME AND DESCRIPTION"/><TextBlock Grid.Column="2" Text="STATUS"/><TextBlock Grid.Column="3" Text="LAST MODIFIED"/></Grid><ListBox Grid.Row="1" ItemsSource="{Binding Units}" SelectedItem="{Binding SelectedUnit}" BorderThickness="0" Background="Transparent">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="domain:UnitOfMeasure">
+                <Border Padding="12" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1">
+                  <Grid ColumnDefinitions="100,*,120,150">
+                    <TextBlock Text="{Binding Code}" FontWeight="SemiBold" />
+                    <StackPanel Grid.Column="1" Spacing="2"><TextBlock Text="{Binding Name}" /><TextBlock Text="{Binding Description}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}" /></StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding IsActive, StringFormat='Active: {0}'}" />
+                    <TextBlock Grid.Column="3" Text="{Binding ModifiedAt, StringFormat='Modified: {0:dd MMM yyyy}'}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox></Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="2" Width="420" Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" IsVisible="{Binding IsEditing}">
+        <StackPanel Spacing="14">
+          <TextBlock Text="Unit details" FontSize="18" FontWeight="SemiBold" /><TextBlock Text="Use a short code such as PCS, BOX, KG, or HOUR." TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
+          <TextBlock Text="Unit code" FontWeight="SemiBold"/>
+          <TextBox Text="{Binding Code}" PlaceholderText="Unit code" />
+          <TextBlock Text="Display name" FontWeight="SemiBold"/>
+          <TextBox Text="{Binding UnitName}" PlaceholderText="Unit name" />
+          <TextBlock Text="Description" FontWeight="SemiBold"/>
+          <TextBox Text="{Binding Description}" PlaceholderText="Description" AcceptsReturn="True" MinHeight="80" />
+          <CheckBox Content="Active" IsChecked="{Binding IsActive}" />
+          <TextBlock Text="{Binding Error}" Foreground="#C62828" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Text="{Binding Status}" Foreground="#2E7D32" TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="*,10,*">
+            <Button Content="Cancel" Classes="outline" Command="{Binding CancelEditCommand}" />
+            <Button Grid.Column="2" Content="Save Unit" Command="{Binding SaveCommand}" Classes="primary" IsEnabled="{Binding !IsBusy}" />
+          </Grid>
+          <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
+          <TextBlock Text="Processing, please wait..." HorizontalAlignment="Center" IsVisible="{Binding IsBusy}" />
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:LedgerNest.Desktop.Views" x:Class="LedgerNest.Desktop.Views.ProductColumnPickerView"
+             x:DataType="local:ProductColumnPickerView" Width="224">
+  <Grid RowDefinitions="Auto,*">
+    <TextBlock Text="Show up to 10 columns" Margin="12,12,12,8" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+    <ScrollViewer Grid.Row="1" MaxHeight="540" HorizontalScrollBarVisibility="Disabled">
+      <ItemsControl ItemsSource="{Binding Options}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="local:ProductColumnOption">
+            <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected, Mode=TwoWay}" IsEnabled="{Binding CanSelect}"
+                      MinHeight="44" Padding="12,6" HorizontalAlignment="Stretch" FontSize="13" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

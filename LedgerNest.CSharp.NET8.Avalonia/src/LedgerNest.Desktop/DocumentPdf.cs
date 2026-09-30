@@ -273,19 +273,45 @@ internal static class DocumentPdf
         Paragraph(business.Address); Paragraph(business.Phone); Paragraph(business.Email);
         if (options.ShowGst && business.TaxId.Length > 0) Paragraph("GST / Tax ID: " + business.TaxId);
         y += compact ? 3 : 8; Ensure(45); Rule(y); y += narrow ? 12 : 18;
+        var customer = invoice.Snapshot?.Customer;
+        var information = new List<(string? Text, bool Bold)>
+        {
+            ("Date: " + DateTimeText(invoice.InvoiceDate), false),
+            ("Status: " + invoice.Status, false),
+            ("Customer: " + (customer?.Name ?? invoice.CustomerName), true)
+        };
+        if (options.ShowCustomerBusinessName && !string.IsNullOrWhiteSpace(customer?.BusinessName)) information.Add(("Business: " + customer.BusinessName, false));
+        if (options.ShowCustomerAddress) information.Add((customer?.Address, false));
+        if (options.ShowCustomerPhone) information.Add((customer?.Phone, false));
+        if (!thermal && options.ShowCustomerEmail) information.Add((customer?.Email, false));
+        if (options.ShowGst && options.ShowCustomerGstin && !string.IsNullOrWhiteSpace(customer?.GstNumber)) information.Add(("GSTIN: " + customer.GstNumber, false));
         if (modern || executive)
         {
-            paint.Color = WithAlpha(accent, 16); canvas.DrawRoundRect(new SKRoundRect(new SKRect(margin, y - 8, width - margin, y + 54), 6, 6), paint);
+            const float padding = 10;
+            var lines = information.SelectMany(entry => Wrap(entry.Text, usable - 2 * padding, size)
+                .Select(line => (Text: line, entry.Bold))).ToArray();
+            var position = 0;
+            while (position < lines.Length)
+            {
+                Ensure(2 * padding + size + 5);
+                var capacity = Math.Max(1, (int)((height - 45 - y - 2 * padding) / (size + 5)));
+                var count = Math.Min(capacity, lines.Length - position);
+                var blockHeight = 2 * padding + count * (size + 5);
+                paint.Color = WithAlpha(accent, 16);
+                canvas.DrawRoundRect(new SKRoundRect(new SKRect(margin, y, width - margin, y + blockHeight), 6, 6), paint);
+                var baseline = y + padding + size;
+                for (var i = 0; i < count; i++)
+                {
+                    var line = lines[position++];
+                    Text(line.Text, margin + padding, baseline, size, line.Bold);
+                    baseline += size + 5;
+                }
+                y += blockHeight;
+                if (position < lines.Length) NewPage();
+            }
         }
-        Paragraph("Date: " + DateTimeText(invoice.InvoiceDate));
-        Paragraph("Status: " + invoice.Status);
-        var customer = invoice.Snapshot?.Customer;
-        Paragraph("Customer: " + (customer?.Name ?? invoice.CustomerName), true);
-        if (options.ShowCustomerBusinessName && !string.IsNullOrWhiteSpace(customer?.BusinessName)) Paragraph("Business: " + customer.BusinessName);
-        if (options.ShowCustomerAddress) Paragraph(customer?.Address);
-        if (options.ShowCustomerPhone) Paragraph(customer?.Phone);
-        if (!thermal && options.ShowCustomerEmail) Paragraph(customer?.Email);
-        if (options.ShowGst && options.ShowCustomerGstin && !string.IsNullOrWhiteSpace(customer?.GstNumber)) Paragraph("GSTIN: " + customer.GstNumber);
+        else
+            foreach (var entry in information) Paragraph(entry.Text, entry.Bold);
         y += 8;
         if (grid && !thermal)
         {
@@ -441,17 +467,20 @@ internal static class DocumentPdf
             Ensure(10); Rule(y); y += compact || narrow ? 10 : 16;
         }
         Ensure(135); y += 6;
-        if (!minimal && !narrow)
-        {
-            paint.Color = WithAlpha(accent, modern || executive ? (byte)20 : (byte)12);
-            canvas.DrawRoundRect(new SKRoundRect(new SKRect(width - margin - Math.Min(usable, 245), y - 6, width - margin, y + 119), 6, 6), paint);
-        }
         var currency = invoice.Snapshot?.Currency?.Split('—')[0].Trim() ?? "";
         Paragraph("AMOUNTS" + (currency.Length > 0 ? " · " + currency : ""), true);
         void Total(string label, decimal amount, bool strong = false) => TotalText(label, Money(amount), strong);
         void TotalText(string label, string value, bool strong = false)
         {
-            Ensure(24); Text(label, margin, y, size, strong); Text(value, width - margin, y, size, strong, right: true); y += 21;
+            Ensure(24);
+            if (!minimal && !narrow)
+            {
+                paint.Color = WithAlpha(accent, modern || executive ? (byte)20 : (byte)12);
+                canvas.DrawRect(width - margin - Math.Min(usable, 245), y - size - 5, Math.Min(usable, 245), 21, paint);
+            }
+            Text(label, margin, y, size, strong);
+            Text(value, width - margin - (!minimal && !narrow ? 10 : 0), y, size, strong, right: true);
+            y += 21;
         }
         if (options.ShowTotalQuantity) TotalText("Total quantity", items.Sum(i => i.Quantity).ToString("0.###", CultureInfo.InvariantCulture));
         Total("Subtotal", invoice.SubTotal);
@@ -529,3 +558,4 @@ internal static class DocumentPdf
         return output.ToArray();
     }
 }
+

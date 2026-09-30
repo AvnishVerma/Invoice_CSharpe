@@ -18,6 +18,14 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
     public DbSet<BackupHistoryEntry> BackupHistory => Set<BackupHistoryEntry>();
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<DocumentSequence> DocumentSequences => Set<DocumentSequence>();
+    public DbSet<UnitOfMeasure> Units => Set<UnitOfMeasure>();
+    public DbSet<ProductSellingUnit> ProductSellingUnits => Set<ProductSellingUnit>();
+    public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
+    public DbSet<NumberSeries> NumberSeries => Set<NumberSeries>();
+    public DbSet<InventoryTransaction> InventoryTransactions => Set<InventoryTransaction>();
+    public DbSet<InvoiceRefund> InvoiceRefunds => Set<InvoiceRefund>();
+    public DbSet<InvoiceRefundLine> InvoiceRefundLines => Set<InvoiceRefundLine>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     // Upgrade only the C# schema; the Flutter database has different column names.
     public void EnsureCurrentSchema()
@@ -40,7 +48,8 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 Database.ExecuteSqlRaw("ALTER TABLE invoices ADD COLUMN Type TEXT NOT NULL DEFAULT 'Invoice'");
             NormalizeLegacyDuplicateDocumentNumbers();
             EnsureColumns("invoices", [("DeletedAt", "TEXT NULL"), ("CustomerName", "TEXT NOT NULL DEFAULT ''"), ("Snapshot", "TEXT NULL")]);
-            EnsureColumns("customers", [("BusinessName", "TEXT NOT NULL DEFAULT ''")]);
+            EnsureColumns("invoices", [("CancellationReason", "TEXT NULL"), ("CancelledBy", "TEXT NULL"), ("CancelledAt", "TEXT NULL")]);
+            EnsureColumns("customers", [("BusinessName", "TEXT NOT NULL DEFAULT ''"), ("CustomerCode", "TEXT NULL")]);
             command.CommandText = """
                 CREATE TABLE IF NOT EXISTS backup_history (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,6 +81,9 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 ("ManufacturerName", "TEXT NOT NULL DEFAULT ''"),
                 ("SupplierName", "TEXT NOT NULL DEFAULT ''"),
                 ("Notes", "TEXT NOT NULL DEFAULT ''")]);
+            EnsureColumns("products", [("ProductCode", "TEXT NULL"), ("Barcode", "TEXT NULL"), ("BaseUnitId", "INTEGER NULL")]);
+            EnsureColumns("invoice_items", [("SellingUnitId", "INTEGER NULL"), ("SellingUnitCode", "TEXT NOT NULL DEFAULT ''"), ("UnitConversionFactor", "TEXT NOT NULL DEFAULT '1'"), ("BaseQuantity", "TEXT NOT NULL DEFAULT '0'")]);
+            EnsureEnhancementTables();
             void EnsureColumns(string table, (string Name, string Definition)[] additions)
             {
                 // Identifiers and definitions come exclusively from the schema constants above.
@@ -122,6 +134,31 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                 }
                 command.Parameters.Clear();
             }
+
+            void EnsureEnhancementTables()
+            {
+                var statements = new[]
+                {
+                    "CREATE TABLE IF NOT EXISTS units (Id INTEGER PRIMARY KEY AUTOINCREMENT, Code TEXT NOT NULL, Name TEXT NOT NULL, Description TEXT NOT NULL DEFAULT '', IsActive INTEGER NOT NULL DEFAULT 1, CreatedBy TEXT NOT NULL DEFAULT '', CreatedAt TEXT NOT NULL, ModifiedBy TEXT NOT NULL DEFAULT '', ModifiedAt TEXT NULL)",
+                    "CREATE UNIQUE INDEX IF NOT EXISTS IX_units_Code ON units(Code)",
+                    "CREATE TABLE IF NOT EXISTS product_selling_units (Id INTEGER PRIMARY KEY AUTOINCREMENT, ProductId INTEGER NOT NULL, UnitId INTEGER NOT NULL, ConversionFactor TEXT NOT NULL DEFAULT '1', SellingPrice TEXT NOT NULL DEFAULT '0', IsDefault INTEGER NOT NULL DEFAULT 0, IsActive INTEGER NOT NULL DEFAULT 1, FOREIGN KEY(ProductId) REFERENCES products(Id) ON DELETE RESTRICT, FOREIGN KEY(UnitId) REFERENCES units(Id) ON DELETE RESTRICT)",
+                    "CREATE UNIQUE INDEX IF NOT EXISTS IX_product_selling_units_ProductId_UnitId ON product_selling_units(ProductId, UnitId)",
+                    "CREATE TABLE IF NOT EXISTS product_prices (Id INTEGER PRIMARY KEY AUTOINCREMENT, ProductId INTEGER NOT NULL, SellingUnitId INTEGER NOT NULL, PriceList TEXT NOT NULL DEFAULT 'Default', SellingPrice TEXT NOT NULL DEFAULT '0', EffectiveDate TEXT NOT NULL, IsActive INTEGER NOT NULL DEFAULT 1, CreatedBy TEXT NOT NULL DEFAULT '', CreatedAt TEXT NOT NULL, ModifiedBy TEXT NOT NULL DEFAULT '', ModifiedAt TEXT NULL)",
+                    "CREATE INDEX IF NOT EXISTS IX_product_prices_lookup ON product_prices(ProductId, SellingUnitId, PriceList, IsActive, EffectiveDate)",
+                    "CREATE TABLE IF NOT EXISTS number_series (EntityType TEXT PRIMARY KEY NOT NULL, Prefix TEXT NOT NULL DEFAULT '', NextValue INTEGER NOT NULL DEFAULT 1, Increment INTEGER NOT NULL DEFAULT 1, NumberLength INTEGER NOT NULL DEFAULT 6)",
+                    "CREATE TABLE IF NOT EXISTS inventory_transactions (Id INTEGER PRIMARY KEY AUTOINCREMENT, ProductId INTEGER NOT NULL, TransactionDate TEXT NOT NULL, TransactionType TEXT NOT NULL, BaseQuantityChange TEXT NOT NULL, SourceType TEXT NOT NULL DEFAULT '', SourceId INTEGER NULL, Reference TEXT NOT NULL DEFAULT '', Notes TEXT NOT NULL DEFAULT '', CreatedBy TEXT NOT NULL DEFAULT '', CreatedAt TEXT NOT NULL, FOREIGN KEY(ProductId) REFERENCES products(Id) ON DELETE RESTRICT)",
+                    "CREATE INDEX IF NOT EXISTS IX_inventory_transactions_ProductId_TransactionDate ON inventory_transactions(ProductId, TransactionDate)",
+                    "CREATE TABLE IF NOT EXISTS invoice_refunds (Id INTEGER PRIMARY KEY AUTOINCREMENT, InvoiceId INTEGER NOT NULL, RefundNumber TEXT NOT NULL, RefundDate TEXT NOT NULL, Reason TEXT NOT NULL DEFAULT '', SubTotal TEXT NOT NULL, TaxTotal TEXT NOT NULL, GrandTotal TEXT NOT NULL, CreatedBy TEXT NOT NULL DEFAULT '', CreatedAt TEXT NOT NULL, FOREIGN KEY(InvoiceId) REFERENCES invoices(Id) ON DELETE RESTRICT)",
+                    "CREATE UNIQUE INDEX IF NOT EXISTS IX_invoice_refunds_RefundNumber ON invoice_refunds(RefundNumber)",
+                    "CREATE TABLE IF NOT EXISTS invoice_refund_lines (Id INTEGER PRIMARY KEY AUTOINCREMENT, InvoiceRefundId INTEGER NOT NULL, InvoiceItemId INTEGER NOT NULL, Quantity TEXT NOT NULL, UnitPrice TEXT NOT NULL, TaxRate TEXT NOT NULL, LineTotal TEXT NOT NULL, FOREIGN KEY(InvoiceRefundId) REFERENCES invoice_refunds(Id) ON DELETE CASCADE, FOREIGN KEY(InvoiceItemId) REFERENCES invoice_items(Id) ON DELETE RESTRICT)",
+                    "CREATE TABLE IF NOT EXISTS role_permissions (Id INTEGER PRIMARY KEY AUTOINCREMENT, Role TEXT NOT NULL, Resource TEXT NOT NULL, Action TEXT NOT NULL, IsAllowed INTEGER NOT NULL DEFAULT 0)",
+                    "CREATE UNIQUE INDEX IF NOT EXISTS IX_role_permissions_Role_Resource_Action ON role_permissions(Role, Resource, Action)",
+                    "CREATE UNIQUE INDEX IF NOT EXISTS IX_products_ProductCode ON products(ProductCode) WHERE ProductCode IS NOT NULL AND ProductCode <> ''",
+                    "CREATE INDEX IF NOT EXISTS IX_products_Search ON products(Name, HsnCode, Code, Barcode)",
+                    "CREATE UNIQUE INDEX IF NOT EXISTS IX_customers_CustomerCode ON customers(CustomerCode) WHERE CustomerCode IS NOT NULL AND CustomerCode <> ''"
+                };
+                foreach (var statement in statements) { command.CommandText = statement; command.ExecuteNonQuery(); }
+            }
             transaction.Commit();
         }
         finally
@@ -133,8 +170,9 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
     // Performs the on model creating action for this screen or workflow.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Customer>().ToTable("customers");
-        modelBuilder.Entity<Product>().ToTable("products");
+        modelBuilder.Entity<Customer>().ToTable("customers").HasIndex(x => x.CustomerCode).IsUnique();
+        modelBuilder.Entity<Product>().ToTable("products").HasIndex(x => x.ProductCode).IsUnique();
+        modelBuilder.Entity<Product>().HasIndex(x => new { x.Name, x.HsnCode, x.Code, x.Barcode });
         modelBuilder.Entity<Invoice>().ToTable("invoices").HasIndex(i => new { i.Type, i.InvoiceNumber }).IsUnique();
         modelBuilder.Entity<Invoice>().Property(i => i.Snapshot).HasConversion(
             snapshot => JsonSerializer.Serialize(snapshot, (JsonSerializerOptions?)null),
@@ -145,6 +183,15 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<AppSetting>().ToTable("settings").HasKey(x => x.Key);
         modelBuilder.Entity<BackupHistoryEntry>().ToTable("backup_history");
         modelBuilder.Entity<DocumentSequence>().ToTable("document_sequences").HasKey(x => x.Type);
+        modelBuilder.Entity<UnitOfMeasure>().ToTable("units").HasIndex(x => x.Code).IsUnique();
+        modelBuilder.Entity<ProductSellingUnit>().ToTable("product_selling_units").HasIndex(x => new { x.ProductId, x.UnitId }).IsUnique();
+        modelBuilder.Entity<ProductPrice>().ToTable("product_prices").HasIndex(x => new { x.ProductId, x.SellingUnitId, x.PriceList, x.IsActive, x.EffectiveDate });
+        modelBuilder.Entity<NumberSeries>().ToTable("number_series").HasKey(x => x.EntityType);
+        modelBuilder.Entity<NumberSeries>().Property(x => x.NextValue).IsConcurrencyToken();
+        modelBuilder.Entity<InventoryTransaction>().ToTable("inventory_transactions").HasIndex(x => new { x.ProductId, x.TransactionDate });
+        modelBuilder.Entity<InvoiceRefund>().ToTable("invoice_refunds").HasIndex(x => x.RefundNumber).IsUnique();
+        modelBuilder.Entity<InvoiceRefundLine>().ToTable("invoice_refund_lines");
+        modelBuilder.Entity<RolePermission>().ToTable("role_permissions").HasIndex(x => new { x.Role, x.Resource, x.Action }).IsUnique();
         // An increment is guarded by the previously-read value, so simultaneous
         // desktop clients retry instead of reserving the same document number.
         modelBuilder.Entity<DocumentSequence>().Property(x => x.NextValue).IsConcurrencyToken();
@@ -155,6 +202,14 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
             .WithOne()
             .HasForeignKey(x => x.InvoiceId)
             .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ProductSellingUnit>().HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<ProductSellingUnit>().HasOne<UnitOfMeasure>().WithMany().HasForeignKey(x => x.UnitId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<ProductPrice>().HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<ProductPrice>().HasOne<ProductSellingUnit>().WithMany().HasForeignKey(x => x.SellingUnitId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<InventoryTransaction>().HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<InvoiceRefund>().HasMany(x => x.Lines).WithOne().HasForeignKey(x => x.InvoiceRefundId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<InvoiceRefund>().HasOne<Invoice>().WithMany().HasForeignKey(x => x.InvoiceId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<InvoiceRefundLine>().HasOne<InvoiceItem>().WithMany().HasForeignKey(x => x.InvoiceItemId).OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Invoice>()
             .Property(x => x.SubTotal).HasPrecision(18, 2);
@@ -177,5 +232,18 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<InvoiceItem>().Property(x => x.TaxRate).HasPrecision(8, 2);
         modelBuilder.Entity<InvoiceItem>().Property(x => x.Discount).HasPrecision(18, 2);
         modelBuilder.Entity<InvoiceItem>().Property(x => x.ExtraCost).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceItem>().Property(x => x.UnitConversionFactor).HasPrecision(18, 6);
+        modelBuilder.Entity<InvoiceItem>().Property(x => x.BaseQuantity).HasPrecision(18, 3);
+        modelBuilder.Entity<ProductSellingUnit>().Property(x => x.ConversionFactor).HasPrecision(18, 6);
+        modelBuilder.Entity<ProductSellingUnit>().Property(x => x.SellingPrice).HasPrecision(18, 2);
+        modelBuilder.Entity<ProductPrice>().Property(x => x.SellingPrice).HasPrecision(18, 2);
+        modelBuilder.Entity<InventoryTransaction>().Property(x => x.BaseQuantityChange).HasPrecision(18, 3);
+        modelBuilder.Entity<InvoiceRefund>().Property(x => x.SubTotal).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceRefund>().Property(x => x.TaxTotal).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceRefund>().Property(x => x.GrandTotal).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceRefundLine>().Property(x => x.Quantity).HasPrecision(18, 3);
+        modelBuilder.Entity<InvoiceRefundLine>().Property(x => x.UnitPrice).HasPrecision(18, 2);
+        modelBuilder.Entity<InvoiceRefundLine>().Property(x => x.TaxRate).HasPrecision(8, 2);
+        modelBuilder.Entity<InvoiceRefundLine>().Property(x => x.LineTotal).HasPrecision(18, 2);
     }
 }

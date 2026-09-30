@@ -29,7 +29,7 @@ internal sealed partial class ManagementView : UserControl
     {
         InitializeComponent();
         this.model = model; this.kind = kind; this.window = window;
-        search.PlaceholderText = Documents ? "Search by Invoice ID or Customer Name…" : kind == "Customer" ? "Search customers by name, phone, email, GST…" : kind == "Product" ? "Search products by name, alias, HSN/SAC, SKU…" : "Search users…";
+        search.PlaceholderText = Documents ? "Search by Invoice ID or Customer Name…" : kind == "Customer" ? "Search customers by name, phone, email, GST…" : kind == "Product" ? "Search name, product ID, barcode, SKU, HSN/SAC…" : "Search users…";
         search.TextChanged += (_, _) => { page = 0; Refresh(); };
         var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.StartDocument(kind); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
         var more = MoreMenu();
@@ -72,22 +72,13 @@ internal sealed partial class ManagementView : UserControl
         {
             RecordRoot.IsVisible = true;
             DocumentRoot.IsVisible = false;
-            if (kind == "Product")
-            {
-                HeaderHost.IsVisible = false;
-                ProductHeaderRoot.IsVisible = true;
-                foreach (var action in headerActions) ProductHeaderActionsHost.Children.Add(action);
-            }
-            else
-            {
-                HeaderHost.Content = new ManagementActionBarView($"{kind} Management", headerActions);
-            }
+            HeaderHost.Content = new ManagementActionBarView($"{kind} Management", headerActions);
             StatsHost.Content = stats;
 
             Control toolbarActions = kind == "User"
                 ? MenuButton("Role: All ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); })
                 : kind == "Product"
-                ? Ui.Wrap(filterButton, sortButton, Ui.Button("☷  Customize Product Columns", window.OpenProductDetailsSettings), Ui.Button("Show Columns ▾", Columns), Ui.Button("visibility", () => stats.IsVisible = !stats.IsVisible))
+                ? Ui.Wrap(filterButton, sortButton, Ui.Button("☷  Customize Product Columns", window.OpenProductDetailsSettings), ProductColumnsButton(), Ui.Button("visibility", () => stats.IsVisible = !stats.IsVisible))
                 : Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
             ToolbarHost.Content = new ManagementToolbarView(search, toolbarActions, tabs, kind != "User");
 
@@ -136,7 +127,9 @@ internal sealed partial class ManagementView : UserControl
     // Performs the filtered action for this screen or workflow.
     private IEnumerable<UiRecord> Filtered()
     {
-        var query = Records.Where(r => r.Values.Values.Any(v => v.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)));
+        var query = kind == "Product"
+            ? model.SearchProducts(search.Text).Where(Records.Contains)
+            : Records.Where(r => r.Values.Values.Any(v => v.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)));
         query = filter switch {
             "Businesses" => query.Where(r => r["Business Name"].Length > 0), "Individuals" => query.Where(r => r["Business Name"].Length == 0),
             "Without GST" => query.Where(r => r["GST / VAT Number"].Length == 0), "With Outstanding" => query.Where(r => decimal.TryParse(r["Outstanding"], out var outstanding) && outstanding > 0), "Expired" => query.Where(r => DateTime.TryParse(r["Expiry Date"], out var expiry) && expiry < DateTime.Today),
@@ -145,9 +138,28 @@ internal sealed partial class ManagementView : UserControl
             "Admin" or "User" => query.Where(r => r["Role"] == filter), "Paid" or "Partial" or "Unpaid" or "Overdue" => query.Where(r => r["Status"] == filter), _ => query };
         return sort switch { "Name A–Z" => query.OrderBy(r => r.Name), "Name Z–A" => query.OrderByDescending(r => r.Name), "Newest" => query.Reverse(), _ => query };
     }
-    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Expiry Date"] : ["Username", "Role"];
-    private readonly HashSet<string> hidden = [];
+    private string[] Headers => Documents ? ["Invoice / Customer", "Title", "Date", "Items", "Total", "Status", "Outstanding"] : kind == "Customer" ? ["Name / Business", "Phone", "Email", "GST / VAT No.", "Address", "Outstanding"] : kind == "Product" ? ["Name / Alias", "Price", .. ProductOptionalColumns.Where(h => !hidden.Contains(h) && model.ProductFieldVisible(h))] : ["Username", "Role"];
+    private readonly HashSet<string> hidden = ["Description", "Unit", "Default Discount", "Storage Location", "Container Number", "Batch Number", "Manufacture Date", "Supplier Name", "SKU Code", "Notes"];
     // Performs the columns action for this screen or workflow.
+    private static readonly string[] ProductOptionalColumns =
+    ["Description", "HSN/SAC", "Purchase Price", "Stock", "Tax Rate", "Unit", "Default Discount", "Storage Location", "Container Number", "Batch Number", "Expiry Date", "Manufacture Date", "Supplier Name", "SKU Code", "Notes"];
+
+    private Button ProductColumnsButton()
+    {
+        var button = Ui.Button("Show Columns ▾", () => { });
+        var flyout = new Flyout { Placement = Avalonia.Controls.PlacementMode.BottomEdgeAlignedRight };
+        flyout.Opening += (_, _) => flyout.Content = new ProductColumnPickerView(
+            new[] { "Alias Name" }.Concat(ProductOptionalColumns)
+                .Where(model.ProductFieldVisible).Select(label => (label, !hidden.Contains(label))),
+            (label, selected) =>
+            {
+                if (selected) hidden.Remove(label); else hidden.Add(label);
+                Refresh();
+            });
+        button.Flyout = flyout;
+        return button;
+    }
+
     private void Columns()
     {
         var checks = Headers.Where(h => kind != "Product" || model.ProductFieldVisible(h)).Select(h => new CheckBox { Content = h, IsChecked = !hidden.Contains(h), IsEnabled = kind != "Product" || h is not ("Name / Alias" or "Price") }).ToArray();
@@ -500,7 +512,7 @@ internal sealed partial class ManagementView : UserControl
         var alias = record["Alias Name (for invoice PDF)"];
         var children = new List<Control> { Ui.Text(record.Name, 13, false), new Border { CornerRadius = new CornerRadius(5), Padding = new Thickness(6.4, 2.4), HorizontalAlignment = HorizontalAlignment.Left, Background = Brush.Parse(badgeBack), Child = Ui.Text(type, 11, true, Brush.Parse(badgeColor)) } };
         if (!model.ProductFieldVisible("Type")) children.RemoveAt(1);
-        if (model.ProductFieldVisible("Alias Name") && !string.IsNullOrWhiteSpace(alias)) children.Add(Ui.LocalText("(" + alias + ")", 11, color: Ui.Muted));
+        if (!hidden.Contains("Alias Name") && model.ProductFieldVisible("Alias Name") && !string.IsNullOrWhiteSpace(alias)) children.Add(Ui.LocalText("(" + alias + ")", 11, color: Ui.Muted));
         return Ui.Stack(3.2, children.ToArray());
     }
 
@@ -608,7 +620,23 @@ internal sealed partial class ManagementView : UserControl
             IconAction("account_balance_wallet", "Payment", () => window.ShowPayment(record), "#9C27B0"),
             DocumentOverflowMenu(record)
         }) actions.Children.Add(button);
+        if (kind == "Quotation" && record["Status"] != "Cancelled")
+            actions.Children.Insert(3, IconAction("cancel", "Cancel Quotation", () => ShowQuotationCancellation(record), "#D32F2F"));
+        if (kind == "Invoice")
+            actions.Children.Insert(3, IconAction("assignment_return", "Refund", () => ShowInvoiceRefund(record), "#D32F2F"));
         return actions;
+    }
+
+    private void ShowQuotationCancellation(UiRecord record)
+    {
+        var cancellation = new QuotationCancellationViewModel(model, record, Refresh, window.CloseOverlay);
+        window.ShowOverlay("Cancel Quotation", new QuotationCancellationView { DataContext = cancellation }, width: 520);
+    }
+
+    private void ShowInvoiceRefund(UiRecord record)
+    {
+        var refund = model.CreateRefundViewModel(record, Refresh, window.CloseOverlay);
+        if (refund != null) window.ShowOverlay("Create Refund", new InvoiceRefundView { DataContext = refund }, width: 760);
     }
 
     // Performs the icon action action for this screen or workflow.
@@ -1093,3 +1121,4 @@ internal sealed partial class ManagementView : UserControl
         }
     }
 }
+

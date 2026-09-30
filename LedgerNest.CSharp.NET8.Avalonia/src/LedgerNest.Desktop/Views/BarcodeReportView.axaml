@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.BarcodeReportView" x:DataType="vm:BarcodeReportViewModel">
+  <Grid RowDefinitions="Auto,12,*" Margin="16">
+    <Border Padding="14" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+      <Grid ColumnDefinitions="*,10,Auto,8,Auto,8,Auto">
+        <TextBox Text="{Binding SearchText}" PlaceholderText="Search product, product ID or barcode"/>
+        <Button Grid.Column="2" Content="Select visible" Command="{Binding SelectVisibleCommand}"/>
+        <Button Grid.Column="4" Content="Clear" Command="{Binding ClearSelectionCommand}"/>
+        <Button Grid.Column="6" Content="Export Labels PDF" Command="{Binding ExportCommand}" Classes="primary" IsEnabled="{Binding !IsBusy}"/>
+      </Grid>
+    </Border>
+    <Border Grid.Row="2" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <Grid ColumnDefinitions="50,*,150,170,110" Margin="14,10"><TextBlock Text="PRINT"/><TextBlock Grid.Column="1" Text="PRODUCT"/><TextBlock Grid.Column="2" Text="PRODUCT ID"/><TextBlock Grid.Column="3" Text="BARCODE"/><TextBlock Grid.Column="4" Text="LABELS"/></Grid>
+        <ScrollViewer Grid.Row="1"><ItemsControl ItemsSource="{Binding VisibleRows}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:BarcodeProductRow">
+          <Border Padding="14,9" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,0"><Grid ColumnDefinitions="50,*,150,170,110"><CheckBox IsChecked="{Binding IsSelected}"/><TextBlock Grid.Column="1" Text="{Binding Name}"/><TextBlock Grid.Column="2" Text="{Binding ProductCode}"/><TextBlock Grid.Column="3" Text="{Binding PrintableCode}"/><NumericUpDown Grid.Column="4" Value="{Binding Quantity}" Minimum="1" Maximum="100"/></Grid></Border>
+        </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="14,10"><TextBlock Text="{Binding Error}" Foreground="#C62828"/><TextBlock Grid.Column="1" Text="{Binding SelectedLabelCount, StringFormat='Selected labels: {0}'}" FontWeight="SemiBold"/></Grid>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

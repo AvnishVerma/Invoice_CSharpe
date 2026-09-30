@@ -18,7 +18,7 @@ public partial class MainWindowViewModel : ObservableObject
 {
     private readonly IDbContextFactory<LedgerNestDbContext>? dbFactory;
     private readonly string? databasePath;
-    public static readonly string[] Routes = ["Dashboard", "New Invoice", "Invoices", "Quotations", "Receipts", "Customers", "Products", "Reports", "Settings"];
+    public static readonly string[] Routes = ["Dashboard", "New Invoice", "Invoices", "Quotations", "Receipts", "Customers", "Products", "Units", "Prices", "Inventory", "Reports", "Settings"];
     [ObservableProperty] private string title = "Dashboard";
     [ObservableProperty] private bool sidebarExpanded = true;
     [ObservableProperty] private string status = "";
@@ -36,6 +36,10 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<UiRecord> Invoices { get; } = [];
     public IEnumerable<UiRecord> ActiveInvoices => Invoices.Where(i => i["Type"] == "Invoice" && !DeletedRecords.Contains(i.Id));
     public ObservableCollection<UiRecord> Payments { get; } = [];
+    public UnitMasterViewModel UnitMaster { get; }
+    public ProductPriceMasterViewModel ProductPriceMaster { get; }
+    public InventoryViewModel Inventory { get; }
+    public PermissionManagementViewModel PermissionManagement { get; }
     public string PendingInvoiceCustomerFilter { get; private set; } = "";
     public string PendingReportCustomerFilter { get; private set; } = "";
     public ObservableCollection<InvoiceLineViewModel> Lines { get; } = [];
@@ -62,6 +66,10 @@ public partial class MainWindowViewModel : ObservableObject
         this.dbFactory = dbFactory;
         this.databasePath = databasePath;
         this.licenseService = licenseService ?? new UnavailableLicenseService();
+        UnitMaster = new UnitMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole);
+        ProductPriceMaster = new ProductPriceMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole);
+        Inventory = new InventoryViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, () => HasPermission("Inventory", "Adjust"));
+        PermissionManagement = new PermissionManagementViewModel(dbFactory, () => CurrentRole);
         RefreshLicense();
         foreach (var option in InvoiceOptions) option.PropertyChanged += (_, _) => InvoiceChanged?.Invoke();
         AdditionalCosts.CollectionChanged += (_, e) =>
@@ -76,6 +84,7 @@ public partial class MainWindowViewModel : ObservableObject
             InvoiceChanged?.Invoke();
         };
         LoadPersistedRecords();
+        PermissionManagement.RefreshUsers();
         LoadPersistedSettings();
         savedStartingNumber = InvoiceSetting("Starting Number").Value;
         LoadPaymentAccounts();

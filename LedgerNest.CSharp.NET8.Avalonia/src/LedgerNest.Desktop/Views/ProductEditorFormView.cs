@@ -33,7 +33,8 @@ internal sealed class ProductEditorFormView : UserControl
         var aliasHelp = Ui.Icon("info_outline", 18, Brush.Parse("#6366F1"));
         aliasHelp.HorizontalAlignment = HorizontalAlignment.Left; aliasHelp.Margin = new Thickness(16, 0, 0, 0);
         ToolTip.SetTip(aliasHelp, "Local-language name used when Show Alias Name in PDF is enabled in Invoice Settings.");
-        Section("GENERAL", ("Name", Input("Name", "inventory_2")),
+        Section("GENERAL", ("Product ID", Pair("Product ID", Input("Product ID", "badge"), "Barcode", Input("Barcode", "qr_code_2"))),
+            ("Name", Input("Name", "inventory_2")),
             ("Alias Name", Ui.Stack(4.8, Input("Alias Name (for invoice PDF)", "translate"), aliasHelp)),
             ("Description", Input("Description", "description")), ("HSN/SAC", Input("HSN/SAC", "qr_code_2")));
 
