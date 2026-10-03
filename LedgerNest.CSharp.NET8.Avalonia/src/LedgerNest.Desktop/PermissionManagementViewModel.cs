@@ -78,6 +78,7 @@ public sealed partial class PermissionManagementViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string newRoleName = "";
     public bool CanManage => currentRole().Equals("Admin", StringComparison.OrdinalIgnoreCase);
+    public event EventHandler? AuthorizationChanged;
     private string EffectiveSelectedRole => string.IsNullOrWhiteSpace(SelectedRole)
         ? Roles.FirstOrDefault() ?? "User"
         : SelectedRole;
@@ -115,6 +116,8 @@ public sealed partial class PermissionManagementViewModel : ObservableObject
         if (SelectedUser == null) Load();
     }
 
+    private void NotifyAuthorizationChanged() => AuthorizationChanged?.Invoke(this, EventArgs.Empty);
+
     private void LoadUserRoleAssignments()
     {
         UserRoleAssignments.Clear();
@@ -135,7 +138,9 @@ public sealed partial class PermissionManagementViewModel : ObservableObject
         if (await db.Roles.AnyAsync(item => item.Name.ToLower() == name.ToLower())) { Error = "Role already exists."; return; }
         db.Roles.Add(new AppRole { Name = name });
         await db.SaveChangesAsync();
-        NewRoleName = ""; RefreshUsers(); SelectedRole = name; LoadUserRoleAssignments(); Status = $"Role {name} created.";
+        NewRoleName = ""; RefreshUsers(); SelectedRole = name; LoadUserRoleAssignments();
+        NotifyAuthorizationChanged();
+        Status = $"Role {name} created.";
     }
 
     [RelayCommand]
@@ -147,9 +152,17 @@ public sealed partial class PermissionManagementViewModel : ObservableObject
         await using var db = await factory.CreateDbContextAsync();
         var role = await db.Roles.SingleOrDefaultAsync(item => item.Name == selectedRoleName);
         if (role == null) return;
+        var fallbackRole = await db.Roles.SingleAsync(item => item.Name == "User");
         db.RolePermissions.RemoveRange(db.RolePermissions.Where(item => item.Role == role.Name));
+        db.UserRoles.RemoveRange(db.UserRoles.Where(item => item.RoleId == role.Id));
+        foreach (var user in await db.Users.Where(item => item.Role == role.Name).ToListAsync())
+        {
+            user.Role = fallbackRole.Name;
+            if (!await db.UserRoles.AnyAsync(item => item.UserId == user.Id && item.RoleId == fallbackRole.Id))
+                db.UserRoles.Add(new AppUserRole { UserId = user.Id, RoleId = fallbackRole.Id });
+        }
         db.Roles.Remove(role);
-        await db.SaveChangesAsync(); RefreshUsers(); Status = $"Role {role.Name} deleted.";
+        await db.SaveChangesAsync(); RefreshUsers(); NotifyAuthorizationChanged(); Status = $"Role {role.Name} deleted.";
     }
 
     [RelayCommand]
@@ -209,6 +222,7 @@ public sealed partial class PermissionManagementViewModel : ObservableObject
             await db.SaveChangesAsync();
             Status = $"{selectedRoleName} permissions saved.";
             RefreshUsers();
+            NotifyAuthorizationChanged();
         }
         catch (Exception exception) { Error = exception.Message; }
         finally { IsBusy = false; }

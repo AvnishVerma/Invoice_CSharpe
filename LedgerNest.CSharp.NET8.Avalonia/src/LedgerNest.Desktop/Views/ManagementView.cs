@@ -29,6 +29,7 @@ internal sealed partial class ManagementView : UserControl
     {
         InitializeComponent();
         this.model = model; this.kind = kind; this.window = window;
+        if (kind == "User") model.PermissionManagement.RefreshUsers();
         search.PlaceholderText = Documents ? "Search by Invoice ID or Customer Name…" : kind == "Customer" ? "Search customers by name, phone, email, GST…" : kind == "Product" ? "Search name, product ID, barcode, SKU, HSN/SAC…" : "Search users…";
         search.TextChanged += (_, _) => { page = 0; Refresh(); };
         var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.StartDocument(kind); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
@@ -115,7 +116,7 @@ internal sealed partial class ManagementView : UserControl
         Refresh();
     }
     // Performs the filter options action for this screen or workflow.
-    private string[] FilterOptions() => Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "Without GST", "With Outstanding"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
+    private string[] FilterOptions() => Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "Without GST", "With Outstanding"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", .. model.PermissionManagement.Roles.Distinct(StringComparer.OrdinalIgnoreCase)];
     // Performs the menu button action for this screen or workflow.
     private Button MenuButton(string title, IEnumerable<string> options, Action<string> select)
     {
@@ -585,7 +586,7 @@ internal sealed partial class ManagementView : UserControl
     private Button PermissionIconAction(string icon, string label, string actionName, Action action, string color)
     {
         var button = PlainIconAction(icon, label, action, color);
-        button.IsVisible = model.HasPermission(kind, actionName);
+        button.IsVisible = model.CanPerformAction(kind == "Receipt" ? "Invoice" : kind, actionName);
         return button;
     }
 

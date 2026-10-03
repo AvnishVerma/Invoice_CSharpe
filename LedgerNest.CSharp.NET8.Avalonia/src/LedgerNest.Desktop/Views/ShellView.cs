@@ -27,6 +27,12 @@ public partial class MainWindow
             if (e.PropertyName is nameof(vm.SidebarExpanded) or nameof(vm.CurrentUsername))
                 if (vm.CanAccessWorkspace) BuildSidebar();
             if (e.PropertyName == nameof(vm.CanAccessWorkspace)) RefreshWorkspaceAccess();
+            if (e.PropertyName == nameof(vm.AuthorizationVersion) && vm.CanAccessWorkspace)
+            {
+                BuildSidebar();
+                if (!vm.CanNavigate(vm.Title)) vm.NavigateCommand.Execute(vm.VisibleRoutes.FirstOrDefault() ?? "Dashboard");
+                else ShowPage();
+            }
             if (e.PropertyName == nameof(vm.Status)) ShowStatusToast(vm.Status);
             if (e.PropertyName is nameof(vm.ThemeMode) or nameof(vm.Language)) ApplyAppearance(vm);
         };

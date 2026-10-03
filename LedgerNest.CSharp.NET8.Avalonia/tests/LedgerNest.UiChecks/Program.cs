@@ -222,6 +222,7 @@ internal static class Program
             CheckTotals();
             CheckServiceTotals();
             CheckAdministratorGuards();
+            CheckRoleAndPermissionRefresh();
             CheckPasswordMigration();
             CheckSessionInvalidation();
             CheckRejectedDatabaseRestores();
@@ -1691,6 +1692,80 @@ internal static class Program
         Check(refreshed.DeleteRecord("User", refreshed.Users.Single(u => u.Name == "admin")) && refreshed.CurrentUsername == null, "Deleting a non-admin account must clear its session");
         Check(!stale.SaveRecord("User", Demote("resurrected"), stale.Users.Single(u => u.Name == "admin")), "Stale edit must not recreate a deleted account");
         Check(CreateModel(factory, path).Users.Single().Name == "second-admin", "All rejected mutations must preserve the remaining administrator");
+    }
+
+    private static void CheckRoleAndPermissionRefresh()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ledgernest-role-refresh-{Guid.NewGuid():N}.db");
+        var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
+        var admin = CreateModel(factory, path);
+        Check(admin.SignIn("admin", "admin"), "Role fixture administrator must sign in");
+
+        var initialAuthorizationVersion = admin.AuthorizationVersion;
+        admin.PermissionManagement.NewRoleName = "Cashier";
+        admin.PermissionManagement.CreateRoleCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Check(admin.PermissionManagement.Roles.Count(role => role.Equals("Cashier", StringComparison.OrdinalIgnoreCase)) == 1,
+            "A created role must immediately appear once in the shared role collection");
+        Check(admin.AuthorizationVersion > initialAuthorizationVersion, "Role creation must invalidate live authorization state");
+
+        var restarted = CreateModel(factory, path);
+        Check(restarted.PermissionManagement.Roles.Contains("Cashier"), "A created role must persist after restart");
+        Check(restarted.SignIn("admin", "admin"), "Restarted role fixture administrator must sign in");
+        var userFields = FormCatalog.User(restarted.PermissionManagement.Roles);
+        userFields[0].Value = "cashier-user";
+        userFields[1].Value = "cashier-password";
+        userFields[2].Value = "Cashier";
+        Check(restarted.SaveRecord("User", userFields), "A persisted custom role must be assignable to a user");
+        using (var db = factory.CreateDbContext())
+        {
+            var user = db.Users.Single(item => item.Username == "cashier-user");
+            user.PasswordChanged = true;
+            db.SaveChanges();
+        }
+
+        void SetInvoicePermissions(params string[] allowedActions)
+        {
+            using var db = factory.CreateDbContext();
+            db.RolePermissions.RemoveRange(db.RolePermissions.Where(item => item.Role == "Cashier" && item.Resource == "Invoice"));
+            db.RolePermissions.AddRange(new[] { "View", "Add", "Update", "Delete" }.Select(action => new LedgerNest.Domain.RolePermission
+            {
+                Role = "Cashier", Resource = "Invoice", Action = action,
+                IsAllowed = allowedActions.Contains(action, StringComparer.OrdinalIgnoreCase)
+            }));
+            db.SaveChanges();
+        }
+
+        var restricted = CreateModel(factory, path);
+        SetInvoicePermissions("View");
+        Check(restricted.SignIn("cashier-user", "cashier-password"), "Restricted role user must sign in");
+        Check(restricted.CanNavigate("Invoices") && restricted.CanView("Invoice"), "Invoice View must expose the menu and permit screen access");
+        Check(!restricted.CanAdd("Invoice") && !restricted.CanUpdate("Invoice") && !restricted.CanDelete("Invoice"),
+            "View-only access must keep Add, Update, and Delete unavailable independently");
+
+        SetInvoicePermissions("View", "Add");
+        Check(restricted.CanView("Invoice") && restricted.CanAdd("Invoice") && !restricted.CanUpdate("Invoice") && !restricted.CanDelete("Invoice"),
+            "View plus Add must not grant Update or Delete");
+        SetInvoicePermissions("View", "Update", "Delete");
+        Check(restricted.CanView("Invoice") && !restricted.CanAdd("Invoice") && restricted.CanUpdate("Invoice") && restricted.CanDelete("Invoice"),
+            "View, Update, and Delete must not grant Add");
+        Check(restricted.CanView("Invoice"), "One denied child action must not remove parent View access");
+
+        Check(restricted.SignIn("admin", "admin") && restricted.CanAdd("Invoice") && restricted.CanUpdate("Invoice") && restricted.CanDelete("Invoice"),
+            "Switching to Admin must recalculate full action access");
+        restricted.SignOut();
+        Check(!restricted.CanView("Invoice") && !restricted.CanAdd("Invoice"), "Signing out must clear resource and action access");
+        Check(restricted.SignIn("cashier-user", "cashier-password") && !restricted.CanAdd("Invoice") && restricted.CanUpdate("Invoice"),
+            "Switching back to a restricted user must not retain Admin actions");
+
+        Check(restarted.SignIn("admin", "admin"), "Administrator must sign in before deleting the custom role");
+        restarted.PermissionManagement.SelectedRole = "Cashier";
+        restarted.PermissionManagement.DeleteRoleCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Check(!restarted.PermissionManagement.Roles.Contains("Cashier"), "A deleted role must immediately leave the shared role collection");
+        var afterDelete = CreateModel(factory, path);
+        Check(!afterDelete.PermissionManagement.Roles.Contains("Cashier"), "A deleted role must remain absent after restart");
+        using var verifyDb = factory.CreateDbContext();
+        Check(verifyDb.Users.Single(item => item.Username == "cashier-user").Role == "User",
+            "Deleting an assigned custom role must move its users to the fallback role");
     }
 
     private static void CheckInvoiceEditing()

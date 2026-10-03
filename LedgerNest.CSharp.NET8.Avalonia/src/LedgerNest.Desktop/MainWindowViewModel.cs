@@ -70,6 +70,7 @@ public partial class MainWindowViewModel : ObservableObject
         ProductPriceMaster = new ProductPriceMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, action => HasPermission("Price", action));
         Inventory = new InventoryViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, () => HasPermission("Inventory", "Adjust"));
         PermissionManagement = new PermissionManagementViewModel(dbFactory, () => CurrentRole);
+        PermissionManagement.AuthorizationChanged += (_, _) => RefreshAuthorizationState();
         RefreshLicense();
         foreach (var option in InvoiceOptions) option.PropertyChanged += (_, _) => InvoiceChanged?.Invoke();
         AdditionalCosts.CollectionChanged += (_, e) =>
