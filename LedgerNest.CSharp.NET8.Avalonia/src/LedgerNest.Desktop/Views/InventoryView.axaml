@@ -5,7 +5,7 @@
     <Border Background="{DynamicResource PageHeaderBrush}" Padding="20,0">
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Text="Inventory Management" Classes="page-header-title"/>
-        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" Classes="header-icon-action" ToolTip.Tip="Refresh inventory" AutomationProperties.Name="Refresh inventory"><TextBlock Text="" FontFamily="Segoe Fluent Icons" FontSize="16"/></Button>
+        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh"><TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White"/></Button>
       </Grid>
     </Border>
     <Grid Grid.Row="1" ColumnDefinitions="340,12,*" Margin="12.8">
@@ -29,7 +29,7 @@
           <TextBox Text="{Binding Notes}" PlaceholderText="Adjustment notes" AcceptsReturn="True" MinHeight="70"/>
           <TextBlock Text="{Binding Error}" Foreground="#C62828" TextWrapping="Wrap"/>
           <TextBlock Text="{Binding Status}" Foreground="#2E7D32" TextWrapping="Wrap"/>
-          <Button Content="Post Adjustment" Command="{Binding PostCommand}" Classes="primary" IsEnabled="{Binding CanManage}"/>
+          <Button Content="Post Adjustment" Command="{Binding PostCommand}" Classes="action primary" IsEnabled="{Binding CanManage}"/>
           <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
         </StackPanel>
       </Border>

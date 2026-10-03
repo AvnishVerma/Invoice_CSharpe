@@ -8,7 +8,7 @@
         <Grid ColumnDefinitions="260,16,*" RowDefinitions="Auto,6,Auto,12,Auto">
           <TextBlock Text="PERMISSIONS FOR ROLE" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}"/>
           <ComboBox Grid.Row="2" ItemsSource="{Binding Roles}" SelectedItem="{Binding SelectedRole}"/>
-          <Grid Grid.Row="4" Grid.ColumnSpan="3" ColumnDefinitions="*,10,Auto,8,Auto"><TextBox Text="{Binding NewRoleName}" PlaceholderText="New role name, for example Cashier"/><Button Grid.Column="2" Content="Create Role" Command="{Binding CreateRoleCommand}" Classes="outline"/><Button Grid.Column="4" Content="Delete Selected Role" Command="{Binding DeleteRoleCommand}" Classes="outline"/></Grid>
+          <Grid Grid.Row="4" Grid.ColumnSpan="3" ColumnDefinitions="*,10,Auto,8,Auto"><TextBox Text="{Binding NewRoleName}" PlaceholderText="New role name, for example Cashier"/><Button Grid.Column="2" Content="Create Role" Command="{Binding CreateRoleCommand}" Classes="action outline"/><Button Grid.Column="4" Content="Delete Selected Role" Command="{Binding DeleteRoleCommand}" Classes="action outline"/></Grid>
         </Grid>
       </Border>
       <Border Grid.Row="2" Padding="14" CornerRadius="10" Background="{DynamicResource AppSelectedBrush}"><Grid ColumnDefinitions="Auto,12,*"><TextBlock Text="admin_panel_settings" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="22" Foreground="{DynamicResource AppAccentBrush}"/><StackPanel Grid.Column="2"><TextBlock Text="Role-based access" FontWeight="SemiBold"/><TextBlock Text="Changes affect every user assigned to the selected role. Assign roles from User Management. Administrators remain unrestricted." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/></StackPanel></Grid></Border>
@@ -20,7 +20,7 @@
           </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
         </Grid>
       </Border>
-      <Grid Grid.Row="5" ColumnDefinitions="*,Auto" Margin="0,12,0,0"><StackPanel><TextBlock Text="{Binding Error}" Foreground="#C62828"/><TextBlock Text="{Binding Status}" Foreground="#2E7D32"/></StackPanel><Button Grid.Column="1" Content="Save Permissions" Command="{Binding SaveCommand}" Classes="primary" IsEnabled="{Binding CanManage}"/></Grid>
+      <Grid Grid.Row="5" ColumnDefinitions="*,Auto" Margin="0,12,0,0"><StackPanel><TextBlock Text="{Binding Error}" Foreground="#C62828"/><TextBlock Text="{Binding Status}" Foreground="#2E7D32"/></StackPanel><Button Grid.Column="1" Content="Save Permissions" Command="{Binding SaveCommand}" Classes="action primary" IsEnabled="{Binding CanManage}"/></Grid>
     </Grid>
   </Grid>
 </UserControl>

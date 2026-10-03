@@ -47,7 +47,7 @@
             <Button x:Name="CloseButton"
                     Grid.Column="3"
                     Content="×"
-                    Classes="outline"
+                    Classes="action outline"
                     MinWidth="38"
                     Click="OnClosePressed" />
           </Grid>

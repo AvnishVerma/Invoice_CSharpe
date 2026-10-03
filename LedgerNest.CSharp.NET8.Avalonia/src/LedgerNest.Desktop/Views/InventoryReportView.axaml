@@ -4,10 +4,8 @@
              x:CompileBindings="False">
   <UserControl.Styles>
     <Style Selector="Border.metricCard"><Setter Property="Background" Value="{DynamicResource AppCardBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="11"/><Setter Property="Padding" Value="16"/></Style>
-    <Style Selector="Button.exportButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/><Setter Property="FontSize" Value="12"/><Setter Property="Padding" Value="8,4"/></Style>
     <Style Selector="TextBlock.tableHeader"><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
     <Style Selector="TextBlock.tableCell"><Setter Property="FontSize" Value="13"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
-    <Style Selector="Button.pageButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Padding" Value="7"/><Setter Property="FontSize" Value="18"/></Style>
   </UserControl.Styles>
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -28,7 +26,7 @@
 
       <Border Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="12">
         <StackPanel>
-          <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,12"><TextBlock loc:UiLocalization.Text="Product Breakdown" FontSize="15" FontWeight="SemiBold"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8"><Button Classes="exportButton" Content="↓  Export CSV" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export inventory report as CSV"/><Button Classes="exportButton" Content="↓  Export PDF" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export inventory report as PDF"/></StackPanel></Grid>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,12"><TextBlock loc:UiLocalization.Text="Product Breakdown" FontSize="15" FontWeight="SemiBold"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8"><Button Classes="action exportButton" Content="↓  Export CSV" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export inventory report as CSV"/><Button Classes="action exportButton" Content="↓  Export PDF" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export inventory report as PDF"/></StackPanel></Grid>
           <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,1" Padding="16,7.2">
             <Grid ColumnDefinitions="2.4*,*,1.25*,1.25*,1.25*"><TextBlock Classes="tableHeader" loc:UiLocalization.Text="PRODUCT"/><TextBlock Grid.Column="1" Classes="tableHeader" loc:UiLocalization.Text="STOCK" HorizontalAlignment="Right"/><TextBlock Grid.Column="2" Classes="tableHeader" loc:UiLocalization.Text="PURCHASE PRICE" HorizontalAlignment="Right"/><TextBlock Grid.Column="3" Classes="tableHeader" loc:UiLocalization.Text="STOCK VALUE" HorizontalAlignment="Right"/><TextBlock Grid.Column="4" Classes="tableHeader" loc:UiLocalization.Text="SALE VALUE" HorizontalAlignment="Right"/></Grid>
           </Border>
@@ -38,7 +36,7 @@
             </DataTemplate></ItemsControl.ItemTemplate>
           </ItemsControl>
           <Border IsVisible="{Binding HasNoRows}" Padding="16,19.2"><TextBlock loc:UiLocalization.Text="No finite-stock products are available for inventory valuation." Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center"/></Border>
-          <Grid ColumnDefinitions="*,Auto" Margin="20,13"><TextBlock Text="{Binding RangeText}" FontSize="13" VerticalAlignment="Center"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"><Button Classes="pageButton" Content="‹" Command="{Binding PreviousPageCommand}" IsEnabled="{Binding CanPrevious}"/><TextBlock Text="{Binding PageText}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/><Button Classes="pageButton" Content="›" Command="{Binding NextPageCommand}" IsEnabled="{Binding CanNext}"/></StackPanel></Grid>
+          <Grid ColumnDefinitions="*,Auto" Margin="20,13"><TextBlock Text="{Binding RangeText}" FontSize="13" VerticalAlignment="Center"/><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"><Button Classes="action-icon pageButton" Command="{Binding PreviousPageCommand}" IsEnabled="{Binding CanPrevious}" ToolTip.Tip="Previous page"><TextBlock Text="chevron_left" Classes="action-icon-glyph"/></Button><TextBlock Text="{Binding PageText}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/><Button Classes="action-icon pageButton" Command="{Binding NextPageCommand}" IsEnabled="{Binding CanNext}" ToolTip.Tip="Next page"><TextBlock Text="chevron_right" Classes="action-icon-glyph"/></Button></StackPanel></Grid>
         </StackPanel>
       </Border>
     </StackPanel>

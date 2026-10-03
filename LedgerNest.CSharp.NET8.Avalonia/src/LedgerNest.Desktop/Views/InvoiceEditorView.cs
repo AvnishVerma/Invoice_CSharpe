@@ -19,8 +19,6 @@ public partial class MainWindow
         Button EditorButton(string label, Action? action = null, bool primary = false)
         {
             var button = Ui.Button(label, action, primary);
-            button.MinHeight = 32;
-            button.Padding = new Thickness(10, 5);
             button.VerticalAlignment = VerticalAlignment.Center;
             return button;
         }
@@ -147,7 +145,7 @@ public partial class MainWindow
                 "Print" => EditorButton(label, async () => { if (Model.LastSavedDocument != null) await PrintDocumentAsync(Model.LastSavedDocument); }),
                 _ => EditorButton(label)
             };
-            button.Content = Ui.Columns("13,5,Auto", Ui.Icon(icon, 13), new Border(), Ui.LocalText(label, 12)); button.MinHeight = 28; button.Padding = new Thickness(8, 4);
+            button.Content = Ui.Columns("18,8,Auto", Ui.Icon(icon, 18), new Border(), Ui.LocalText(label, 14));
             button.IsEnabled = editorModel.LastSavedDocument != null; ToolTip.SetTip(button, "Open the last saved document. Save this invoice first to include your changes."); actions.Add(button);
         }
         var shellModel = new InvoiceEditorShellModel();
@@ -163,12 +161,15 @@ public partial class MainWindow
         editorModel.Invoices.CollectionChanged += documentsChanged;
         UpdateHeader();
 
+        var voidGlyph = Ui.Icon("block", 18);
+        voidGlyph.Classes.Add("action-icon-glyph");
         var voidInvoice = new Button
         {
-            Content = Ui.Icon("block", 16),
+            Content = voidGlyph,
             IsVisible = editorModel.IsEditingDocument && editorModel.InvoiceDetails[0].Value == "Invoice",
             IsEnabled = editorModel.CanVoidCurrentInvoice
         };
+        voidInvoice.Classes.Add("action-icon");
         voidInvoice.Classes.Add("header-icon-action");
         ToolTip.SetTip(voidInvoice, "Void Invoice");
         Avalonia.Automation.AutomationProperties.SetName(voidInvoice, "Void Invoice");

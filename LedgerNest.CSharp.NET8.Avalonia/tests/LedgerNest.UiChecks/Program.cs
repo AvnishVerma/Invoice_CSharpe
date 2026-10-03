@@ -642,6 +642,23 @@ internal static class Program
                         var dashboardBody = dashboard.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Name == "DashboardContent");
                         Check(Math.Abs(dashboardBody.TranslatePoint(default, dashboard)!.Value.X - 12.8) < 1, "Dashboard content must align with the left page gutter");
                     }
+                    foreach (var iconAction in window.GetVisualDescendants().OfType<Button>().Where(button => button.IsEffectivelyVisible && button.Classes.Contains("action-icon")))
+                    {
+                        Check(Math.Abs(iconAction.Bounds.Width - 32) < 1 && Math.Abs(iconAction.Bounds.Height - 32) < 1,
+                            $"Icon actions must use the global 32x32 size on {route}");
+                        Check(ToolTip.GetTip(iconAction) is string tooltip && !string.IsNullOrWhiteSpace(tooltip),
+                            $"Icon actions must expose a tooltip on {route}");
+                    }
+                    var refreshActions = window.GetVisualDescendants().OfType<Button>()
+                        .Where(button => button.IsEffectivelyVisible && button.Tag?.ToString() == "Refresh").ToArray();
+                    foreach (var refreshAction in refreshActions)
+                    {
+                        Check(refreshAction.Classes.Contains("action-icon") && Math.Abs(refreshAction.Bounds.Width - 32) < 1 && Math.Abs(refreshAction.Bounds.Height - 32) < 1,
+                            $"Refresh must use the common icon action on {route}");
+                        Check(ToolTip.GetTip(refreshAction)?.ToString() == "Refresh", $"Refresh must use the standard tooltip on {route}");
+                        Check(refreshAction.Content is TextBlock refreshGlyph && refreshGlyph.Classes.Contains("action-icon-glyph"),
+                            $"Refresh must use the global icon style on {route}");
+                    }
                 }
             }
             window.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;

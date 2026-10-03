@@ -554,9 +554,9 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, action);
         button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
-        button.Width = 26; button.Height = 26;
-        button.MinWidth = 26; button.MinHeight = 26;
-        button.Padding = new Thickness(0);
+        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+        button.Classes.Remove("action");
+        button.Classes.Add("action-icon");
         button.Margin = new Thickness(0);
         button.Background = Brushes.Transparent;
         button.BorderBrush = Brushes.Transparent;
@@ -654,10 +654,10 @@ internal sealed partial class ManagementView : UserControl
     private static Button IconAction(string icon, string label, Action action, string color)
     {
         var button = Ui.Button(label, action);
-        button.Content = Ui.Icon(icon, 16, Brush.Parse(color));
-        button.Width = 28; button.Height = 28;
-        button.MinWidth = 28; button.MinHeight = 28;
-        button.Padding = new Thickness(0);
+        button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
+        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+        button.Classes.Remove("action");
+        button.Classes.Add("action-icon");
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
         button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
         button.Tag = label;
@@ -669,10 +669,10 @@ internal sealed partial class ManagementView : UserControl
     private static Button IconAction(string icon, string label, Func<Task> action, string color)
     {
         var button = Ui.Button(label, async () => await action());
-        button.Content = Ui.Icon(icon, 16, Brush.Parse(color));
-        button.Width = 28; button.Height = 28;
-        button.MinWidth = 28; button.MinHeight = 28;
-        button.Padding = new Thickness(0);
+        button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
+        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+        button.Classes.Remove("action");
+        button.Classes.Add("action-icon");
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
         button.BorderBrush = new SolidColorBrush(Color.Parse(color), .3);
         button.Tag = label;
@@ -684,10 +684,12 @@ internal sealed partial class ManagementView : UserControl
     private static Button TopIconAction(string icon, string label, Action action)
     {
         var button = Ui.Button(label, action);
-        button.Content = Ui.Icon(icon, 22, Brushes.White);
+        button.Content = Ui.Icon(icon, 18, Brushes.White);
+        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+        button.Classes.Remove("action");
         button.Classes.Remove("outline");
+        button.Classes.Add("action-icon");
         button.Classes.Add("header-icon-action");
-        button.Tag = label;
         ToolTip.SetTip(button, label);
         return button;
     }
@@ -696,10 +698,12 @@ internal sealed partial class ManagementView : UserControl
     private static Button TopIconAction(string icon, string label, Func<Task> action)
     {
         var button = Ui.Button(label, async () => await action());
-        button.Content = Ui.Icon(icon, 22, Brushes.White);
+        button.Content = Ui.Icon(icon, 18, Brushes.White);
+        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+        button.Classes.Remove("action");
         button.Classes.Remove("outline");
+        button.Classes.Add("action-icon");
         button.Classes.Add("header-icon-action");
-        button.Tag = label;
         ToolTip.SetTip(button, label);
         return button;
     }
@@ -803,10 +807,13 @@ internal sealed partial class ManagementView : UserControl
     // Performs the document overflow menu action for this screen or workflow.
     private Button DocumentOverflowMenu(UiRecord record)
     {
-        var button = Ui.Button("⋯", () => { });
-        button.Width = 28; button.Height = 28;
-        button.MinWidth = 28; button.MinHeight = 28;
-        button.Padding = new Thickness(0);
+        var button = Ui.Button("More actions", () => { });
+        button.Content = Ui.Icon("more_horiz", 18);
+        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+        button.Classes.Remove("action");
+        button.Classes.Add("action-icon");
+        button.Tag = "⋯";
+        ToolTip.SetTip(button, "More actions");
         var menu = new MenuFlyout();
         void Add(string title, string icon, Action? action)
         {

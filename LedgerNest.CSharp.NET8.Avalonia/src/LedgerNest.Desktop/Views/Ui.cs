@@ -185,11 +185,13 @@ internal static class Ui
             button.Content = content;
         }
         if (!primary) button.Foreground = Accent;
+        button.Classes.Add("action");
         button.Classes.Add(primary ? "primary" : "outline");
         AutomationProperties.SetName(button, label);
         if (action == null) ToolTip.SetTip(button, "This service has not yet been migrated.");
         return button;
     }
+
     // Performs the field action for this screen or workflow.
     public static Control Field(FormField field, string? labelText = null, bool singleLine = false, bool compact = true)
     {

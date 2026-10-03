@@ -10,8 +10,8 @@
     <Border Background="{DynamicResource PageHeaderBrush}" Height="44.8" Padding="20,0">
       <Grid ColumnDefinitions="*,Auto" MinHeight="30.4">
         <TextBlock loc:UiLocalization.Text="Reports" Classes="page-header-title" HorizontalAlignment="Left" />
-        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh reports" AutomationProperties.Name="Refresh reports" Classes="header-icon-action">
-          <TextBlock Text="" FontFamily="Segoe Fluent Icons" FontSize="16" />
+        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh" Classes="action-icon header-icon-action">
+          <TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White" />
         </Button>
       </Grid>
     </Border>

@@ -24,8 +24,8 @@
     <Border Background="{DynamicResource PageHeaderBrush}" Height="44.8" Padding="20,0">
       <Grid ColumnDefinitions="*,Auto,10,Auto">
         <TextBlock Text="Unit Management" Classes="page-header-title"/>
-        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" Classes="header-icon-action" ToolTip.Tip="Refresh units" AutomationProperties.Name="Refresh units"><TextBlock Text="" FontFamily="Segoe Fluent Icons" FontSize="16"/></Button>
-        <Button Grid.Column="3" Content="+ New Unit" Command="{Binding NewCommand}" Classes="primary" IsEnabled="{Binding CanManage}" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh"><TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White"/></Button>
+        <Button Grid.Column="3" Content="+ New Unit" Command="{Binding NewCommand}" Classes="action primary" IsEnabled="{Binding CanManage}" />
       </Grid>
     </Border>
 
@@ -34,8 +34,8 @@
         <Grid RowDefinitions="Auto,8,Auto,8,*">
           <Grid ColumnDefinitions="*,Auto,8,Auto">
             <TextBlock Text="Units" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center" />
-            <Button Grid.Column="1" Content="Edit" Classes="outline" Command="{Binding EditSelectedCommand}" IsEnabled="{Binding CanManage}" />
-            <Button Grid.Column="3" Content="Delete" Classes="outline" Command="{Binding DeleteSelectedCommand}" IsEnabled="{Binding CanManage}" />
+            <Button Grid.Column="1" Content="Edit" Classes="action outline" Command="{Binding EditSelectedCommand}" IsEnabled="{Binding CanManage}" />
+            <Button Grid.Column="3" Content="Delete" Classes="action outline" Command="{Binding DeleteSelectedCommand}" IsEnabled="{Binding CanManage}" />
           </Grid>
           <TextBlock Grid.Row="2" Text="Select a row to edit or delete it. Inactive units remain on historical invoices but cannot be selected for new products." TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
           <Grid Grid.Row="4" RowDefinitions="Auto,*"><Grid ColumnDefinitions="100,*,120,150" Margin="12,8"><TextBlock Text="CODE"/><TextBlock Grid.Column="1" Text="NAME AND DESCRIPTION"/><TextBlock Grid.Column="2" Text="STATUS"/><TextBlock Grid.Column="3" Text="LAST MODIFIED"/></Grid><ListBox Grid.Row="1" ItemsSource="{Binding Units}" SelectedItem="{Binding SelectedUnit}" BorderThickness="0" Background="Transparent">
@@ -68,8 +68,8 @@
           <TextBlock Text="{Binding Error}" Foreground="#C62828" TextWrapping="Wrap" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           <TextBlock Text="{Binding Status}" Foreground="#2E7D32" TextWrapping="Wrap" />
           <Grid ColumnDefinitions="*,10,*">
-            <Button Content="Cancel" Classes="outline" Command="{Binding CancelEditCommand}" />
-            <Button Grid.Column="2" Content="Save Unit" Command="{Binding SaveCommand}" Classes="primary" IsEnabled="{Binding !IsBusy}" />
+            <Button Content="Cancel" Classes="action outline" Command="{Binding CancelEditCommand}" />
+            <Button Grid.Column="2" Content="Save Unit" Command="{Binding SaveCommand}" Classes="action primary" IsEnabled="{Binding !IsBusy}" />
           </Grid>
           <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" />
           <TextBlock Text="Processing, please wait..." HorizontalAlignment="Center" IsVisible="{Binding IsBusy}" />

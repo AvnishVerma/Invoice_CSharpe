@@ -16,13 +16,6 @@
       <Setter Property="CornerRadius" Value="7" />
       <Setter Property="FontSize" Value="12" />
     </Style>
-    <Style Selector="Button.exportButton">
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
-      <Setter Property="FontSize" Value="12" />
-      <Setter Property="Padding" Value="8,4" />
-    </Style>
     <Style Selector="TextBlock.tableHeader">
       <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
       <Setter Property="FontSize" Value="11" />
@@ -49,8 +42,8 @@
           <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,12">
             <TextBlock Text="{Binding RevenueTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
-              <Button Classes="exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer report as CSV" Content="↓  Export CSV" />
-              <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer report as PDF" Content="↓  Export PDF" />
+              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer report as CSV" Content="↓  Export CSV" />
+              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer report as PDF" Content="↓  Export PDF" />
             </StackPanel>
           </Grid>
 
@@ -119,8 +112,8 @@
               </ComboBox>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8" VerticalAlignment="Center" Margin="12,0,0,0">
-              <Button Classes="exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer statement as CSV" Content="↓  Export CSV" />
-              <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer statement as PDF" Content="↓  Export PDF" />
+              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer statement as CSV" Content="↓  Export CSV" />
+              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer statement as PDF" Content="↓  Export PDF" />
             </StackPanel>
           </Grid>
 

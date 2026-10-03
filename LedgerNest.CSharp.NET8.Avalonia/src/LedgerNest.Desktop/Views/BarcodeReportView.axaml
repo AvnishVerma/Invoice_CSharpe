@@ -6,7 +6,7 @@
         <TextBox Text="{Binding SearchText}" PlaceholderText="Search product, product ID or barcode"/>
         <Button Grid.Column="2" Content="Select visible" Command="{Binding SelectVisibleCommand}"/>
         <Button Grid.Column="4" Content="Clear" Command="{Binding ClearSelectionCommand}"/>
-        <Button Grid.Column="6" Content="Export Labels PDF" Command="{Binding ExportCommand}" Classes="primary" IsEnabled="{Binding !IsBusy}"/>
+        <Button Grid.Column="6" Content="Export Labels PDF" Command="{Binding ExportCommand}" Classes="action primary" IsEnabled="{Binding !IsBusy}"/>
       </Grid>
     </Border>
     <Border Grid.Row="2" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">

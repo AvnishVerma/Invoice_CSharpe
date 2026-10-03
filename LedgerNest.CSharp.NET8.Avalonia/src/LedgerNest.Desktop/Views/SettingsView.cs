@@ -138,16 +138,18 @@ public partial class MainWindow
             ActionButton("Export JSON", "download", CreateBackupFile),
             new Border(),
             ActionButton("Import Backup", "upload", ImportBackupFile));
-        var refresh = Ui.Button("↻", () =>
+        var refresh = Ui.Button("Refresh", () =>
         {
             ReloadBackupHistory();
             RenderHistory();
         });
-        refresh.Background = Brushes.Transparent;
-        refresh.BorderThickness = new Thickness(0);
-        refresh.Foreground = Brushes.White;
-        refresh.FontSize = 22;
-        ToolTip.SetTip(refresh, "Refresh backup history");
+        refresh.Content = Ui.Icon("refresh", 18, Brushes.White);
+        ((TextBlock)refresh.Content).Classes.Add("action-icon-glyph");
+        refresh.Classes.Remove("action");
+        refresh.Classes.Remove("outline");
+        refresh.Classes.Add("action-icon");
+        refresh.Classes.Add("header-icon-action");
+        ToolTip.SetTip(refresh, "Refresh");
         return new ScreenScaffoldView(Ui.AppBar("Backup Management", refresh), new BackupManagementView(actions, history));
     }
 

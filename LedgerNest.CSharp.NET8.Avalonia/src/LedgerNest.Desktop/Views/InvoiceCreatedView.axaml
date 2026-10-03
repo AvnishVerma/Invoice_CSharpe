@@ -159,7 +159,7 @@
                     Tag="Create New Invoice"
                     HorizontalAlignment="Stretch"
                     MinHeight="41.6"
-                    Classes="primary">
+                    Classes="action primary">
               <Grid ColumnDefinitions="Auto,10,*">
                 <TextBlock Text=""
                            FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"

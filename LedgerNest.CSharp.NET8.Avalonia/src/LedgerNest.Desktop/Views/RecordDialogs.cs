@@ -34,7 +34,6 @@ public partial class MainWindow
         Control footer;
         if (kind == "Product")
         {
-            foreach (var button in new[] { cancel, save }) { button.Height = 32; button.MinHeight = 32; button.Padding = new Thickness(12, 5); }
             cancel.Background = Brushes.Transparent; cancel.Foreground = ProductEditorFormView.Purple;
             save.Background = ProductEditorFormView.Purple;
             save.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("save", 17, Brushes.White), new Border(), Ui.LocalText("Save Product", 13, true, Brushes.White));

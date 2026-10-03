@@ -8,7 +8,6 @@
     <Style Selector="ToggleButton.periodButton:checked"><Setter Property="Background" Value="{DynamicResource AppSelectedBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/><Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/></Style>
     <Style Selector="ToggleButton.filterButton"><Setter Property="MinHeight" Value="27.2"/><Setter Property="Padding" Value="14,5"/><Setter Property="CornerRadius" Value="7"/><Setter Property="Background" Value="{DynamicResource AppCardBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/></Style>
     <Style Selector="ToggleButton.filterButton:checked"><Setter Property="Background" Value="{DynamicResource AppSelectedBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/><Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/></Style>
-    <Style Selector="Button.exportButton"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/><Setter Property="FontSize" Value="12"/><Setter Property="Padding" Value="8,4"/></Style>
     <Style Selector="TextBlock.tableHeader"><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
     <Style Selector="TextBlock.tableCell"><Setter Property="FontSize" Value="13"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
   </UserControl.Styles>
@@ -42,8 +41,8 @@
               <ToggleButton Classes="filterButton" IsChecked="{Binding IsOverdueSelected}" Content="{Binding OverdueFilterLabel}" Command="{Binding SelectStatusCommand}" CommandParameter="Overdue" />
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
-              <Button Classes="exportButton" Content="↓  Export CSV" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export invoice status report as CSV" />
-              <Button Classes="exportButton" Content="↓  Export PDF" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export invoice status report as PDF" />
+              <Button Classes="action exportButton" Content="↓  Export CSV" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export invoice status report as CSV" />
+              <Button Classes="action exportButton" Content="↓  Export PDF" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export invoice status report as PDF" />
             </StackPanel>
           </Grid>
 

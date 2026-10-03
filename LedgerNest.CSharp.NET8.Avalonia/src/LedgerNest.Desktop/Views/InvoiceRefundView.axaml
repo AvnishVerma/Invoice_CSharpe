@@ -26,7 +26,7 @@
       <TextBox Text="{Binding Reason}" PlaceholderText="Refund reason" MaxLength="500"/>
       <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Refund total" FontSize="16" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="{Binding RefundTotal, StringFormat='{}{0:0.00}'}" FontSize="18" FontWeight="Bold"/></Grid>
       <TextBlock Text="{Binding Error}" Foreground="#C62828" TextWrapping="Wrap"/>
-      <Grid ColumnDefinitions="*,10,*"><Button Content="Close" Command="{Binding CloseCommand}"/><Button Grid.Column="2" Content="Create Refund" Command="{Binding SubmitCommand}" Classes="primary" IsEnabled="{Binding !IsBusy}"/></Grid>
+      <Grid ColumnDefinitions="*,10,*"><Button Content="Close" Command="{Binding CloseCommand}"/><Button Grid.Column="2" Content="Create Refund" Command="{Binding SubmitCommand}" Classes="action primary" IsEnabled="{Binding !IsBusy}"/></Grid>
       <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
     </StackPanel>
   </Grid>

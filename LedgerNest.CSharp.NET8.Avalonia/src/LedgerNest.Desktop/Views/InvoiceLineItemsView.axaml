@@ -30,7 +30,7 @@
                   <NumericUpDown Grid.Column="3" Value="{Binding Line.TaxRate, Mode=TwoWay}" Minimum="0" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" Margin="2" MinHeight="29" Padding="6,3" />
                   <NumericUpDown Grid.Column="4" Value="{Binding Line.Discount, Mode=TwoWay}" Minimum="0" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" Margin="2" MinHeight="29" Padding="6,3" />
                   <TextBlock Grid.Column="5" Text="{Binding Line.Total, StringFormat={}{0:0.00}}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
-                  <Button Grid.Column="6" Content="×" Command="{Binding RemoveCommand}" MinHeight="29" Padding="6,3" VerticalAlignment="Center" />
+                  <Button Grid.Column="6" Command="{Binding RemoveCommand}" Classes="action-icon outline" ToolTip.Tip="Delete" AutomationProperties.Name="Delete"><TextBlock Text="delete" Classes="action-icon-glyph"/></Button>
                 </Grid>
               </Border>
             </DataTemplate>

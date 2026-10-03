@@ -9,13 +9,6 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="12" />
     </Style>
-    <Style Selector="Button.exportButton">
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
-      <Setter Property="FontSize" Value="12" />
-      <Setter Property="Padding" Value="8,4" />
-    </Style>
     <Style Selector="TextBlock.tableHeader">
       <Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}" />
       <Setter Property="FontSize" Value="11" />
@@ -37,8 +30,8 @@
             <Border Background="{DynamicResource AppCardBrush}" CornerRadius="18" Padding="9.6,5.6" VerticalAlignment="Center">
               <TextBlock loc:UiLocalization.Text="▣  Rank: Revenue" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
             </Border>
-            <Button Classes="exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export product report as CSV" Content="↓  Export CSV" />
-            <Button Classes="exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export product report as PDF" Content="↓  Export PDF" />
+            <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export product report as CSV" Content="↓  Export CSV" />
+            <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export product report as PDF" Content="↓  Export PDF" />
           </StackPanel>
         </Grid>
 

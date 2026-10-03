@@ -15,7 +15,7 @@
     <TextBlock Text="{Binding Error}" Foreground="#C62828" TextWrapping="Wrap"/>
     <Grid ColumnDefinitions="*,10,*">
       <Button Content="Keep Quotation" Command="{Binding CloseCommand}"/>
-      <Button Grid.Column="2" Content="Cancel Quotation" Command="{Binding CancelQuotationCommand}" Classes="danger" IsEnabled="{Binding !IsBusy}"/>
+      <Button Grid.Column="2" Content="Cancel Quotation" Command="{Binding CancelQuotationCommand}" Classes="action danger" IsEnabled="{Binding !IsBusy}"/>
     </Grid>
     <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
   </StackPanel>

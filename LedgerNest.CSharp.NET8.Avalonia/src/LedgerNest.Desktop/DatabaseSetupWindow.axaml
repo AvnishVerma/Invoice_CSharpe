@@ -59,7 +59,7 @@
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <TextBlock Text="You can change the connection later in application settings." FontSize="12"
                    Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
-        <Button Grid.Column="1" Content="Continue" MinWidth="138" MinHeight="36" Classes="primary"
+        <Button Grid.Column="1" Content="Continue" MinWidth="138" MinHeight="36" Classes="action primary"
                 HorizontalContentAlignment="Center" Click="ContinueClicked" />
       </Grid>
     </Border>
