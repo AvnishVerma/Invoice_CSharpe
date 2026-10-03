@@ -4,8 +4,8 @@
   <Grid RowDefinitions="44.8,*" Background="{DynamicResource AppBackgroundBrush}">
     <Border Background="{DynamicResource PageHeaderBrush}" Padding="20,0">
       <Grid ColumnDefinitions="*,Auto">
-        <StackPanel VerticalAlignment="Center"><TextBlock Text="Inventory Management" FontSize="20" Foreground="White"/><TextBlock Text="Adjust stock and review every movement" FontSize="11" Foreground="#DCE8FA"/></StackPanel>
-        <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" Classes="header-action"/>
+        <TextBlock Text="Inventory Management" Classes="page-header-title"/>
+        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" Classes="header-icon-action" ToolTip.Tip="Refresh inventory" AutomationProperties.Name="Refresh inventory"><TextBlock Text="" FontFamily="Segoe Fluent Icons" FontSize="16"/></Button>
       </Grid>
     </Border>
     <Grid Grid.Row="1" ColumnDefinitions="340,12,*" Margin="12.8">

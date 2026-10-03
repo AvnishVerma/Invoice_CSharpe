@@ -120,6 +120,10 @@ public partial class MainWindowViewModel
     private InvoiceSnapshot? editingSnapshot;
     private readonly Dictionary<InvoiceLineViewModel, InvoiceItem> historicalLines = [];
     public bool IsEditingDocument => editingDocument != null;
+    public bool CanVoidCurrentInvoice => editingDocument is { SourceId: > 0 }
+        && editingDocument["Type"] == "Invoice"
+        && !string.Equals(editingDocument["Status"], "Voided", StringComparison.OrdinalIgnoreCase)
+        && HasPermission("Invoice", "Update");
     public string EditorDocumentNumber => editingDocument?.Name ?? PeekNextDocumentNumber(InvoiceDetails[0].Value);
     public UiRecord? LastSavedDocument { get; private set; }
 
@@ -175,6 +179,8 @@ public partial class MainWindowViewModel
     // Performs the load document for editing action for this screen or workflow.
     public bool LoadDocumentForEditing(UiRecord record)
     {
+        var resource = record["Type"] == "Quotation" ? "Quotation" : "Invoice";
+        if (!HasPermission(resource, "Update")) { Status = "You do not have permission to edit this document."; return false; }
         if (dbFactory == null) { Status = "Editing requires saved document storage."; return false; }
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
@@ -182,8 +188,8 @@ public partial class MainWindowViewModel
         if (invoice == null || invoice.DeletedAt != null) { Status = "Document is unavailable or in trash."; return false; }
         if (invoice.PaidAmount != 0 || db.Payments.Any(p => p.InvoiceId == invoice.Id))
         { Status = "Documents with payments cannot be edited yet."; return false; }
-        if (invoice.Status == "Cancelled")
-        { Status = "Cancelled quotations cannot be edited."; return false; }
+        if (invoice.Status is "Cancelled" or "Voided")
+        { Status = $"{invoice.Status} documents cannot be edited."; return false; }
         if (invoice.Snapshot is not { Version: 1 } snapshot)
         { Status = "This document lacks a supported historical snapshot and cannot be safely edited."; return false; }
         editingDocument = record;
@@ -219,10 +225,48 @@ public partial class MainWindowViewModel
         return true;
     }
 
+    // Voids the invoice currently open in the editor. The database check is repeated here
+    // so this rule remains enforced if a caller bypasses the button state.
+    public bool VoidCurrentInvoice()
+    {
+        if (!HasPermission("Invoice", "Update"))
+        { Status = "You do not have permission to void invoices."; return false; }
+        if (dbFactory == null || editingDocument is not { SourceId: > 0 } record || record["Type"] != "Invoice")
+        { Status = "Only a saved invoice can be voided."; return false; }
+
+        using var db = dbFactory.CreateDbContext();
+        db.EnsureCurrentSchema();
+        var invoice = db.Invoices.SingleOrDefault(item => item.Id == record.SourceId);
+        if (invoice == null || invoice.DeletedAt != null)
+        { Status = "Invoice is unavailable or in trash."; return false; }
+        if (string.Equals(invoice.Status, "Voided", StringComparison.OrdinalIgnoreCase))
+        { Status = "This invoice is already voided."; return false; }
+        if (invoice.Type != "Invoice")
+        { Status = "Only invoices can be voided."; return false; }
+        if (invoice.PaidAmount > 0.005m || db.Payments.Any(payment => payment.InvoiceId == invoice.Id))
+        { Status = "Invoices with payments cannot be voided. Refund or remove the payment first."; return false; }
+
+        invoice.Status = "Voided";
+        invoice.CancellationReason = "Voided by user";
+        invoice.CancelledBy = CurrentUsername ?? "system";
+        invoice.CancelledAt = DateTime.UtcNow;
+        db.SaveChanges();
+
+        record.Values["Status"] = "Voided";
+        record.Values["Outstanding"] = "0.00";
+        editingFingerprint = Fingerprint(invoice);
+        LastSavedDocument = record;
+        InvoiceChanged?.Invoke();
+        OnPropertyChanged(nameof(CanVoidCurrentInvoice));
+        Status = $"Invoice {invoice.InvoiceNumber} voided.";
+        return true;
+    }
+
     // Performs the save invoice action for this screen or workflow.
     public bool SaveInvoice()
     {
-        if (!HasPermission("Invoice", IsEditingDocument ? "Edit" : "Add")) { Status = "Your role cannot save this invoice."; return false; }
+        var permissionResource = (editingDocument?["Type"] ?? InvoiceDetails[0].Value) == "Quotation" ? "Quotation" : "Invoice";
+        if (!HasPermission(permissionResource, IsEditingDocument ? "Update" : "Add")) { Status = "Your role cannot save this document."; return false; }
         if (!RequireBusinessLicense()) return false;
         if (Lines.Count == 0) { Status = "Add at least one item before creating an invoice."; return false; }
         if (!InvoiceSetting("Allow Fractional Quantity").IsChecked && Lines.Any(line => decimal.Truncate(line.Quantity) != line.Quantity))
@@ -281,6 +325,8 @@ public partial class MainWindowViewModel
     {
         if (type is not ("Invoice" or "Quotation" or "Receipt"))
             throw new ArgumentException("Unknown document type.", nameof(type));
+        var resource = type == "Quotation" ? "Quotation" : "Invoice";
+        if (!HasPermission(resource, "Add")) { Status = $"You do not have permission to create {type.ToLowerInvariant()} records."; return; }
         editingDocument = null; editingSnapshot = null; editingFingerprint = null; historicalLines.Clear();
         Lines.Clear();
         AdditionalCosts.Clear();

@@ -66,8 +66,8 @@ public partial class MainWindowViewModel : ObservableObject
         this.dbFactory = dbFactory;
         this.databasePath = databasePath;
         this.licenseService = licenseService ?? new UnavailableLicenseService();
-        UnitMaster = new UnitMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole);
-        ProductPriceMaster = new ProductPriceMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole);
+        UnitMaster = new UnitMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, action => HasPermission("Unit", action));
+        ProductPriceMaster = new ProductPriceMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, action => HasPermission("Price", action));
         Inventory = new InventoryViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, () => HasPermission("Inventory", "Adjust"));
         PermissionManagement = new PermissionManagementViewModel(dbFactory, () => CurrentRole);
         RefreshLicense();
@@ -94,7 +94,12 @@ public partial class MainWindowViewModel : ObservableObject
     }
     // Performs the line changed action for this screen or workflow.
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();
-    [RelayCommand] private void Navigate(string route) { if (Routes.Contains(route)) { Title = route; Status = ""; } }
+    [RelayCommand] private void Navigate(string route)
+    {
+        if (!Routes.Contains(route)) return;
+        if (!CanNavigate(route)) { Status = $"Access denied to {route}."; return; }
+        Title = route; Status = "";
+    }
     [RelayCommand] private void ToggleSidebar() => SidebarExpanded = !SidebarExpanded;
 
     // Performs the customer invoice filter queue action for customer management row actions.

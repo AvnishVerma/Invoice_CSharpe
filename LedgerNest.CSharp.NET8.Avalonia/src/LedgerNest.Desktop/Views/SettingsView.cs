@@ -26,11 +26,22 @@ public partial class MainWindow
             new("PDF Settings", "settings"), new("Invoice Settings", "receipt_long"), new("Product Details", "view_column"),
             new("Accessibility", "accessibility_new"), new("License", "lock"), new("Software Info", "info_outline")
         ];
+        tabs = tabs.Where(tab => tab.Label switch
+        {
+            "Users" => Model.HasPermission("User", "View"),
+            "Permissions" => Model.HasPermission("Permission", "View"),
+            _ => true
+        }).ToArray();
+        if (!tabs.Any(tab => tab.Label == settingsTab)) settingsTab = tabs.First().Label;
         return new SettingsPageView(new SettingsPageModel(tabs, settingsTab, SettingsContent, selected => settingsTab = selected));
     }
 
     // Performs the settings content selection action for this screen or workflow.
-    private Control SettingsContent(string name) => name switch
+    private Control SettingsContent(string name)
+    {
+        if (name == "Users" && !Model.HasPermission("User", "View") || name == "Permissions" && !Model.HasPermission("Permission", "View"))
+            return Ui.Empty("Access denied", "Your assigned roles do not allow this screen.");
+        return name switch
     {
         "Company Info" => CompanySettingsView(),
         "PDF Settings" => PdfSettingsView(),
@@ -42,6 +53,7 @@ public partial class MainWindow
         "License" => LicenseSettingsView(),
         _ => SettingsForm(name)
     };
+    }
     // Performs the settings form action for this screen or workflow.
     private Control SettingsForm(string name)
     {

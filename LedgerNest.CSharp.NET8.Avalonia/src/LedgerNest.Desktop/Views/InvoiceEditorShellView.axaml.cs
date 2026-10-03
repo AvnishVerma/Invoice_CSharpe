@@ -14,7 +14,7 @@ public sealed partial class InvoiceEditorShellView : UserControl
     }
 
     // Performs the invoice editor shell view content assignment action for this screen or workflow.
-    public InvoiceEditorShellView(InvoiceEditorShellModel model, Control workspace, Control actions, Control create, Control totals)
+    public InvoiceEditorShellView(InvoiceEditorShellModel model, Control workspace, Control actions, Control create, Control totals, Control? headerActions = null)
     {
         InitializeComponent();
         DataContext = model;
@@ -22,6 +22,7 @@ public sealed partial class InvoiceEditorShellView : UserControl
         ActionsHost.Content = actions;
         CreateHost.Content = create;
         TotalsHost.Content = totals;
+        HeaderActionsHost.Content = headerActions;
         SizeChanged += (_, e) =>
         {
             FooterFrame.Padding = new Thickness(e.NewSize.Width < 700 ? 8 : 16, 8);

@@ -15,6 +15,25 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindowViewModel
 {
+    private bool isRefreshingPersistedData;
+
+    // Reloads persisted lists once while leaving the current route, search text and filters intact.
+    public void RefreshPersistedData()
+    {
+        if (isRefreshingPersistedData || dbFactory == null) return;
+        try
+        {
+            isRefreshingPersistedData = true;
+            Customers.Clear(); Products.Clear(); Users.Clear(); Invoices.Clear(); Payments.Clear(); DeletedRecords.Clear();
+            LoadPersistedRecords();
+            Status = "Data refreshed.";
+        }
+        finally
+        {
+            isRefreshingPersistedData = false;
+        }
+    }
+
     // Performs the reload from database action for this screen or workflow.
     private void ReloadFromDatabase()
     {
@@ -118,7 +137,7 @@ public partial class MainWindowViewModel
                     ["Total"] = invoice.GrandTotal.ToString("0.00"),
                     ["Tax"] = invoice.TaxTotal.ToString(CultureInfo.InvariantCulture),
                     ["Paid"] = invoice.PaidAmount.ToString("0.00"),
-                    ["Outstanding"] = invoice.BalanceAmount.ToString("0.00"),
+                    ["Outstanding"] = invoice.Status == "Voided" ? "0.00" : invoice.BalanceAmount.ToString("0.00"),
                     ["Status"] = invoice.Status
                 }
             });
@@ -276,6 +295,16 @@ public partial class MainWindowViewModel
                 user.PasswordChanged = true;
             }
             if (user.Id == 0) db.Users.Add(user);
+            db.SaveChanges();
+            var role = db.Roles.SingleOrDefault(item => item.Name == user.Role);
+            if (role == null)
+            {
+                role = new AppRole { Name = user.Role, IsSystem = user.Role == "Admin" };
+                db.Roles.Add(role);
+                db.SaveChanges();
+            }
+            db.UserRoles.RemoveRange(db.UserRoles.Where(item => item.UserId == user.Id));
+            db.UserRoles.Add(new AppUserRole { UserId = user.Id, RoleId = role.Id });
             db.SaveChanges();
             transaction.Commit();
             return user.Id;

@@ -93,7 +93,7 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
     // Keep each page's existing header actions while hosting its header above navigation.
     private void ExtractHeader(Control content)
     {
-        var header = content.GetLogicalDescendants().OfType<PageHeaderView>().FirstOrDefault();
+        var header = content.GetLogicalDescendants().FirstOrDefault(control => control is PageHeaderView or ManagementActionBarView) as Control;
         if (header != null)
         {
             switch (header.GetLogicalParent())

@@ -32,13 +32,19 @@ internal sealed partial class ManagementView : UserControl
         search.PlaceholderText = Documents ? "Search by Invoice ID or Customer Name…" : kind == "Customer" ? "Search customers by name, phone, email, GST…" : kind == "Product" ? "Search name, product ID, barcode, SKU, HSN/SAC…" : "Search users…";
         search.TextChanged += (_, _) => { page = 0; Refresh(); };
         var add = Ui.Button($"＋ New {kind}", () => { if (Documents) model.StartDocument(kind); else window.EditRecord(kind, Refresh); }, true); add.Classes.Add("material");
+        add.IsVisible = model.HasPermission(kind == "Receipt" ? "Invoice" : kind, "Add");
         var more = MoreMenu();
         var trashButton = Ui.Button("Trash", () => { trash = !trash; Refresh(); });
+        void Reload()
+        {
+            model.RefreshPersistedData();
+            Refresh();
+        }
         var headerActions = kind == "User"
-            ? new Control[] { Ui.Button("↻", Refresh), add }
+            ? new Control[] { TopIconAction("refresh", "Refresh", Reload), add }
             : Documents
-            ? new Control[] { Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, trashButton, Ui.Button("↻", Refresh) }
-            : [Ui.Button("↑ Import", Import), Ui.Button("↓ Export", Export), more, Ui.Button("↻", Refresh), add];
+            ? new Control[] { TopIconAction("upload", "Import", Import), TopIconAction("download", "Export", Export), more, trashButton, TopIconAction("refresh", "Refresh", Reload) }
+            : [TopIconAction("upload", "Import", Import), TopIconAction("download", "Export", Export), more, TopIconAction("refresh", "Refresh", Reload), add];
         var filterButton = MenuButton("Filter ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); });
         var sortButton = MenuButton("Sort: Name A–Z ▾", ["Name A–Z", "Name Z–A", "Newest", "Oldest"], option => { sort = option; Refresh(); });
         if (kind == "Product" && model.ShouldShowProductDetailsNotice())
@@ -62,7 +68,7 @@ internal sealed partial class ManagementView : UserControl
                 TopIconAction("download", "Export PDF", async () => await ExportDocumentsPdf()),
                 TopIconAction("download", "Export", Export),
                 TopIconAction("delete", "Trash", () => { trash = !trash; Refresh(); }),
-                TopIconAction("refresh", "Refresh", Refresh));
+                TopIconAction("refresh", "Refresh", Reload));
             DocumentAddHost.Content = add;
             DocumentSearchHost.Content = search;
             DocumentToolbarHost.Content = Ui.Wrap(CustomerMenu(), filterButton, sortButton);
@@ -91,8 +97,6 @@ internal sealed partial class ManagementView : UserControl
         }
         Refresh();
     }
-    // Performs the subtitle action for this screen or workflow.
-    private string Subtitle() => kind == "Customer" ? "Manage your customers and contact details" : kind == "Product" ? "Manage your products and services" : Documents ? $"Manage {kind.ToLowerInvariant()}s and payment status" : "Manage users and access permissions";
     // Performs the filter options action for this screen or workflow.
     private string[] FilterOptions() => Documents ? ["All", "Paid", "Partial", "Unpaid", "Overdue"] : kind == "Customer" ? ["All", "Businesses", "Individuals", "GST Registered", "Without GST", "With Outstanding"] : kind == "Product" ? ["All", "Products", "Services", "Low Stock", "Out of Stock", "Expired"] : ["All", "Admin", "User"];
     // Performs the menu button action for this screen or workflow.
@@ -412,8 +416,8 @@ internal sealed partial class ManagementView : UserControl
             PlainIconAction("visibility", "View", () => View(record), "#6E6E6E"),
             PlainIconAction("receipt_long", "Invoices", () => window.OpenInvoicesForCustomer(record.Name), "#6E6E6E"),
             PlainIconAction("account_balance_wallet", "Payment", () => window.OpenCustomerReport(record.Name), "#6E6E6E"),
-            PlainIconAction("edit", "Edit", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
-            PlainIconAction("delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F")
+            PermissionIconAction("edit", "Edit", "Update", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
+            PermissionIconAction("delete", "Delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F")
         }
     };
 
@@ -540,8 +544,8 @@ internal sealed partial class ManagementView : UserControl
         Children =
         {
             PlainIconAction("visibility", "View", () => View(record), "#6E6E6E"),
-            PlainIconAction("edit", "Edit", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
-            PlainIconAction("delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F")
+            PermissionIconAction("edit", "Edit", "Update", () => window.EditRecord(kind, Refresh, record), "#6E6E6E"),
+            PermissionIconAction("delete", "Delete", "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }), "#D32F2F")
         }
     };
 
@@ -558,6 +562,13 @@ internal sealed partial class ManagementView : UserControl
         button.BorderBrush = Brushes.Transparent;
         button.BorderThickness = new Thickness(0);
         button.Tag = label;
+        return button;
+    }
+
+    private Button PermissionIconAction(string icon, string label, string actionName, Action action, string color)
+    {
+        var button = PlainIconAction(icon, label, action, color);
+        button.IsVisible = model.HasPermission(kind, actionName);
         return button;
     }
 
@@ -674,12 +685,10 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, action);
         button.Content = Ui.Icon(icon, 22, Brushes.White);
-        button.Width = 28; button.Height = 28;
-        button.MinWidth = 28; button.MinHeight = 28;
-        button.Padding = new Thickness(0);
-        button.Background = Brushes.Transparent;
-        button.BorderBrush = Brushes.Transparent;
+        button.Classes.Remove("outline");
+        button.Classes.Add("header-icon-action");
         button.Tag = label;
+        ToolTip.SetTip(button, label);
         return button;
     }
 
@@ -688,12 +697,10 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, async () => await action());
         button.Content = Ui.Icon(icon, 22, Brushes.White);
-        button.Width = 28; button.Height = 28;
-        button.MinWidth = 28; button.MinHeight = 28;
-        button.Padding = new Thickness(0);
-        button.Background = Brushes.Transparent;
-        button.BorderBrush = Brushes.Transparent;
+        button.Classes.Remove("outline");
+        button.Classes.Add("header-icon-action");
         button.Tag = label;
+        ToolTip.SetTip(button, label);
         return button;
     }
 
@@ -739,11 +746,13 @@ internal sealed partial class ManagementView : UserControl
 
         var footer = new Grid { Width = 698, ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto") };
         var delete = Ui.Button("🗑  Delete Product", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }));
+        delete.IsVisible = model.HasPermission("Product", "Delete");
         delete.Foreground = Brush.Parse("#F44336");
         delete.BorderBrush = Brush.Parse("#F44336");
         delete.Background = Brushes.Transparent;
         delete.Classes.Add("outline");
         var actions = Ui.Wrap(Ui.Button("Close", window.CloseOverlay), Ui.Button("✎  Edit", () => { window.CloseOverlay(); window.EditRecord(kind, Refresh, record); }, true));
+        if (actions.Children.Count > 1) actions.Children[1].IsVisible = model.HasPermission("Product", "Update");
         Grid.SetColumn(actions, 2);
         footer.Children.Add(delete);
         footer.Children.Add(actions);
@@ -823,8 +832,8 @@ internal sealed partial class ManagementView : UserControl
             menu.Items.Add(item);
         }
         Add("View", () => View(record));
-        Add("Edit", () => { if (Documents) { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); } else window.EditRecord(kind, Refresh, record); });
-        Add(Documents ? (trash ? "Delete Permanently" : "Move to Trash") : "Delete", () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }));
+        Add("Edit", model.HasPermission(kind == "Receipt" ? "Invoice" : kind, "Update") ? () => { if (Documents) { if (model.LoadDocumentForEditing(record)) window.CloseOverlay(); } else window.EditRecord(kind, Refresh, record); } : null);
+        Add(Documents ? (trash ? "Delete Permanently" : "Move to Trash") : "Delete", model.HasPermission(kind == "Receipt" ? "Invoice" : kind, "Delete") ? () => window.Confirm("Confirm Delete", $"Delete {record.Name}?", () => { Delete(record); Refresh(); }) : null);
         Add("Export PDF", Documents ? async () => await ExportDocumentPdf(record) : null);
         button.Flyout = menu;
         return button;

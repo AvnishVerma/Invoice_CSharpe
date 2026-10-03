@@ -70,6 +70,7 @@ public partial class MainWindow
     {
         invoiceCompletionVisible = false;
         if (!Model.ValidateSession() || !Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
+        if (!Model.CanNavigate(Model.Title)) { Model.Status = $"Access denied to {Model.Title}."; Model.NavigateCommand.Execute(Model.VisibleRoutes.FirstOrDefault() ?? "Dashboard"); return; }
         CloseOverlay();
         Control content = Model.Title switch
         {

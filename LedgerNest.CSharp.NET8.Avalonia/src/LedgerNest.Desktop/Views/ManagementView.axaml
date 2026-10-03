@@ -19,25 +19,7 @@
   </UserControl.Resources>
   <Grid>
     <Grid x:Name="RecordRoot" RowDefinitions="Auto,*">
-      <Grid>
-        <ContentControl x:Name="HeaderHost" />
-        <Border x:Name="ProductHeaderRoot"
-                IsVisible="False"
-                Background="{DynamicResource PageHeaderBrush}"
-                Padding="16,12">
-          <Grid ColumnDefinitions="*,Auto">
-            <StackPanel Spacing="3">
-              <TextBlock Text="Product Management" FontSize="22" FontWeight="Bold"
-                         Foreground="White" />
-              <TextBlock Text="Manage your products and services" FontSize="13"
-                         Foreground="#D6E3F3" />
-            </StackPanel>
-            <StackPanel x:Name="ProductHeaderActionsHost" Grid.Column="1"
-                        Orientation="Horizontal" Spacing="8"
-                        HorizontalAlignment="Right" VerticalAlignment="Center" />
-          </Grid>
-        </Border>
-      </Grid>
+      <ContentControl x:Name="HeaderHost" />
       <ScrollViewer Grid.Row="1"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">

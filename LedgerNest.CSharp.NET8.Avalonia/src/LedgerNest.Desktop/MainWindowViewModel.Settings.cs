@@ -187,6 +187,7 @@ public partial class MainWindowViewModel
     // Performs the save settings action for this screen or workflow.
     public bool SaveSettings(string name)
     {
+        if (!HasPermission("Settings", "Update")) { Status = "You do not have permission to change settings."; return false; }
         if (!Settings.TryGetValue(name, out var sections)) return false;
         if (name == "Product Details") { ProductSetting("Name").IsChecked = true; ProductSetting("Price").IsChecked = true; }
         var fields = sections.SelectMany(s => s.Fields).ToArray();

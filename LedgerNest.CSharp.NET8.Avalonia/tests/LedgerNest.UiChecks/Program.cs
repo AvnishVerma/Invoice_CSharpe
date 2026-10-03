@@ -327,9 +327,11 @@ internal static class Program
             foreach (var settingTab in settingsNavigation.Tabs)
             {
                 settingsNavigation.SelectedTab = settingTab.Label; Settle();
-                var pageHeader = settingsShell.GetVisualDescendants().OfType<PageHeaderView>().First();
+                var pageHeader = settingsShell.GetVisualDescendants()
+                    .First(control => control is PageHeaderView or ManagementActionBarView);
                 Check(Math.Abs(pageHeader.Bounds.Height - 44.8) < 1, "Settings headers must use the standard height");
                 Check(pageHeader.TranslatePoint(default, settingsShell)!.Value.Y == 0, "Settings header must precede navigation tabs");
+                Check(!pageHeader.GetVisualAncestors().OfType<ScrollViewer>().Any(), "Settings header must remain outside scrolling tab content");
                 Check(FindButton(settingTab.Label).TranslatePoint(default, settingsShell)!.Value.Y >= 44, "Settings tabs must sit below the header");
             }
             settingsNavigation.SelectedTab = "Company Info"; Capture("settings-header-above-tabs");
@@ -375,7 +377,7 @@ internal static class Program
             {
                 model.NavigateCommand.Execute(route); Settle();
                 var management = window.GetVisualDescendants().OfType<ManagementView>().Single();
-                var header = management.GetVisualDescendants().OfType<PageHeaderView>().Single();
+                var header = management.GetVisualDescendants().OfType<ManagementActionBarView>().Single();
                 Check(header.TranslatePoint(default, management)!.Value.Y == 0, "Management header must sit at the top");
                 Check(!header.GetVisualAncestors().OfType<ScrollViewer>().Any(), "Management header must stay outside scrolling content");
                 Capture("fixed-header-" + route);
@@ -672,7 +674,7 @@ internal static class Program
         Check(customerReport is { IsStatement: true, SelectedCustomerName: "Test Customer" }, "Customer payment action must open the Statements tab filtered by customer name");
         Capture("customer-statement-filtered");
         model.NavigateCommand.Execute("Customers"); Settle();
-        Click("↑ Import");
+        Click("Import");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Import Customers from CSV") &&
               window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Customer full name"),
             "Customer import must show its structured CSV schema");
@@ -695,7 +697,7 @@ internal static class Program
         foreach (var key in new[] { Key.Q, Key.S, Key.F, Key.M, Key.O, Key.P })
             Check(window.KeyBindings.Any(k => k.Gesture?.Key == key && k.Gesture.KeyModifiers.HasFlag(KeyModifiers.Control)), $"Ctrl+{key} must have a window-level key binding");
         model.NavigateCommand.Execute("Products");
-        Click("↑ Import");
+        Click("Import");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Import Products from CSV"), "Product import must show the CSV guidance dialog");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Column") &&
               window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Required") &&
@@ -706,7 +708,7 @@ internal static class Program
         Check(FindButton("Download Sample").IsVisible, "Product import must offer a sample CSV download");
         Capture("product-import-csv");
         Click("Cancel");
-        Click("↓ Export");
+        Click("Export");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Export to PDF") &&
               FindButton("Current Page").IsVisible && FindButton("All Products").IsVisible,
             "Product export must offer current-page and all-products PDF choices");
@@ -718,8 +720,8 @@ internal static class Program
         Check(unitMasterView.Bounds.Width > 0, "Unit Master route must render its AXAML view");
         Check(window.GetVisualDescendants().OfType<ListBox>().Single().Bounds.Width > unitMasterView.Bounds.Width * .85,
             "Unit list must expand across the workspace while its editor is closed");
-        Check(FindButton("+ New Unit").IsVisible && !FindButton("+ New Unit").IsEnabled && FindButton("Refresh").IsVisible,
-            "Unit Master must expose refresh while disabling mutations without administrator permission");
+        Check(FindButton("+ New Unit").IsVisible && FindButton("Refresh").IsVisible,
+            "Unit Master must expose its create and icon-only refresh actions");
         model.UnitMaster.NewCommand.Execute(null); Settle();
         Check(window.GetVisualDescendants().OfType<TextBox>().Any(box => box.PlaceholderText == "Unit code") &&
               window.GetVisualDescendants().OfType<TextBox>().Any(box => box.PlaceholderText == "Unit name"),
@@ -829,8 +831,10 @@ internal static class Program
         var editPath = Path.Combine(Path.GetTempPath(), $"ledgernest-edit-ui-{Guid.NewGuid():N}.db");
         var editFactory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={editPath}").Options);
         var editModel = CreateModel(editFactory, editPath);
+        Check(editModel.SignIn("admin", "admin"), "UI edit fixture must sign in");
         editModel.Lines.Add(new InvoiceLineViewModel { Name = "Editable service", Price = 100, Quantity = 1 });
         Check(editModel.SaveInvoice(), "UI edit fixture must save");
+        editModel.SignOut();
         Avalonia.Application.Current!.RequestedThemeVariant = ThemeVariant.Light;
         window.DataContext = editModel;
         Check(ReferenceEquals(window.DataContext, editModel), "Live window must accept replacement model without reparenting errors");
@@ -925,10 +929,13 @@ internal static class Program
         Check(!editModel.CanAccessWorkspace && editModel.CurrentUsername == null && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login"), "Navigation must return externally invalidated sessions to login");
         Check(!editModel.SignIn("sidebar-user", "incorrect") && editModel.CurrentRole == "" && editModel.CurrentUsername == null, "Failed account switch must not retain previous role");
 
+        Check(editModel.SignIn("admin", "updated-admin-password"), "Default customer fixture must sign in");
         var defaultFields = FormCatalog.Customer(); defaultFields[0].Value = "Default customer"; defaultFields[2].Value = "1234567890";
         Check(editModel.SaveRecord("Customer", defaultFields), "Default customer fixture must save");
         editModel.SetDefaultCustomer(editModel.Customers.Single(c => c.Name == "Default customer"));
-        var defaultReload = CreateModel(editFactory, editPath); defaultReload.StartDocument("Invoice");
+        var defaultReload = CreateModel(editFactory, editPath);
+        Check(defaultReload.SignIn("admin", "updated-admin-password"), "Reloaded default customer fixture must sign in");
+        defaultReload.StartDocument("Invoice");
         Check(defaultReload.InvoiceCustomer[0].Value == "Default customer", "Issue 6: default customer must survive restart and populate new invoices");
         defaultReload.SetDefaultCustomer(null); defaultReload.StartDocument("Invoice");
         Check(defaultReload.InvoiceCustomer[0].Value == "", "Issue 6: clearing default must leave a new invoice blank");
@@ -988,6 +995,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-invoice-settings-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Invoice settings fixture must authenticate as Admin");
         FormField F(string label) => model.InvoiceSetting(label);
         Check(model.CanChangeInvoiceStartingNumber, "Empty storage must allow setting the starting number");
         F("Starting Number").Value = "0";
@@ -1124,6 +1132,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-invoice-presentation-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Invoice presentation fixture must authenticate as Admin");
         FormField F(string label) => model.InvoiceSetting(label);
         FormField Pdf(string label) => model.Settings["PDF Settings"].SelectMany(section => section.Fields).Single(field => field.Label == label);
         string Text(UiRecord record)
@@ -1254,6 +1263,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-receipt-pdf-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Receipt fixture must authenticate as Admin");
         foreach (var field in model.Settings["Company Info"].SelectMany(s => s.Fields))
         {
             if (field.Label == "Company Name") field.Value = "Harbour Coffee & Kitchen";
@@ -1331,8 +1341,9 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-json-reload-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "JSON reload failure fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "JSON reload fixture", Price = 45, Quantity = 1 });
-        Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "JSON reload failure fixture must save and sign in");
+        Check(model.SaveInvoice(), "JSON reload failure fixture must save");
         var backup = model.CreateJsonBackup();
         using (var db = factory.CreateDbContext()) { db.Invoices.Single().GrandTotal = 100m; db.SaveChanges(); }
         factory.SuccessfulCreationsRemaining = 1;
@@ -1349,8 +1360,9 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-restore-reload-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Reload failure fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Committed restore", Price = 60, Quantity = 1 });
-        Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "Reload failure fixture must save and sign in");
+        Check(model.SaveInvoice(), "Reload failure fixture must save");
         var backup = model.CreateDatabaseBackup();
         using (var db = factory.CreateDbContext()) { db.Invoices.Single().GrandTotal = 120m; db.SaveChanges(); }
         factory.FailCreation = true;
@@ -1367,6 +1379,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-locked-restore-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Locked restore fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Lock fixture", Price = 90, Quantity = 1 });
         Check(model.SaveInvoice(), "Locked restore fixture must save");
         var backup = model.CreateDatabaseBackup();
@@ -1375,7 +1388,6 @@ internal static class Program
             db.Invoices.Single().GrandTotal = 180m;
             db.SaveChanges();
         }
-        Check(model.SignIn("admin", "admin"), "Locked restore fixture must sign in");
         var stagingBefore = Directory.GetDirectories(Path.GetTempPath(), "ledgernest-restore-*").ToHashSet();
         using (var blocker = new Microsoft.Data.Sqlite.SqliteConnection(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder { DataSource = path, Pooling = false }.ToString()))
         {
@@ -1400,6 +1412,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-rollback-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Rollback fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Rollback original", Price = 90, Quantity = 1 });
         Check(model.SaveInvoice(), "Rollback fixture must save");
         var original = model.CreateJsonBackup();
@@ -1429,6 +1442,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-json-guard-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "JSON restore fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Protected JSON invoice", Price = 75, Quantity = 1 });
         Check(model.SaveInvoice(), "JSON restore fixture must persist");
         var valid = model.CreateJsonBackup();
@@ -1467,8 +1481,9 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-restore-guard-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Restore guard fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Protected invoice", Price = 125, Quantity = 1 });
-        Check(model.SaveInvoice() && model.SignIn("admin", "admin"), "Restore guard fixture must persist and sign in");
+        Check(model.SaveInvoice(), "Restore guard fixture must persist");
         var valid = model.CreateDatabaseBackup();
         byte[] AlterBackup(string sql)
         {
@@ -1505,6 +1520,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-session-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Session invalidation fixture administrator must sign in");
         var fields = FormCatalog.User(); fields[0].Value = "session-user"; fields[1].Value = "session-password";
         Check(model.SaveRecord("User", fields), "Session invalidation fixture must save");
         foreach (var change in new[] { "role", "password", "salt", "required-change", "username", "delete" })
@@ -1577,6 +1593,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-admin-guards-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Administrator guard fixture must authenticate before protected user operations");
         var admin = model.Users.Single();
         FormField[] Demote(string username) => [new("Username", username), new("Role", "User")];
         Check(!model.SaveRecord("User", Demote("admin"), admin), "Last admin demotion must fail");
@@ -1594,6 +1611,7 @@ internal static class Program
         var second = FormCatalog.User(); second[0].Value = "second-admin"; second[1].Value = "second-password"; second[2].Value = "Admin";
         Check(model.SaveRecord("User", second), "Second administrator must be creatable");
         var stale = CreateModel(factory, path);
+        Check(stale.SignIn("second-admin", "second-password"), "Stale administrator fixture must authenticate before protected user operations");
         Check(model.SaveRecord("User", Demote("admin"), admin), "Demotion must succeed when another administrator exists");
         Check(!stale.DeleteRecord("User", stale.Users.Single(u => u.Name == "second-admin")), "Stale view must use database administrator count before deletion");
         Check(!stale.SaveRecord("User", Demote("second-admin"), stale.Users.Single(u => u.Name == "second-admin")), "Stale view must use database administrator count before demotion");
@@ -1611,6 +1629,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-edit-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Invoice editing fixture must sign in");
         model.InvoiceCustomer[0].Value = "Original";
         model.InvoiceDetails[2].Value = "2026-12-31";
         model.InvoiceOptions[2].Value = "Original note";
@@ -1618,8 +1637,10 @@ internal static class Program
         Check(model.SaveInvoice(), "Editable invoice must save");
         var id = model.Invoices.Single().SourceId;
         var stale = CreateModel(factory, path);
+        Check(stale.SignIn("admin", "admin"), "Stale invoice editor must sign in");
         Check(stale.LoadDocumentForEditing(stale.Invoices.Single()), "Second editor must load the original snapshot");
         var editor = CreateModel(factory, path);
+        Check(editor.SignIn("admin", "admin"), "Invoice editor must sign in");
         Check(editor.LoadDocumentForEditing(editor.Invoices.Single()), "Persisted document must load for editing");
         Check(editor.InvoiceDetails[2].Value == "2026-12-31" && editor.InvoiceOptions[2].Value == "Original note" && editor.Totals.Total == 210, "Editor must restore saved inputs and totals");
         Check(editor.Lines[0].Unit == "box", "Item unit override must survive save and reopen");
@@ -1635,11 +1656,13 @@ internal static class Program
         stale.Lines[0].Price = 1;
         Check(!stale.SaveInvoice() && stale.Status.Contains("changed"), "Stale editor must not overwrite a newer saved version");
         var fresh = CreateModel(factory, path);
+        Check(fresh.SignIn("admin", "admin"), "Fresh invoice editor must sign in");
         Check(fresh.LoadDocumentForEditing(fresh.Invoices.Single()), "Latest snapshot must reopen");
         var payment = FormCatalog.Payment(); payment[0].Value = "10";
         Check(model.ApplyPayment(model.Invoices.Single(), payment), "Payment during editing must apply");
         Check(!fresh.SaveInvoice(), "Payment arriving after editor load must prevent overwrite");
         var paid = CreateModel(factory, path);
+        Check(paid.SignIn("admin", "admin"), "Paid invoice editor must sign in");
         Check(!paid.LoadDocumentForEditing(paid.Invoices.Single()), "Paid documents must not open in this edit workflow");
         using (var db = factory.CreateDbContext())
             Check(db.Invoices.Single().PaidAmount == 10 && db.Invoices.Single().GrandTotal == 315, "Rejected edit must preserve payment and invoice totals");
@@ -1652,6 +1675,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-snapshots-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Invoice snapshot fixture must sign in");
         string[] customer = ["Original Customer", "Original Business", "1234567890", "original@example.com", "GST-123", "Original Address"];
         for (var i = 0; i < customer.Length; i++) model.InvoiceCustomer[i].Value = customer[i];
         model.InvoiceDetails[2].Value = "2026-12-31";
@@ -1715,6 +1739,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-forms-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Form round-trip fixture must sign in");
         var customer = FormCatalog.Customer();
         customer[0].Value = "Business owner";
         customer[1].Value = "Roundtrip business";
@@ -1747,6 +1772,7 @@ internal static class Program
         Check(model.RestoreJsonBackup(backup), "Full forms must restore from JSON");
         Verify(CreateModel(factory, path));
         var edited = CreateModel(factory, path);
+        Check(edited.SignIn("admin", "admin"), "Product edit fixture must sign in");
         edited.AddProductLine(edited.Products.Single());
         var addedLine = edited.Lines.Single();
         addedLine.Quantity = 3;
@@ -1806,6 +1832,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-receivables-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Receivables fixture must sign in");
         model.InvoiceCustomer[0].Value = "Receivable customer";
         model.InvoiceDetails[2].Value = DateTime.Today.AddDays(-45).ToString("yyyy-MM-dd");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Service", Price = 100, Quantity = 2, TaxRate = 5 });
@@ -1850,6 +1877,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-tax-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Tax report fixture must sign in");
         model.InvoiceDetails[1].Value = "2026-01-15";
         model.Lines.Add(new InvoiceLineViewModel { Name = "Five percent", Price = 100, TaxRate = 5 });
         model.Lines.Add(new InvoiceLineViewModel { Name = "Eighteen percent", Price = 100, TaxRate = 18 });
@@ -1882,6 +1910,7 @@ internal static class Program
         var backup = model.CreateJsonBackup();
         Check(model.RestoreJsonBackup(backup), "Tax report backup must restore");
         Verify(model, CurrencyDisplay.Format(48m));
+        Check(model.SignIn("admin", "admin"), "Tax report fixture must sign in after restore");
         Check(model.SetDocumentTrash(model.Invoices.Single(i => i.SourceId == mixed.SourceId), true), "Tax test invoice must move to trash");
         Verify(CreateModel(factory, path), CurrencyDisplay.Format(25m));
     }
@@ -1891,6 +1920,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-revenue-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Revenue report fixture must sign in");
         var product = FormCatalog.Product();
         product.First(field => field.Label == "Name").Value = "Costed product";
         product.First(field => field.Label == "Sale Price").Value = "100";
@@ -2014,6 +2044,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-delete-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Record deletion fixture must sign in");
         var customer = FormCatalog.Customer();
         customer[0].Value = "Historical customer"; customer[2].Value = "1234567890";
         Check(model.SaveRecord("Customer", customer), "Deletion test customer must save");
@@ -2040,6 +2071,7 @@ internal static class Program
             Check(db.Invoices.Single().CustomerId == null && db.InvoiceItems.Single().ProductId == null, "Deletion must detach obsolete catalog references");
         var backup = reloaded.CreateJsonBackup();
         Check(reloaded.RestoreJsonBackup(backup) && reloaded.Invoices.Single()["Customer"] == "Historical customer", "Backup must preserve history after catalog deletion");
+        Check(reloaded.SignIn("admin", "admin"), "Record deletion fixture must sign in after restore");
         var user = FormCatalog.User();
         user[0].Value = "deletable"; user[1].Value = "test-password";
         Check(reloaded.SaveRecord("User", user) && reloaded.SignIn("deletable", "test-password"), "Deletion test user must sign in");
@@ -2054,10 +2086,12 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-trash-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Trash fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Trash item", Price = 100, Quantity = 1 });
         Check(model.SaveInvoice(), "Trash test invoice must save");
         using (var db = factory.CreateDbContext()) db.Database.ExecuteSqlRaw("ALTER TABLE invoices DROP COLUMN DeletedAt");
         model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Upgraded trash fixture must sign in");
         Check(model.ActiveInvoices.Count() == 1, "Older C# databases must gain trash state without losing invoices");
         var record = model.Invoices.Single();
         var payment = FormCatalog.Payment();
@@ -2069,17 +2103,21 @@ internal static class Program
         Check(!model.ExportCsv("Invoice").Contains("00000001"), "Default document export must exclude trash");
         Check(model.PeekNextDocumentNumber("Invoice") == "00000002", "Trashed document number must remain reserved");
         var reloaded = CreateModel(factory, path);
+        Check(reloaded.SignIn("admin", "admin"), "Reloaded trash fixture must sign in");
         record = reloaded.Invoices.Single();
         Check(reloaded.DeletedRecords.Contains(record.Id), "Trash must survive restart");
         Check(reloaded.BuildReport("Products").Rows.Length == 1, "Trashed invoice items must not count as product sales");
         Check(!reloaded.ApplyPayment(record, payment), "Trashed invoices must reject new payments");
         var backup = reloaded.CreateJsonBackup();
         Check(reloaded.RestoreJsonBackup(backup) && reloaded.DeletedRecords.Contains(reloaded.Invoices.Single().Id), "JSON backup must preserve trash state");
+        Check(reloaded.SignIn("admin", "admin"), "Trash fixture must sign in after JSON restore");
         var dbBackup = reloaded.CreateDatabaseBackup();
         Check(reloaded.SetDocumentTrash(reloaded.Invoices.Single(), false), "Document must restore from trash");
         Check(reloaded.RestoreDatabaseBackup(dbBackup) && reloaded.DeletedRecords.Contains(reloaded.Invoices.Single().Id), "Database backup must preserve trash state");
+        Check(reloaded.SignIn("admin", "admin"), "Trash fixture must sign in after database restore");
         Check(reloaded.SetDocumentTrash(reloaded.Invoices.Single(), false), "Restored backup document must restore from trash");
         var restored = CreateModel(factory, path);
+        Check(restored.SignIn("admin", "admin"), "Restored trash fixture must sign in");
         record = restored.Invoices.Single();
         Check(restored.ActiveInvoices.Count() == 1 && restored.BuildReport("Revenue").Billed == 100 && restored.Payments.Count == 1, "Restore must recover report totals and payment history after restart");
         Check(restored.SetDocumentTrash(record, true) && restored.DeleteDocumentPermanently(record), "Trashed document must support permanent deletion");
@@ -2093,12 +2131,14 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-numbering-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Document numbering fixture must sign in");
         model.Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Invoice Prefix").Value = "INV";
         model.Settings["Invoice Settings"].SelectMany(s => s.Fields).Single(f => f.Label == "Starting Number").Value = "27";
         Check(model.SaveSettings("Invoice Settings"), "Starting number must persist");
         Check(model.PeekNextDocumentNumber("Invoice") == "INV-00000027" && model.PeekNextDocumentNumber("Invoice") == "INV-00000027", "Number preview must honor the invoice prefix and settings without consuming a number");
         Check(model.PeekNextDocumentNumber("Quotation") == "00000001" && model.PeekNextDocumentNumber("Receipt") == "00000001", "Quotation and receipt sequences must start independently at one");
         var stale = CreateModel(factory, path);
+        Check(stale.SignIn("admin", "admin"), "Second numbering fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Numbered item", Price = 1 });
         stale.Lines.Add(new InvoiceLineViewModel { Name = "Numbered item", Price = 1 });
         Check(model.SaveInvoice() && stale.SaveInvoice(), "Two already-open editors must save distinct numbers");
@@ -2122,6 +2162,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-types-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Document type fixture must sign in");
         model.Lines.Add(new InvoiceLineViewModel { Name = "Type test", Price = 10, Quantity = 1 });
         foreach (var type in new[] { "Invoice", "Quotation", "Receipt" })
         {
@@ -2158,6 +2199,7 @@ internal static class Program
         var factory = new TestDbContextFactory(options);
 
         var model = CreateModel(factory, dbPath);
+        Check(model.SignIn("admin", "admin"), "Persistence fixture must sign in");
         var customer = FormCatalog.Customer();
         customer[0].Value = "Persisted Customer";
         customer[2].Value = "5551234567";
@@ -2258,6 +2300,7 @@ internal static class Program
         Check(model.SaveRecord("Customer", afterDbBackupCustomer), "Customer after DB backup must save");
         Check(model.RestoreDatabaseBackup(dbBackup), "Database-file backup must restore successfully");
         Check(model.Customers.Any(c => c.Name == "Persisted Customer") && !model.Customers.Any(c => c.Name == "After DB Backup"), "Database-file restore must replace current data");
+        Check(model.SignIn("admin", "admin"), "Persistence fixture must sign in again after database restore");
 
         var backupJson = model.CreateJsonBackup();
         var backup = JsonNode.Parse(backupJson)!.AsObject();

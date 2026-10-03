@@ -17,6 +17,7 @@ public sealed partial class ProductPriceMasterViewModel : ObservableObject
     private readonly IDbContextFactory<LedgerNestDbContext>? factory;
     private readonly Func<string> user;
     private readonly Func<string> role;
+    private readonly Func<string, bool> hasPermission;
     public ObservableCollection<ProductOption> Products { get; } = [];
     public ObservableCollection<UnitOption> Units { get; } = [];
     public ObservableCollection<SellingUnitRow> SellingUnits { get; } = [];
@@ -34,12 +35,14 @@ public sealed partial class ProductPriceMasterViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string error = "";
     [ObservableProperty] private string status = "";
-    public bool CanManage => role().Equals("Admin", StringComparison.OrdinalIgnoreCase);
+    public bool CanManage => role().Equals("Admin", StringComparison.OrdinalIgnoreCase) || hasPermission("Add") || hasPermission("Update");
     public bool HasProduct => SelectedProduct != null;
 
-    public ProductPriceMasterViewModel(IDbContextFactory<LedgerNestDbContext>? factory, Func<string> user, Func<string> role)
+    public void RefreshAuthorizationState() => OnPropertyChanged(nameof(CanManage));
+
+    public ProductPriceMasterViewModel(IDbContextFactory<LedgerNestDbContext>? factory, Func<string> user, Func<string> role, Func<string, bool>? hasPermission = null)
     {
-        this.factory = factory; this.user = user; this.role = role;
+        this.factory = factory; this.user = user; this.role = role; this.hasPermission = hasPermission ?? (_ => false);
         Refresh();
     }
 
@@ -77,7 +80,7 @@ public sealed partial class ProductPriceMasterViewModel : ObservableObject
         IsBusy = true; Error = "";
         try
         {
-            await new ProductPricingService(factory).SaveSellingUnitAsync(new ProductSellingUnit { ProductId = SelectedProduct.Id, UnitId = SelectedUnit.Id, ConversionFactor = ConversionFactor, SellingPrice = UnitSellingPrice, IsDefault = IsDefault, IsActive = IsActive }, role());
+            await new ProductPricingService(factory).SaveSellingUnitAsync(new ProductSellingUnit { ProductId = SelectedProduct.Id, UnitId = SelectedUnit.Id, ConversionFactor = ConversionFactor, SellingPrice = UnitSellingPrice, IsDefault = IsDefault, IsActive = IsActive }, role(), user());
             Status = "Selling unit saved."; RefreshDetails();
         }
         catch (Exception exception) { Error = exception.Message; }

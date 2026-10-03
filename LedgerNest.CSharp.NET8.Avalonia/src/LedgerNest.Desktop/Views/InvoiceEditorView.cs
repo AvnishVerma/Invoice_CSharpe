@@ -163,7 +163,26 @@ public partial class MainWindow
         editorModel.Invoices.CollectionChanged += documentsChanged;
         UpdateHeader();
 
-        var body = new InvoiceEditorShellView(shellModel, viewport, actions, create, totals);
+        var voidInvoice = new Button
+        {
+            Content = Ui.Icon("block", 16),
+            IsVisible = editorModel.IsEditingDocument && editorModel.InvoiceDetails[0].Value == "Invoice",
+            IsEnabled = editorModel.CanVoidCurrentInvoice
+        };
+        voidInvoice.Classes.Add("header-icon-action");
+        ToolTip.SetTip(voidInvoice, "Void Invoice");
+        Avalonia.Automation.AutomationProperties.SetName(voidInvoice, "Void Invoice");
+        voidInvoice.Click += (_, _) => Confirm(
+            "Void Invoice",
+            $"Void {editorModel.EditorDocumentNumber}? This action cannot be undone.",
+            () =>
+            {
+                if (!editorModel.VoidCurrentInvoice()) return;
+                voidInvoice.IsEnabled = false;
+                UpdateHeader();
+            });
+
+        var body = new InvoiceEditorShellView(shellModel, viewport, actions, create, totals, voidInvoice);
         body.DetachedFromVisualTree += (_, _) => { editorModel.InvoiceDetails[0].PropertyChanged -= headerChanged; editorModel.Invoices.CollectionChanged -= documentsChanged; };
         editorModel.InvoiceChanged += UpdateTotals;
         System.Collections.Specialized.NotifyCollectionChangedEventHandler collectionChanged = (_, _) => RefreshLines(); editorModel.Lines.CollectionChanged += collectionChanged;

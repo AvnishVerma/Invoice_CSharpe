@@ -12,7 +12,9 @@ public partial class MainWindow
     // Performs the edit record action for this screen or workflow.
     internal void EditRecord(string kind, Action refresh, UiRecord? record = null)
     {
-        var fields = kind == "Customer" ? FormCatalog.Customer() : kind == "Product" ? Model.ProductEditorFields(record) : FormCatalog.User();
+        if (!Model.HasPermission(kind, record == null ? "Add" : "Update"))
+        { Model.Status = $"You do not have permission to {(record == null ? "create" : "edit")} {kind.ToLowerInvariant()} records."; return; }
+        var fields = kind == "Customer" ? FormCatalog.Customer() : kind == "Product" ? Model.ProductEditorFields(record) : FormCatalog.User(Model.PermissionManagement.Roles);
         if (record != null && kind == "User") fields = fields.Where(f => f.Kind != "password").ToArray();
         if (record != null) foreach (var f in fields) { f.Value = record[f.Label]; f.IsChecked = bool.TryParse(f.Value, out var v) && v; }
         var useDefault = new CheckBox { Content = "Use as default for new invoices", IsVisible = kind == "Customer" };

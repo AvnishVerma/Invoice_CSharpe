@@ -26,6 +26,8 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
     public DbSet<InvoiceRefund> InvoiceRefunds => Set<InvoiceRefund>();
     public DbSet<InvoiceRefundLine> InvoiceRefundLines => Set<InvoiceRefundLine>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<AppRole> Roles => Set<AppRole>();
+    public DbSet<AppUserRole> UserRoles => Set<AppUserRole>();
 
     // Upgrade only the C# schema; the Flutter database has different column names.
     public void EnsureCurrentSchema()
@@ -153,6 +155,9 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
                     "CREATE TABLE IF NOT EXISTS invoice_refund_lines (Id INTEGER PRIMARY KEY AUTOINCREMENT, InvoiceRefundId INTEGER NOT NULL, InvoiceItemId INTEGER NOT NULL, Quantity TEXT NOT NULL, UnitPrice TEXT NOT NULL, TaxRate TEXT NOT NULL, LineTotal TEXT NOT NULL, FOREIGN KEY(InvoiceRefundId) REFERENCES invoice_refunds(Id) ON DELETE CASCADE, FOREIGN KEY(InvoiceItemId) REFERENCES invoice_items(Id) ON DELETE RESTRICT)",
                     "CREATE TABLE IF NOT EXISTS role_permissions (Id INTEGER PRIMARY KEY AUTOINCREMENT, Role TEXT NOT NULL, Resource TEXT NOT NULL, Action TEXT NOT NULL, IsAllowed INTEGER NOT NULL DEFAULT 0)",
                     "CREATE UNIQUE INDEX IF NOT EXISTS IX_role_permissions_Role_Resource_Action ON role_permissions(Role, Resource, Action)",
+                    "CREATE TABLE IF NOT EXISTS roles (Id INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, IsSystem INTEGER NOT NULL DEFAULT 0)",
+                    "CREATE UNIQUE INDEX IF NOT EXISTS IX_roles_Name ON roles(Name)",
+                    "CREATE TABLE IF NOT EXISTS user_roles (UserId INTEGER NOT NULL, RoleId INTEGER NOT NULL, PRIMARY KEY(UserId, RoleId), FOREIGN KEY(UserId) REFERENCES users(Id) ON DELETE CASCADE, FOREIGN KEY(RoleId) REFERENCES roles(Id) ON DELETE CASCADE)",
                     "CREATE UNIQUE INDEX IF NOT EXISTS IX_products_ProductCode ON products(ProductCode) WHERE ProductCode IS NOT NULL AND ProductCode <> ''",
                     "CREATE INDEX IF NOT EXISTS IX_products_Search ON products(Name, HsnCode, Code, Barcode)",
                     "CREATE UNIQUE INDEX IF NOT EXISTS IX_customers_CustomerCode ON customers(CustomerCode) WHERE CustomerCode IS NOT NULL AND CustomerCode <> ''"
@@ -192,6 +197,10 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<InvoiceRefund>().ToTable("invoice_refunds").HasIndex(x => x.RefundNumber).IsUnique();
         modelBuilder.Entity<InvoiceRefundLine>().ToTable("invoice_refund_lines");
         modelBuilder.Entity<RolePermission>().ToTable("role_permissions").HasIndex(x => new { x.Role, x.Resource, x.Action }).IsUnique();
+        modelBuilder.Entity<AppRole>().ToTable("roles").HasIndex(x => x.Name).IsUnique();
+        modelBuilder.Entity<AppUserRole>().ToTable("user_roles").HasKey(x => new { x.UserId, x.RoleId });
+        modelBuilder.Entity<AppUserRole>().HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<AppUserRole>().HasOne<AppRole>().WithMany().HasForeignKey(x => x.RoleId).OnDelete(DeleteBehavior.Cascade);
         // An increment is guarded by the previously-read value, so simultaneous
         // desktop clients retry instead of reserving the same document number.
         modelBuilder.Entity<DocumentSequence>().Property(x => x.NextValue).IsConcurrencyToken();

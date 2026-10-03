@@ -71,6 +71,7 @@ internal static class Ui
         ["close"] = "\ue5cd",
         ["edit"] = "\ue3c9",
         ["delete"] = "\ue872",
+        ["block"] = "\ue14b",
         ["download"] = "\uf090",
         ["upload"] = "\uf09b",
         ["business"] = "\ue0af",

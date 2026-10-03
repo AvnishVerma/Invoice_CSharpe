@@ -39,6 +39,10 @@ public partial class MainWindowViewModel
         OnPropertyChanged(nameof(CurrentRole));
         OnPropertyChanged(nameof(RequiresPasswordChange));
         OnPropertyChanged(nameof(CanAccessWorkspace));
+        UnitMaster.RefreshAuthorizationState();
+        ProductPriceMaster.RefreshAuthorizationState();
+        Inventory.RefreshAuthorizationState();
+        PermissionManagement.RefreshAuthorizationState();
     }
 
     // Performs the sign out action for this screen or workflow.

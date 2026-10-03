@@ -39,6 +39,8 @@ public sealed partial class InventoryViewModel : ObservableObject
     [ObservableProperty] private string status = "";
     public bool CanManage => currentRole().Equals("Admin", StringComparison.OrdinalIgnoreCase) || canAdjust();
 
+    public void RefreshAuthorizationState() => OnPropertyChanged(nameof(CanManage));
+
     public InventoryViewModel(IDbContextFactory<LedgerNestDbContext>? factory, Func<string> currentUser, Func<string> currentRole, Func<bool>? canAdjust = null)
     {
         this.factory = factory;

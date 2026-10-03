@@ -272,3 +272,16 @@ public sealed class RolePermission
     public string Action { get; set; } = "";
     public bool IsAllowed { get; set; }
 }
+
+public sealed class AppRole
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public bool IsSystem { get; set; }
+}
+
+public sealed class AppUserRole
+{
+    public int UserId { get; set; }
+    public int RoleId { get; set; }
+}

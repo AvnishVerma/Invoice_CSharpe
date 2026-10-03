@@ -18,6 +18,9 @@ public partial class MainWindowViewModel
     // Performs the save record action for this screen or workflow.
     public bool SaveRecord(string kind, FormField[] fields, UiRecord? original = null)
     {
+        var resource = kind switch { "Customer" => "Customer", "Product" => "Product", "User" => "User", _ => kind };
+        var action = original == null ? "Add" : "Update";
+        if (!HasPermission(resource, action)) { Status = $"You do not have permission to {action.ToLowerInvariant()} {kind.ToLowerInvariant()} records."; return false; }
         if (kind is "Customer" or "Product" && !RequireBusinessLicense()) return false;
         if (kind == "Product" && original == null && !ProductFieldVisible("Stock"))
         {
@@ -31,7 +34,7 @@ public partial class MainWindowViewModel
         if (original != null && !records.Contains(original)) { Status = "Record no longer exists in this view."; return false; }
         if (kind == "User")
         {
-            if (values.GetValueOrDefault("Role") is not ("Admin" or "Manager" or "Sales" or "User"))
+            if (PermissionManagement.Roles.Count > 0 && !PermissionManagement.Roles.Contains(values.GetValueOrDefault("Role"), StringComparer.OrdinalIgnoreCase))
             { Status = "Select a valid user role."; return false; }
             if (dbFactory == null && Users.Any(u => u != original && u.Name.Equals(values["Username"], StringComparison.OrdinalIgnoreCase)))
             { Status = "Username is already in use."; return false; }
@@ -43,6 +46,7 @@ public partial class MainWindowViewModel
         var record = new UiRecord { SourceId = sourceId, Values = values };
         if (original != null) records[records.IndexOf(original)] = record; else records.Add(record);
         if (kind == "User") PermissionManagement.RefreshUsers();
+        if (kind == "Product") ProductPriceMaster.RefreshCommand.Execute(null);
         if (kind == "User" && original != null && CurrentUsername == original.Name)
         {
             SetSession(null, "", false);
@@ -53,6 +57,8 @@ public partial class MainWindowViewModel
     // Performs the delete record action for this screen or workflow.
     public bool DeleteRecord(string kind, UiRecord record)
     {
+        var resource = kind switch { "Customer" => "Customer", "Product" => "Product", "User" => "User", _ => kind };
+        if (!HasPermission(resource, "Delete")) { Status = $"You do not have permission to delete {kind.ToLowerInvariant()} records."; return false; }
         if (kind is "Customer" or "Product" && !RequireBusinessLicense()) return false;
         var records = kind switch { "Customer" => Customers, "Product" => Products, "User" => Users, _ => null };
         if (records == null || !records.Contains(record)) return false;
@@ -96,6 +102,7 @@ public partial class MainWindowViewModel
         }
         records.Remove(record);
         if (kind == "User") PermissionManagement.RefreshUsers();
+        if (kind == "Product") ProductPriceMaster.RefreshCommand.Execute(null);
         DeletedRecords.Remove(record.Id);
         if (kind == "User" && CurrentUsername == record.Name)
         {
@@ -108,6 +115,8 @@ public partial class MainWindowViewModel
     // Performs the set document trash action for this screen or workflow.
     public bool SetDocumentTrash(UiRecord record, bool trashed)
     {
+        var resource = record["Type"] == "Quotation" ? "Quotation" : "Invoice";
+        if (!HasPermission(resource, "Delete")) { Status = "You do not have permission to delete this document."; return false; }
         if (!RequireBusinessLicense()) return false;
         if (!Invoices.Contains(record)) return false;
         if (dbFactory != null)
@@ -127,6 +136,8 @@ public partial class MainWindowViewModel
     // Performs the delete document permanently action for this screen or workflow.
     public bool DeleteDocumentPermanently(UiRecord record)
     {
+        var resource = record["Type"] == "Quotation" ? "Quotation" : "Invoice";
+        if (!HasPermission(resource, "Delete")) { Status = "You do not have permission to delete this document."; return false; }
         if (!RequireBusinessLicense()) return false;
         if (!Invoices.Contains(record) || !DeletedRecords.Contains(record.Id)) return false;
         if (dbFactory != null)

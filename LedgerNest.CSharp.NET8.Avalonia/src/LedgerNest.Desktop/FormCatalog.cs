@@ -15,7 +15,12 @@ public static class FormCatalog
     // Performs the product action for this screen or workflow.
     public static FormField[] Product() => [Choice("Type", "Product", "Service"), Text("Name", required: true), Text("Alias Name (for invoice PDF)"), new("Description", kind: "multiline"), Text("HSN/SAC"), new("Sale Price", "0", "number", required: true), Number("Purchase Price"), Number("Default Discount"), Number("Tax (%)"), Toggle("Price includes tax"), Number("Stock"), Toggle("Unlimited stock"), Choice("Unit", "None", "pcs", "kg", "g", "l", "m", "box", "Custom…"), Text("Custom unit"), Text("Storage Location"), Text("Container Number"), Text("Batch Number"), new("Expiry Date", kind: "date"), new("Manufacture Date", kind: "date"), Text("Supplier Name"), Text("SKU Code"), new("Notes", kind: "multiline"), Text("Manufacturer Name"), new("Product ID") { Icon = "badge", Help = "Generated automatically when left blank" }, new("Barcode") { Icon = "qr_code_2" }];
     // Performs the user action for this screen or workflow.
-    public static FormField[] User() => [Text("Username", required: true), new("Password", kind: "password", required: true), Choice("Role", "User", "Sales", "Manager", "Admin")];
+    public static FormField[] User(IEnumerable<string>? roles = null)
+    {
+        var options = roles?.Where(item => !string.IsNullOrWhiteSpace(item)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray() ?? ["User"];
+        if (options.Length == 0) options = ["User"];
+        return [Text("Username", required: true), new("Password", kind: "password", required: true), new("Role", options[0], "choice", options)];
+    }
     // Performs the payment action for this screen or workflow.
     public static FormField[] Payment() => [Number("Amount"), new("Date", DateTime.Today.ToString("yyyy-MM-dd"), "date"), Choice("Payment Method", "Cash", "UPI", "Bank Transfer", "Card", "Cheque", "Other"), Number("Tax covered"), new("Notes / Reference", kind: "multiline")];
     // Performs the custom item action for this screen or workflow.

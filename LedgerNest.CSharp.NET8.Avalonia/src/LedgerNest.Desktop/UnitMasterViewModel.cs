@@ -12,6 +12,7 @@ public sealed partial class UnitMasterViewModel : ObservableObject
     private readonly IDbContextFactory<LedgerNestDbContext>? factory;
     private readonly Func<string> currentUser;
     private readonly Func<string> currentRole;
+    private readonly Func<string, bool> hasPermission;
     public ObservableCollection<UnitOfMeasure> Units { get; } = [];
     [ObservableProperty] private UnitOfMeasure? selectedUnit;
     [ObservableProperty] private int editingId;
@@ -23,13 +24,16 @@ public sealed partial class UnitMasterViewModel : ObservableObject
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string error = "";
     [ObservableProperty] private string status = "";
-    public bool CanManage => currentRole().Equals("Admin", StringComparison.OrdinalIgnoreCase);
+    public bool CanManage => currentRole().Equals("Admin", StringComparison.OrdinalIgnoreCase) || hasPermission("Add") || hasPermission("Update") || hasPermission("Delete");
 
-    public UnitMasterViewModel(IDbContextFactory<LedgerNestDbContext>? factory, Func<string> currentUser, Func<string> currentRole)
+    public void RefreshAuthorizationState() => OnPropertyChanged(nameof(CanManage));
+
+    public UnitMasterViewModel(IDbContextFactory<LedgerNestDbContext>? factory, Func<string> currentUser, Func<string> currentRole, Func<string, bool>? hasPermission = null)
     {
         this.factory = factory;
         this.currentUser = currentUser;
         this.currentRole = currentRole;
+        this.hasPermission = hasPermission ?? (_ => false);
         Refresh();
     }
 
@@ -46,12 +50,14 @@ public sealed partial class UnitMasterViewModel : ObservableObject
     [RelayCommand]
     private void New()
     {
+        if (!currentRole().Equals("Admin", StringComparison.OrdinalIgnoreCase) && !hasPermission("Add")) { Error = "You cannot create units."; return; }
         EditingId = 0; Code = ""; UnitName = ""; Description = ""; IsActive = true; Error = ""; IsEditing = true;
     }
 
     [RelayCommand]
     private void EditSelected()
     {
+        if (!currentRole().Equals("Admin", StringComparison.OrdinalIgnoreCase) && !hasPermission("Update")) { Error = "You cannot edit units."; return; }
         if (SelectedUnit == null) return;
         EditingId = SelectedUnit.Id; Code = SelectedUnit.Code; UnitName = SelectedUnit.Name;
         Description = SelectedUnit.Description; IsActive = SelectedUnit.IsActive; Error = ""; IsEditing = true;
@@ -87,7 +93,7 @@ public sealed partial class UnitMasterViewModel : ObservableObject
         IsBusy = true; Error = "";
         try
         {
-            await new UnitMasterService(factory).DeleteAsync(SelectedUnit.Id, currentRole());
+            await new UnitMasterService(factory).DeleteAsync(SelectedUnit.Id, currentRole(), currentUser());
             Status = "Unit deleted.";
             Refresh();
         }

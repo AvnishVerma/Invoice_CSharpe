@@ -6,11 +6,14 @@ namespace LedgerNest.Desktop.Views;
 
 public sealed partial class PageHeaderView : UserControl
 {
+    public static readonly StyledProperty<string> TitleProperty = AvaloniaProperty.Register<PageHeaderView, string>(nameof(Title), "");
+    public string Title { get => GetValue(TitleProperty); set => SetValue(TitleProperty, value); }
+
     public PageHeaderView() => InitializeComponent();
 
     public PageHeaderView(string title, IEnumerable<Control> actions) : this()
     {
-        UiLocalization.Bind(Heading, TextBlock.TextProperty, title);
+        Title = title;
         foreach (var action in actions)
         {
             if (action is Button button)

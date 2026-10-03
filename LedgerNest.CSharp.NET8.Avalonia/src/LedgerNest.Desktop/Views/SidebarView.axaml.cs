@@ -24,16 +24,15 @@ public sealed partial class SidebarView : UserControl
             : Ui.Stack(2, Ui.Logo(true), Ui.Button("›", toggleSidebar));
 
         var nav = Ui.Stack(0);
-        string[] icons = ["dashboard", "receipt", "receipt_long", "request_quote", "point_of_sale", "people", "inventory_2", "straighten", "payments", "warehouse", "bar_chart", "settings"];
-        for (var i = 0; i < MainWindowViewModel.Routes.Length; i++)
+        var icons = MainWindowViewModel.Routes.Zip(new[] { "dashboard", "receipt", "receipt_long", "request_quote", "point_of_sale", "people", "inventory_2", "straighten", "payments", "warehouse", "bar_chart", "settings" }).ToDictionary(item => item.First, item => item.Second);
+        foreach (var route in model.VisibleRoutes)
         {
-            var route = MainWindowViewModel.Routes[i];
             var selected = model.Title == route;
             var button = Ui.Button(route, () => navigate(route));
             var marker = new Border { Width = 3, Height = 18, CornerRadius = new CornerRadius(2), Background = Ui.Primary, IsVisible = selected && expanded };
             button.Content = expanded
-                ? Ui.Columns("18,12,*,Auto", Ui.Icon(icons[i], 18, selected ? Ui.Primary : Ui.Muted), new Border(), Ui.LocalText(route, 13.5, selected, selected ? Ui.Primary : Ui.Muted), marker)
-                : Ui.Icon(icons[i], 20, selected ? Ui.Primary : Ui.Muted);
+                ? Ui.Columns("18,12,*,Auto", Ui.Icon(icons[route], 18, selected ? Ui.Primary : Ui.Muted), new Border(), Ui.LocalText(route, 13.5, selected, selected ? Ui.Primary : Ui.Muted), marker)
+                : Ui.Icon(icons[route], 20, selected ? Ui.Primary : Ui.Muted);
             button.HorizontalContentAlignment = HorizontalAlignment.Stretch;
             button.Classes.Clear();
             button.Classes.Add("nav");

@@ -45,7 +45,9 @@ public sealed class UnitMasterService(IDbContextFactory<LedgerNestDbContext> fac
 {
     public async Task<UnitOfMeasure> SaveAsync(UnitOfMeasure unit, string user, string role = "Admin", CancellationToken cancellationToken = default)
     {
-        if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase)) throw new UnauthorizedAccessException("Only administrators can manage units.");
+        var permissionAction = unit.Id == 0 ? "Add" : "Update";
+        if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !await new AuthorizationService(factory).IsUserAllowedAsync(user, "Unit", permissionAction, cancellationToken))
+            throw new UnauthorizedAccessException($"User cannot {permissionAction.ToLowerInvariant()} units.");
         unit.Code = unit.Code.Trim().ToUpperInvariant();
         unit.Name = unit.Name.Trim();
         if (unit.Code.Length == 0 || unit.Name.Length == 0) throw new InvalidOperationException("Unit code and name are required.");
@@ -57,9 +59,10 @@ public sealed class UnitMasterService(IDbContextFactory<LedgerNestDbContext> fac
         return unit;
     }
 
-    public async Task DeleteAsync(int unitId, string role = "Admin", CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(int unitId, string role = "Admin", string user = "", CancellationToken cancellationToken = default)
     {
-        if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase)) throw new UnauthorizedAccessException("Only administrators can manage units.");
+        if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !await new AuthorizationService(factory).IsUserAllowedAsync(user, "Unit", "Delete", cancellationToken))
+            throw new UnauthorizedAccessException("User cannot delete units.");
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var unit = await db.Units.FindAsync([unitId], cancellationToken) ?? throw new InvalidOperationException("Unit does not exist.");
         if (await db.Products.AnyAsync(product => product.BaseUnitId == unitId, cancellationToken) ||
@@ -88,9 +91,10 @@ public sealed class ProductPricingService(IDbContextFactory<LedgerNestDbContext>
         return fallback.SellingPrice > 0 ? fallback.SellingPrice : fallback.ProductSalePrice;
     }
 
-    public async Task SaveSellingUnitAsync(ProductSellingUnit sellingUnit, string role = "Admin", CancellationToken cancellationToken = default)
+    public async Task SaveSellingUnitAsync(ProductSellingUnit sellingUnit, string role = "Admin", string user = "", CancellationToken cancellationToken = default)
     {
-        if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase)) throw new UnauthorizedAccessException("Only administrators can manage product prices.");
+        if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !await new AuthorizationService(factory).IsUserAllowedAsync(user, "Price", sellingUnit.Id == 0 ? "Add" : "Update", cancellationToken))
+            throw new UnauthorizedAccessException("User cannot manage product prices.");
         if (sellingUnit.ConversionFactor <= 0 || sellingUnit.SellingPrice < 0) throw new InvalidOperationException("Conversion and selling price must be valid positive values.");
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         if (await db.ProductSellingUnits.AnyAsync(item => item.Id != sellingUnit.Id && item.ProductId == sellingUnit.ProductId && item.UnitId == sellingUnit.UnitId, cancellationToken))
@@ -105,7 +109,8 @@ public sealed class ProductPricingService(IDbContextFactory<LedgerNestDbContext>
 
     public async Task<ProductPrice> SavePriceAsync(ProductPrice price, string user, string role = "Admin", CancellationToken cancellationToken = default)
     {
-        if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase)) throw new UnauthorizedAccessException("Only administrators can manage product prices.");
+        if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase) && !await new AuthorizationService(factory).IsUserAllowedAsync(user, "Price", price.Id == 0 ? "Add" : "Update", cancellationToken))
+            throw new UnauthorizedAccessException("User cannot manage product prices.");
         if (price.SellingPrice < 0) throw new InvalidOperationException("Selling price cannot be negative.");
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         if (!await db.ProductSellingUnits.AnyAsync(item => item.Id == price.SellingUnitId && item.ProductId == price.ProductId, cancellationToken))
@@ -122,6 +127,9 @@ public sealed class InventoryService(IDbContextFactory<LedgerNestDbContext> fact
 {
     public async Task PostAsync(InventoryTransaction movement, CancellationToken cancellationToken = default)
     {
+        if (!string.IsNullOrWhiteSpace(movement.CreatedBy) && !movement.CreatedBy.Equals("system", StringComparison.OrdinalIgnoreCase) &&
+            !await new AuthorizationService(factory).IsUserAllowedAsync(movement.CreatedBy, "Inventory", "Update", cancellationToken))
+            throw new UnauthorizedAccessException("User cannot adjust inventory.");
         if (movement.BaseQuantityChange == 0) throw new InvalidOperationException("Inventory movement quantity cannot be zero.");
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var strategy = db.Database.CreateExecutionStrategy();
@@ -187,6 +195,50 @@ public sealed class InvoiceRefundService(IDbContextFactory<LedgerNestDbContext> 
 
 public sealed class AuthorizationService(IDbContextFactory<LedgerNestDbContext> factory)
 {
+    public async Task<bool> IsUserAllowedAsync(string username, string resource, string action, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(username)) return false;
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        var userId = await db.Users.AsNoTracking().Where(item => item.Username == username).Select(item => (int?)item.Id).SingleOrDefaultAsync(cancellationToken);
+        return userId.HasValue && await IsAllowedAsync(userId.Value, resource, action, cancellationToken);
+    }
+
+    public async Task EnsureRolesAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        var existing = await db.Roles.Select(item => item.Name).ToListAsync(cancellationToken);
+        var names = await db.Users.Select(item => item.Role).Distinct().ToListAsync(cancellationToken);
+        names.Add("Admin");
+        names.Add("User");
+        foreach (var name in names.Where(item => !string.IsNullOrWhiteSpace(item)).Distinct(StringComparer.OrdinalIgnoreCase))
+            if (!existing.Contains(name, StringComparer.OrdinalIgnoreCase)) db.Roles.Add(new AppRole { Name = name.Trim(), IsSystem = name.Equals("Admin", StringComparison.OrdinalIgnoreCase) });
+        await db.SaveChangesAsync(cancellationToken);
+        if (!await db.RolePermissions.AnyAsync(item => item.Role == "User", cancellationToken))
+            db.RolePermissions.AddRange(RbacCatalog.Permissions.Select(item => new RolePermission { Role = "User", Resource = item.Resource, Action = item.Action, IsAllowed = true }));
+        await db.SaveChangesAsync(cancellationToken);
+        var mappedUsers = await db.UserRoles.Select(item => item.UserId).Distinct().ToListAsync(cancellationToken);
+        var roles = await db.Roles.ToDictionaryAsync(item => item.Name, StringComparer.OrdinalIgnoreCase, cancellationToken);
+        foreach (var user in await db.Users.Where(item => !mappedUsers.Contains(item.Id)).ToListAsync(cancellationToken))
+            if (roles.TryGetValue(user.Role, out var role)) db.UserRoles.Add(new AppUserRole { UserId = user.Id, RoleId = role.Id });
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<string[]> GetUserRolesAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        await EnsureRolesAsync(cancellationToken);
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        return await (from mapping in db.UserRoles.AsNoTracking() join role in db.Roles.AsNoTracking() on mapping.RoleId equals role.Id
+                      where mapping.UserId == userId select role.Name).ToArrayAsync(cancellationToken);
+    }
+
+    public async Task<bool> IsAllowedAsync(int userId, string resource, string action, CancellationToken cancellationToken = default)
+    {
+        var roles = await GetUserRolesAsync(userId, cancellationToken);
+        if (roles.Any(role => role.Equals("Admin", StringComparison.OrdinalIgnoreCase))) return true;
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        return await db.RolePermissions.AsNoTracking().AnyAsync(item => roles.Contains(item.Role) && item.Resource == resource && item.Action == action && item.IsAllowed, cancellationToken);
+    }
+
     public async Task<bool> IsAllowedAsync(string role, string resource, string action, CancellationToken cancellationToken = default)
     {
         if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase)) return true;
