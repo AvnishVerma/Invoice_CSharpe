@@ -49,6 +49,7 @@ public partial class MainWindow
         "Users" => new ManagementView(Model, "User", this),
         "Permissions" => new PermissionManagementView { DataContext = Model.PermissionManagement },
         "Backup" => BackupView(),
+        "Accessibility" => new AccessibilitySettingsView(() => Model.SaveSettings("Accessibility")),
         "Software Info" => SoftwareInfo(),
         "License" => LicenseSettingsView(),
         _ => SettingsForm(name)

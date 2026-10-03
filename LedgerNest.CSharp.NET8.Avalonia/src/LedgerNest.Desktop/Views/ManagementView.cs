@@ -76,19 +76,36 @@ internal sealed partial class ManagementView : UserControl
         }
         else
         {
-            RecordRoot.IsVisible = true;
+            RecordRoot.IsVisible = kind != "User";
+            UserRoot.IsVisible = kind == "User";
             DocumentRoot.IsVisible = false;
-            HeaderHost.Content = new ManagementActionBarView($"{kind} Management", headerActions);
-            StatsHost.Content = stats;
+            if (kind == "User")
+            {
+                UserHeaderHost.Content = new ManagementActionBarView("User Management", headerActions);
+                UserStatsHost.Content = stats;
+            }
+            else
+            {
+                HeaderHost.Content = new ManagementActionBarView($"{kind} Management", headerActions);
+                StatsHost.Content = stats;
+            }
 
             Control toolbarActions = kind == "User"
                 ? MenuButton("Role: All ▾", FilterOptions(), option => { filter = option; page = 0; Refresh(); })
                 : kind == "Product"
                 ? Ui.Wrap(filterButton, sortButton, Ui.Button("☷  Customize Product Columns", window.OpenProductDetailsSettings), ProductColumnsButton(), Ui.Button("visibility", () => stats.IsVisible = !stats.IsVisible))
                 : Ui.Wrap(filterButton, sortButton, Ui.Button("Columns ▾", Columns), Ui.Button("◉", () => stats.IsVisible = !stats.IsVisible));
-            ToolbarHost.Content = new ManagementToolbarView(search, toolbarActions, tabs, kind != "User");
-
-            RecordResultsHost.Content = results;
+            var toolbar = new ManagementToolbarView(search, toolbarActions, tabs, kind != "User");
+            if (kind == "User")
+            {
+                UserToolbarHost.Content = toolbar;
+                UserResultsHost.Content = results;
+            }
+            else
+            {
+                ToolbarHost.Content = toolbar;
+                RecordResultsHost.Content = results;
+            }
         }
         if (Documents && kind == "Invoice")
         {

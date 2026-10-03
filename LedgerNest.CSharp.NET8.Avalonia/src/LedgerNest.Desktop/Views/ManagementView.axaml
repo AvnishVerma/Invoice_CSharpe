@@ -34,6 +34,25 @@
       </Border>
       </ScrollViewer>
     </Grid>
+    <Grid x:Name="UserRoot" IsVisible="False" RowDefinitions="Auto,*">
+      <ContentControl x:Name="UserHeaderHost" />
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <Grid Margin="{DynamicResource PageContentPadding}" ColumnDefinitions="300,16,*" MinWidth="760">
+          <Border Classes="settings-column">
+            <StackPanel Spacing="12">
+              <TextBlock Text="User summary" Classes="settings-section-title" />
+              <TextBlock Text="Review user totals and access status before working with an account."
+                         Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+              <ContentControl x:Name="UserStatsHost" />
+            </StackPanel>
+          </Border>
+          <StackPanel Grid.Column="2" Spacing="12">
+            <ContentControl x:Name="UserToolbarHost" />
+            <ContentControl x:Name="UserResultsHost" />
+          </StackPanel>
+        </Grid>
+      </ScrollViewer>
+    </Grid>
     <Grid x:Name="DocumentRoot"
           IsVisible="False"
           RowDefinitions="Auto,*">

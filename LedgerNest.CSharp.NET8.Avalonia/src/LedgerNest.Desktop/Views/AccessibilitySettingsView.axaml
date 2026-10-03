@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.AccessibilitySettingsView">
+  <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppCanvasBrush}">
+    <local:PageHeaderView Title="Accessibility" />
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <Grid Margin="{DynamicResource PageContentPadding}" ColumnDefinitions="280,16,*" MinWidth="720">
+        <Border Classes="settings-column">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Accessibility" Classes="settings-section-title" />
+            <TextBlock Text="Keyboard commands provide fast access to the most common invoice actions."
+                       Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+            <Button Content="Save Settings" Classes="action primary" Click="SaveClicked" HorizontalAlignment="Stretch" />
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="2" Classes="settings-column">
+          <StackPanel Spacing="12">
+            <TextBlock Text="Keyboard shortcuts" Classes="settings-section-title" />
+            <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+              <TextBlock Text="Ctrl + Q" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="New invoice"/>
+              <TextBlock Grid.Row="1" Text="Ctrl + S" FontWeight="SemiBold"/><TextBlock Grid.Row="1" Grid.Column="1" Text="Save invoice"/>
+              <TextBlock Grid.Row="2" Text="Ctrl + F" FontWeight="SemiBold"/><TextBlock Grid.Row="2" Grid.Column="1" Text="Search products"/>
+              <TextBlock Grid.Row="3" Text="Ctrl + M" FontWeight="SemiBold"/><TextBlock Grid.Row="3" Grid.Column="1" Text="Add custom item"/>
+              <TextBlock Grid.Row="4" Text="Ctrl + O" FontWeight="SemiBold"/><TextBlock Grid.Row="4" Grid.Column="1" Text="Preview PDF"/>
+              <TextBlock Grid.Row="5" Text="Ctrl + P" FontWeight="SemiBold"/><TextBlock Grid.Row="5" Grid.Column="1" Text="Print invoice"/>
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

@@ -3,16 +3,20 @@
              x:Class="LedgerNest.Desktop.Views.PermissionManagementView" x:DataType="vm:PermissionManagementViewModel">
   <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppBackgroundBrush}">
     <local:PageHeaderView Title="User Permissions" />
-    <Grid Grid.Row="1" RowDefinitions="Auto,12,Auto,12,*,Auto" Margin="{DynamicResource PageContentPadding}" MaxWidth="1100" HorizontalAlignment="Stretch">
-      <Border Padding="16" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-        <Grid ColumnDefinitions="260,16,*" RowDefinitions="Auto,6,Auto,12,Auto">
+    <Grid Grid.Row="1" Margin="{DynamicResource PageContentPadding}" ColumnDefinitions="280,16,*" MinWidth="760">
+      <Border Classes="settings-column">
+        <StackPanel Spacing="12">
+        <Grid RowDefinitions="Auto,6,Auto,12,Auto">
           <TextBlock Text="PERMISSIONS FOR ROLE" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}"/>
           <ComboBox Grid.Row="2" ItemsSource="{Binding Roles}" SelectedItem="{Binding SelectedRole}"/>
-          <Grid Grid.Row="4" Grid.ColumnSpan="3" ColumnDefinitions="*,10,Auto,8,Auto"><TextBox Text="{Binding NewRoleName}" PlaceholderText="New role name, for example Cashier"/><Button Grid.Column="2" Content="Create Role" Command="{Binding CreateRoleCommand}" Classes="action outline"/><Button Grid.Column="4" Content="Delete Selected Role" Command="{Binding DeleteRoleCommand}" Classes="action outline"/></Grid>
+          <StackPanel Grid.Row="4" Spacing="8"><TextBox Text="{Binding NewRoleName}" PlaceholderText="New role name, for example Cashier"/><Button Content="Create Role" Command="{Binding CreateRoleCommand}" Classes="action outline" HorizontalAlignment="Stretch"/><Button Content="Delete Selected Role" Command="{Binding DeleteRoleCommand}" Classes="action outline" HorizontalAlignment="Stretch"/></StackPanel>
         </Grid>
+        <Border Padding="12" CornerRadius="10" Background="{DynamicResource AppSelectedBrush}"><StackPanel Spacing="6"><TextBlock Text="Role-based access" FontWeight="SemiBold"/><TextBlock Text="Changes affect every user assigned to the selected role. Assign roles from User Management. Administrators remain unrestricted." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/></StackPanel></Border>
+        <StackPanel><TextBlock Text="{Binding Error}" Foreground="#C62828" TextWrapping="Wrap"/><TextBlock Text="{Binding Status}" Foreground="#2E7D32" TextWrapping="Wrap"/></StackPanel>
+        </StackPanel>
       </Border>
-      <Border Grid.Row="2" Padding="14" CornerRadius="10" Background="{DynamicResource AppSelectedBrush}"><Grid ColumnDefinitions="Auto,12,*"><TextBlock Text="admin_panel_settings" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="22" Foreground="{DynamicResource AppAccentBrush}"/><StackPanel Grid.Column="2"><TextBlock Text="Role-based access" FontWeight="SemiBold"/><TextBlock Text="Changes affect every user assigned to the selected role. Assign roles from User Management. Administrators remain unrestricted." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/></StackPanel></Grid></Border>
-      <Border Grid.Row="4" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+      <Grid Grid.Column="2" RowDefinitions="*,Auto">
+      <Border Classes="settings-column" Padding="0">
         <Grid RowDefinitions="Auto,*">
           <Grid ColumnDefinitions="*,90,90,90,90" Margin="16,10"><TextBlock Text="RESOURCE"/><TextBlock Grid.Column="1" Text="VIEW" HorizontalAlignment="Center"/><TextBlock Grid.Column="2" Text="ADD" HorizontalAlignment="Center"/><TextBlock Grid.Column="3" Text="UPDATE" HorizontalAlignment="Center"/><TextBlock Grid.Column="4" Text="DELETE" HorizontalAlignment="Center"/></Grid>
           <ScrollViewer Grid.Row="1"><ItemsControl ItemsSource="{Binding ResourcePermissions}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:PermissionResourceRowViewModel">
@@ -20,7 +24,8 @@
           </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
         </Grid>
       </Border>
-      <Grid Grid.Row="5" ColumnDefinitions="*,Auto" Margin="0,12,0,0"><StackPanel><TextBlock Text="{Binding Error}" Foreground="#C62828"/><TextBlock Text="{Binding Status}" Foreground="#2E7D32"/></StackPanel><Button Grid.Column="1" Content="Save Permissions" Command="{Binding SaveCommand}" Classes="action primary" IsEnabled="{Binding CanManage}"/></Grid>
+      <Button Grid.Row="1" Content="Save Permissions" Command="{Binding SaveCommand}" Classes="action primary" IsEnabled="{Binding CanManage}" HorizontalAlignment="Right" Margin="0,12,0,0"/>
+      </Grid>
     </Grid>
   </Grid>
 </UserControl>

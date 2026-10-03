@@ -1,11 +1,27 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.BackupManagementView">
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="{DynamicResource PageContentPadding}" Spacing="13" MaxWidth="940" HorizontalAlignment="Stretch">
-      <ContentControl x:Name="ActionsHost" />
-      <Separator />
-      <ContentControl x:Name="HistoryHost" />
-    </StackPanel>
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+    <Grid Margin="{DynamicResource PageContentPadding}"
+          ColumnDefinitions="420,16,*"
+          MinWidth="720">
+      <Border Classes="settings-column">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Backup actions" Classes="settings-section-title" />
+          <TextBlock Text="Create, export, or import a protected copy of your business data."
+                     Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+          <ContentControl x:Name="ActionsHost" />
+        </StackPanel>
+      </Border>
+      <Border Grid.Column="2" Classes="settings-column">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Backup history" Classes="settings-section-title" />
+          <TextBlock Text="Review saved backups and use their existing restore, download, share, and delete actions."
+                     Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+          <Separator />
+          <ContentControl x:Name="HistoryHost" />
+        </StackPanel>
+      </Border>
+    </Grid>
   </ScrollViewer>
 </UserControl>

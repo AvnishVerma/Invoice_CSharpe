@@ -52,6 +52,6 @@ public static class FormCatalog
         ["Product Details"] = [
             new("Product Fields", [Toggle("Name", true, "Always required"), Toggle("Price", true, "Always required"), Toggle("Stock", true), Toggle("Alias Name", true), Toggle("Tax Rate", true), Toggle("HSN/SAC", true), Toggle("Description", true), Toggle("Purchase Price", true), Toggle("Default Discount", true), Toggle("Unit", true), Toggle("Product / Service Type", true), Toggle("Advanced Information", true), Toggle("Extra Cost", true)]),
             new("Advanced Information", [Toggle("Storage Location", true), Toggle("Container Number", true), Toggle("Batch Number", true), Toggle("Expiry Date", true), Toggle("Manufacture Date", true), Toggle("Manufacturer Name", true), Toggle("Supplier Name", true), Toggle("SKU Code", true), Toggle("Notes", true)])],
-        ["Accessibility"] = [new("Create Invoice Layout", [Choice("Layout", "New Layout", "Classic Layout")])]
+        ["Accessibility"] = []
     };
 }

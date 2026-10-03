@@ -608,6 +608,42 @@ internal static class Program
         Capture("issue-05-simple-feed");
         foreach (var route in MainWindowViewModel.Routes) { model.NavigateCommand.Execute(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
+        void CheckSettingsColumns(string tab, string leftText, string rightText)
+        {
+            Click(tab); Settle();
+            var left = window.GetVisualDescendants().OfType<TextBlock>().First(text => text.IsEffectivelyVisible && text.Text == leftText);
+            var right = window.GetVisualDescendants().OfType<TextBlock>().First(text => text.IsEffectivelyVisible && text.Text == rightText);
+            Check(left.TranslatePoint(default, window) is { } leftPoint && right.TranslatePoint(default, window) is { } rightPoint && rightPoint.X > leftPoint.X + 120,
+                $"{tab} must use the common two-column settings layout");
+        }
+        CheckSettingsColumns("Backup", "Backup actions", "Backup history");
+        CheckSettingsColumns("Users", "User summary", "USER");
+        CheckSettingsColumns("Permissions", "PERMISSIONS FOR ROLE", "RESOURCE");
+        Capture("settings-permissions-two-column");
+        CheckSettingsColumns("License", "License status", "Activate this device");
+        Capture("settings-license-two-column");
+        CheckSettingsColumns("Software Info", "App Details", "Application Updates");
+        Click("Accessibility"); Settle();
+        Check(!window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsEffectivelyVisible && text.Text == "Create Invoice Layout"),
+            "Accessibility must not expose invoice-layout configuration");
+        if (compactUiOnly)
+        {
+            window.Width = 800;
+            foreach (var layout in new[]
+                     {
+                         (Tab: "Backup", Left: "Backup actions", Right: "Backup history"),
+                         (Tab: "Users", Left: "User summary", Right: "USER"),
+                         (Tab: "Permissions", Left: "PERMISSIONS FOR ROLE", Right: "RESOURCE"),
+                         (Tab: "License", Left: "License status", Right: "Activate this device"),
+                         (Tab: "Software Info", Left: "App Details", Right: "Application Updates")
+                     })
+            {
+                CheckSettingsColumns(layout.Tab, layout.Left, layout.Right);
+                Check(window.GetVisualDescendants().OfType<ScrollViewer>().Any(viewer => viewer.IsEffectivelyVisible),
+                    $"{layout.Tab} must remain scrollable at compact width");
+            }
+            window.Width = 1440;
+        }
         Click("PDF Settings"); Click("Grid Classic");
         Check(FindButton("Save Settings").IsEnabled, "Changing PDF template must enable saving");
         Click("Landscape");

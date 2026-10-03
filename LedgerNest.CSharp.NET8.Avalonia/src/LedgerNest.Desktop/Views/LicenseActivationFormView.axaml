@@ -1,9 +1,16 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.LicenseActivationFormView">
-  <StackPanel Spacing="16" MaxWidth="820" HorizontalAlignment="Left">
-    <ContentControl x:Name="StatusHost" />
-    <Border Padding="22" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+  <Grid ColumnDefinitions="320,16,*" MinWidth="760">
+    <StackPanel Spacing="12">
+      <TextBlock Text="License status" Classes="settings-section-title" />
+      <ContentControl x:Name="StatusHost" />
+      <TextBlock Text="License status controls whether business records can be created or changed on this device."
+                 Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+      <ContentControl x:Name="RefreshHost" />
+    </StackPanel>
+    <StackPanel Grid.Column="2" Spacing="16">
+    <Border Classes="settings-column">
       <StackPanel Spacing="10">
         <TextBlock Text="Activate this device" FontSize="18" FontWeight="SemiBold" />
         <TextBlock Text="Send this Device ID to your software provider to receive a trial, paid or renewal license."
@@ -13,13 +20,13 @@
         <ContentControl x:Name="ImportHost" />
       </StackPanel>
     </Border>
-    <Border Padding="22" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <Border Classes="settings-column">
       <StackPanel Spacing="10">
         <TextBlock Text="Or paste your license" FontSize="18" FontWeight="SemiBold" />
         <ContentControl x:Name="PasteHost" />
         <ContentControl x:Name="ActivateHost" />
       </StackPanel>
     </Border>
-    <ContentControl x:Name="RefreshHost" />
-  </StackPanel>
+    </StackPanel>
+  </Grid>
 </UserControl>
