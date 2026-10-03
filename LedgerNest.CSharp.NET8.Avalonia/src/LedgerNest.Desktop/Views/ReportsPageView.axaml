@@ -7,7 +7,7 @@
     <local:ReportTabIconConverter x:Key="ReportTabIconConverter" />
   </UserControl.Resources>
   <Grid RowDefinitions="Auto,Auto,*">
-    <Border Background="{DynamicResource PageHeaderBrush}" Height="44.8" Padding="20,0">
+    <Border Classes="page-header">
       <Grid ColumnDefinitions="*,Auto" MinHeight="30.4">
         <TextBlock loc:UiLocalization.Text="Reports" Classes="page-header-title" HorizontalAlignment="Left" />
         <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh" Classes="action-icon header-icon-action">

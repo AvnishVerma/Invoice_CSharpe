@@ -636,6 +636,8 @@ internal static class Program
                     model.NavigateCommand.Execute(route); Capture($"compact-{route.Replace(" ", "-")}-{width}");
                     var headerBand = window.GetVisualDescendants().OfType<Border>().First(b => b.IsEffectivelyVisible && b.Background is Avalonia.Media.ISolidColorBrush headerBrush && headerBrush.Color == Avalonia.Media.Color.Parse(Branding.HeaderColor));
                     Check(Math.Abs(headerBand.Bounds.Height - 44.8) < 1, "Header height must stay consistent on " + route);
+                    Check(headerBand.Classes.Contains("page-header"), "Every route must use the shared page-header AXAML style on " + route);
+                    Check(!headerBand.GetVisualAncestors().OfType<ScrollViewer>().Any(), "Page headers must remain outside scrolling content on " + route);
                     if (route == "Dashboard")
                     {
                         var dashboard = window.GetVisualDescendants().OfType<DashboardPageView>().Single();

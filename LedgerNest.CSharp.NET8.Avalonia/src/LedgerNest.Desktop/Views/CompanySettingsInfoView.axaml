@@ -23,7 +23,7 @@
               BorderThickness="0,0,1,0">
         <Grid RowDefinitions="*,Auto">
           <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <Border Padding="19.2">
+            <Border Padding="{DynamicResource PageContentPadding}">
               <StackPanel Spacing="12.8">
                 <TextBlock loc:UiLocalization.Text="COMPANY LOGO" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
                 <ContentControl x:Name="LogoButtonHost" />
@@ -33,13 +33,13 @@
               </StackPanel>
             </Border>
           </ScrollViewer>
-          <Border Grid.Row="1" Padding="12.8">
+          <Border Grid.Row="1" Padding="{DynamicResource PageContentPadding}">
             <ContentControl x:Name="SaveHost" />
           </Border>
         </Grid>
       </Border>
       <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <Border Padding="25.6">
+        <Border Padding="{DynamicResource PageContentPadding}">
           <ContentControl x:Name="DetailsHost" />
         </Border>
       </ScrollViewer>

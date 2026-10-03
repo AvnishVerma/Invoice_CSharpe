@@ -21,7 +21,7 @@
     </Style>
   </UserControl.Styles>
   <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppCanvasBrush}">
-    <Border Background="{DynamicResource PageHeaderBrush}" Height="44.8" Padding="20,0">
+    <Border Classes="page-header">
       <Grid ColumnDefinitions="*,Auto,10,Auto">
         <TextBlock Text="Unit Management" Classes="page-header-title"/>
         <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh"><TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White"/></Button>
@@ -29,7 +29,7 @@
       </Grid>
     </Border>
 
-    <Grid Grid.Row="1" ColumnDefinitions="*,20,Auto" Margin="12.8">
+    <Grid Grid.Row="1" ColumnDefinitions="*,20,Auto" Margin="{DynamicResource PageContentPadding}">
       <Border Padding="16" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
         <Grid RowDefinitions="Auto,8,Auto,8,*">
           <Grid ColumnDefinitions="*,Auto,8,Auto">

@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.PermissionManagementView" x:DataType="vm:PermissionManagementViewModel">
-  <Grid RowDefinitions="44.8,*" Background="{DynamicResource AppBackgroundBrush}">
+  <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppBackgroundBrush}">
     <local:PageHeaderView Title="User Permissions" />
-    <Grid Grid.Row="1" RowDefinitions="Auto,12,Auto,12,*,Auto" Margin="16" MaxWidth="1100" HorizontalAlignment="Stretch">
+    <Grid Grid.Row="1" RowDefinitions="Auto,12,Auto,12,*,Auto" Margin="{DynamicResource PageContentPadding}" MaxWidth="1100" HorizontalAlignment="Stretch">
       <Border Padding="16" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
         <Grid ColumnDefinitions="260,16,*" RowDefinitions="Auto,6,Auto,12,Auto">
           <TextBlock Text="PERMISSIONS FOR ROLE" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}"/>

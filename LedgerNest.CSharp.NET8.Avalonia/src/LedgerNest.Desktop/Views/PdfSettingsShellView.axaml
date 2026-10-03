@@ -4,12 +4,12 @@
   <Grid RowDefinitions="Auto,*">
     <ContentControl x:Name="HeaderHost" />
     <Grid Grid.Row="1">
-      <Grid x:Name="WideLayout" Margin="12" ColumnDefinitions="260,12,320,12,*">
+      <Grid x:Name="WideLayout" Margin="{DynamicResource PageContentPadding}" ColumnDefinitions="260,12,320,12,*">
         <ContentControl x:Name="WideTemplatesHost" />
         <ContentControl x:Name="WideSettingsHost" Grid.Column="2" />
         <ContentControl x:Name="WidePreviewHost" Grid.Column="4" />
       </Grid>
-      <ScrollViewer x:Name="NarrowLayout" Margin="12" IsVisible="False" VerticalScrollBarVisibility="Auto">
+      <ScrollViewer x:Name="NarrowLayout" Margin="{DynamicResource PageContentPadding}" IsVisible="False" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="12">
           <ContentControl x:Name="NarrowTemplatesHost" />
           <ContentControl x:Name="NarrowSettingsHost" />

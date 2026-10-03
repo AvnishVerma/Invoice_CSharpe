@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.ManagementActionBarView">
-  <Border Background="{DynamicResource PageHeaderBrush}" Height="44.8" Padding="20,0">
+  <Border Classes="page-header">
     <Grid ColumnDefinitions="*,Auto">
       <TextBlock x:Name="TitleText" Classes="page-header-title" />
       <StackPanel x:Name="ActionsHost" Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" />

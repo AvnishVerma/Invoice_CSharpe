@@ -23,7 +23,7 @@
       <ScrollViewer Grid.Row="1"
                   HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-      <Border Padding="12.8">
+      <Border Padding="{DynamicResource PageContentPadding}">
         <StackPanel Spacing="9.6">
           <ContentControl x:Name="ProductBannerHost" />
 

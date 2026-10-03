@@ -1,8 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.ScreenScaffoldView">
-  <Grid RowDefinitions="Auto,*">
-    <ContentControl x:Name="HeaderHost" />
-    <ContentControl x:Name="BodyHost" Grid.Row="1" />
+  <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppCanvasBrush}">
+    <ContentControl x:Name="HeaderHost" VerticalAlignment="Top" />
+    <ContentControl x:Name="BodyHost" Grid.Row="1"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch" />
   </Grid>
 </UserControl>

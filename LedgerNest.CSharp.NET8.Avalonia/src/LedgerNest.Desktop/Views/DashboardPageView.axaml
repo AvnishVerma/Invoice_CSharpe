@@ -136,7 +136,7 @@
   </UserControl.Resources>
 
   <Grid RowDefinitions="Auto,*">
-    <Border Background="{DynamicResource PageHeaderBrush}" Height="44.8" Padding="20,0">
+    <Border Classes="page-header">
       <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="30.4">
         <TextBlock Grid.Column="1" loc:UiLocalization.Text="Dashboard Overview" Foreground="White" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Left" VerticalAlignment="Center" />
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6.4">
