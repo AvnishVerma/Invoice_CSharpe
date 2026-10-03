@@ -373,39 +373,11 @@ public partial class MainWindow
     {
         return new ScreenScaffoldView(Ui.AppBar("Customize"), new CustomizationOffersView(Branding.Name));
     }
-    // Shows application identity, release-channel configuration, and in-app notifications.
-    private Control SoftwareInfo()
+    // Shows application identity, update configuration, and notifications using AXAML bindings.
+    private Control SoftwareInfo() => new SoftwareInformationView
     {
-        var manifestUrl = new TextBox { Text = Model.UpdateManifestUrl, PlaceholderText = "HTTPS update manifest URL" };
-        var updateDetails = Ui.Stack(8,
-            Ui.LocalText("Update status", 12, true, Ui.Muted),
-            Ui.Text(Model.UpdateStatus),
-            string.IsNullOrWhiteSpace(Model.LatestUpdateVersion) ? Ui.Text("No release information has been received yet.", 12, color: Ui.Muted) : Ui.LocalText($"Available version: {Model.LatestUpdateVersion}", 14, true, Ui.Primary));
-        if (!string.IsNullOrWhiteSpace(Model.LatestUpdateNotes)) updateDetails.Children.Add(Ui.Text(Model.LatestUpdateNotes, 12, color: Ui.Muted));
-        if (!string.IsNullOrWhiteSpace(Model.LatestUpdateDownloadUrl)) updateDetails.Children.Add(Ui.Button("Download update", OpenUpdateDownload, true));
-
-        var notifications = Ui.Stack(8, Ui.Columns("*,Auto", Ui.LocalText("Notifications", 18, true), Ui.Button($"Mark read ({Model.UnreadNotificationCount})", () => { Model.MarkNotificationsRead(); ShowPage(); })));
-        if (Model.Notifications.Count == 0) notifications.Children.Add(Ui.Text("No application notifications.", 12, color: Ui.Muted));
-        foreach (var notification in Model.Notifications.Take(5))
-            notifications.Children.Add(Ui.Card(Ui.Stack(3, Ui.LocalText(notification.Title, 14, true, notification.IsRead ? Ui.Muted : Ui.Primary), Ui.Text(notification.Message, 12), Ui.Text(notification.CreatedAt.ToLocalTime().ToString("g"), 11, color: Ui.Muted)), 10));
-
-        var details = Ui.Stack(8,
-            Ui.LocalText("App Details", 18, true),
-            Ui.Text($"App name: {Branding.Name}"),
-            Ui.Text($"Version: {Updates.AppVersion.Display}"),
-            string.IsNullOrWhiteSpace(Updates.AppVersion.BuildId) ? new Border() : Ui.Text($"Build: {Updates.AppVersion.BuildId[..Math.Min(7, Updates.AppVersion.BuildId.Length)]}", 12, color: Ui.Muted),
-            Ui.Text("Platform: Desktop"),
-            Ui.Text("License: See legacy LICENSE", 12, color: Ui.Muted));
-        var updates = Ui.Stack(10,
-            Ui.LocalText("Application Updates", 18, true),
-            Ui.Text("Configure the publisher HTTPS manifest used to announce new versions.", 12, color: Ui.Muted),
-            manifestUrl,
-            Ui.Wrap(Ui.Button("Save update channel", () => { if (Model.SaveUpdateManifestUrl(manifestUrl.Text)) ShowPage(); }), Ui.Button("Check for updates", async () => await CheckForUpdatesAsync())),
-            updateDetails);
-        return new ScreenScaffoldView(
-            Ui.AppBar("Software Information"),
-            new SoftwareInformationView(Ui.Logo(), details, updates, notifications, Ui.Wrap(Ui.Button("Change Password", ShowChangePassword), Ui.Button("First-time Setup", ShowOnboarding))));
-    }
+        DataContext = new SoftwareInformationViewModel(Model, () => CheckForUpdatesAsync(), OpenUpdateDownload, ShowChangePassword, ShowOnboarding)
+    };
 
 
     // Provides an administrator-only workspace for preparing update and announcement manifests.
@@ -515,3 +487,7 @@ public partial class MainWindow
 
 // Describes a backup shown in the current Backup Management history.
 internal sealed record BackupHistoryItem(string Name, string FilePath, long Size, DateTime CreatedAt, bool IsDatabase);
+
+
+
+

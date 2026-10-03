@@ -1,0 +1,6 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="LedgerNest.Desktop.Views.BrandLogo" x:Name="Root" AutomationProperties.Name="LedgerNest">
+  <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" HorizontalAlignment="Center">
+    <Border Width="34" Height="34" CornerRadius="6" Background="{DynamicResource AppPrimaryBrush}"><TextBlock Text="receipt_long" Classes="action-icon-glyph" FontSize="21" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+    <TextBlock Text="LedgerNest" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center" IsVisible="{Binding !Compact, ElementName=Root}"/>
+  </StackPanel>
+</UserControl>
