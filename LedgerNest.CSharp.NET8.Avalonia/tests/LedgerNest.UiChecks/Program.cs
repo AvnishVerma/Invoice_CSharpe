@@ -645,6 +645,14 @@ internal static class Program
             window.Width = 1440;
         }
         Click("PDF Settings"); Click("Grid Classic");
+        var templateCards = window.GetVisualDescendants().OfType<Button>()
+            .Where(button => button.Tag?.ToString() is "Grid Classic" or "Classic" or "Modern" or "Minimal" or "Executive")
+            .ToArray();
+        Check(templateCards.Length == 5 && templateCards.All(button => button.Bounds.Height >= 87),
+            "PDF templates must use the detailed card height");
+        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsEffectivelyVisible && text.Text == "Old-style bordered tabular bill, for A4, A5 and A6") &&
+              window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsEffectivelyVisible && text.Text == "Default"),
+            "PDF template cards must show descriptions and the default badge");
         Check(FindButton("Save Settings").IsEnabled, "Changing PDF template must enable saving");
         Click("Landscape");
         Check(model.Settings["PDF Settings"][0].Fields[1].Value == "Landscape", "PDF orientation selector must update the stored field");
