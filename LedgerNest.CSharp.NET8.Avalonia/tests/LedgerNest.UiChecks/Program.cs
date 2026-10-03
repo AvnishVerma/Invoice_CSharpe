@@ -650,6 +650,12 @@ internal static class Program
             .ToArray();
         Check(templateCards.Length == 5 && templateCards.All(button => button.Bounds.Height >= 87),
             "PDF templates must use the detailed card height");
+        var templateScroller = templateCards[0].GetVisualAncestors().OfType<ScrollViewer>().First();
+        Check(templateCards.All(button =>
+        {
+            var cardPosition = button.TranslatePoint(default, templateScroller)!.Value;
+            return cardPosition.X + button.Bounds.Width <= templateScroller.Bounds.Width - 8;
+        }), "PDF template cards must leave space before the vertical scrollbar");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsEffectivelyVisible && text.Text == "Old-style bordered tabular bill, for A4, A5 and A6") &&
               window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsEffectivelyVisible && text.Text == "Default"),
             "PDF template cards must show descriptions and the default badge");

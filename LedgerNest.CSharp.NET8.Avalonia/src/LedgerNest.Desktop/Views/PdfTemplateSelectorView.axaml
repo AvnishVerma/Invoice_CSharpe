@@ -22,7 +22,7 @@
         <TextBlock Text="TEMPLATES" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
       </Border>
       <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-        <ContentControl x:Name="TemplatesHost" />
+        <ContentControl x:Name="TemplatesHost" Margin="0,0,10,0" />
       </ScrollViewer>
     </Grid>
   </Border>
