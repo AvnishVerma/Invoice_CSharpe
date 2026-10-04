@@ -31,6 +31,30 @@ internal static class Program
     }
 
     private static int assertions;
+    private static void CheckPublisherPresentation()
+    {
+        string? savedVersion = null;
+        var model = new PublisherConsoleViewModel((version, url, notes, title, message, type) => { savedVersion = version; return Task.CompletedTask; });
+        model.Version = "5.0.0";
+        model.AnnouncementTitle = "Release";
+        model.AnnouncementMessage = "Ready";
+        model.NotificationKind = "Warning";
+        Check(model.Preview.Contains("5.0.0") && model.Preview.Contains("generated-on-publish") && model.Preview.Contains("Ready"), "Publisher preview must refresh from bound release and announcement data");
+        model.AnnouncementMessage = "";
+        Check(!model.Preview.Contains("generated-on-publish"), "Incomplete announcements must remain excluded from the manifest preview");
+        model.SaveCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Check(savedVersion == "5.0.0", "Publisher Save command must invoke existing manifest validation and persistence");
+        model.AnnouncementTitle = null!;
+        Check(model.Preview.Contains("5.0.0"), "Clearing a bound publisher field must not break preview serialization");
+        var view = new PublisherConsoleFormView { DataContext = model };
+        var window = new Window { Content = view, Width = 1100, Height = 800 };
+        window.Show(); Dispatcher.UIThread.RunJobs();
+        var input = view.GetVisualDescendants().OfType<TextBox>().Single(text => text.PlaceholderText == "Release version, e.g. 4.5.0");
+        input.Text = "5.1.0";
+        Check(model.Version == "5.1.0" && model.Preview.Contains("5.1.0"), "AXAML publisher inputs must update live manifest preview");
+        Check(view.GetVisualDescendants().OfType<PageHeaderView>().Count() == 1, "Publisher must use one shared AXAML page header");
+        window.Close(); Dispatcher.UIThread.RunJobs();
+    }
     private static void CheckUserDialogPresentation()
     {
         var username = new FormField("Username", "admin", required: true);
@@ -535,6 +559,7 @@ internal static class Program
         CheckAxamlDialogs();
         CheckAxamlActions();
         CheckSettingsFormModel();
+        CheckPublisherPresentation();
         CheckUserDialogPresentation();
         CheckPrinterSelection();
         CheckReportPresentation();

@@ -1,7 +1,5 @@
-using Avalonia;
+using CommunityToolkit.Mvvm.Input;
 using Avalonia.Controls;
-using Avalonia.Layout;
-using Avalonia.Media;
 using LedgerNest.Desktop.Views;
 using Avalonia.Platform.Storage;
 using System.Text;
@@ -108,7 +106,7 @@ public partial class MainWindow
         var restored = backup.IsDatabase
             ? Model.RestoreDatabaseBackup(bytes)
             : Model.RestoreJsonBackup(Encoding.UTF8.GetString(bytes));
-        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
+        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", new DialogMessage(Model.Status), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]));
     }
 
     // Saves another copy of a history backup using the platform file picker.
@@ -146,7 +144,7 @@ public partial class MainWindow
         {
             if (!CanContinueBackupOperation(operationModel, version)) return;
             operationModel.Status = $"Backup file error: {ex.Message}";
-            ShowOverlay("Backup File Error", Ui.Text(operationModel.Status), Ui.Button("Close", CloseOverlay, true));
+            ShowOverlay("Backup File Error", new DialogMessage(operationModel.Status), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]));
         }
     }
 
@@ -161,7 +159,7 @@ public partial class MainWindow
         var sessionVersion = operationModel.SessionVersion;
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         var backup = Model.CreateJsonBackup();
-        if (backup.Length == 0) { ShowOverlay("Backup", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true)); return; }
+        if (backup.Length == 0) { ShowOverlay("Backup", new DialogMessage(Model.Status), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)])); return; }
         var file = await StorageProvider.SaveFilePickerAsync(new()
         {
             Title = "Create JSON Backup",
@@ -173,7 +171,7 @@ public partial class MainWindow
         await WriteBackupFileAsync(file, Encoding.UTF8.GetBytes(backup));
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         TrackBackup(file, Encoding.UTF8.GetByteCount(backup));
-        ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+        ShowOverlay("Backup Created", new DialogMessage($"{Model.Status} Saved {file.Name}."), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]));
     }
 
 
@@ -184,7 +182,7 @@ public partial class MainWindow
         var sessionVersion = operationModel.SessionVersion;
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         var backup = Model.CreateDatabaseBackup();
-        if (backup.Length == 0) { ShowOverlay("Backup", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true)); return; }
+        if (backup.Length == 0) { ShowOverlay("Backup", new DialogMessage(Model.Status), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)])); return; }
         var file = await StorageProvider.SaveFilePickerAsync(new()
         {
             Title = "Create Database Backup",
@@ -196,7 +194,7 @@ public partial class MainWindow
         await WriteBackupFileAsync(file, backup);
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         TrackBackup(file, backup.LongLength);
-        ShowOverlay("Backup Created", Ui.Text($"{Model.Status} Saved {file.Name}."), Ui.Button("Close", CloseOverlay, true));
+        ShowOverlay("Backup Created", new DialogMessage($"{Model.Status} Saved {file.Name}."), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]));
     }
 
     // Writes through the storage-provider stream and retries transient Windows file-picker locks.
@@ -238,7 +236,7 @@ public partial class MainWindow
             ? operationModel.RestoreDatabaseBackup(memory.ToArray())
             : operationModel.RestoreJsonBackup(Encoding.UTF8.GetString(memory.ToArray()));
         if (restored) TrackBackup(files[0], memory.Length);
-        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
+        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", new DialogMessage(Model.Status), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]));
         page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
 
@@ -260,7 +258,7 @@ public partial class MainWindow
         await stream.CopyToAsync(memory);
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         var restored = operationModel.RestoreDatabaseBackup(memory.ToArray());
-        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
+        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", new DialogMessage(Model.Status), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]));
         page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
 
@@ -282,7 +280,7 @@ public partial class MainWindow
         var json = await reader.ReadToEndAsync();
         if (!CanContinueBackupOperation(operationModel, sessionVersion)) return;
         var restored = operationModel.RestoreJsonBackup(json);
-        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", Ui.Text(Model.Status), Ui.Button("Close", CloseOverlay, true));
+        ShowOverlay(restored ? "Backup Restored" : "Restore Failed", new DialogMessage(Model.Status), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]));
         page.Content = Model.CanAccessWorkspace ? SettingsView() : null;
     }
     // Performs the customization view action for this screen or workflow.
@@ -300,43 +298,7 @@ public partial class MainWindow
     // Provides an administrator-only workspace for preparing update and announcement manifests.
     private Control PublisherConsole()
     {
-        var version = new TextBox { Text = AppVersion.Current, PlaceholderText = "Release version, e.g. 4.5.0" };
-        var downloadUrl = new TextBox { PlaceholderText = "HTTPS installer or release page URL" };
-        var notes = new TextBox { PlaceholderText = "What changed in this release?", AcceptsReturn = true, MinHeight = 88, TextWrapping = TextWrapping.Wrap };
-        var title = new TextBox { PlaceholderText = "Announcement title" };
-        var message = new TextBox { PlaceholderText = "Message shown to every connected installation", AcceptsReturn = true, MinHeight = 76, TextWrapping = TextWrapping.Wrap };
-        var type = new ComboBox { ItemsSource = Enum.GetNames<NotificationType>(), SelectedItem = NotificationType.Information.ToString(), MinHeight = 32 };
-        var preview = new TextBox { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 180, FontFamily = FontFamily.Default, FontSize = 12 };
-
-        void RefreshPreview()
-        {
-            var notificationTitle = title.Text?.Trim() ?? "";
-            var notificationMessage = message.Text?.Trim() ?? "";
-            var notificationType = Enum.TryParse<NotificationType>(type.SelectedItem?.ToString(), out var parsed) ? parsed : NotificationType.Information;
-            IReadOnlyList<GlobalNotification>? notifications = notificationTitle.Length == 0 || notificationMessage.Length == 0
-                ? null
-                : [new GlobalNotification("generated-on-publish", notificationTitle, notificationMessage, notificationType, DateTimeOffset.UtcNow)];
-            preview.Text = HttpAppUpdateService.SerializeManifest(new AppUpdateManifest(version.Text?.Trim() ?? "0.0.0", downloadUrl.Text?.Trim(), notes.Text?.Trim(), DateTimeOffset.UtcNow, false, notifications));
-        }
-
-        foreach (var input in new Control[] { version, downloadUrl, notes, title, message })
-            ((TextBox)input).TextChanged += (_, _) => RefreshPreview();
-        type.SelectionChanged += (_, _) => RefreshPreview();
-        RefreshPreview();
-
-        var release = Ui.Card(Ui.Stack(10,
-            Ui.LocalText("Release", 18, true),
-            Ui.Text("The installed version is prefilled from LedgerNest.Desktop.dll. Use the version packaged for your next release.", 12, color: Ui.Muted),
-            Ui.LocalText("Version", 12, true, Ui.Muted), version,
-            Ui.LocalText("Download URL", 12, true, Ui.Muted), downloadUrl,
-            Ui.LocalText("Release notes", 12, true, Ui.Muted), notes));
-        var announcement = Ui.Card(Ui.Stack(10,
-            Ui.LocalText("Global Announcement", 18, true),
-            Ui.Text("Every client that checks this manifest receives this announcement once.", 12, color: Ui.Muted),
-            title, message, type));
-        var previewCard = Ui.Card(Ui.Stack(8, Ui.LocalText("Manifest Preview", 18, true), Ui.Text("Review the JSON before saving it to publish.", 12, color: Ui.Muted), preview));
-        var publish = Ui.Button("Save Global Update Manifest", async () => await SaveGlobalUpdateManifestAsync(version.Text, downloadUrl.Text, notes.Text, title.Text, message.Text, type.SelectedItem?.ToString()), true);
-        return new ScreenScaffoldView(Ui.AppBar("Publisher Console"), new PublisherConsoleFormView(release, announcement, previewCard, publish));
+        return new PublisherConsoleFormView { DataContext = new PublisherConsoleViewModel(SaveGlobalUpdateManifestAsync) };
     }
     // Creates the publisher-controlled manifest that clients read from the configured HTTPS endpoint.
     private async Task SaveGlobalUpdateManifestAsync(string? versionText, string? downloadUrl, string? notes, string? announcementTitle, string? announcementMessage, string? notificationType)

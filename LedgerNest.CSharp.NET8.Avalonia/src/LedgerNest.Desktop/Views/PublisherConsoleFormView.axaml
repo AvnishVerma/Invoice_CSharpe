@@ -1,27 +1,34 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.PublisherConsoleFormView">
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+ x:Class="LedgerNest.Desktop.Views.PublisherConsoleFormView" x:DataType="vm:PublisherConsoleViewModel" x:Name="PageRoot">
+ <UserControl.Styles>
+  <Style Selector="Border.card"><Setter Property="Padding" Value="20"/><Setter Property="CornerRadius" Value="12"/><Setter Property="Background" Value="{DynamicResource AppCardBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="BorderThickness" Value="1"/></Style>
+  <Style Selector="TextBlock.heading"><Setter Property="FontSize" Value="18"/><Setter Property="FontWeight" Value="Bold"/></Style>
+  <Style Selector="TextBlock.help"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+  <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/></Style>
+ </UserControl.Styles>
+ <views:ScreenScaffoldView>
+  <views:ScreenScaffoldView.PageHeader><views:PageHeaderView Title="Publisher Console"/></views:ScreenScaffoldView.PageHeader>
+  <views:ScreenScaffoldView.PageBody>
+   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="28" Spacing="16" MaxWidth="1050" HorizontalAlignment="Left">
-      <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-        <StackPanel Spacing="6">
-          <TextBlock Text="Publisher Console" FontSize="24" FontWeight="SemiBold" />
-          <TextBlock Text="Create an update and notification manifest for all LedgerNest installations."
-                     FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
-        </StackPanel>
-      </Border>
-      <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-        <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-          <ContentControl x:Name="ReleaseHost" />
-        </Border>
-        <Border Grid.Column="1" Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-          <ContentControl x:Name="AnnouncementHost" />
-        </Border>
-      </Grid>
-      <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-        <ContentControl x:Name="PreviewHost" />
-      </Border>
-      <ContentControl x:Name="PublishHost" />
+     <Border Classes="card"><TextBlock Text="Create an update and notification manifest for all LedgerNest installations." FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/></Border>
+     <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+      <Border Classes="card"><StackPanel Spacing="10">
+       <TextBlock Text="Release" Classes="heading"/><TextBlock Text="The installed version is prefilled from LedgerNest.Desktop.dll. Use the version packaged for your next release." Classes="help"/>
+       <TextBlock Text="Version" Classes="label"/><TextBox Text="{Binding Version}" PlaceholderText="Release version, e.g. 4.5.0"/>
+       <TextBlock Text="Download URL" Classes="label"/><TextBox Text="{Binding DownloadUrl}" PlaceholderText="HTTPS installer or release page URL"/>
+       <TextBlock Text="Release notes" Classes="label"/><TextBox Text="{Binding ReleaseNotes}" PlaceholderText="What changed in this release?" AcceptsReturn="True" MinHeight="88" TextWrapping="Wrap"/>
+      </StackPanel></Border>
+      <Border Grid.Column="1" Classes="card"><StackPanel Spacing="10">
+       <TextBlock Text="Global Announcement" Classes="heading"/><TextBlock Text="Every client that checks this manifest receives this announcement once." Classes="help"/>
+       <TextBox Text="{Binding AnnouncementTitle}" PlaceholderText="Announcement title"/><TextBox Text="{Binding AnnouncementMessage}" PlaceholderText="Message shown to every connected installation" AcceptsReturn="True" MinHeight="76" TextWrapping="Wrap"/>
+       <ComboBox ItemsSource="{Binding NotificationKinds}" SelectedItem="{Binding NotificationKind}" MinHeight="32"/>
+      </StackPanel></Border>
+     </Grid>
+     <Border Classes="card"><StackPanel Spacing="8"><TextBlock Text="Manifest Preview" Classes="heading"/><TextBlock Text="Review the JSON before saving it to publish." Classes="help"/><TextBox Text="{Binding Preview}" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="180" FontSize="12"/></StackPanel></Border>
+     <Button Content="Save Global Update Manifest" Command="{Binding SaveCommand}" Classes="action primary" ToolTip.Tip="Save Global Update Manifest" HorizontalAlignment="Left"/>
     </StackPanel>
-  </ScrollViewer>
+   </ScrollViewer>
+  </views:ScreenScaffoldView.PageBody>
+ </views:ScreenScaffoldView>
 </UserControl>
