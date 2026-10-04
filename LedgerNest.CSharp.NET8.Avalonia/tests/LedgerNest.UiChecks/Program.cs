@@ -31,6 +31,38 @@ internal static class Program
     }
 
     private static int assertions;
+    private static void CheckAxamlActions()
+    {
+        var calls = 0;
+        var action = new ActionButtonView
+        {
+            ActionLabel = "Refresh", Caption = "Refresh", Icon = "refresh", Primary = true,
+            Command = new CommunityToolkit.Mvvm.Input.RelayCommand(() => calls++)
+        };
+        var fixture = new Window { Content = action, Width = 600, Height = 300 };
+        fixture.Show(); Dispatcher.UIThread.RunJobs(); fixture.UpdateLayout();
+        Check(action.Tag as string == "Refresh" && action.Classes.Contains("primary") && !action.Classes.Contains("outline"),
+            "Reusable AXAML actions must retain the label and selected button variant");
+        Check(action.GetVisualDescendants().OfType<TextBlock>().Any(control => control.Text == "refresh" && control.Classes.Contains("action-icon-glyph")),
+            "Action icons must be declared by the shared AXAML button");
+        action.Command!.Execute(null);
+        Check(calls == 1 && Math.Abs(action.Bounds.Height - 32) < 1, "Shared actions must dispatch commands and use the global button height");
+        action.Available = false; Dispatcher.UIThread.RunJobs();
+        Check(!action.IsEnabled, "Unavailable legacy services must remain disabled through AXAML bindings");
+        var field = new FormField("Tax Mode", "Per Item", "choice", ["Per Item", "Global", "No Tax"]);
+        var choices = new SegmentedChoiceViewModel(field);
+        var segments = new SegmentedChoiceView { DataContext = choices };
+        fixture.Content = segments; Dispatcher.UIThread.RunJobs(); fixture.UpdateLayout();
+        Check(choices.Options.Count == 3 && choices.Options.Single(option => option.IsSelected).Value == "Per Item",
+            "Segmented choices must expose the current form value without generating controls");
+        choices.Options.Single(option => option.Value == "Global").SelectCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        Check(field.Value == "Global" && segments.GetVisualDescendants().OfType<Button>().Single(button => button.Classes.Contains("selected")).Tag as string == "Global",
+            "Segment commands must update the stored value and AXAML selected appearance");
+        field.Value = "No Tax"; Dispatcher.UIThread.RunJobs();
+        Check(choices.Options.Single(option => option.IsSelected).Value == "No Tax", "External form updates must refresh the segmented selection");
+        fixture.Close();
+    }
     private static void CheckAxamlDialogs()
     {
         var closed = 0;
@@ -380,6 +412,7 @@ internal static class Program
         }
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         CheckAxamlDialogs();
+        CheckAxamlActions();
         CheckOnboardingViewModel();
         CheckAxamlFields();
         var model = CreateModel();

@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.SegmentedChoiceView" x:DataType="vm:SegmentedChoiceViewModel">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="SegmentedSelectedBrush">#E8DEF8</SolidColorBrush></ResourceDictionary>
+        <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="SegmentedSelectedBrush">#3A4C69</SolidColorBrush></ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="Button.segment.selected"><Setter Property="Background" Value="{DynamicResource SegmentedSelectedBrush}" /></Style>
+  </UserControl.Styles>
+  <Border CornerRadius="20" ClipToBounds="True">
+    <ItemsControl ItemsSource="{Binding Options}">
+      <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:SegmentedOptionViewModel">
+          <Button Classes="action outline segment" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
+                  Tag="{Binding Value}" ToolTip.Tip="{Binding Value}" AutomationProperties.Name="{Binding Value}">
+            <TextBlock vm:UiLocalization.Text="{Binding Value}" />
+          </Button>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </Border>
+</UserControl>

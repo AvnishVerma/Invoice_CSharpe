@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.EmptyStateView" x:DataType="vm:EmptyStateViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.empty-icon"><Setter Property="FontSize" Value="51.2" /></Style>
+    <Style Selector="TextBlock.empty-icon.cart"><Setter Property="FontSize" Value="38.4" /></Style>
+  </UserControl.Styles>
+  <Border MinHeight="240" Padding="24">
+    <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <TextBlock Text="{Binding Icon}" Classes="empty-icon" Classes.cart="{Binding IsCart}"
+                 FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" Foreground="{DynamicResource AppOutlineBrush}" HorizontalAlignment="Center" />
+      <TextBlock vm:UiLocalization.Text="{Binding Title}" FontSize="18" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" />
+      <TextBlock vm:UiLocalization.Text="{Binding Subtitle}" FontSize="14" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" TextWrapping="Wrap" />
+    </StackPanel>
+  </Border>
+</UserControl>

@@ -1,14 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
-using Avalonia.Controls.Documents;
-using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using Avalonia.Automation;
-using CommunityToolkit.Mvvm.Input;
 
 namespace LedgerNest.Desktop.Views;
 
@@ -170,43 +166,13 @@ internal static class Ui
         return block;
     }
     // Performs the button action for this screen or workflow.
-    public static Button Button(string label, Action? action = null, bool primary = false)
-    {
-        var button = new Button { Content = label, Tag = label, Command = action == null ? null : new RelayCommand(action), IsEnabled = action != null, VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment=HorizontalAlignment.Center, VerticalContentAlignment=VerticalAlignment.Center };
-        var caption = LocalText(label);
-        caption.ClearValue(TextBlock.ForegroundProperty);
-        button.Content = caption;
-        var symbols = new Dictionary<string, string> { ["＋"] = "add", ["↑"] = "upload", ["↓"] = "download", ["↻"] = "refresh", ["×"] = "close", ["‹"] = "chevron_left", ["›"] = "chevron_right", ["⋯"] = "more_horiz", ["⇥"] = "logout" };
-        if (label.Length > 0 && symbols.TryGetValue(label[..1], out var symbol))
-        {
-            var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            content.Children.Add(Icon(symbol, 18, primary ? Brushes.White : Accent));
-            if (label.Length > 1) content.Children.Add(LocalText(label[1..].Trim(), 14, color: primary ? Brushes.White : Accent));
-            button.Content = content;
-        }
-        if (!primary) button.Foreground = Accent;
-        button.Classes.Add("action");
-        button.Classes.Add(primary ? "primary" : "outline");
-        AutomationProperties.SetName(button, label);
-        if (action == null) ToolTip.SetTip(button, "This service has not yet been migrated.");
-        return button;
-    }
+    public static Button Button(string label, Action? action = null, bool primary = false) => new ActionButtonView(label, action, primary);
 
     // Legacy callers load an AXAML field view; control structure and bindings live in that view.
     public static Control Field(FormField field, string? labelText = null, bool singleLine = false, bool compact = true)
         => new FormFieldView { DataContext = new FormFieldViewModel(field, labelText, singleLine, compact) };
     // Performs the segments action for this screen or workflow.
-    public static Control Segments(FormField field)
-    {
-        var panel = new StackPanel { Orientation = Orientation.Horizontal };
-        var buttons = new List<Button>();
-        void Update() { foreach (var b in buttons) b.Background = b.Tag?.ToString() == field.Value ? Palette("#E8DEF8", "#3A4C69") : Brushes.Transparent; }
-        foreach (var option in field.Options)
-        {
-            var b = Button(option, () => { field.Value = option; Update(); }); b.Classes.Add("segment"); buttons.Add(b); panel.Children.Add(b);
-        }
-        Update(); return new Border { CornerRadius = new CornerRadius(20), ClipToBounds = true, Child = panel };
-    }
+    public static Control Segments(FormField field) => new SegmentedChoiceView { DataContext = new SegmentedChoiceViewModel(field) };
     public static Control Fields(IEnumerable<FormField> fields, int columns = 1, bool compact = true)
         => new FormFieldsView { DataContext = new FormFieldsViewModel(fields.Select(field => new FormFieldViewModel(field, compact: compact)).ToArray(), columns) };
     // Performs the logo action for this screen or workflow.
@@ -219,7 +185,8 @@ internal static class Ui
     { using var stream = AssetLoader.Open(new Uri($"avares://LedgerNest.Desktop/Assets/{name}")); return new Bitmap(stream); }
     // Performs the empty action for this screen or workflow.
     public static Control Empty(string title, string subtitle = "", string icon = "▤")
-    { var p = Stack(12, Icon(icon == "✓" ? "check_circle" : icon == "cart" ? "shopping_cart" : title.Contains("customers") ? "person_off" : "receipt_long", icon == "cart" ? 48 : 64, Outline), LocalText(title, 18, color: Muted), LocalText(subtitle, 14, color: Muted)); p.HorizontalAlignment = HorizontalAlignment.Center; p.VerticalAlignment = VerticalAlignment.Center; foreach (var c in p.Children) c.HorizontalAlignment = HorizontalAlignment.Center; return new Border { MinHeight = 240, Padding = new Thickness(24), Child = p }; }
+        => new EmptyStateView { DataContext = new EmptyStateViewModel(title, subtitle,
+            icon == "✓" ? "check_circle" : icon == "cart" ? "shopping_cart" : title.Contains("customers") ? "person_off" : "receipt_long") };
     // Performs the header action for this screen or workflow.
     public static Control Header(string title, string subtitle, params Control[] actions)
     { var a = Wrap(actions); a.HorizontalAlignment = HorizontalAlignment.Right; return Columns("*,Auto", Stack(2, LocalText(title, 22, true), LocalText(subtitle, 13, color: Muted)), a); }

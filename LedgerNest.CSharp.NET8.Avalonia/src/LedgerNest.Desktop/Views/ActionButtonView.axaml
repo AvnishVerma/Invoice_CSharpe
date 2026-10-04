@@ -1,0 +1,15 @@
+<Button xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+        x:Class="LedgerNest.Desktop.Views.ActionButtonView" x:Name="ActionRoot" x:DataType="views:ActionButtonView"
+        Classes="action" Classes.primary="{Binding Primary, ElementName=ActionRoot}"
+        Classes.outline="{Binding !Primary, ElementName=ActionRoot}"
+        IsEnabled="{Binding Available, ElementName=ActionRoot}"
+        Tag="{Binding ActionLabel, ElementName=ActionRoot}" ToolTip.Tip="{Binding Tooltip, ElementName=ActionRoot}"
+        AutomationProperties.Name="{Binding ActionLabel, ElementName=ActionRoot}">
+  <StackPanel Orientation="Horizontal" Spacing="8">
+    <TextBlock Text="{Binding Icon, ElementName=ActionRoot}" Classes="action-icon-glyph"
+               IsVisible="{Binding HasIcon, ElementName=ActionRoot}" VerticalAlignment="Center" />
+    <TextBlock vm:UiLocalization.Text="{Binding Caption, ElementName=ActionRoot}"
+               IsVisible="{Binding HasCaption, ElementName=ActionRoot}" FontSize="14" VerticalAlignment="Center" />
+  </StackPanel>
+</Button>
