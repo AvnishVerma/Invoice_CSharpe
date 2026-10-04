@@ -31,6 +31,27 @@ internal static class Program
     }
 
     private static int assertions;
+    private static void CheckSettingsFormModel()
+    {
+        var saved = 0;
+        var field = new FormField("Example", "saved value");
+        var model = new SettingsFormPageViewModel("Example Settings", [new FormSection("General", [field])], () => saved++);
+        Check(model.Sections.Count == 1 && ReferenceEquals(model.Sections[0].Fields.Fields.Single().Field, field),
+            "Generic AXAML settings must preserve the original form fields and validation state");
+        model.SaveCommand.Execute(null);
+        Check(saved == 1, "Generic settings save must delegate to its original operation");
+        Check(new KeyboardShortcutsViewModel().Items.Count == 5 && new KeyboardShortcutsViewModel(true).Items.Count == 6,
+            "Shortcut presentation must preserve the dialog and accessibility command lists");
+        var view = new SettingsFormPageView { DataContext = model };
+        var fixture = new Window { Content = view, Width = 800, Height = 600 };
+        fixture.Show(); Dispatcher.UIThread.RunJobs(); fixture.UpdateLayout();
+        Check(view.GetVisualDescendants().OfType<PageHeaderView>().Single().Title == "Example Settings",
+            "Generic AXAML settings must consume the shared page header");
+        var save = view.GetVisualDescendants().OfType<Button>().Single(button => button.Content as string == "Save Settings");
+        save.Command!.Execute(null);
+        Check(saved == 2, "Declared AXAML save button must retain its command binding");
+        fixture.Close();
+    }
     private static void CheckAxamlActions()
     {
         var calls = 0;
@@ -413,6 +434,7 @@ internal static class Program
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
         CheckAxamlDialogs();
         CheckAxamlActions();
+        CheckSettingsFormModel();
         CheckOnboardingViewModel();
         CheckAxamlFields();
         var model = CreateModel();

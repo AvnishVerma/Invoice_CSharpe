@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.SettingsFormPageView" x:DataType="vm:SettingsFormPageViewModel" x:Name="Root">
+  <views:ScreenScaffoldView>
+    <views:ScreenScaffoldView.PageHeader>
+      <views:PageHeaderView Title="{Binding Title}" DataContext="{Binding DataContext, ElementName=Root}" />
+    </views:ScreenScaffoldView.PageHeader>
+    <views:ScreenScaffoldView.PageBody>
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="{DynamicResource PageContentPadding}" MaxWidth="900" Spacing="16">
+          <ItemsControl ItemsSource="{Binding Sections}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:SettingsFormSection">
+                <Border Classes="settings-column" Padding="24" Margin="0,0,0,16">
+                  <StackPanel Spacing="12.8">
+                    <TextBlock vm:UiLocalization.Text="{Binding Title}" FontSize="18" FontWeight="Bold" />
+                    <views:FormFieldsView DataContext="{Binding Fields}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Button Content="Save Settings" Command="{Binding SaveCommand}" Classes="action primary" />
+        </StackPanel>
+      </ScrollViewer>
+    </views:ScreenScaffoldView.PageBody>
+  </views:ScreenScaffoldView>
+</UserControl>

@@ -27,6 +27,7 @@
   <UserControl.DataTemplates>
     <DataTemplate DataType="vm:AuthenticationFormViewModel"><views:AuthenticationFormView /></DataTemplate>
     <DataTemplate DataType="vm:OnboardingViewModel"><views:OnboardingStepView /></DataTemplate>
+    <DataTemplate DataType="vm:KeyboardShortcutsViewModel"><views:KeyboardShortcutsView /></DataTemplate>
     <DataTemplate DataType="vm:OnboardingActions" x:DataType="vm:OnboardingActions">
       <WrapPanel>
         <Button Content="{Binding Model.BackLabel}" Command="{Binding Model.BackCommand}" Classes="action outline" Margin="0,0,8,0" />

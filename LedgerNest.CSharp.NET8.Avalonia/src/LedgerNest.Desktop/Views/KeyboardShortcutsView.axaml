@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.KeyboardShortcutsView" x:DataType="vm:KeyboardShortcutsViewModel">
+  <ItemsControl ItemsSource="{Binding Items}">
+    <ItemsControl.ItemTemplate>
+      <DataTemplate x:DataType="vm:KeyboardShortcut">
+        <Grid ColumnDefinitions="160,*" Margin="0,0,0,12.8">
+          <Border Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="12" Padding="10">
+            <TextBlock Text="{Binding Key}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
+          </Border>
+          <TextBlock Grid.Column="1" vm:UiLocalization.Text="{Binding Description}" FontSize="14" TextWrapping="Wrap" VerticalAlignment="Center" />
+        </Grid>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</UserControl>
