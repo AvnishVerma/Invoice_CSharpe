@@ -1,0 +1,8 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+ x:Class="LedgerNest.Desktop.Views.UserEditorView" x:DataType="vm:UserEditorViewModel">
+ <StackPanel Spacing="14.4" Margin="0,8,0,0">
+  <views:FormFieldView DataContext="{Binding Username}"/>
+  <Border IsEnabled="{Binding !EditingSelf}"><views:FormFieldView DataContext="{Binding Role}"/></Border>
+  <TextBlock IsVisible="{Binding EditingSelf}" Text="You can't change your own role." FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+ </StackPanel>
+</UserControl>

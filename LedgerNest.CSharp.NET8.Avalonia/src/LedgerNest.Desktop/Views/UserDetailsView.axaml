@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop"
+ x:Class="LedgerNest.Desktop.Views.UserDetailsView" x:DataType="vm:UserDetailsViewModel">
+ <StackPanel Spacing="11.2">
+  <Grid ColumnDefinitions="38,10,*">
+   <Border Width="30.4" Height="30.4" CornerRadius="19" Background="{DynamicResource UserAvatarBrush}"><TextBlock Text="{Binding Initial}" FontSize="14" FontWeight="Bold" Foreground="#9C27B0" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/></Border>
+   <TextBlock Grid.Column="2" Text="{Binding Username}" FontSize="16" FontWeight="Bold"/>
+  </Grid>
+  <Border Background="{DynamicResource UserRoleBrush}" CornerRadius="6" Padding="7.2,3.2" HorizontalAlignment="Left"><TextBlock Text="{Binding Role}" FontSize="11" Foreground="#9C27B0"/></Border>
+  <TextBlock Text="{Binding Note}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+ </StackPanel>
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.ThemeDictionaries>
+  <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="UserAvatarBrush">#F0DDF8</SolidColorBrush><SolidColorBrush x:Key="UserRoleBrush">#F3E5F5</SolidColorBrush></ResourceDictionary>
+  <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="UserAvatarBrush">#202B36</SolidColorBrush><SolidColorBrush x:Key="UserRoleBrush">#202B36</SolidColorBrush></ResourceDictionary>
+ </ResourceDictionary.ThemeDictionaries></ResourceDictionary></UserControl.Resources>
+</UserControl>

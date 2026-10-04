@@ -1,23 +1,31 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.ReportStatisticsView"
-             x:CompileBindings="False">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.ReportStatisticsView" x:DataType="vm:ReportStatisticsModel">
+  <UserControl.Styles>
+    <Style Selector="Grid.blue TextBlock.colored"><Setter Property="Foreground" Value="#0D47A1" /></Style>
+    <Style Selector="Grid.blue Border.icon-circle"><Setter Property="Background" Value="#1F0D47A1" /></Style>
+    <Style Selector="Grid.green TextBlock.colored"><Setter Property="Foreground" Value="#16A34A" /></Style>
+    <Style Selector="Grid.green Border.icon-circle"><Setter Property="Background" Value="#1F16A34A" /></Style>
+    <Style Selector="Grid.red TextBlock.colored"><Setter Property="Foreground" Value="#E53935" /></Style>
+    <Style Selector="Grid.red Border.icon-circle"><Setter Property="Background" Value="#1FE53935" /></Style>
+    <Style Selector="Grid.purple TextBlock.colored"><Setter Property="Foreground" Value="#7C3AED" /></Style>
+    <Style Selector="Grid.purple Border.icon-circle"><Setter Property="Background" Value="#1F7C3AED" /></Style>
+    <Style Selector="Grid.sky TextBlock.colored"><Setter Property="Foreground" Value="#0284C7" /></Style>
+    <Style Selector="Grid.sky Border.icon-circle"><Setter Property="Background" Value="#1F0284C7" /></Style>
+    <Style Selector="Grid.violet TextBlock.colored"><Setter Property="Foreground" Value="#8B5CF6" /></Style>
+    <Style Selector="Grid.violet Border.icon-circle"><Setter Property="Background" Value="#1F8B5CF6" /></Style>
+  </UserControl.Styles>
   <ItemsControl ItemsSource="{Binding Statistics}">
-    <ItemsControl.ItemsPanel>
-      <ItemsPanelTemplate>
-        <WrapPanel />
-      </ItemsPanelTemplate>
-    </ItemsControl.ItemsPanel>
+    <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
     <ItemsControl.ItemTemplate>
-      <DataTemplate>
+      <DataTemplate x:DataType="vm:ReportStatisticModel">
         <Border Width="250" MinHeight="76" Margin="0,0,12,12" Padding="16" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-          <Grid ColumnDefinitions="Auto,12,*">
-            <Border Width="29" Height="29" CornerRadius="9" Background="{Binding IconBackground}" VerticalAlignment="Center">
-              <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          <Grid ColumnDefinitions="Auto,12,*" Classes.blue="{Binding IsBlue}" Classes.green="{Binding IsGreen}" Classes.red="{Binding IsRed}" Classes.purple="{Binding IsPurple}" Classes.sky="{Binding IsSky}" Classes.violet="{Binding IsViolet}">
+            <Border Classes="icon-circle" Width="29" Height="29" CornerRadius="9" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Icon}" Classes="colored" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <StackPanel Grid.Column="2" Spacing="5">
               <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
-              <TextBlock Text="{Binding Value}" FontSize="18" FontWeight="Bold" Foreground="{Binding Accent}" />
+              <TextBlock Text="{Binding Value}" Classes="colored" FontSize="18" FontWeight="Bold" />
             </StackPanel>
           </Grid>
         </Border>

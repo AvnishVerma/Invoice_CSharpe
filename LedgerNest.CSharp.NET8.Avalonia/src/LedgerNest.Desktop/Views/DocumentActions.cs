@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Layout;
+using CommunityToolkit.Mvvm.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -34,7 +34,7 @@ public partial class MainWindow
         {
             preview.Items.Add(new DocumentPreviewItemModel($"{item.Description} x{item.Quantity:0.###}", CurrencyDisplay.Format(item.LineTotal, currency: document["Currency"])));
         }
-        ShowOverlay("", new DocumentPreviewView(preview), Ui.Button("Close", CloseOverlay, true), width: 650);
+        ShowOverlay("", new DocumentPreviewView(preview), new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]), width: 650);
     }
 
     // Renders the generated PDF inside LedgerNest without opening an external viewer.
@@ -52,10 +52,10 @@ public partial class MainWindow
             };
             foreach (var page in rendered) preview.Pages.Add(CreatePreviewBitmap(page.Pixels, page.Width, page.Height));
             ShowOverlay("PDF Preview", new PdfPreviewView(preview),
-                Ui.Wrap(
-                    Ui.Button("Download PDF", async () => await DownloadDocumentPdf(document)),
-                    Ui.Button("Print", async () => await PrintDocumentAsync(document), true),
-                    Ui.Button("Close", CloseOverlay)),
+                new DialogActions([
+                    new DialogAction("Download PDF", new AsyncRelayCommand(() => DownloadDocumentPdf(document))),
+                    new DialogAction("Print", new AsyncRelayCommand(() => PrintDocumentAsync(document)), true),
+                    new DialogAction("Close", new RelayCommand(CloseOverlay))]),
                 width: 1100);
             Model.Status = $"PDF preview ready for {document.Name}.";
         }
@@ -186,31 +186,9 @@ public partial class MainWindow
         var selected = choices.Contains(configuredPrinter, StringComparer.OrdinalIgnoreCase)
             ? configuredPrinter
             : discovered.FirstOrDefault(printer => printer.IsDefault && !PrinterClassifier.IsFilePrinter(printer.Name))?.Name ?? choices[0];
-        var picker = new ComboBox
-        {
-            ItemsSource = choices,
-            SelectedItem = selected,
-            MinWidth = 360,
-            HorizontalAlignment = HorizontalAlignment.Stretch
-        };
-        var dialog = new Window
-        {
-            Title = "Select Printer",
-            Width = 480,
-            Height = 220,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner
-        };
-        var cancel = Ui.Button("Cancel", () => dialog.Close((false, (string?)null)));
-        var print = Ui.Button("Print", () => dialog.Close((true, picker.SelectedItem?.ToString())), true);
-        dialog.Content = new Border
-        {
-            Padding = new Thickness(24),
-            Child = Ui.Rows("Auto,*,Auto",
-                Ui.LocalText("Choose a printer", 20, true),
-                new StackPanel { Spacing = 8, Margin = new Thickness(0, 20), Children = { Ui.LocalText("Printer", 12, true, Ui.Muted), picker } },
-                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, print } })
-        };
+        var dialog = new PrinterSelectionWindow();
+        dialog.DataContext = new PrinterSelectionViewModel(choices, selected,
+            (confirmed, printer) => dialog.Close((confirmed, printer)));
         return await dialog.ShowDialog<(bool Confirmed, string? PrinterName)>(this);
     }
 

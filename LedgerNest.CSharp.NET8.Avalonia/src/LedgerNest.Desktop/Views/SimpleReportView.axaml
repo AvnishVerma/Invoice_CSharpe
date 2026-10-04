@@ -1,0 +1,11 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.SimpleReportView" x:DataType="vm:SimpleReportViewModel">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="18" Spacing="20">
+      <Border IsVisible="{Binding HasStatistics}"><views:ReportStatisticsView DataContext="{Binding Statistics}" /></Border>
+      <Border IsVisible="{Binding HasTable}"><views:ReportTableView DataContext="{Binding Table}" /></Border>
+      <Border IsVisible="{Binding HasInformation}"><views:ReportInformationPanelView DataContext="{Binding InformationContent}" /></Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

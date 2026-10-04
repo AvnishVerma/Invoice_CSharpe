@@ -1,12 +1,30 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.RevenueBreakdownPanelView">
-  <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-    <StackPanel Spacing="12">
-      <TextBlock Text="Monthly Breakdown" FontSize="16" FontWeight="SemiBold" />
-      <ScrollViewer HorizontalScrollBarVisibility="Auto">
-        <ContentControl x:Name="RowsHost" />
-      </ScrollViewer>
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.RevenueBreakdownPanelView" x:DataType="vm:RevenueReportViewModel">
+ <UserControl.Styles>
+  <Style Selector="Border.detail"><Setter Property="Background" Value="{DynamicResource AppCardBrush}"/><Setter Property="Padding" Value="14,13"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="BorderThickness" Value="0,0,0,1"/></Style>
+  <Style Selector="Border.detail.total"><Setter Property="Background" Value="{DynamicResource AppCanvasBrush}"/></Style>
+  <Style Selector="Border.detail TextBlock"><Setter Property="FontSize" Value="13"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+  <Style Selector="Border.detail.total TextBlock"><Setter Property="FontWeight" Value="Bold"/></Style>
+  <Style Selector="Grid.heading TextBlock"><Setter Property="FontSize" Value="11"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/></Style>
+ </UserControl.Styles>
+ <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+  <StackPanel Spacing="12">
+   <TextBlock Text="Monthly Breakdown" FontSize="16" FontWeight="SemiBold"/>
+   <ScrollViewer HorizontalScrollBarVisibility="Auto">
+    <StackPanel MinWidth="820">
+     <Border Padding="14,10" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1">
+      <Grid Classes="heading" ColumnDefinitions="1.05*,.65*,*,*,*,*,*,.65*">
+       <TextBlock Text="MONTH"/><TextBlock Grid.Column="1" Text="INVOICES"/><TextBlock Grid.Column="2" Text="BILLED"/><TextBlock Grid.Column="3" Text="COLLECTED"/><TextBlock Grid.Column="4" Text="OUTSTANDING"/><TextBlock Grid.Column="5" Text="COGS"/><TextBlock Grid.Column="6" Text="PROFIT"/><TextBlock Grid.Column="7" Text="MARGIN"/>
+      </Grid>
+     </Border>
+     <ItemsControl ItemsSource="{Binding Rows}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:RevenueBreakdownRowModel">
+      <Border Classes="detail" Classes.total="{Binding IsTotal}"><Grid ColumnDefinitions="1.05*,.65*,*,*,*,*,*,.65*">
+       <TextBlock Text="{Binding Month}" FontWeight="Bold"/><TextBlock Grid.Column="1" Text="{Binding Invoices}"/><TextBlock Grid.Column="2" Text="{Binding Billed}" Foreground="#2563EB"/><TextBlock Grid.Column="3" Text="{Binding Collected}"/><TextBlock Grid.Column="4" Text="{Binding Outstanding}"/><TextBlock Grid.Column="5" Text="{Binding Cogs}"/><TextBlock Grid.Column="6" Text="{Binding Profit}" Foreground="#16A34A"/><TextBlock Grid.Column="7" Text="{Binding Margin}"/>
+      </Grid></Border>
+     </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+     <Border Padding="11.2,14.4" IsVisible="{Binding !HasMonths}"><TextBlock Text="No monthly revenue data for this period." FontSize="13" Foreground="{DynamicResource AppMutedBrush}"/></Border>
     </StackPanel>
-  </Border>
+   </ScrollViewer>
+  </StackPanel>
+ </Border>
 </UserControl>

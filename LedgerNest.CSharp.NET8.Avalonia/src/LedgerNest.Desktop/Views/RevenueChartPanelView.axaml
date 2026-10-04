@@ -1,17 +1,22 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.RevenueChartPanelView">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns:plot="using:ScottPlot.Avalonia"
+             x:Class="LedgerNest.Desktop.Views.RevenueChartPanelView" x:DataType="vm:RevenueReportViewModel">
   <Border Padding="20" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
     <StackPanel Spacing="12">
       <Grid ColumnDefinitions="*,Auto">
-        <StackPanel Spacing="3">
-          <TextBlock Text="Monthly Revenue Trend" FontSize="16" FontWeight="SemiBold" />
-          <TextBlock x:Name="SubtitleText" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
-        </StackPanel>
-        <ContentControl x:Name="ActionsHost" Grid.Column="1" />
+        <StackPanel Spacing="3"><TextBlock Text="Monthly Revenue Trend" FontSize="16" FontWeight="SemiBold" /><TextBlock Text="{Binding ChartSubtitle}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" /></StackPanel>
+        <WrapPanel Grid.Column="1">
+          <Button Command="{Binding ExportCsvCommand}" Classes="action outline" ToolTip.Tip="Export CSV" Margin="0,0,8,8"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="download" Classes="action-icon-glyph" /><TextBlock Text="Export CSV" /></StackPanel></Button>
+          <Button Command="{Binding ExportPdfCommand}" Classes="action outline" ToolTip.Tip="Export PDF" Margin="0,0,8,8"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="download" Classes="action-icon-glyph" /><TextBlock Text="Export PDF" /></StackPanel></Button>
+        </WrapPanel>
       </Grid>
-      <ContentControl x:Name="ChartHost" />
-      <ContentControl x:Name="LegendHost" HorizontalContentAlignment="Center" />
+      <plot:AvaPlot x:Name="Chart" Height="250" IsVisible="{Binding HasMonths}" />
+      <Border IsVisible="{Binding !HasMonths}"><views:EmptyStateView DataContext="{Binding EmptyChart}" /></Border>
+      <WrapPanel HorizontalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,8,8"><Border Width="13" Height="13" CornerRadius="3" Background="#3B82F6" VerticalAlignment="Center" /><TextBlock Text="Billed" FontSize="13" FontWeight="Bold" /></StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,8,8"><Border Width="13" Height="13" CornerRadius="3" Background="#22C55E" VerticalAlignment="Center" /><TextBlock Text="Collected" FontSize="13" FontWeight="Bold" /></StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,8,8"><Border Width="13" Height="13" CornerRadius="3" Background="#7C3AED" VerticalAlignment="Center" /><TextBlock Text="Profit" FontSize="13" FontWeight="Bold" /></StackPanel>
+      </WrapPanel>
     </StackPanel>
   </Border>
 </UserControl>

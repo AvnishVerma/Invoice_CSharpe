@@ -31,6 +31,65 @@ internal static class Program
     }
 
     private static int assertions;
+    private static void CheckUserDialogPresentation()
+    {
+        var username = new FormField("Username", "admin", required: true);
+        var role = new FormField("Role", "Admin", "choice", ["Admin", "User"]);
+        var editor = new UserEditorView { DataContext = new UserEditorViewModel(new FormFieldViewModel(username), new FormFieldViewModel(role), true) };
+        var window = new Window { Content = editor, Width = 550, Height = 400 };
+        window.Show(); Dispatcher.UIThread.RunJobs();
+        Check(!editor.GetVisualDescendants().OfType<ComboBox>().Single().IsEffectivelyEnabled, "The declarative user editor must prevent changing the signed-in user's own role");
+        var usernameInput = editor.GetVisualDescendants().OfType<TextBox>().Single(input => input.PlaceholderText == "Username");
+        usernameInput.Text = "updated";
+        Check(username.Value == "updated", "User editing fields must retain two-way bindings");
+        window.Close(); Dispatcher.UIThread.RunJobs();
+        var payment = new PaymentDialogModel { IsFullyPaid = true, OutstandingText = "0.00" };
+        Check(!payment.CanRecordPayment && payment.HasNoPayments, "Payment dialog state must preserve fully-paid eligibility and empty history");
+        var paymentView = new PaymentDialogView(payment);
+        window = new Window { Content = paymentView, Width = 700, Height = 400 };
+        window.Show(); Dispatcher.UIThread.RunJobs();
+        Check(paymentView.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text == "Invoice fully paid" && text.IsEffectivelyVisible), "AXAML must render the fully-paid message without a generated payment form");
+        window.Close(); Dispatcher.UIThread.RunJobs();
+    }
+    private static void CheckPrinterSelection()
+    {
+        (bool Confirmed, string? Printer) result = (false, null);
+        var model = new PrinterSelectionViewModel(["Default", "Office"], "Default", (confirmed, printer) => result = (confirmed, printer));
+        model.SelectedPrinter = "Office";
+        model.PrintCommand.Execute(null);
+        Check(result == (true, "Office"), "Printer selection must pass the selected printer to existing print behavior");
+        model.CancelCommand.Execute(null);
+        Check(result == (false, null), "Cancelling printer selection must not submit a printer");
+        var view = new PrinterSelectionWindow { DataContext = model };
+        view.Show(); Dispatcher.UIThread.RunJobs();
+        var picker = view.GetVisualDescendants().OfType<ComboBox>().Single();
+        Check(picker.SelectedItem?.ToString() == "Office", "AXAML printer chooser must bind the selected printer");
+        picker.SelectedItem = "Default";
+        Check(model.SelectedPrinter == "Default", "AXAML printer selection must update the print command state");
+        Check(view.GetVisualDescendants().OfType<Button>().Count(button => button.Command == model.PrintCommand || button.Command == model.CancelCommand) == 2, "AXAML printer actions must retain Print and Cancel commands");
+        view.Close(); Dispatcher.UIThread.RunJobs();
+    }
+    private static void CheckReportPresentation()
+    {
+        var month = new RevenueMonthSnapshot(new DateTime(2026, 10, 1), 2, 120m, 80m, 40m, 60m, 40m);
+        var report = new RevenueReportViewModel(new RevenueReportSnapshot(2, 120m, 80m, 40m, 60m, 40m, 20m, 1, [month]), () => Task.CompletedTask, () => Task.CompletedTask);
+        Check(report.Rows.Count == 2 && report.Rows[^1].IsTotal, "Revenue presentation must include one detail row and a distinct total row");
+        Check(report.Rows[^1].Margin == "40%", "Revenue presentation must preserve the margin calculation");
+        Check(report.Statistics.Statistics.Count == 6 && report.Statistics.Statistics[4].IsGreen, "Revenue statistics must preserve all six metrics and profit state");
+        Check(report.HasMissingCosts && report.MissingCostMessage.StartsWith("1 item sold") && report.HasMonths, "Revenue warnings and chart state must follow report data");
+        var exports = 0;
+        var table = new ReportTableViewModel("Tax", [["Rate", "Tax"], ["18%", CurrencyDisplay.Format(20m, "0.00")]], true, () => { exports++; return Task.CompletedTask; }, () => Task.CompletedTask);
+        Check(table.Rows[0].Cells.All(cell => cell.IsHeader) && table.Rows[0].Cells[0].Text == "RATE", "Generic report headers must be represented as data for AXAML templates");
+        Check(table.Rows[1].Cells[1].IsMoney && !table.Rows[1].Cells[1].IsHeader, "Report cells must retain monetary presentation independently of controls");
+        table.ExportCsvCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        Check(exports == 1, "Declarative report export buttons must invoke the existing export behavior");
+        var view = new RevenueReportView { DataContext = report };
+        var window = new Window { Content = view, Width = 1100, Height = 800 };
+        window.Show(); Dispatcher.UIThread.RunJobs();
+        Check(view.GetVisualDescendants().OfType<ScottPlot.Avalonia.AvaPlot>().Single().IsVisible, "Populated revenue reports must use the chart declared in AXAML");
+        Check(view.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text == "Total"), "Revenue breakdown totals must render through the AXAML row template");
+        window.Close(); Dispatcher.UIThread.RunJobs();
+    }
     private static void CheckInvoiceSettingAdapters()
     {
         var field = new FormField("Time Format", "12 hour", "choice", ["12 hour", "24 hour"]);
@@ -476,6 +535,9 @@ internal static class Program
         CheckAxamlDialogs();
         CheckAxamlActions();
         CheckSettingsFormModel();
+        CheckUserDialogPresentation();
+        CheckPrinterSelection();
+        CheckReportPresentation();
         CheckInvoiceSettingAdapters();
         CheckOnboardingViewModel();
         CheckAxamlFields();

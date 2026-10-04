@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.PrinterSelectionWindow" x:DataType="vm:PrinterSelectionViewModel"
+ Title="Select Printer" Width="480" Height="220" CanResize="False" WindowStartupLocation="CenterOwner"
+ Background="{DynamicResource AppCanvasBrush}">
+ <Border Padding="24">
+  <Grid RowDefinitions="Auto,*,Auto">
+   <TextBlock Text="Choose a printer" FontSize="20" FontWeight="Bold"/>
+   <StackPanel Grid.Row="1" Spacing="8" Margin="0,20">
+    <TextBlock Text="Printer" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}"/>
+    <ComboBox ItemsSource="{Binding Printers}" SelectedItem="{Binding SelectedPrinter}" MinWidth="360" HorizontalAlignment="Stretch" AutomationProperties.Name="Printer"/>
+   </StackPanel>
+   <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
+    <Button Content="Cancel" Command="{Binding CancelCommand}" Classes="action outline" ToolTip.Tip="Cancel"/>
+    <Button Content="Print" Command="{Binding PrintCommand}" Classes="action primary" ToolTip.Tip="Print"/>
+   </StackPanel>
+  </Grid>
+ </Border>
+</Window>

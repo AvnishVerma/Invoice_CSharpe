@@ -1,7 +1,13 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.PaymentDialogView"
              x:CompileBindings="False">
+  <UserControl.Styles>
+    <Style Selector="Border.outstanding"><Setter Property="BorderBrush" Value="#59F59E0B"/><Setter Property="Background" Value="#FFF5E8"/></Style>
+    <Style Selector="Border.outstanding TextBlock.amount"><Setter Property="Foreground" Value="#F59E0B"/></Style>
+    <Style Selector="Border.outstanding.paid"><Setter Property="BorderBrush" Value="#5916A34A"/><Setter Property="Background" Value="#EEF8F0"/></Style>
+    <Style Selector="Border.outstanding.paid TextBlock.amount"><Setter Property="Foreground" Value="#16A34A"/></Style>
+  </UserControl.Styles>
   <StackPanel Spacing="16">
     <TextBlock Text="{Binding InvoiceLine}" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" />
 
@@ -18,10 +24,10 @@
           <TextBlock Text="{Binding PaidText}" FontSize="16" FontWeight="Bold" Foreground="#16A34A" />
         </StackPanel>
       </Border>
-      <Border Grid.Column="4" Padding="12.8,9.6" CornerRadius="6" BorderBrush="{Binding OutstandingBorder}" BorderThickness="1" Background="{Binding OutstandingBackground}">
+      <Border Grid.Column="4" Padding="12.8,9.6" CornerRadius="6" Classes="outstanding" Classes.paid="{Binding IsFullyPaid}" BorderThickness="1">
         <StackPanel Spacing="6.4">
           <TextBlock loc:UiLocalization.Text="Outstanding" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
-          <TextBlock Text="{Binding OutstandingText}" FontSize="16" FontWeight="Bold" Foreground="{Binding OutstandingBrush}" />
+          <TextBlock Text="{Binding OutstandingText}" FontSize="16" FontWeight="Bold" Classes="amount" />
         </StackPanel>
       </Border>
     </Grid>
@@ -70,7 +76,10 @@
 
     <StackPanel IsVisible="{Binding CanRecordPayment}" Spacing="9.6">
       <TextBlock loc:UiLocalization.Text="New Payment" FontSize="14" FontWeight="Bold" />
-      <ContentControl Content="{Binding PaymentForm}" />
+      <views:FormFieldsView DataContext="{Binding AmountAndDate}"/>
+      <TextBlock Text="{Binding AmountHint}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}"/>
+      <views:FormFieldsView DataContext="{Binding MethodAndTax}"/>
+      <views:FormFieldView DataContext="{Binding Note}"/>
     </StackPanel>
   </StackPanel>
 </UserControl>

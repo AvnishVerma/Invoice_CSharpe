@@ -25,6 +25,11 @@
     </ResourceDictionary>
   </UserControl.Resources>
   <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:UserDetailsViewModel"><views:UserDetailsView /></DataTemplate>
+    <DataTemplate DataType="vm:UserEditorViewModel"><views:UserEditorView /></DataTemplate>
+    <DataTemplate DataType="vm:UserPasswordViewModel"><views:UserPasswordView /></DataTemplate>
+    <DataTemplate DataType="vm:FormFieldsViewModel"><views:FormFieldsView /></DataTemplate>
+    <DataTemplate DataType="vm:DialogIcon" x:DataType="vm:DialogIcon"><TextBlock Text="{Binding Glyph}" Classes="action-icon-glyph" FontSize="22" Foreground="White" /></DataTemplate>
     <DataTemplate DataType="vm:AuthenticationFormViewModel"><views:AuthenticationFormView /></DataTemplate>
     <DataTemplate DataType="vm:OnboardingViewModel"><views:OnboardingStepView /></DataTemplate>
     <DataTemplate DataType="vm:KeyboardShortcutsViewModel"><views:KeyboardShortcutsView /></DataTemplate>

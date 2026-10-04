@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Avalonia.Controls;
-using Avalonia.Media;
 
 namespace LedgerNest.Desktop.Views;
 
@@ -27,15 +26,15 @@ public sealed class PaymentDialogModel
     public string TotalText { get; init; } = "";
     public string PaidText { get; init; } = "";
     public string OutstandingText { get; init; } = "";
-    public IBrush OutstandingBrush { get; init; } = Brushes.Gray;
-    public IBrush OutstandingBorder { get; init; } = Brushes.LightGray;
-    public IBrush OutstandingBackground { get; init; } = Brushes.White;
     public ObservableCollection<PaymentHistoryRowModel> Payments { get; } = [];
     public bool HasPayments => Payments.Count > 0;
     public bool HasNoPayments => Payments.Count == 0;
     public bool IsFullyPaid { get; init; }
     public bool CanRecordPayment => !IsFullyPaid;
-    public Control? PaymentForm { get; init; }
+    public FormFieldsViewModel? AmountAndDate { get; init; }
+    public FormFieldsViewModel? MethodAndTax { get; init; }
+    public FormFieldViewModel? Note { get; init; }
+    public string AmountHint { get; init; } = "";
 }
 
 // Describes one payment history row rendered in the AXAML payment dialog.

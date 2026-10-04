@@ -1,10 +1,9 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.ReportNoticeView">
-  <Border x:Name="Frame" Padding="12,10" CornerRadius="8" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.ReportNoticeView" x:DataType="vm:ReportNoticeModel">
+  <Border Padding="12,10" CornerRadius="8" Background="{DynamicResource AppCardBrush}" BorderBrush="#FDE68A" BorderThickness="1">
     <Grid ColumnDefinitions="Auto,10,*">
-      <TextBlock x:Name="IconText" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" VerticalAlignment="Center" />
-      <TextBlock x:Name="MessageText" Grid.Column="2" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
+      <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" Foreground="#D97706" VerticalAlignment="Center" />
+      <TextBlock Text="{Binding Message}" Grid.Column="2" FontSize="12" Foreground="#D97706" TextWrapping="Wrap" VerticalAlignment="Center" />
     </Grid>
   </Border>
 </UserControl>

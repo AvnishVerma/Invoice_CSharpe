@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
+using CommunityToolkit.Mvvm.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using LedgerNest.Desktop.Views;
@@ -46,16 +46,9 @@ public partial class MainWindow
     // Shows a compact read-only summary for a user account.
     internal void ShowUserDetails(UiRecord user, Action refresh)
     {
-        var initial = user.Name.Length == 0 ? "?" : user.Name[..1].ToUpperInvariant();
-        var initialText = Ui.Text(initial, 14, true, Brush.Parse("#9C27B0"));
-        initialText.HorizontalAlignment = HorizontalAlignment.Center;
-        initialText.VerticalAlignment = VerticalAlignment.Center;
-        initialText.TextAlignment = TextAlignment.Center;
-        var avatar = new Border { Width = 30.4, Height = 30.4, CornerRadius = new CornerRadius(19), Background = Ui.Palette("#F0DDF8", "#202B36"), Child = initialText };
-        var role = new Border { Background = Ui.Palette("#F3E5F5", "#202B36"), CornerRadius = new CornerRadius(6), Padding = new Thickness(7.2, 3.2), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(user["Role"], 11, false, Brush.Parse("#9C27B0")) };
         var note = user.Name == Model.CurrentUsername ? "This is your account" : $"{user["Role"]} access";
-        var content = Ui.Stack(11.2, Ui.Columns("38,10,*", avatar, new Border(), Ui.Text(user.Name, 16, true)), role, Ui.Text(note, 12, color: Ui.Muted));
-        ShowOverlay("User Details", content, Ui.Button("Close", CloseOverlay, true), width: 360);
+        ShowOverlay("User Details", new UserDetailsViewModel(user.Name, user["Role"], note),
+            new DialogActions([new DialogAction("Close", new RelayCommand(CloseOverlay), true)]), width: 360);
     }
 
     // Opens the user editor and prevents changing the signed-in user's own role.
@@ -63,20 +56,16 @@ public partial class MainWindow
     {
         var username = new FormField("Username", user.Name, required: true);
         var role = new FormField("Role", user["Role"], "choice", ["Admin", "User"], required: true);
-        var roleControl = Ui.Field(role);
-        var editingSelf = user.Name == Model.CurrentUsername;
-        roleControl.IsEnabled = !editingSelf;
-        var form = Ui.Stack(14.4, Ui.Field(username), roleControl);
-        form.Margin = new Thickness(0, 8, 0, 0);
-        if (editingSelf) form.Children.Add(Ui.LocalText("You can't change your own role.", 12, color: Ui.Muted));
-        var cancel = Ui.Button("Cancel", CloseOverlay);
-        var save = Ui.Button("✓  Save Changes", () =>
+        var form = new UserEditorViewModel(new FormFieldViewModel(username), new FormFieldViewModel(role), user.Name == Model.CurrentUsername);
+        var save = new RelayCommand(() =>
         {
             if (!Model.SaveRecord("User", [username, role], user)) return;
             refresh();
             CloseOverlay();
-        }, true);
-        ShowOverlay("Edit User", form, Ui.Columns("*,12,2*", cancel, new Border(), save), side: true, width: 520);
+        });
+        ShowOverlay("Edit User", form, new DialogActions([
+            new DialogAction("Cancel", new RelayCommand(CloseOverlay)),
+            new DialogAction("✓  Save Changes", save, true)]), side: true, width: 520);
     }
 
     // Opens the current-password flow for the signed-in user or an administrator reset flow for another user.
@@ -86,14 +75,15 @@ public partial class MainWindow
         FormField[] fields = ownAccount
             ? [new("Current Password", kind: "password", required: true), new("New Password", kind: "password", required: true), new("Confirm New Password", kind: "password", required: true)]
             : [new("New Password", kind: "password", required: true), new("Confirm New Password", kind: "password", required: true)];
-        var identity = new Border { Background = Ui.Palette("#E3F2FD", "#202B36"), BorderBrush = Brush.Parse("#64B5F6"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Padding = new Thickness(11.2, 9.6), Child = Ui.Text($"User: {user.Name}", 14, false, Brush.Parse("#1976D2")) };
-        var body = Ui.Stack(12.8, identity, Ui.Fields(fields));
-        var save = Ui.Button("✓  Change Password", () =>
+        var body = new UserPasswordViewModel(user.Name, new FormFieldsViewModel(fields.Select(field => new FormFieldViewModel(field)).ToArray(), 1));
+        var save = new RelayCommand(() =>
         {
             var changed = ownAccount ? Model.ChangePassword(user.Name, fields) : Model.ResetUserPassword(user, fields);
             if (changed) CloseOverlay();
-        }, true);
-        ShowOverlay("Change Password", body, Ui.Wrap(Ui.Button("Cancel", CloseOverlay), save), width: 450, headerAccessory: Ui.Icon("lock", 22, Brushes.White));
+        });
+        ShowOverlay("Change Password", body, new DialogActions([
+            new DialogAction("Cancel", new RelayCommand(CloseOverlay)),
+            new DialogAction("✓  Change Password", save, true)]), width: 450, headerAccessory: new DialogIcon("lock"));
     }
 
     // Performs the show payment action for this screen or workflow.
@@ -114,33 +104,21 @@ public partial class MainWindow
         fields[3].Value = invoice["Tax"].Length > 0 ? invoice["Tax"] : "0.00";
 
         var fullyPaid = outstanding <= 0.005m;
-        Control? paymentForm = null;
-        Control footer;
-        if (fullyPaid)
-        {
-            footer = Ui.Button("Close", CloseOverlay, true);
-        }
-        else
-        {
-            var amountHint = Ui.Text($"Max: {Money(outstanding)}", 11, color: Ui.Muted);
-            paymentForm = Ui.Stack(9.6, Ui.Fields(fields.Take(2), 2), amountHint, Ui.Fields(fields.Skip(2).Take(2), 2), Ui.Field(fields[4]));
-            var savePayment = Ui.Button("Save Payment", () => { if (Model.ApplyPayment(invoice, fields)) ShowPayment(invoice); }, true);
-            savePayment.Content = Ui.Columns("18,8,Auto", Ui.Icon("check_circle", 16, Brushes.White), new Border(), Ui.LocalText("Record Payment", 13, true, Brushes.White));
-            footer = Ui.Wrap(Ui.Button("Close", CloseOverlay), savePayment);
-        }
-
-        var outstandingColor = fullyPaid ? "#16A34A" : "#F59E0B";
+        var footer = new DialogActions(fullyPaid
+            ? [new DialogAction("Close", new RelayCommand(CloseOverlay), true)]
+            : [new DialogAction("Close", new RelayCommand(CloseOverlay)),
+                new DialogAction("Save Payment", new RelayCommand(() => { if (Model.ApplyPayment(invoice, fields)) ShowPayment(invoice); }), true)]);
         var model = new PaymentDialogModel
         {
             InvoiceLine = $"{invoice.Name} — {invoice["Customer"]}",
             TotalText = Money(total),
             PaidText = Money(paid),
             OutstandingText = Money(outstanding),
-            OutstandingBrush = Brush.Parse(outstandingColor),
-            OutstandingBorder = new SolidColorBrush(Color.Parse(outstandingColor), .35),
-            OutstandingBackground = Brush.Parse(fullyPaid ? "#EEF8F0" : "#FFF5E8"),
             IsFullyPaid = fullyPaid,
-            PaymentForm = paymentForm
+            AmountAndDate = new FormFieldsViewModel(fields.Take(2).Select(field => new FormFieldViewModel(field)).ToArray(), 2),
+            MethodAndTax = new FormFieldsViewModel(fields.Skip(2).Take(2).Select(field => new FormFieldViewModel(field)).ToArray(), 2),
+            Note = new FormFieldViewModel(fields[4]),
+            AmountHint = $"Max: {Money(outstanding)}"
         };
         foreach (var payment in payments)
         {
@@ -153,10 +131,10 @@ public partial class MainWindow
     private void ShowCustomItem()
     {
         var fields = FormCatalog.CustomItem();
-        ShowOverlay("Add Custom Item", Ui.Fields(fields, 2), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Add Item", () =>
+        ShowOverlay("Add Custom Item", new FormFieldsViewModel(fields.Select(field => new FormFieldViewModel(field)).ToArray(), 2), new DialogActions([new DialogAction("Cancel", new RelayCommand(CloseOverlay)), new DialogAction("Add Item", new RelayCommand(() =>
         {
             if (!fields.Select(f => f.Validate()).ToArray().All(v => v) || fields[2].Number <= 0) { fields[2].Error = "Quantity must be greater than zero."; return; }
             if (Model.TryAddInvoiceLine(new InvoiceLineViewModel { Name = fields[0].Value, Quantity = fields[2].Number, Price = fields[3].Number, TaxRate = fields[4].Number, Discount = fields[5].Number })) CloseOverlay();
-        }, true)), width: 640);
+        }), true)]), width: 640);
     }
 }
