@@ -235,10 +235,7 @@ public partial class MainWindow
             search.Focus();
         }, Model.TryAddInvoiceLine, Model.InvoiceSetting("Allow Fractional Quantity").IsChecked, Model.ProductFieldVisible,
             Model.ActiveUnitCodes(product["Unit"]), Model.SellingUnitChoices(product));
-        overlay.Children.Clear();
-        overlay.Margin = new Thickness(0);
-        overlay.IsVisible = true;
-        overlay.Children.Add(new ProductItemDialogView { DataContext = dialog });
+        Model.CurrentOverlay = dialog;
     }
     // Performs the total row action for this screen or workflow.
     private Control TotalRow(string label, decimal value, bool bold = false) => Ui.Columns("*,Auto", Ui.LocalText(label, bold ? 18 : 13, bold), Ui.Text(CurrencyDisplay.Format(value, currency: Model.EditorCurrency), bold ? 22 : 14, bold, bold ? Brush.Parse("#4CAF50") : null));

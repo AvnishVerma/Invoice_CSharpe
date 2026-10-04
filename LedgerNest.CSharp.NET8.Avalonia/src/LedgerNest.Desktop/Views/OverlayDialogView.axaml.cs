@@ -1,60 +1,14 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Layout;
 
 namespace LedgerNest.Desktop.Views;
 
 public sealed partial class OverlayDialogView : UserControl
 {
-    private readonly Action close;
+    public OverlayDialogView() => InitializeComponent();
 
-    public OverlayDialogView()
+    private void OnScrimPressed(object? sender, PointerPressedEventArgs e)
     {
-        InitializeComponent();
-        close = () => { };
+        if (DataContext is OverlayDialogViewModel model) model.CloseCommand.Execute(null);
     }
-
-    public OverlayDialogView(string title, Control content, Control footer, Control? headerAccessory, Action close, bool side, double width, double availableWidth, double availableHeight, Control? leadingIcon = null, bool prominentHeader = false)
-    {
-        InitializeComponent();
-        this.close = close;
-        TitleText.Text = title;
-        BodyHost.Content = content;
-        FooterHost.Content = footer;
-        HeaderAccessoryHost.Content = headerAccessory ?? new Border();
-        LeadingIconHost.Content = leadingIcon ?? new Border();
-        if (leadingIcon != null || prominentHeader)
-        {
-            TitleText.FontSize = 24;
-            TitleText.FontWeight = Avalonia.Media.FontWeight.Normal;
-            CloseButton.IsVisible = false;
-            Panel.CornerRadius = new CornerRadius(28);
-            Panel.Background = Ui.Palette("#F2EDF5", "#282330");
-        }
-
-        Panel.Width = side ? (availableWidth < 750 ? availableWidth - 32 : Math.Clamp(availableWidth * .42, 520, 680)) : width;
-        Panel.MaxWidth = Math.Max(280, availableWidth - 32);
-        Panel.MaxHeight = Math.Max(320, availableHeight - 32);
-        Panel.HorizontalAlignment = side ? HorizontalAlignment.Right : HorizontalAlignment.Center;
-        Panel.VerticalAlignment = side ? VerticalAlignment.Stretch : VerticalAlignment.Center;
-        if (content is ProductEditorFormView)
-        {
-            Panel.Width = Math.Min(550, Math.Max(280, availableWidth - 32));
-            Panel.Background = ProductEditorFormView.Surface;
-            Panel.Resources["OverlayCardSurface"] = ProductEditorFormView.Surface;
-            FooterHost.HorizontalAlignment = HorizontalAlignment.Stretch;
-            SubtitleText.IsVisible = true;
-            LeadingIconHost.IsVisible = false;
-            CloseButton.Classes.Clear(); CloseButton.Background = Avalonia.Media.Brushes.Transparent;
-            CloseButton.BorderThickness = new Thickness(0); CloseButton.Padding = new Thickness(8);
-            CloseButton.MinWidth = 32; CloseButton.MinHeight = 32; CloseButton.FontSize = 22;
-        }
-    }
-
-    // Performs the on close pressed action for this screen or workflow.
-    private void OnClosePressed(object? sender, Avalonia.Interactivity.RoutedEventArgs e) => close();
-
-    // Performs the on scrim pressed action for this screen or workflow.
-    private void OnScrimPressed(object? sender, PointerPressedEventArgs e) => close();
 }

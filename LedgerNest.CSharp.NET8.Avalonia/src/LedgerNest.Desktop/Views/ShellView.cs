@@ -15,8 +15,7 @@ public partial class MainWindow
         if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
         page.Content = null;
         sidebar.Content = null;
-        overlay.Children.Clear();
-        overlay.IsVisible = false;
+        vm.CurrentOverlay = null;
         shellModel = vm;
         CurrencyDisplay.SelectedCurrency = () => vm.InvoiceSetting("Currency").Value;
         ApplyAppearance(vm);

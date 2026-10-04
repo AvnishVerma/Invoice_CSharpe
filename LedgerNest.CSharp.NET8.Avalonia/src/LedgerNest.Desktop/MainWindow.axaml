@@ -1,6 +1,9 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:LedgerNest.Desktop"
+        xmlns:views="using:LedgerNest.Desktop.Views"
         x:Class="LedgerNest.Desktop.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
         Width="1440" Height="900" MinWidth="640" MinHeight="480"
         Title="LadgerNest" Background="{DynamicResource AppCanvasBrush}">
   <Grid x:Name="Root">
@@ -10,7 +13,16 @@
         <ContentControl x:Name="page" Grid.Column="1" />
       </Grid>
     </Grid>
-    <Grid x:Name="overlay" IsVisible="False" />
+    <Grid x:Name="overlay" IsVisible="{Binding IsOverlayOpen}" ColumnDefinitions="Auto,*">
+      <Border Width="{Binding #sidebar.Bounds.Width}" IsVisible="{Binding IsSideOverlay}" IsHitTestVisible="False" />
+      <ContentControl Grid.Column="1" Content="{Binding CurrentOverlay}">
+        <ContentControl.DataTemplates>
+          <DataTemplate DataType="vm:LoginViewModel"><views:LoginView /></DataTemplate>
+          <DataTemplate DataType="vm:ProductItemDialogViewModel"><views:ProductItemDialogView /></DataTemplate>
+          <DataTemplate DataType="vm:OverlayDialogViewModel"><views:OverlayDialogView /></DataTemplate>
+        </ContentControl.DataTemplates>
+      </ContentControl>
+    </Grid>
     <Border x:Name="toastCard"
             IsVisible="False"
             Width="390"

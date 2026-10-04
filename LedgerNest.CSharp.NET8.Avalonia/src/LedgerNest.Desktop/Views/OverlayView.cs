@@ -1,5 +1,5 @@
-using Avalonia;
 using Avalonia.Controls;
+using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Desktop.Views;
 
 namespace LedgerNest.Desktop;
@@ -10,7 +10,7 @@ public partial class MainWindow
     internal void CloseOverlay()
     {
         if (!Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
-        overlay.Children.Clear(); overlay.IsVisible = false;
+        Model.CurrentOverlay = null;
     }
 
     // Performs the show access screen action for this screen or workflow.
@@ -33,14 +33,19 @@ public partial class MainWindow
         ShowPage();
     }
     // Performs the show overlay action for this screen or workflow.
-    internal void ShowOverlay(string title, Control content, Control? footer = null, bool side = false, double width = 560, Control? headerAccessory = null, Control? leadingIcon = null, bool prominentHeader = false)
+    internal void ShowOverlay(string title, object content, object? footer = null, bool side = false, double width = 560, object? headerAccessory = null, object? leadingIcon = null, bool prominentHeader = false)
     {
-        overlay.Children.Clear(); overlay.IsVisible = true;
-        overlay.Margin = new Thickness(side ? (Model.SidebarExpanded ? 210 : 64) : 0, 0, 0, 0);
-        var availableWidth = Bounds.Width - overlay.Margin.Left;
-        overlay.Children.Add(new OverlayDialogView(title, content, footer ?? Ui.Button("Close", CloseOverlay), headerAccessory, CloseOverlay, side, width, availableWidth, Bounds.Height, leadingIcon, prominentHeader));
+        var availableWidth = Bounds.Width - (side ? sidebar.Bounds.Width : 0);
+        Model.CurrentOverlay = new OverlayDialogViewModel(title, content, footer, headerAccessory,
+            leadingIcon, CloseOverlay, side, prominentHeader, content is ProductEditorFormView,
+            width, availableWidth, Bounds.Height);
     }
     // Performs the confirm action for this screen or workflow.
     internal void Confirm(string title, string message, Action action)
-    { ShowOverlay(title, Ui.Text(message), Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Confirm", () => { action(); CloseOverlay(); }, true)), width: 460); }
+    {
+        ShowOverlay(title, new DialogMessage(message), new DialogActions([
+            new DialogAction("Cancel", new RelayCommand(CloseOverlay)),
+            new DialogAction("Confirm", new RelayCommand(() => { action(); CloseOverlay(); }), true)
+        ]), width: 460);
+    }
 }

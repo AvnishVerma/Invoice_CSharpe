@@ -21,6 +21,12 @@ public partial class MainWindowViewModel : ObservableObject
     public static readonly string[] Routes = ["Dashboard", "New Invoice", "Invoices", "Quotations", "Receipts", "Customers", "Products", "Units", "Prices", "Inventory", "Reports", "Settings"];
     [ObservableProperty] private string title = "Dashboard";
     [ObservableProperty] private bool sidebarExpanded = true;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOverlayOpen))]
+    [NotifyPropertyChangedFor(nameof(IsSideOverlay))]
+    private object? currentOverlay;
+    public bool IsOverlayOpen => CurrentOverlay != null;
+    public bool IsSideOverlay => CurrentOverlay is OverlayDialogViewModel { IsSide: true };
     [ObservableProperty] private string status = "";
     [ObservableProperty] private string themeMode = "Light";
     [ObservableProperty] private string language = "English";

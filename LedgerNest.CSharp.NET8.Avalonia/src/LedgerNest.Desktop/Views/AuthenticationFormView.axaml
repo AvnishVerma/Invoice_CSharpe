@@ -1,9 +1,15 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.AuthenticationFormView">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.AuthenticationFormView" x:DataType="vm:AuthenticationFormViewModel">
   <StackPanel Spacing="14.4">
-    <TextBlock x:Name="TitleText" FontSize="22" FontWeight="Bold" TextWrapping="Wrap" />
-    <TextBlock x:Name="SubtitleText" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
-    <ContentControl x:Name="BodyHost" />
+    <TextBlock Text="{Binding Title}" FontSize="22" FontWeight="Bold" TextWrapping="Wrap" />
+    <TextBlock Text="{Binding Subtitle}" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+    <StackPanel IsVisible="{Binding IsRecovery}" Spacing="14.4">
+      <views:FormFieldView DataContext="{Binding Username}" />
+      <Button Content="Generate Challenge" Classes="action outline" IsEnabled="False" ToolTip.Tip="This service has not yet been migrated." />
+      <TextBlock vm:UiLocalization.Text="Challenge Code" FontSize="13" FontWeight="Bold" />
+      <TextBox IsReadOnly="True" PlaceholderText="Challenge code" />
+    </StackPanel>
+    <views:FormFieldsView DataContext="{Binding Fields}" />
   </StackPanel>
 </UserControl>

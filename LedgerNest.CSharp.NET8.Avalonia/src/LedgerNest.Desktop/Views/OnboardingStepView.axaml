@@ -1,11 +1,23 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="using:LedgerNest.Desktop.Views"
-             x:Class="LedgerNest.Desktop.Views.OnboardingStepView">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.OnboardingStepView" x:DataType="vm:OnboardingViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.step"><Setter Property="FontSize" Value="13" /></Style>
+    <Style Selector="TextBlock.step.selected"><Setter Property="FontWeight" Value="Bold" /></Style>
+  </UserControl.Styles>
   <StackPanel Spacing="19.2">
     <views:BrandLogo HorizontalAlignment="Left" />
-    <ContentControl x:Name="StepHost" />
-    <TextBlock x:Name="TitleText" FontSize="24" FontWeight="Bold" TextWrapping="Wrap" />
-    <ContentControl x:Name="BodyHost" />
+    <WrapPanel>
+      <TextBlock Classes="step" Classes.selected="{Binding IsCompany}" vm:UiLocalization.Text="1  Company" Margin="0,0,8,0" />
+      <TextBlock Classes="step" Classes.selected="{Binding IsInvoice}" vm:UiLocalization.Text="2  Invoice" Margin="0,0,8,0" />
+      <TextBlock Classes="step" Classes.selected="{Binding IsAppearance}" vm:UiLocalization.Text="3  Appearance" />
+    </WrapPanel>
+    <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" TextWrapping="Wrap" />
+    <Border IsVisible="{Binding !IsComplete}"><views:FormFieldsView DataContext="{Binding Fields}" /></Border>
+    <StackPanel IsVisible="{Binding IsComplete}" Spacing="14.4" HorizontalAlignment="Center" Margin="32">
+      <TextBlock Text="✓" FontSize="40" HorizontalAlignment="Center" />
+      <TextBlock vm:UiLocalization.Text="You're all set!" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" />
+      <TextBlock vm:UiLocalization.Text="Start creating invoices for your business." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+    </StackPanel>
   </StackPanel>
 </UserControl>
