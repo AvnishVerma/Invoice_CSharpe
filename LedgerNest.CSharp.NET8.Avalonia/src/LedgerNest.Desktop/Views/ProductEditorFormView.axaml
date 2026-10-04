@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns:primitives="using:Avalonia.Controls.Primitives"
+ x:Class="LedgerNest.Desktop.Views.ProductEditorFormView" x:DataType="vm:ProductEditorViewModel">
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.ThemeDictionaries>
+  <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="ProductTipBrush">#FFF5ED</SolidColorBrush></ResourceDictionary>
+  <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="ProductTipBrush">#3B3026</SolidColorBrush></ResourceDictionary>
+ </ResourceDictionary.ThemeDictionaries></ResourceDictionary></UserControl.Resources>
+ <StackPanel Spacing="24">
+  <ItemsControl ItemsSource="{Binding Sections}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ProductEditorSectionViewModel">
+   <StackPanel Spacing="9.6" Margin="0,0,0,24">
+    <TextBlock Text="{Binding Title}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}"/>
+    <ItemsControl ItemsSource="{Binding Rows}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ProductEditorRowViewModel">
+     <StackPanel Spacing="1.6" Margin="0,0,0,12.8" IsVisible="{Binding IsVisible}">
+      <ItemsControl ItemsSource="{Binding Inputs}">
+       <ItemsControl.ItemsPanel><ItemsPanelTemplate><primitives:UniformGrid Rows="1" Columns="{Binding Columns}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+       <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ProductInputViewModel"><Border Margin="0,0,6,0" IsEnabled="{Binding IsEnabled}" IsVisible="{Binding IsVisible}"><views:ProductInputView/></Border></DataTemplate></ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Text="{Binding Help}" IsVisible="{Binding HasHelp}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+     </StackPanel>
+    </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+   </StackPanel>
+  </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+  <Expander x:Name="ProductAdvancedInformation" IsVisible="{Binding HasAdvanced}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" Padding="0">
+   <Expander.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="more_horiz" Classes="action-icon-glyph" Foreground="#6750A4"/><TextBlock Text="Advanced Information" FontSize="15"/></StackPanel></Expander.Header>
+   <ItemsControl ItemsSource="{Binding Advanced}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ProductInputViewModel"><Border Margin="0,0,0,16"><views:ProductInputView/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+  </Expander>
+  <Border Background="{DynamicResource ProductTipBrush}" BorderBrush="#FFD18B" BorderThickness="1" CornerRadius="10" Padding="9.6"><Grid ColumnDefinitions="16,10,*"><TextBlock Text="lightbulb" Classes="action-icon-glyph" Foreground="#FFB300"/><TextBlock Grid.Column="2" Text="Tip: Choose optional product fields in Settings → Product Details." FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/></Grid></Border>
+ </StackPanel>
+</UserControl>

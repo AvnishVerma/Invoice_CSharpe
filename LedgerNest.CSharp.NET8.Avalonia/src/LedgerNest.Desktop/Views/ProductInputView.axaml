@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:converters="using:Avalonia.Data.Converters"
+ x:Class="LedgerNest.Desktop.Views.ProductInputView" x:DataType="vm:ProductInputViewModel" x:Name="Root">
+ <UserControl.Resources>
+  <ResourceDictionary><ResourceDictionary.ThemeDictionaries>
+   <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="ProductInputSurface">#FFF8FF</SolidColorBrush></ResourceDictionary>
+   <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="ProductInputSurface">#282330</SolidColorBrush></ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+  <DataTemplate x:Key="TextInput" x:DataType="vm:ProductInputViewModel"><TextBox Text="{Binding Field.Value, Mode=TwoWay}" PlaceholderText="{Binding Field.Label}" MaxLength="{Binding Field.MaxLength}" AcceptsReturn="{Binding IsMultiline}" Classes.multiline="{Binding IsMultiline}" Classes.with-icon="{Binding HasIcon}" AutomationProperties.Name="{Binding Field.Label}"/></DataTemplate>
+  <DataTemplate x:Key="ChoiceInput" x:DataType="vm:ProductInputViewModel"><ComboBox ItemsSource="{Binding Field.Options}" SelectedItem="{Binding Field.Value, Mode=TwoWay}" Classes.with-icon="{Binding HasIcon}" AutomationProperties.Name="{Binding Field.Label}"/></DataTemplate>
+  <DataTemplate x:Key="DateInput" x:DataType="vm:ProductInputViewModel">
+   <Grid>
+    <TextBox Text="{Binding DateAdapter.DateText}" IsReadOnly="True" PlaceholderText="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" AutomationProperties.Name="{Binding Field.Label}" PointerPressed="OpenCalendar" KeyDown="CalendarKeyDown"/>
+    <Button x:Name="CalendarButton" Classes="action-icon text" HorizontalAlignment="Right" ToolTip.Tip="Choose date"><TextBlock Text="calendar_today" Classes="action-icon-glyph"/>
+     <Button.Flyout><Flyout><StackPanel Spacing="6.4"><Calendar DisplayDate="{Binding DateAdapter.CalendarDisplayDate}" SelectedDate="{Binding DateAdapter.SelectedDate, Mode=TwoWay}" SelectedDatesChanged="DateSelected"/><Button Content="Clear date" Classes="action outline" Click="ClearDate"/></StackPanel></Flyout></Button.Flyout>
+    </Button>
+   </Grid>
+  </DataTemplate>
+  </ResourceDictionary>
+ </UserControl.Resources>
+ <UserControl.Styles>
+  <Style Selector="TextBox"><Setter Property="MinHeight" Value="38.4"/><Setter Property="Padding" Value="10,8"/><Setter Property="FontSize" Value="15"/><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="#C8C3CA"/><Setter Property="CornerRadius" Value="10"/><Setter Property="TextWrapping" Value="NoWrap"/></Style>
+  <Style Selector="TextBox.with-icon"><Setter Property="Padding" Value="34,8,10,8"/></Style>
+  <Style Selector="TextBox.multiline"><Setter Property="MinHeight" Value="76.8"/><Setter Property="Padding" Value="10,20,10,8"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+  <Style Selector="TextBox.multiline.with-icon"><Setter Property="Padding" Value="34,20,10,8"/></Style>
+  <Style Selector="ComboBox"><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="MinHeight" Value="38.4"/><Setter Property="Padding" Value="10,6"/><Setter Property="Background" Value="Transparent"/><Setter Property="CornerRadius" Value="10"/></Style>
+  <Style Selector="ComboBox.with-icon"><Setter Property="Padding" Value="34,6,10,6"/></Style>
+  <Style Selector="ContentControl#Input.text"><Setter Property="ContentTemplate" Value="{StaticResource TextInput}"/></Style>
+  <Style Selector="ContentControl#Input.choice"><Setter Property="ContentTemplate" Value="{StaticResource ChoiceInput}"/></Style>
+  <Style Selector="ContentControl#Input.date"><Setter Property="ContentTemplate" Value="{StaticResource DateInput}"/></Style>
+ </UserControl.Styles>
+ <StackPanel Spacing="3.2">
+  <Border IsVisible="{Binding IsCheck}"><CheckBox IsChecked="{Binding Field.IsChecked, Mode=TwoWay}" AutomationProperties.Name="{Binding Field.Label}"><StackPanel Spacing="2.4"><TextBlock Text="{Binding Field.Label}" FontSize="13"/><TextBlock Text="{Binding Help}" IsVisible="{Binding HasHelp}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/></StackPanel></CheckBox></Border>
+  <Grid IsVisible="{Binding !IsCheck}" Margin="0,7,0,0">
+   <ContentControl x:Name="Input" Content="{Binding}" Classes.text="{Binding IsText}" Classes.choice="{Binding IsChoice}" Classes.date="{Binding IsDate}"/>
+   <TextBlock Text="{Binding Icon}" Classes="action-icon-glyph" FontSize="18.4" IsVisible="{Binding HasIcon}" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+   <Border Background="{DynamicResource ProductInputSurface}" Padding="3.2,0" Margin="9,-7,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" IsHitTestVisible="False">
+    <Border.IsVisible><MultiBinding Converter="{x:Static converters:BoolConverters.Or}"><Binding Path="ShowCaption"/><Binding Path="IsKeyboardFocusWithin" ElementName="Root"/></MultiBinding></Border.IsVisible>
+    <TextBlock Text="{Binding Field.Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+   </Border>
+  </Grid>
+  <TextBlock Text="{Binding Field.Error}" FontSize="12" Foreground="Firebrick" IsVisible="{Binding Field.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}"/>
+  <TextBlock Text="info_outline" Classes="action-icon-glyph" Foreground="#6366F1" Margin="16,0,0,0" HorizontalAlignment="Left" IsVisible="{Binding ShowAliasHelp}" ToolTip.Tip="Local-language name used when Show Alias Name in PDF is enabled in Invoice Settings."/>
+ </StackPanel>
+</UserControl>

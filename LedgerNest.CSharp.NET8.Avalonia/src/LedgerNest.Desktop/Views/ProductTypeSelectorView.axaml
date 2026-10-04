@@ -1,0 +1,8 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.ProductTypeSelectorView" x:DataType="vm:SegmentedChoiceViewModel">
+ <UserControl.Styles><Style Selector="Button.segment"><Setter Property="Background" Value="Transparent"/></Style><Style Selector="Button.segment.selected"><Setter Property="Background" Value="{DynamicResource AppSelectedBrush}"/></Style></UserControl.Styles>
+ <Border BorderBrush="#C8C3CA" BorderThickness="1" CornerRadius="18" ClipToBounds="True">
+  <ItemsControl ItemsSource="{Binding Options}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:SegmentedOptionViewModel">
+   <Button Classes="action segment" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}" Tag="{Binding Value}" ToolTip.Tip="{Binding Value}" AutomationProperties.Name="{Binding Value}"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="check" Classes="action-icon-glyph" IsVisible="{Binding IsSelected}"/><TextBlock Text="{Binding Value}"/></StackPanel></Button>
+  </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+ </Border>
+</UserControl>

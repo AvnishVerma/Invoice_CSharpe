@@ -1,12 +1,11 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.RecordDialogFooterView">
-  <StackPanel Spacing="12.8">
-    <ContentControl x:Name="UseDefaultHost" />
-    <ContentControl x:Name="AddAnotherHost" />
-    <Grid ColumnDefinitions="*,12,2*">
-      <ContentControl x:Name="CancelHost" />
-      <ContentControl x:Name="SaveHost" Grid.Column="2" />
-    </Grid>
-  </StackPanel>
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.RecordDialogFooterView" x:DataType="vm:RecordEditorFooterViewModel">
+ <UserControl.Styles><Style Selector="Button.product-save"><Setter Property="Background" Value="#6750A4"/></Style><Style Selector="Button.product-cancel"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#6750A4"/></Style></UserControl.Styles>
+ <StackPanel Spacing="12.8">
+  <CheckBox Content="Use as default for new invoices" IsVisible="{Binding IsCustomer}" IsChecked="{Binding UseDefault, Mode=TwoWay}"/>
+  <CheckBox Content="Add another after saving" IsVisible="{Binding IsNew}" IsChecked="{Binding AddAnother, Mode=TwoWay}"/>
+  <Grid ColumnDefinitions="*,12,2*">
+   <Button Content="Cancel" Command="{Binding CancelCommand}" Classes="action outline dialog-action" Classes.product-cancel="{Binding IsProduct}" HorizontalAlignment="Stretch" ToolTip.Tip="Cancel"/>
+   <Button Grid.Column="2" Command="{Binding SaveCommand}" Classes="action primary dialog-action" Classes.product-save="{Binding IsProduct}" HorizontalAlignment="Stretch" Tag="{Binding SaveLabel}" ToolTip.Tip="{Binding SaveLabel}" AutomationProperties.Name="{Binding SaveLabel}"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="save" Classes="action-icon-glyph" IsVisible="{Binding IsProduct}"/><TextBlock Text="{Binding SaveLabel}"/></StackPanel></Button>
+  </Grid>
+ </StackPanel>
 </UserControl>

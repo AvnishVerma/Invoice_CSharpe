@@ -31,6 +31,28 @@ internal static class Program
     }
 
     private static int assertions;
+    private static void CheckProductEditorState()
+    {
+        var fields = FormCatalog.Product();
+        var model = new ProductEditorViewModel(fields, label => label != "HSN/SAC");
+        model.Attach();
+        var inputs = model.Sections.SelectMany(section => section.Rows).SelectMany(row => row.Inputs).ToArray();
+        Check(inputs.All(input => input.Field.Label != "HSN/SAC"), "Product presentation must honor optional-field settings without constructing controls");
+        var stock = inputs.Single(input => input.Field.Label == "Stock");
+        fields.Single(field => field.Label == "Unlimited stock").IsChecked = true;
+        Check(!stock.IsEnabled, "Unlimited-stock state must disable the stock input in the product ViewModel");
+        var custom = inputs.Single(input => input.Field.Label == "Custom unit");
+        fields.Single(field => field.Label == "Unit").Value = "Custom…";
+        Check(custom.IsVisible, "Custom unit state must reveal its input through a binding");
+        fields.Single(field => field.Label == "Unit").Value = "None";
+        Check(!custom.IsVisible, "Selecting a standard unit must hide the custom unit input");
+        var saved = false;
+        var footer = new RecordEditorFooterViewModel("Product", true, () => { }, state => saved = state.AddAnother);
+        footer.AddAnother = true;
+        footer.SaveCommand.Execute(null);
+        Check(saved && footer.IsProduct && footer.SaveLabel == "Save Product", "Record-footer choices and Save command must preserve add-another behavior");
+        model.Detach();
+    }
     private static void CheckPublisherPresentation()
     {
         string? savedVersion = null;
@@ -452,6 +474,7 @@ internal static class Program
         var path = Path.Combine(Path.GetTempPath(), $"ledgernest-product-settings-{Guid.NewGuid():N}.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={path}").Options);
         var model = CreateModel(factory, path);
+        Check(model.SignIn("admin", "admin"), "Product settings fixture must authenticate before changing settings");
         Check(model.ProductFieldVisible("Manufacturer Name") && model.ProductFieldVisible("Extra Cost"), "Reference product defaults must enable metadata and extra cost");
         model.ProductSetting("Stock").IsChecked = false;
         model.ProductSetting("HSN/SAC").IsChecked = false;
@@ -461,6 +484,7 @@ internal static class Program
         Check(model.SaveSettings("Product Details"), "Product preferences must save");
         Check(model.ProductSetting("Name").IsChecked && model.ProductSetting("Price").IsChecked, "Required product fields cannot be disabled");
         var reloaded = CreateModel(factory, path);
+        Check(reloaded.SignIn("admin", "admin"), "Reloaded product fixture must authenticate before saving products");
         Check(!reloaded.ProductFieldVisible("Stock") && !reloaded.ProductFieldVisible("HSN/SAC") && !reloaded.ProductFieldVisible("Manufacturer Name"), "Product settings must survive a database reload");
         var fields = reloaded.ProductEditorFields();
         Check(fields.Single(f => f.Label == "Unlimited stock").IsChecked, "New products default to unlimited stock when stock is hidden");
@@ -559,6 +583,7 @@ internal static class Program
         CheckAxamlDialogs();
         CheckAxamlActions();
         CheckSettingsFormModel();
+        CheckProductEditorState();
         CheckPublisherPresentation();
         CheckUserDialogPresentation();
         CheckPrinterSelection();
@@ -847,7 +872,16 @@ internal static class Program
             unlimitedStock.IsChecked = true; Settle();
             Check(!ProductBox("Stock").IsEffectivelyEnabled, "Unlimited stock must disable the stock amount input");
             var unitChoice = window.GetVisualDescendants().OfType<ComboBox>().Single(c => Avalonia.Automation.AutomationProperties.GetName(c) == "Unit");
+            var productPresentation = (ProductEditorViewModel)window.GetVisualDescendants().OfType<ProductEditorFormView>().Single().DataContext!;
+            var unitField = productPresentation.Sections.SelectMany(section => section.Rows).SelectMany(row => row.Inputs).Single(input => input.Field.Label == "Unit").Field;
+            // The Unit master supplies new-product choices; retain coverage for historical custom-unit records.
+            unitField.Options = [..unitField.Options, "Custom…"];
+            unitChoice.ItemsSource = unitField.Options;
             unitChoice.SelectedItem = "Custom…"; Settle();
+            var customRow = productPresentation.Sections.SelectMany(section => section.Rows).Single(row => row.Inputs.Any(input => input.Field.Label == "Custom unit"));
+            Check(productPresentation.Sections.SelectMany(section => section.Rows).SelectMany(row => row.Inputs).Single(input => input.Field.Label == "Unit").Field.Value == "Custom…", "Product unit selector must update the field value");
+            Check(customRow.IsVisible, "Custom-unit row state must become visible after choosing a custom unit");
+            Capture("product-editor-custom-unit");
             Check(ProductBox("Custom unit").IsEffectivelyVisible, "Custom unit choice must reveal its input");
             ProductBox("Custom unit").Text = "hours";
             var advanced = window.GetVisualDescendants().OfType<Expander>().Single(e => e.Name == "ProductAdvancedInformation");

@@ -25,6 +25,7 @@
     </ResourceDictionary>
   </UserControl.Resources>
   <UserControl.DataTemplates>
+    <DataTemplate DataType="vm:RecordEditorFooterViewModel"><views:RecordDialogFooterView /></DataTemplate>
     <DataTemplate DataType="vm:UserDetailsViewModel"><views:UserDetailsView /></DataTemplate>
     <DataTemplate DataType="vm:UserEditorViewModel"><views:UserEditorView /></DataTemplate>
     <DataTemplate DataType="vm:UserPasswordViewModel"><views:UserPasswordView /></DataTemplate>

@@ -1,8 +1,4 @@
-using Avalonia;
-using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Input;
-using Avalonia.Layout;
-using Avalonia.Media;
 using LedgerNest.Desktop.Views;
 
 namespace LedgerNest.Desktop;
@@ -17,32 +13,21 @@ public partial class MainWindow
         var fields = kind == "Customer" ? FormCatalog.Customer() : kind == "Product" ? Model.ProductEditorFields(record) : FormCatalog.User(Model.PermissionManagement.Roles);
         if (record != null && kind == "User") fields = fields.Where(f => f.Kind != "password").ToArray();
         if (record != null) foreach (var f in fields) { f.Value = record[f.Label]; f.IsChecked = bool.TryParse(f.Value, out var v) && v; }
-        var useDefault = new CheckBox { Content = "Use as default for new invoices", IsVisible = kind == "Customer" };
-        var another = new CheckBox { Content = "Add another after saving", IsVisible = record == null };
-        var cancel = Ui.Button("Cancel", CloseOverlay); cancel.Classes.Add("dialog-action"); cancel.HorizontalAlignment = HorizontalAlignment.Stretch;
-        var save = Ui.Button($"Save {kind}", () =>
+        var footer = new RecordEditorFooterViewModel(kind, record == null, CloseOverlay, state =>
         {
             if (!Model.SaveRecord(kind, fields, record)) return;
-            if (kind == "Customer" && useDefault.IsChecked == true) Model.SetDefaultCustomer(Model.Customers.Last(c => c.Name == fields[0].Value.Trim()));
-            refresh(); if (another.IsChecked == true) EditRecord(kind, refresh); else CloseOverlay();
-        }, true); save.Classes.Add("material"); save.Classes.Add("dialog-action"); save.HorizontalAlignment = HorizontalAlignment.Stretch;
-        Control form = Ui.Fields(fields);
-        if (kind == "Product")
-        {
-            form = new ProductEditorFormView(fields, Model.ProductFieldVisible);
-        }
-        Control footer;
-        if (kind == "Product")
-        {
-            cancel.Background = Brushes.Transparent; cancel.Foreground = ProductEditorFormView.Purple;
-            save.Background = ProductEditorFormView.Purple;
-            save.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("save", 17, Brushes.White), new Border(), Ui.LocalText("Save Product", 13, true, Brushes.White));
-            footer = Ui.Stack(9.6, another, Ui.Columns("*,12,2*", cancel, new Border(), save));
-        }
-        else footer = new RecordDialogFooterView(useDefault, another, cancel, save);
-        ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}", form, footer, true, kind == "Product" ? 550 : 520, kind == "Product" && Model.ProductFieldVisible("Type") ? ProductEditorFormView.TypeSelector(fields[0]) : null);
+            if (kind == "Customer" && state.UseDefault) Model.SetDefaultCustomer(Model.Customers.Last(customer => customer.Name == fields[0].Value.Trim()));
+            refresh();
+            if (state.AddAnother) EditRecord(kind, refresh); else CloseOverlay();
+        });
+        object form = kind == "Product"
+            ? new ProductEditorFormView(fields, Model.ProductFieldVisible)
+            : new FormFieldsViewModel(fields.Select(field => new FormFieldViewModel(field)).ToArray(), 1);
+        var typeSelector = kind == "Product" && Model.ProductFieldVisible("Type")
+            ? new ProductTypeSelectorView { DataContext = new SegmentedChoiceViewModel(fields[0]) } : null;
+        ShowOverlay(record == null ? (kind == "Product" ? "Add New Product" : $"New {kind}") : $"Edit {kind}",
+            form, footer, true, kind == "Product" ? 550 : 520, typeSelector);
     }
-
     // Shows a compact read-only summary for a user account.
     internal void ShowUserDetails(UiRecord user, Action refresh)
     {

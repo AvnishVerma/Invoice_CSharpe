@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.ProductDetailsSettingsView" x:DataType="vm:ProductDetailsSettingsViewModel" xmlns:shared="using:LedgerNest.Desktop.Views" x:Name="PageRoot">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.ProductDetailsSettingsView" x:DataType="vm:ProductDetailsSettingsViewModel" xmlns:shared="using:LedgerNest.Desktop.Views" x:Name="PageRoot">
   <UserControl.Resources>
     <DataTemplate x:Key="FieldRow" x:DataType="vm:ProductFieldOption">
       <Border Classes="card" Padding="12" Margin="0,0,0,6">
@@ -8,7 +8,7 @@
             <TextBlock Text="{Binding Title}" FontSize="15" />
             <TextBlock Text="{Binding Help}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
           </StackPanel>
-          <ToggleSwitch Grid.Column="3" IsChecked="{Binding Field.IsChecked, Mode=TwoWay}" IsEnabled="{Binding !Required}" />
+          <shared:FormToggleSwitchView Grid.Column="3" Field="{Binding Field}" IsEnabled="{Binding !Required}" />
         </Grid>
       </Border>
     </DataTemplate>
