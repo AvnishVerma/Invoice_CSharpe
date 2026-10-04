@@ -28,6 +28,7 @@
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="AppCanvasBrush">#FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="LicenseNoticeBrush">#FFF4E3</SolidColorBrush>
           <SolidColorBrush x:Key="AppSurfaceBrush">#FAFAFA</SolidColorBrush>
           <SolidColorBrush x:Key="AppCardBrush">#FBF5FF</SolidColorBrush>
           <SolidColorBrush x:Key="AppTextBrush">#202124</SolidColorBrush>
@@ -39,6 +40,7 @@
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="AppCanvasBrush">#111820</SolidColorBrush>
+          <SolidColorBrush x:Key="LicenseNoticeBrush">#3F321E</SolidColorBrush>
           <SolidColorBrush x:Key="AppSurfaceBrush">#18212B</SolidColorBrush>
           <SolidColorBrush x:Key="AppCardBrush">#202B36</SolidColorBrush>
           <SolidColorBrush x:Key="AppTextBrush">#F1F5F9</SolidColorBrush>
@@ -155,6 +157,19 @@
       <Setter Property="MinHeight" Value="{DynamicResource ActionButtonHeight}" />
       <Setter Property="Padding" Value="{DynamicResource ActionButtonPadding}" />
       <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.segment.selected">
+      <Setter Property="Background" Value="{DynamicResource AppSelectedBrush}" />
+    </Style>
+    <Style Selector="Button.pdf-template">
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.pdf-template.selected">
+      <Setter Property="Background" Value="{DynamicResource AppSelectedBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
     </Style>
     <Style Selector="Button.header-icon-action">
       <Setter Property="Background" Value="Transparent" />

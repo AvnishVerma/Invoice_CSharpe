@@ -1,0 +1,95 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views" xmlns:converters="using:Avalonia.Data.Converters" x:Class="LedgerNest.Desktop.Views.FormFieldView" x:DataType="vm:FormFieldViewModel" x:Name="Root">
+  <UserControl.Resources>
+    <DataTemplate x:Key="TextInput" x:DataType="vm:FormFieldViewModel">
+      <TextBox Text="{Binding Field.Value, Mode=TwoWay}" PlaceholderText="{Binding Label}" MaxLength="{Binding Field.MaxLength}" AcceptsReturn="{Binding IsMultiline}" Classes.multiline="{Binding IsMultiline}" Classes.with-icon="{Binding WithIcon}" TextWrapping="Wrap" PasswordChar="{Binding PasswordChar}" AutomationProperties.Name="{Binding Field.Label}" />
+    </DataTemplate>
+    <DataTemplate x:Key="ChoiceInput" x:DataType="vm:FormFieldViewModel">
+      <ComboBox ItemsSource="{Binding Field.Options}" SelectedItem="{Binding Field.Value, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Field.Label}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate>
+            <TextBlock vm:UiLocalization.Text="{Binding}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+    </DataTemplate>
+    <DataTemplate x:Key="DateInput" x:DataType="vm:FormFieldViewModel">
+      <Grid>
+        <TextBox Text="{Binding DateText}" IsReadOnly="True" PlaceholderText="{Binding Label}" Padding="10,5,36,5" AutomationProperties.Name="{Binding Field.Label}" PointerPressed="OpenCalendar" />
+        <Button x:Name="CalendarButton" Classes="action-icon text" HorizontalAlignment="Right" ToolTip.Tip="Choose date" Tag="Choose date">
+          <TextBlock Text="calendar_today" Classes="action-icon-glyph" />
+          <Button.Flyout>
+            <Flyout>
+              <Calendar DisplayDate="{Binding CalendarDisplayDate}" SelectedDate="{Binding SelectedDate, Mode=TwoWay}" SelectedDatesChanged="DateSelected" />
+            </Flyout>
+          </Button.Flyout>
+        </Button>
+      </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="SliderInput" x:DataType="vm:FormFieldViewModel">
+      <Slider Minimum="0" Maximum="100" Value="{Binding SliderValue, Mode=TwoWay}" AutomationProperties.Name="{Binding Field.Label}" />
+    </DataTemplate>
+    <DataTemplate x:Key="FileInput" x:DataType="vm:FormFieldViewModel">
+      <StackPanel Spacing="5">
+        <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+        <WrapPanel Orientation="Horizontal">
+          <Button Content="Upload image" Click="UploadImage" Classes="action outline" />
+          <TextBlock Text="{Binding ImageStatus}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="8,0" VerticalAlignment="Center" />
+          <Button Content="Remove" Command="{Binding RemoveImageCommand}" Classes="action outline" />
+        </WrapPanel>
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="ToggleInput" x:DataType="vm:FormFieldViewModel">
+      <local:InvoiceToggleSettingView Field="{Binding Field}" Title="{Binding Label}" Help="{Binding Field.Help}" Icon="{Binding Field.Icon}" />
+    </DataTemplate>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="TextBox.multiline">
+      <Setter Property="MinHeight" Value="84" />
+    </Style>
+    <Style Selector="TextBox.with-icon">
+      <Setter Property="Padding" Value="38,5,10,5" />
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ContentControl#Input.IsText">
+      <Setter Property="ContentTemplate" Value="{StaticResource TextInput}" />
+    </Style>
+    <Style Selector="ContentControl#Input.IsChoice">
+      <Setter Property="ContentTemplate" Value="{StaticResource ChoiceInput}" />
+    </Style>
+    <Style Selector="ContentControl#Input.IsDate">
+      <Setter Property="ContentTemplate" Value="{StaticResource DateInput}" />
+    </Style>
+    <Style Selector="ContentControl#Input.IsSlider">
+      <Setter Property="ContentTemplate" Value="{StaticResource SliderInput}" />
+    </Style>
+    <Style Selector="ContentControl#Input.IsFile">
+      <Setter Property="ContentTemplate" Value="{StaticResource FileInput}" />
+    </Style>
+    <Style Selector="ContentControl#Input.IsToggle">
+      <Setter Property="ContentTemplate" Value="{StaticResource ToggleInput}" />
+    </Style>
+  </UserControl.Styles>
+  <StackPanel Spacing="4">
+    <Grid Margin="0,7,0,0">
+      <ContentControl x:Name="Input" Content="{Binding}" Classes.IsText="{Binding IsText}" Classes.IsChoice="{Binding IsChoice}" Classes.IsDate="{Binding IsDate}" Classes.IsSlider="{Binding IsSlider}" Classes.IsFile="{Binding IsFile}" Classes.IsToggle="{Binding IsToggle}" />
+      <TextBlock Text="{Binding Field.Icon}" Classes="action-icon-glyph" IsVisible="{Binding WithIcon}" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" />
+      <Border Background="{DynamicResource AppCardBrush}" Padding="4,0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="9,-7,0,0" IsHitTestVisible="False">
+        <Border.IsVisible>
+          <MultiBinding Converter="{x:Static converters:BoolConverters.And}">
+            <Binding Path="!IsToggle" />
+            <Binding Path="!IsFile" />
+            <Binding Path="!IsSlider" />
+            <MultiBinding Converter="{x:Static converters:BoolConverters.Or}">
+              <Binding Path="ShowCaption" />
+              <Binding Path="IsKeyboardFocusWithin" ElementName="Root" />
+            </MultiBinding>
+          </MultiBinding>
+        </Border.IsVisible>
+        <TextBlock vm:UiLocalization.Text="{Binding Caption}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+      </Border>
+    </Grid>
+    <TextBlock Text="{Binding Field.Error}" Foreground="Firebrick" FontSize="12" IsVisible="{Binding Field.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+  </StackPanel>
+</UserControl>

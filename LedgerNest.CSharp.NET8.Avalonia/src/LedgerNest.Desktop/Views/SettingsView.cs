@@ -66,104 +66,25 @@ public partial class MainWindow
         stack.Children.Add(Ui.Button("Save Settings", () => Model.SaveSettings(name), true));
         stack.MaxWidth = 900; return new ScreenScaffoldView(Ui.AppBar(name), Ui.Scroll(stack, 28));
     }
-    // Builds the backup management screen and keeps its history list synchronized with completed file operations.
+    // Supplies backup state and existing file-operation behavior to the AXAML view.
     private Control BackupView()
     {
         ReloadBackupHistory();
-        var history = Ui.Stack(14);
-        void RenderHistory()
-        {
-            history.Children.Clear();
-            if (backupHistory.Count == 0)
-            {
-                history.Children.Add(Ui.Empty("No backups found", "Create or import a backup to show it here."));
-                return;
-            }
-            foreach (var backup in backupHistory.OrderByDescending(item => item.CreatedAt))
-            {
-                var icon = new Border
-                {
-                    Width = 32,
-                    Height = 32,
-                    CornerRadius = new CornerRadius(20),
-                    Background = Brush.Parse(backup.IsDatabase ? "#2196F3" : "#4CAF60"),
-                    Child = Ui.Icon(backup.IsDatabase ? "storage" : "code", 23, Brushes.White)
-                };
-                var menu = Ui.Button("⋮", () => { });
-                menu.MinWidth = 38;
-                ToolTip.SetTip(menu, "Backup actions");
-                var flyout = new MenuFlyout();
-                var restore = new MenuItem { Header = "Restore" };
-                restore.Click += async (_, _) => await RunBackupFileAction(() => RestoreTrackedBackup(backup));
-                var download = new MenuItem { Header = "Download" };
-                download.Click += async (_, _) => await RunBackupFileAction(() => SaveTrackedBackupCopy(backup, "Download Backup"));
-                var share = new MenuItem { Header = "Share" };
-                share.Click += async (_, _) => await RunBackupFileAction(() => SaveTrackedBackupCopy(backup, "Share Backup"));
-                var delete = new MenuItem { Header = "Delete" };
-                delete.Click += (_, _) => Confirm("Delete Backup", $"Delete {backup.Name}?", async () => await RunBackupFileAction(() => DeleteTrackedBackup(backup)));
-                flyout.Items.Add(restore);
-                flyout.Items.Add(download);
-                flyout.Items.Add(share);
-                flyout.Items.Add(delete);
-                menu.Flyout = flyout;
-                var details = Ui.Stack(2.4,
-                    Ui.Text(backup.Name, 15),
-                    Ui.Text($"Size: {FormatFileSize(backup.Size)}", 12, color: Ui.Muted),
-                    Ui.Text($"Created: {backup.CreatedAt:dd MMM yyyy HH:mm}", 12, color: Ui.Muted));
-                var card = Ui.Card(Ui.Columns("Auto,16,*,Auto", icon, new Border(), details, menu), 16);
-                card.Background = Ui.Palette("#F8F3FB", "#202B36");
-                card.MaxWidth = 870;
-                card.HorizontalAlignment = HorizontalAlignment.Stretch;
-                history.Children.Add(card);
-            }
-        }
-        RenderHistory();
-        System.Collections.Specialized.NotifyCollectionChangedEventHandler historyChanged = (_, _) => RenderHistory();
-        history.AttachedToVisualTree += (_, _) => backupHistory.CollectionChanged += historyChanged;
-        history.DetachedFromVisualTree += (_, _) => backupHistory.CollectionChanged -= historyChanged;
-
-        Button ActionButton(string label, string icon, Func<Task> action)
-        {
-            var button = Ui.Button(label, async () => await RunBackupFileAction(action));
-            button.Content = Ui.Columns("Auto,8,*", Ui.Icon(icon, 18, Brush.Parse("#6750A4")), new Border(), Ui.LocalText(label, 14, color: Brush.Parse("#6750A4")));
-            button.Background = Ui.Palette("#F5EFFA", "#202B36");
-            button.BorderBrush = Brush.Parse("#E2D9E8");
-            button.CornerRadius = new CornerRadius(22);
-            button.HorizontalAlignment = HorizontalAlignment.Stretch;
-            return button;
-        }
-
-        var actions = Ui.Columns("*,16,*,16,*",
-            ActionButton("Create DB Backup", "backup", CreateDatabaseBackupFile),
-            new Border(),
-            ActionButton("Export JSON", "download", CreateBackupFile),
-            new Border(),
-            ActionButton("Import Backup", "upload", ImportBackupFile));
-        var refresh = Ui.Button("Refresh", () =>
-        {
-            ReloadBackupHistory();
-            RenderHistory();
-        });
-        refresh.Content = Ui.Icon("refresh", 18, Brushes.White);
-        ((TextBlock)refresh.Content).Classes.Add("action-icon-glyph");
-        refresh.Classes.Remove("action");
-        refresh.Classes.Remove("outline");
-        refresh.Classes.Add("action-icon");
-        refresh.Classes.Add("header-icon-action");
-        ToolTip.SetTip(refresh, "Refresh");
-        return new ScreenScaffoldView(Ui.AppBar("Backup Management", refresh), new BackupManagementView(actions, history));
+        var model = new BackupManagementViewModel(backupHistory, ReloadBackupHistory,
+            () => RunBackupFileAction(CreateDatabaseBackupFile),
+            () => RunBackupFileAction(CreateBackupFile),
+            () => RunBackupFileAction(ImportBackupFile),
+            item => RunBackupFileAction(() => RestoreTrackedBackup(item)),
+            item => RunBackupFileAction(() => SaveTrackedBackupCopy(item, "Download Backup")),
+            item => RunBackupFileAction(() => SaveTrackedBackupCopy(item, "Share Backup")),
+            item => Confirm("Delete Backup", $"Delete {item.Name}?", async () => await RunBackupFileAction(() => DeleteTrackedBackup(item))));
+        return new BackupManagementView { DataContext = model };
     }
-
-    // Formats a backup byte length for the history cards.
-    private static string FormatFileSize(long bytes) => bytes >= 1024 * 1024
-        ? $"{bytes / 1024d / 1024d:0.0} MB"
-        : $"{Math.Max(0.1, bytes / 1024d):0.0} KB";
-
     // Loads the backup-history table each time the screen is opened or refreshed.
     private void ReloadBackupHistory()
     {
         backupHistory.Clear();
-        foreach (var backup in Model.LoadBackupHistory())
+        foreach (var backup in Model.LoadBackupHistory().OrderByDescending(item => item.CreatedAt))
             backupHistory.Add(new BackupHistoryItem(
                 backup.Name,
                 backup.FilePath,
@@ -180,7 +101,7 @@ public partial class MainWindow
         if (existing != null) backupHistory.Remove(existing);
         var isDatabase = file.Name.EndsWith(".invoicedb", StringComparison.OrdinalIgnoreCase);
         var createdAt = DateTime.Now;
-        backupHistory.Add(new BackupHistoryItem(file.Name, filePath, size, createdAt, isDatabase));
+        backupHistory.Insert(0, new BackupHistoryItem(file.Name, filePath, size, createdAt, isDatabase));
         Model.RecordBackupHistory(file.Name, filePath, size, isDatabase);
     }
 
@@ -486,8 +407,3 @@ public partial class MainWindow
 }
 
 // Describes a backup shown in the current Backup Management history.
-internal sealed record BackupHistoryItem(string Name, string FilePath, long Size, DateTime CreatedAt, bool IsDatabase);
-
-
-
-

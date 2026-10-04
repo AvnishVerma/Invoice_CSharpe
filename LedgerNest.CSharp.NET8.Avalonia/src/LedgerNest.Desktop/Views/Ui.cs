@@ -192,157 +192,9 @@ internal static class Ui
         return button;
     }
 
-    // Performs the field action for this screen or workflow.
+    // Legacy callers load an AXAML field view; control structure and bindings live in that view.
     public static Control Field(FormField field, string? labelText = null, bool singleLine = false, bool compact = true)
-    {
-        var withIcon = labelText == null && field.Icon.Length > 0;
-        labelText ??= field.Label;
-        Control input;
-        var binding = new Binding(nameof(FormField.Value)) { Source = field, Mode = BindingMode.TwoWay };
-        switch (field.Kind)
-        {
-            case "toggle":
-                var thumb = new Avalonia.Controls.Shapes.Ellipse { Width = compact ? 13 : 16, Height = compact ? 13 : 16, Fill = Brushes.White, Margin = new Thickness(compact ? 2 : 3) };
-                var track = new Border { Width = compact ? 32 : 40, Height = compact ? 20 : 24, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Child = thumb };
-                var toggle = new ToggleButton { Content = track, Padding = new Thickness(0), BorderThickness = new Thickness(0), Background = Brushes.Transparent, MinHeight = 32, VerticalAlignment = VerticalAlignment.Center };
-                toggle.Classes.Add("form-toggle");
-                toggle.Bind(ToggleButton.IsCheckedProperty, new Binding(nameof(FormField.IsChecked)) { Source = field, Mode = BindingMode.TwoWay });
-                void PaintToggle() { track.Background = toggle.IsChecked == true ? Brush.Parse("#8097BD") : Brushes.White; track.BorderBrush = toggle.IsChecked == true ? Brushes.Transparent : Brush.Parse("#BDBDBD"); thumb.Fill = toggle.IsChecked == true ? Primary : Brush.Parse("#BDBDBD"); thumb.HorizontalAlignment = toggle.IsChecked == true ? HorizontalAlignment.Right : HorizontalAlignment.Left; }
-                toggle.IsCheckedChanged += (_, _) => PaintToggle(); PaintToggle();
-                AutomationProperties.SetName(toggle, field.Label);
-                var caption = Stack(3, LocalText(labelText), LocalText(field.Help, 12, color: Muted)); if (field.Help.Length == 0) caption.Children[1].IsVisible = false;
-                return Columns("*,12,Auto", caption, new Border(), toggle);
-            case "choice":
-                var combo = new ComboBox
-                {
-                    ItemsSource = field.Options,
-                    HorizontalAlignment = HorizontalAlignment.Stretch,
-                    MinHeight = compact ? 32 : 40,
-                    Padding = new Thickness(10, compact ? 5 : 7),
-                    VerticalContentAlignment = VerticalAlignment.Center
-                };
-                combo.Bind(SelectingItemsControl.SelectedItemProperty, binding); input = combo; break;
-            case "date":
-                var dateText = new TextBox
-                {
-                    IsReadOnly = true,
-                    PlaceholderText = labelText,
-                    MinHeight = compact ? 32 : 40,
-                    Padding = new Thickness(10, compact ? 5 : 7, 36, compact ? 5 : 7),
-                    VerticalContentAlignment = VerticalAlignment.Center
-                };
-                dateText.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = field, Converter = new Avalonia.Data.Converters.FuncValueConverter<string, string>(value => DateTime.TryParse(value, out var parsed) ? parsed.ToString("dd/MM/yyyy") : "") });
-                var calendar = new Calendar { SelectedDate = DateTime.TryParse(field.Value, out var d) ? d : null, DisplayDate = DateTime.TryParse(field.Value, out var initial) ? initial : DateTime.Today };
-                var flyout = new Flyout { Content = calendar };
-                calendar.SelectedDatesChanged += (_, _) => { field.Value = calendar.SelectedDate?.ToString("yyyy-MM-dd") ?? ""; flyout.Hide(); };
-                var dateButton = Button("", () => flyout.ShowAt(dateText)); dateButton.Content = Icon("calendar_today", 18); dateButton.Classes.Add("text"); dateButton.HorizontalAlignment = HorizontalAlignment.Right; dateButton.Margin = new Thickness(0, 0, 4, 0);
-                dateText.PointerPressed += (_, _) => flyout.ShowAt(dateText);
-                var dateGrid = new Grid(); dateGrid.Children.Add(dateText); dateGrid.Children.Add(dateButton); input = dateGrid; break;
-            case "slider":
-                var slider = new Slider { Minimum = 0, Maximum = 100, Value = (double)field.Number };
-                slider.PropertyChanged += (_, e) => { if (e.Property == RangeBase.ValueProperty) field.Value = slider.Value.ToString("0"); };
-                input = slider; break;
-            case "file":
-                var selected = Text(field.Value.Length == 0 ? "No image selected" : "Image selected", 12, color: Muted);
-                var browse = Button("Upload image", () => { });
-                browse.Click += async (_, _) =>
-                {
-                    if (TopLevel.GetTopLevel(browse) is not { } top) return;
-                    var files = await top.StorageProvider.OpenFilePickerAsync(new() { Title = field.Label, AllowMultiple = false, FileTypeFilter = [Avalonia.Platform.Storage.FilePickerFileTypes.ImageAll] });
-                    if (files.Count > 0)
-                    {
-                        try
-                        {
-                            await using var stream = await files[0].OpenReadAsync();
-                            using var bytes = new MemoryStream(); await stream.CopyToAsync(bytes);
-                            if (bytes.Length > 2 * 1024 * 1024) { field.Error = "Logo must be 2 MB or smaller."; return; }
-                            var value = "base64:" + Convert.ToBase64String(bytes.ToArray());
-                            using var bitmap = LoadLogo(value);
-                            if (bitmap == null || bitmap.PixelSize.Width > 1080 || bitmap.PixelSize.Height > 1080) { field.Error = "Choose an image up to 1080 × 1080 pixels."; return; }
-                            field.Value = value; field.Error = ""; selected.Text = files[0].Name;
-                        }
-                        catch (IOException) { field.Error = "The image could not be read."; }
-                    }
-                };
-                input = Wrap(browse, selected, Button("Remove", () => { field.Value = ""; selected.Text = "No image selected"; })); break;
-            default:
-                var box = new TextBox
-                {
-                    PlaceholderText = labelText,
-                    MinHeight = compact ? 32 : 40,
-                    MaxLength = field.MaxLength,
-                    AcceptsReturn = field.Kind == "multiline" && !singleLine,
-                    TextWrapping = TextWrapping.Wrap,
-                    PasswordChar = field.Kind == "password" ? '●' : '\0',
-                    Padding = new Thickness(10, compact ? 5 : 7),
-                    VerticalContentAlignment = VerticalAlignment.Center
-                };
-                if (field.Kind == "multiline" && !singleLine) box.MinHeight = compact ? 84 : 104;
-                box.Bind(TextBox.TextProperty, binding);
-                if (withIcon)
-                {
-                    box.MinHeight = field.Kind == "multiline" ? (compact ? 84 : 104) : (compact ? 36 : 44);
-                    box.Padding = new Thickness(compact ? 38 : 44, compact ? 5 : 7, 10, compact ? 5 : 7);
-                    box.FontSize = compact ? 14 : 16;
-                    var container = new Grid(); container.Children.Add(box);
-                    var icon = Icon(field.Icon, compact ? 18 : 20); icon.HorizontalAlignment = HorizontalAlignment.Left; icon.Margin = new Thickness(compact ? 10 : 12, 0, 0, 0); icon.IsHitTestVisible = false; container.Children.Add(icon); input = container;
-                }
-                else input = box;
-                break;
-        }
-        if (compact)
-        {
-            void CompactInput(Control control)
-            {
-                if (control is TextBox text)
-                {
-                    text.MinHeight = Math.Min(text.MinHeight, text.AcceptsReturn ? 84 : 36);
-                    var p = text.Padding == default ? new Thickness(10, 5) : text.Padding;
-                    text.Padding = new Thickness(p.Left, Math.Min(p.Top, 5), p.Right, Math.Min(p.Bottom, 5));
-                    text.VerticalContentAlignment = VerticalAlignment.Center;
-                }
-                else if (control is ComboBox choice)
-                {
-                    choice.MinHeight = Math.Min(choice.MinHeight, 32);
-                    choice.Padding = new Thickness(10, 5);
-                }
-                if (control is Panel panel)
-                    foreach (var child in panel.Children) CompactInput(child);
-                if (control is Button button)
-                {
-                    button.MinHeight = 30;
-                    button.Padding = new Thickness(8, 4);
-                }
-            }
-            CompactInput(input);
-        }
-        if (input is TextBox textInput) UiLocalization.Bind(textInput, TextBox.PlaceholderTextProperty, labelText);
-        else if (input is Grid inputGrid)
-            foreach (var textInputChild in inputGrid.Children.OfType<TextBox>()) UiLocalization.Bind(textInputChild, TextBox.PlaceholderTextProperty, labelText);
-        if (input is ComboBox choiceInput)
-            choiceInput.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((value, _) => LocalText(value ?? ""));
-        AutomationProperties.SetName(input, field.Label);
-        var error = Text("", 12, color: Brushes.Firebrick);
-        error.Bind(TextBlock.TextProperty, new Binding(nameof(FormField.Error)) { Source = field });
-        var errors = new Binding(nameof(FormField.Error)) { Source = field, Converter = new Avalonia.Data.Converters.FuncValueConverter<string, bool>(s => !string.IsNullOrEmpty(s)) };
-        error.Bind(Visual.IsVisibleProperty, errors);
-        if (field.Kind is "file" or "slider") return Stack(5, LocalText(labelText, 12, color: Muted), input, error);
-        var floatLabel = new Border { Background = CardSurface, Padding = new Thickness(4, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(9, -7, 0, 0), Child = LocalText(labelText + (field.Required && !labelText.EndsWith("*") ? " *" : ""), 12, color: Muted), IsHitTestVisible = false };
-        // Reserve the same space above the input that the floating caption uses.
-        // Without it, first-row captions are rendered outside their layout slot
-        // and are clipped by cards, dialogs, and scroll viewers.
-        var fieldGrid = new Grid { Margin = new Thickness(0, 7, 0, 0) };
-        input.Margin = new Thickness(0);
-        fieldGrid.Children.Add(input);
-        fieldGrid.Children.Add(floatLabel);
-        void UpdateLabel() => floatLabel.IsVisible = field.Value?.Length > 0 || input.IsKeyboardFocusWithin || field.Kind is "choice" or "date";
-        input.GotFocus += (_, _) => UpdateLabel(); input.LostFocus += (_, _) => UpdateLabel();
-        System.ComponentModel.PropertyChangedEventHandler changed = (_, e) => { if (e.PropertyName == nameof(FormField.Value)) UpdateLabel(); };
-        fieldGrid.AttachedToVisualTree += (_, _) => field.PropertyChanged += changed;
-        fieldGrid.DetachedFromVisualTree += (_, _) => field.PropertyChanged -= changed;
-        UpdateLabel();
-        return Stack(4, fieldGrid, error);
-    }
+        => new FormFieldView { DataContext = new FormFieldViewModel(field, labelText, singleLine, compact) };
     // Performs the segments action for this screen or workflow.
     public static Control Segments(FormField field)
     {
@@ -355,19 +207,8 @@ internal static class Ui
         }
         Update(); return new Border { CornerRadius = new CornerRadius(20), ClipToBounds = true, Child = panel };
     }
-    // Performs the fields action for this screen or workflow.
     public static Control Fields(IEnumerable<FormField> fields, int columns = 1, bool compact = true)
-    {
-        var g = new Grid { ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Repeat("*", columns))) };
-        var array = fields.ToArray();
-        for (var i = 0; i < array.Length; i++)
-        {
-            if (i % columns == 0) g.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            var control = Field(array[i], compact: compact); control.Margin = new Thickness(0, 0, i % columns < columns - 1 ? 12 : 0, i / columns < (array.Length - 1) / columns ? 16 : 0);
-            Grid.SetColumn(control, i % columns); Grid.SetRow(control, i / columns); g.Children.Add(control);
-        }
-        return g;
-    }
+        => new FormFieldsView { DataContext = new FormFieldsViewModel(fields.Select(field => new FormFieldViewModel(field, compact: compact)).ToArray(), columns) };
     // Performs the logo action for this screen or workflow.
     public static Control Logo(bool compact = false) => new BrandLogo(compact);
     // Performs the asset action for this screen or workflow.

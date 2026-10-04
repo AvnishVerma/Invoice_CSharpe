@@ -31,6 +31,66 @@ internal static class Program
     }
 
     private static int assertions;
+    private static void CheckAxamlFields()
+    {
+        var text = new FormField("Name", required: true);
+        var choice = new FormField("Role", "User", "choice", ["Admin", "User"]);
+        var date = new FormField("Date", "2030-01-02", "date");
+        var fields = new[] { text, choice, date }.Select(field => new FormFieldViewModel(field)).ToArray();
+        var rows = new FormFieldsViewModel(fields, 2);
+        Check(rows.Rows.Count == 2 && rows.Rows[0].Fields.Count == 2 && rows.Rows[1].Fields.Count == 1,
+            "AXAML form rows must preserve each row's independent height and configured column count");
+        var view = new FormFieldsView { DataContext = rows };
+        var fixture = new Window { Content = view, Width = 600, Height = 300 };
+        fixture.Show(); Dispatcher.UIThread.RunJobs(); fixture.UpdateLayout();
+        var inputNames = new[] { "Name", "Role", "Date" };
+        var textInputs = view.GetVisualDescendants().OfType<TextBox>().Where(control => inputNames.Contains(Avalonia.Automation.AutomationProperties.GetName(control))).ToArray();
+        var choiceInputs = view.GetVisualDescendants().OfType<ComboBox>().Where(control => inputNames.Contains(Avalonia.Automation.AutomationProperties.GetName(control))).ToArray();
+        Check(choiceInputs.Length == 1 && textInputs.Length == 2,
+            $"Field templates must instantiate only the applicable named inputs (choices: {choiceInputs.Length}, text: {textInputs.Length})");
+        Check(!view.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().Any(control => control.Classes.Contains("form-toggle")),
+            "Text, choice and date templates must not create hidden field toggles");
+        var box = view.GetVisualDescendants().OfType<TextBox>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Name");
+        box.Text = "AXAML value";
+        Check(text.Value == "AXAML value", "AXAML text fields must retain two-way editing");
+        var selector = view.GetVisualDescendants().OfType<ComboBox>().Single();
+        selector.SelectedItem = "Admin";
+        Check(choice.Value == "Admin", "AXAML choices must retain their persisted values");
+        fields[2].SelectedDate = new DateTime(2030, 2, 3);
+        Dispatcher.UIThread.RunJobs();
+        Check(date.Value == "2030-02-03" && fields[2].DateText == new DateTime(2030, 2, 3).ToString("dd/MM/yyyy"), "Date presentation must preserve the database date format and existing locale-aware display");
+        text.Value = ""; text.Validate(); Dispatcher.UIThread.RunJobs();
+        Check(view.GetVisualDescendants().OfType<TextBlock>().Any(control => control.IsEffectivelyVisible && control.Text == "Name is required."),
+            "AXAML validation must display business-field errors");
+        fixture.Close();
+    }
+    private static void CheckBackupViewModel()
+    {
+        var history = new System.Collections.ObjectModel.ObservableCollection<BackupHistoryItem>();
+        var calls = new List<string>();
+        Task Record(string action) { calls.Add(action); return Task.CompletedTask; }
+        var model = new BackupManagementViewModel(history, () => calls.Add("refresh"),
+            () => Record("database"), () => Record("json"), () => Record("import"),
+            item => Record("restore:" + item.Name), item => Record("download:" + item.Name),
+            item => Record("share:" + item.Name), item => calls.Add("delete:" + item.Name));
+        model.Attach();
+        Check(!model.HasHistory, "Backup empty state must be driven by the history collection");
+        var item = new BackupHistoryItem("test.invoicedb", "test.invoicedb", 2048, DateTime.Today, true);
+        history.Add(item);
+        Check(model.HasHistory && item.Icon == "storage" && item.FormattedSize == "2.0 KB", "Backup history must expose its metadata without constructing controls");
+        model.RefreshCommand.Execute(null);
+        model.CreateDatabaseCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        model.ExportJsonCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        model.ImportCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+        model.RestoreCommand.ExecuteAsync(item).GetAwaiter().GetResult();
+        model.DownloadCommand.ExecuteAsync(item).GetAwaiter().GetResult();
+        model.ShareCommand.ExecuteAsync(item).GetAwaiter().GetResult();
+        model.DeleteCommand.Execute(item);
+        Check(calls.SequenceEqual(new[] { "refresh", "database", "json", "import", "restore:test.invoicedb", "download:test.invoicedb", "share:test.invoicedb", "delete:test.invoicedb" }), "Every AXAML backup action must dispatch its existing operation and selected item");
+        history.Clear();
+        Check(!model.HasHistory, "Deleting the last backup must restore the empty state");
+        model.Detach();
+    }
     private sealed class LicenseTestClock(DateTimeOffset now) : TimeProvider
     {
         public DateTimeOffset UtcNow { get; set; } = now;
@@ -122,6 +182,8 @@ internal static class Program
         var database = Path.Combine(directory, "test.db");
         var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={database}").Options);
         var model = new MainWindowViewModel(factory, database, service);
+        using (var db = factory.CreateDbContext()) { db.Users.Single(user => user.Username == "admin").PasswordChanged = true; db.SaveChanges(); }
+        Check(model.SignIn("admin", "admin"), "License business-operation fixture must authenticate before checking entitlements");
         model.Lines.Add(new InvoiceLineViewModel { Name = "License fixture", Quantity = 1, Price = 100 });
         Check(!model.SaveInvoice(), "Expired licenses must block invoice saves at the model boundary");
         var product = FormCatalog.Product(); product[1].Value = "Licensed product";
@@ -244,10 +306,12 @@ internal static class Program
             CheckRevenueReport();
             CheckCrossPlatformPrinting();
             CheckToastService();
+            CheckBackupViewModel();
             CheckReceivablesLifecycle();
             CheckFormRoundTrips();
         }
         AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
+        CheckAxamlFields();
         var model = CreateModel();
         var window = new MainWindow { DataContext = model, Width = 1440, Height = 900 };
         window.Show();
@@ -286,17 +350,24 @@ internal static class Program
             var licensedModel = new MainWindowViewModel(licenseService: service);
             window.DataContext = licensedModel;
             licensedModel.NavigateCommand.Execute("Settings"); Click("License"); Capture("licensing-unactivated");
+            Check(licensedModel.ShowLicenseNotice && licensedModel.LicenseNotice.StartsWith("Read-only"), "Missing licenses must expose the read-only AXAML notice state");
+            var licenseShell = window.GetVisualDescendants().OfType<SettingsPageView>().Single();
+            var licenseHeader = licenseShell.GetVisualDescendants().OfType<PageHeaderView>().Single();
+            Check(licenseHeader.TranslatePoint(default, licenseShell)!.Value.Y == 0, "The AXAML license header must appear above the settings tabs");
             Check(FindButton("Import License File").IsVisible && FindButton("Copy Device ID").IsEnabled, "License screen must provide file activation and a device request ID");
             var input = window.GetVisualDescendants().OfType<TextBox>().Single(box => box.PlaceholderText == "Paste a license document");
             input.Text = "invalid"; Click("Activate License");
             Check(!licensedModel.CanMakeBusinessChanges, "Invalid pasted licenses must not unlock business operations");
             input.Text = SignLicense(keys, LicenseFixture(clock.GetUtcNow())); Click("Activate License");
             Check(licensedModel.CanMakeBusinessChanges && input.Text == "", "License activation must refresh UI state and clear pasted contents");
+            Check(!licensedModel.ShowLicenseNotice && !FindButton("Manage License").IsEffectivelyVisible, "Paid activation must hide the license notice through binding");
             Capture("licensing-active");
             clock.UtcNow += TimeSpan.FromDays(31); Click("Refresh License Status");
             Check(!licensedModel.CanMakeBusinessChanges, "Expired licenses must return the UI to read-only mode");
+            Check(licensedModel.ShowLicenseNotice && FindButton("Manage License").IsEffectivelyVisible, "Expiry must restore the license notice without rebuilding its controls");
             Capture("licensing-expired");
             input.Text = SignLicense(keys, LicenseFixture(clock.GetUtcNow()) with { Kind = "Trial", ExpiresAtUtc = clock.GetUtcNow().AddDays(14) }); Click("Activate License");
+            Check(licensedModel.ShowLicenseNotice && licensedModel.LicenseNotice.StartsWith("Trial active"), "Trials must expose their expiry notice through AXAML binding");
             Capture("licensing-trial");
             window.Close();
             Console.WriteLine($"Licensing checks passed ({assertions} assertions). Screenshots: {output}");
@@ -983,7 +1054,7 @@ internal static class Program
         Check(editModel.SaveRecord("User", sessionUser) && editModel.SignIn("sidebar-user", "session-password"), "Sidebar fixture user must sign in");
         Settle();
         Check(editModel.CurrentRole == "User" && window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "sidebar-user"), "Sidebar must show signed-in account and role without navigating");
-        Click("⇥");
+        Click("Sign out");
         Check(editModel.CurrentUsername == null && editModel.CurrentRole == "" && !editModel.RequiresPasswordChange, "Logout button must clear all session identity");
         Check(!editModel.CanAccessWorkspace && window.GetVisualDescendants().OfType<Button>().Any(b => b.Content?.ToString() == "Login") && !window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "sidebar-user"), "Logout must remove previous sidebar identity");
         FormField[] signedOutChange = [new("Current Password", "session-password"), new("New Password", "replacement-password"), new("Confirm", "replacement-password")];

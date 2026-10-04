@@ -1,41 +1,25 @@
-using Avalonia.Automation;
+using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.Data;
-using Avalonia.Layout;
-using Avalonia.Media;
-using LedgerNest.Desktop;
 
 namespace LedgerNest.Desktop.Views;
 
-/// <summary>Renders the standard invoice-setting toggle with XAML-owned layout and theme resources.</summary>
 public sealed partial class InvoiceToggleSettingView : UserControl
 {
-    public InvoiceToggleSettingView()
-    {
-        InitializeComponent();
-    }
+    public static readonly StyledProperty<FormField?> FieldProperty = AvaloniaProperty.Register<InvoiceToggleSettingView, FormField?>(nameof(Field));
+    public static readonly StyledProperty<string> TitleProperty = AvaloniaProperty.Register<InvoiceToggleSettingView, string>(nameof(Title), "");
+    public static readonly StyledProperty<string> HelpProperty = AvaloniaProperty.Register<InvoiceToggleSettingView, string>(nameof(Help), "");
+    public static readonly StyledProperty<string> IconProperty = AvaloniaProperty.Register<InvoiceToggleSettingView, string>(nameof(Icon), "");
+    public FormField? Field { get => GetValue(FieldProperty); set => SetValue(FieldProperty, value); }
+    public string Title { get => GetValue(TitleProperty); set => SetValue(TitleProperty, value); }
+    public string Help { get => GetValue(HelpProperty); set => SetValue(HelpProperty, value); }
+    public string Icon { get => GetValue(IconProperty); set => SetValue(IconProperty, value); }
 
-    public InvoiceToggleSettingView(FormField field, string title, string help, string icon)
-        : this()
+    public InvoiceToggleSettingView() => InitializeComponent();
+    public InvoiceToggleSettingView(FormField field, string title, string help, string icon) : this()
     {
-        TitleText.Text = title;
-        HelpText.Text = help;
-        HelpText.IsVisible = !string.IsNullOrWhiteSpace(help);
-        IconText.Text = icon;
-        IconText.IsVisible = !string.IsNullOrWhiteSpace(icon);
-        Toggle.Bind(ToggleButton.IsCheckedProperty, new Binding(nameof(FormField.IsChecked)) { Source = field, Mode = BindingMode.TwoWay });
-        AutomationProperties.SetName(Toggle, field.Label);
-        Toggle.IsCheckedChanged += (_, _) => Paint();
-        Paint();
-    }
-
-    private void Paint()
-    {
-        var selected = Toggle.IsChecked == true;
-        Track.Background = selected ? Brush.Parse("#8097BD") : Brushes.White;
-        Track.BorderBrush = selected ? Brushes.Transparent : Brush.Parse("#BDBDBD");
-        Thumb.Fill = selected ? Brush.Parse("#0D47A1") : Brush.Parse("#BDBDBD");
-        Thumb.HorizontalAlignment = selected ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+        Field = field;
+        Title = title;
+        Help = help;
+        Icon = icon;
     }
 }

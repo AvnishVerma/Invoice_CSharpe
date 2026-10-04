@@ -93,6 +93,14 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
     // Keep each page's existing header actions while hosting its header above navigation.
     private void ExtractHeader(Control content)
     {
+        var scaffold = content as ScreenScaffoldView ?? content.GetLogicalDescendants().OfType<ScreenScaffoldView>().FirstOrDefault();
+        if (scaffold != null)
+        {
+            scaffold.ShowHeader = false;
+            CurrentHeader = scaffold.PageHeader as Control;
+            OnPropertyChanged(nameof(CurrentHeader));
+            return;
+        }
         var header = content.GetLogicalDescendants().FirstOrDefault(control => control is PageHeaderView or ManagementActionBarView) as Control;
         if (header != null)
         {

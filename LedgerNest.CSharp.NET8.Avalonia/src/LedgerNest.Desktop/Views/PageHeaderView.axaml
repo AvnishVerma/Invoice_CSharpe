@@ -1,10 +1,24 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.Views.PageHeaderView" x:Name="Root">
+  <UserControl.Styles>
+    <Style Selector="Button">
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="{DynamicResource PageHeaderBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button TextBlock">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+  </UserControl.Styles>
   <Border Classes="page-header">
     <Grid ColumnDefinitions="*,Auto">
-      <TextBlock x:Name="Heading" Text="{Binding Title, ElementName=Root}" Classes="page-header-title" TextWrapping="NoWrap" />
-      <StackPanel x:Name="Actions" Grid.Column="1" Orientation="Horizontal" Spacing="12"
-                  HorizontalAlignment="Right" VerticalAlignment="Center" />
+      <TextBlock x:Name="Heading" loc:UiLocalization.Text="{Binding Title, ElementName=Root}" Classes="page-header-title" TextWrapping="NoWrap" />
+      <ItemsControl Grid.Column="1" ItemsSource="{Binding Actions, ElementName=Root}"
+                    HorizontalAlignment="Right" VerticalAlignment="Center">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="12" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      </ItemsControl>
+      <ContentControl Grid.Column="1" Content="{Binding HeaderActions, ElementName=Root}"
+                      HorizontalAlignment="Right" VerticalAlignment="Center" />
     </Grid>
   </Border>
 </UserControl>

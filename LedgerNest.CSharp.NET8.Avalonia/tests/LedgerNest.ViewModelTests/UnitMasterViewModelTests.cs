@@ -30,7 +30,7 @@ public sealed class UnitMasterViewModelTests
     }
 
     [Fact]
-    public async Task NonAdminCannotSaveUnit()
+    public async Task UserWithoutCreatePermissionCannotSaveUnit()
     {
         var fixture = Factory();
         try
@@ -39,7 +39,7 @@ public sealed class UnitMasterViewModelTests
             var model = new UnitMasterViewModel(fixture.Factory, () => "sales", () => "User") { Code = "PCS", UnitName = "Piece" };
             await model.SaveCommand.ExecuteAsync(null);
             Assert.Empty(model.Units);
-            Assert.Contains("administrators", model.Error);
+            Assert.Contains("cannot create units", model.Error);
         }
         finally { Cleanup(fixture.Path); }
     }

@@ -1,0 +1,14 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.FormFieldsView" x:DataType="vm:FormFieldsViewModel">
+  <ItemsControl ItemsSource="{Binding Rows}">
+    <ItemsControl.ItemTemplate>
+      <DataTemplate x:DataType="vm:FormFieldsRow">
+        <ItemsControl ItemsSource="{Binding Fields}">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1" Columns="{Binding Columns}" /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:FormFieldViewModel"><local:FormFieldView Margin="0,0,12,16" /></DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </DataTemplate>
+    </ItemsControl.ItemTemplate>
+  </ItemsControl>
+</UserControl>

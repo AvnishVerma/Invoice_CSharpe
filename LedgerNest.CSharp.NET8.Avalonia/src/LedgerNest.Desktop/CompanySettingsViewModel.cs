@@ -30,6 +30,9 @@ public sealed partial class CompanySettingsViewModel : ObservableObject, IDispos
     [ObservableProperty] private string selectedTheme;
     [ObservableProperty] private Bitmap? logoImage;
     public bool HasLogo => LogoImage != null;
+    public bool IsProduct => BusinessType.Value == "Product";
+    public bool IsService => BusinessType.Value == "Service";
+    public bool IsBoth => BusinessType.Value == "Both";
 
     public CompanySettingsViewModel(MainWindowViewModel model)
     {
@@ -41,18 +44,7 @@ public sealed partial class CompanySettingsViewModel : ObservableObject, IDispos
         Country = Field("Country"); Phone = Field("Phone"); Email = Field("Email"); Website = Field("Website"); Address = Field("Address");
         BusinessType = sections[2].Fields[0]; ShowQr = sections[3].Fields[0]; ShowBank = sections[3].Fields[1];
         selectedLanguage = model.Language; selectedTheme = model.ThemeMode;
-        if (LogoValue.Value.StartsWith("base64:", StringComparison.Ordinal))
-        {
-            try
-            {
-                using var stream = new MemoryStream(Convert.FromBase64String(LogoValue.Value[7..]));
-                LogoImage = new Bitmap(stream);
-            }
-            catch (Exception exception) when (exception is FormatException or ArgumentException)
-            {
-                LogoImage = null;
-            }
-        }
+        LogoImage = Views.Ui.LoadLogo(LogoValue.Value);
     }
 
     partial void OnSelectedLanguageChanged(string value) => model.SetLanguage(value);
@@ -76,7 +68,12 @@ public sealed partial class CompanySettingsViewModel : ObservableObject, IDispos
         { model.Status = "The selected image could not be opened."; return false; }
     }
 
-    [RelayCommand] private void SelectBusinessType(string? value) { if (!string.IsNullOrWhiteSpace(value)) BusinessType.Value = value; }
+    [RelayCommand] private void SelectBusinessType(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        BusinessType.Value = value;
+        OnPropertyChanged(nameof(IsProduct)); OnPropertyChanged(nameof(IsService)); OnPropertyChanged(nameof(IsBoth));
+    }
     [RelayCommand] private void AddUpi() => model.AddUpiAccount();
     [RelayCommand] private void RemoveUpi(FormField[]? account) { if (account != null) model.RemoveUpiAccount(account); }
     [RelayCommand] private void AddBank() => model.AddBankAccount();

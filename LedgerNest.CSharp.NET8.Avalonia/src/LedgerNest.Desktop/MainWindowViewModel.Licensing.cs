@@ -9,8 +9,17 @@ public partial class MainWindowViewModel
     [ObservableProperty] private LicenseStatus licenseStatus = new(LicenseState.Missing, "Import a license file to activate LedgerNest.");
     public string LicenseDeviceId => licenseService.DeviceId;
     public bool CanMakeBusinessChanges => LicenseStatus.Allows(LicenseFeatures.BusinessWrite);
+    public bool ShowLicenseNotice => !CanMakeBusinessChanges || LicenseStatus.State == LicenseState.Trial;
+    public string LicenseNotice => CanMakeBusinessChanges
+        ? "Trial active · Expires " + LicenseStatus.Claims?.ExpiresAtUtc?.ToLocalTime().ToString("dd MMM yyyy")
+        : "Read-only · Activate a license to create or change business records.";
 
-    partial void OnLicenseStatusChanged(LicenseStatus value) => OnPropertyChanged(nameof(CanMakeBusinessChanges));
+    partial void OnLicenseStatusChanged(LicenseStatus value)
+    {
+        OnPropertyChanged(nameof(CanMakeBusinessChanges));
+        OnPropertyChanged(nameof(ShowLicenseNotice));
+        OnPropertyChanged(nameof(LicenseNotice));
+    }
 
     public void RefreshLicense() => LicenseStatus = licenseService.GetStatus();
 

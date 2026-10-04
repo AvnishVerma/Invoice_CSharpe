@@ -1,14 +1,29 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.InvoiceToggleSettingView">
+             xmlns:converters="using:Avalonia.Data.Converters"
+             x:Class="LedgerNest.Desktop.Views.InvoiceToggleSettingView" x:Name="Root">
+  <UserControl.Styles>
+    <Style Selector="ToggleButton Border#Track">
+      <Setter Property="Background" Value="White" /><Setter Property="BorderBrush" Value="#BDBDBD" />
+    </Style>
+    <Style Selector="ToggleButton Ellipse#Thumb">
+      <Setter Property="Fill" Value="#BDBDBD" /><Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    <Style Selector="ToggleButton:checked Border#Track">
+      <Setter Property="Background" Value="#8097BD" /><Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="ToggleButton:checked Ellipse#Thumb">
+      <Setter Property="Fill" Value="{DynamicResource PageHeaderBrush}" /><Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+  </UserControl.Styles>
   <Border Padding="12" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
     <Grid ColumnDefinitions="24,16,*,16,Auto">
-      <TextBlock x:Name="IconText" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="22" Foreground="{DynamicResource AppHeaderBrush}" VerticalAlignment="Center" />
+      <TextBlock Text="{Binding Icon, ElementName=Root}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="22" Foreground="{DynamicResource PageHeaderBrush}" VerticalAlignment="Center" />
       <StackPanel Grid.Column="2" Spacing="3" VerticalAlignment="Center">
-        <TextBlock x:Name="TitleText" FontSize="16" />
-        <TextBlock x:Name="HelpText" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding Title, ElementName=Root}" FontSize="16" />
+        <TextBlock Text="{Binding Help, ElementName=Root}" IsVisible="{Binding Help, ElementName=Root, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
       </StackPanel>
-      <ToggleButton x:Name="Toggle" Classes="form-toggle" Grid.Column="4" Padding="0" BorderThickness="0" Background="Transparent" VerticalAlignment="Center">
+      <ToggleButton x:Name="Toggle" IsChecked="{Binding Field.IsChecked, ElementName=Root, Mode=TwoWay}" AutomationProperties.Name="{Binding Field.Label, ElementName=Root}" Classes="form-toggle" Grid.Column="4" Padding="0" BorderThickness="0" Background="Transparent" VerticalAlignment="Center">
         <Border x:Name="Track" Width="42" Height="26" CornerRadius="18" BorderThickness="2" Padding="3">
           <Ellipse x:Name="Thumb" Width="16" Height="16" />
         </Border>

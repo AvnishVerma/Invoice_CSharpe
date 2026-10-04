@@ -1,8 +1,14 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.LicenseWorkspaceView">
+             xmlns:vm="using:LedgerNest.Desktop"
+             x:Class="LedgerNest.Desktop.Views.LicenseWorkspaceView" x:Name="Root" x:DataType="vm:MainWindowViewModel">
   <Grid RowDefinitions="Auto,*">
-    <ContentControl x:Name="NoticeHost" />
-    <ContentControl x:Name="BodyHost" Grid.Row="1" />
+    <Border Padding="12.8,6.4" Background="{DynamicResource LicenseNoticeBrush}" IsVisible="{Binding ShowLicenseNotice}">
+      <Grid ColumnDefinitions="*,12,Auto">
+        <TextBlock Text="{Binding LicenseNotice}" FontSize="13" VerticalAlignment="Center" TextWrapping="Wrap" />
+        <Button Grid.Column="2" Content="Manage License" Click="ManageLicense" />
+      </Grid>
+    </Border>
+    <ContentControl Content="{Binding Body, ElementName=Root}" Grid.Row="1" />
   </Grid>
 </UserControl>

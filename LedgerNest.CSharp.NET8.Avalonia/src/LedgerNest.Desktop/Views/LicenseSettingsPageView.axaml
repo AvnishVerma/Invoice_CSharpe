@@ -1,0 +1,49 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.LicenseSettingsPageView" x:DataType="vm:LicenseSettingsViewModel" xmlns:shared="using:LedgerNest.Desktop.Views" x:Name="PageRoot">
+  <shared:ScreenScaffoldView>
+    <shared:ScreenScaffoldView.PageHeader>
+      <shared:PageHeaderView Title="License &amp; Activation" DataContext="{Binding DataContext, ElementName=PageRoot}" />
+    </shared:ScreenScaffoldView.PageHeader>
+    <shared:ScreenScaffoldView.PageBody>
+      <ScrollViewer HorizontalScrollBarVisibility="Auto">
+        <Grid Margin="{DynamicResource PageContentPadding}" ColumnDefinitions="420,16,*" MinWidth="760">
+          <StackPanel Spacing="12">
+            <Border Classes="settings-column">
+              <StackPanel Spacing="9">
+                <TextBlock Text="License status" Classes="settings-section-title" />
+                <TextBlock Text="{Binding StatusTitle}" FontSize="22" FontWeight="Bold" />
+                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+                <StackPanel IsVisible="{Binding HasClaims}" Spacing="6">
+                  <TextBlock Text="{Binding Customer, StringFormat='Licensed to: {0}'}" FontWeight="Bold" />
+                  <TextBlock Text="{Binding LicenseId, StringFormat='License ID: {0}'}" Foreground="{DynamicResource AppMutedBrush}" />
+                  <TextBlock Text="{Binding Expiry, StringFormat='Expires: {0}'}" />
+                </StackPanel>
+                <TextBlock Text="{Binding ChangeStatus}" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Button Content="Refresh License Status" Command="{Binding RefreshCommand}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2" Spacing="12">
+            <Border Classes="settings-column">
+              <StackPanel Spacing="10">
+                <TextBlock Text="Activate this device" Classes="settings-section-title" />
+                <TextBlock Text="Send this Device ID to your software provider to receive a license." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+                <TextBox Text="{Binding DeviceId}" IsReadOnly="True" TextWrapping="Wrap" AutomationProperties.Name="License Device ID" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Content="Copy Device ID" Click="CopyDeviceId" IsEnabled="{Binding CanCopy}" />
+                  <Button Content="Import License File" Click="ImportLicense" Classes="action primary" IsEnabled="{Binding !IsImporting}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+            <Border Classes="settings-column">
+              <StackPanel Spacing="10">
+                <TextBlock Text="Or paste your license" Classes="settings-section-title" />
+                <TextBox Text="{Binding LicenseDocument, Mode=TwoWay}" PlaceholderText="Paste a license document" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120" MaxLength="65536" AutomationProperties.Name="License document" />
+                <Button Content="Activate License" Command="{Binding ActivateCommand}" Classes="action primary" HorizontalAlignment="Left" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Grid>
+      </ScrollViewer>
+    </shared:ScreenScaffoldView.PageBody>
+  </shared:ScreenScaffoldView>
+</UserControl>

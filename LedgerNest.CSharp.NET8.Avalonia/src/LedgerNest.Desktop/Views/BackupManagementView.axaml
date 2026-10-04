@@ -1,27 +1,82 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.BackupManagementView">
-  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-    <Grid Margin="{DynamicResource PageContentPadding}"
-          ColumnDefinitions="420,16,*"
-          MinWidth="720">
-      <Border Classes="settings-column">
-        <StackPanel Spacing="12">
-          <TextBlock Text="Backup actions" Classes="settings-section-title" />
-          <TextBlock Text="Create, export, or import a protected copy of your business data."
-                     Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
-          <ContentControl x:Name="ActionsHost" />
-        </StackPanel>
-      </Border>
-      <Border Grid.Column="2" Classes="settings-column">
-        <StackPanel Spacing="12">
-          <TextBlock Text="Backup history" Classes="settings-section-title" />
-          <TextBlock Text="Review saved backups and use their existing restore, download, share, and delete actions."
-                     Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
-          <Separator />
-          <ContentControl x:Name="HistoryHost" />
-        </StackPanel>
-      </Border>
-    </Grid>
-  </ScrollViewer>
+﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.BackupManagementView" x:DataType="vm:BackupManagementViewModel" x:Name="Root">
+  <local:ScreenScaffoldView>
+    <local:ScreenScaffoldView.PageHeader>
+      <local:PageHeaderView Title="Backup Management" DataContext="{Binding DataContext, ElementName=Root}">
+        <local:PageHeaderView.HeaderActions>
+          <Button Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" Tag="Refresh">
+            <TextBlock Text="refresh" Classes="action-icon-glyph" />
+          </Button>
+        </local:PageHeaderView.HeaderActions>
+      </local:PageHeaderView>
+    </local:ScreenScaffoldView.PageHeader>
+    <local:ScreenScaffoldView.PageBody>
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <Grid Margin="{DynamicResource PageContentPadding}" ColumnDefinitions="420,16,*" MinWidth="720">
+          <Border Classes="settings-column">
+            <StackPanel Spacing="12">
+              <TextBlock Text="Backup actions" Classes="settings-section-title" />
+              <TextBlock Text="Create, export, or import a protected copy of your business data." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+              <Button Command="{Binding CreateDatabaseCommand}" Tag="Create DB Backup" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="backup" Classes="action-icon-glyph" />
+                  <TextBlock Text="Create DB Backup" />
+                </StackPanel>
+              </Button>
+              <Button Command="{Binding ExportJsonCommand}" Tag="Export JSON" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="download" Classes="action-icon-glyph" />
+                  <TextBlock Text="Export JSON" />
+                </StackPanel>
+              </Button>
+              <Button Command="{Binding ImportCommand}" Tag="Import Backup" HorizontalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="upload" Classes="action-icon-glyph" />
+                  <TextBlock Text="Import Backup" />
+                </StackPanel>
+              </Button>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="2" Classes="settings-column">
+            <StackPanel Spacing="12">
+              <TextBlock Text="Backup history" Classes="settings-section-title" />
+              <TextBlock Text="Review saved backups and use their existing restore, download, share, and delete actions." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
+              <Separator />
+              <StackPanel IsVisible="{Binding !HasHistory}" Spacing="6">
+                <TextBlock Text="No backups found" FontWeight="Bold" />
+                <TextBlock Text="Create or import a backup to show it here." Foreground="{DynamicResource AppMutedBrush}" />
+              </StackPanel>
+              <ItemsControl ItemsSource="{Binding History}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:BackupHistoryItem">
+                    <Border Classes="card" Padding="16" Margin="0,0,0,14">
+                      <Grid ColumnDefinitions="Auto,16,*,Auto">
+                        <Border Width="32" Height="32" CornerRadius="20" Background="#4CAF60" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Icon}" Classes="action-icon-glyph" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="2" Spacing="2.4">
+                          <TextBlock Text="{Binding Name}" FontSize="15" TextWrapping="Wrap" />
+                          <TextBlock Text="{Binding FormattedSize, StringFormat='Size: {0}'}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+                          <TextBlock Text="{Binding FormattedCreatedAt, StringFormat='Created: {0}'}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+                        </StackPanel>
+                        <Button Grid.Column="3" Classes="action-icon" ToolTip.Tip="Backup actions" Content="⋮">
+                          <Button.Flyout>
+                            <MenuFlyout>
+                              <MenuItem Header="Restore" Command="{Binding #Root.((vm:BackupManagementViewModel)DataContext).RestoreCommand}" CommandParameter="{Binding}" />
+                              <MenuItem Header="Download" Command="{Binding #Root.((vm:BackupManagementViewModel)DataContext).DownloadCommand}" CommandParameter="{Binding}" />
+                              <MenuItem Header="Share" Command="{Binding #Root.((vm:BackupManagementViewModel)DataContext).ShareCommand}" CommandParameter="{Binding}" />
+                              <MenuItem Header="Delete" Command="{Binding #Root.((vm:BackupManagementViewModel)DataContext).DeleteCommand}" CommandParameter="{Binding}" />
+                            </MenuFlyout>
+                          </Button.Flyout>
+                        </Button>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </ScrollViewer>
+    </local:ScreenScaffoldView.PageBody>
+  </local:ScreenScaffoldView>
 </UserControl>
