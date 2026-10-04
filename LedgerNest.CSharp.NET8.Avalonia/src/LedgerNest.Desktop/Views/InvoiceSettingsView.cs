@@ -146,29 +146,7 @@ public partial class MainWindow
     }
 
     private static Control InvoiceToggle(FormField field, string title, string help, string icon, bool compact = false, bool leading = false)
-    {
-        if (!compact && !leading)
-            return new InvoiceToggleSettingView(field, title, help, icon);
-
-        var track = new Border { Width = 41.6, Height = 25.6, CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(2), Padding = new Thickness(3.2) };
-        var thumb = new Avalonia.Controls.Shapes.Ellipse { Width = 16, Height = 16 };
-        track.Child = thumb;
-        var toggle = new ToggleButton { Content = track, Padding = new Thickness(0), BorderThickness = new Thickness(0), Background = Brushes.Transparent };
-        toggle.Classes.Add("form-toggle");
-        toggle.Bind(ToggleButton.IsCheckedProperty, new Binding(nameof(FormField.IsChecked)) { Source = field, Mode = BindingMode.TwoWay });
-        AutomationProperties.SetName(toggle, field.Label);
-        void Paint()
-        {
-            track.Background = toggle.IsChecked == true ? Brush.Parse("#8097BD") : Brushes.White;
-            track.BorderBrush = toggle.IsChecked == true ? Brushes.Transparent : Brush.Parse("#BDBDBD");
-            thumb.Fill = toggle.IsChecked == true ? InvoiceSettingsBlue : Brush.Parse("#BDBDBD");
-            thumb.HorizontalAlignment = toggle.IsChecked == true ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-        }
-        toggle.IsCheckedChanged += (_, _) => Paint(); Paint();
-        if (leading) return Ui.Columns("52,16,*", toggle, new Border(), Ui.LocalText(title, 14));
-        if (compact) return Ui.Columns("*,16,Auto", Ui.LocalText(title, 14), new Border(), toggle);
-        return InvoiceSettingsCard(Ui.Columns("24,16,*,16,Auto", Ui.Icon(icon, 22, InvoiceSettingsBlue), new Border(), Ui.Stack(3.2, Ui.LocalText(title, 16), Ui.LocalText(help, 13, color: Ui.Muted)), new Border(), toggle), 12);
-    }
+        => new InvoiceToggleSettingView(field, title, help, icon) { Compact = compact || leading, Leading = leading };
 
     private static Border InvoiceSettingsCard(Control content, double padding = 16)
     {
@@ -178,82 +156,25 @@ public partial class MainWindow
     }
 
     private static Control InvoiceInput(FormField field, string label, string icon)
-    {
-        Control input;
-        var padding = new Thickness(icon.Length > 0 ? 36 : 10, 8, 10, 8);
-        if (field.Kind == "choice")
-        {
-            var combo = new ComboBox { ItemsSource = field.Options, HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 38.4, Padding = padding, Background = Ui.Palette("#FFFFFF", "#252525") };
-            combo.Bind(ComboBox.SelectedItemProperty, new Binding(nameof(FormField.Value)) { Source = field, Mode = BindingMode.TwoWay });
-            if (field.Label == "Time Format") combo.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((value, _) => Ui.Text(value == "12 hour" ? "12-hour (2:30 PM)" : "24-hour (14:30)", 15));
-            input = combo;
-        }
-        else
-        {
-            var box = new TextBox { MinHeight = 38.4, Padding = padding, MaxLength = field.Label == "Invoice Prefix" ? 25 : field.MaxLength, Background = Ui.Palette("#FFFFFF", "#252525") };
-            box.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = field, Mode = BindingMode.TwoWay });
-            input = box;
-        }
-        AutomationProperties.SetName(input, field.Label);
-        var grid = new Grid { Margin = new Thickness(0, 8, 0, 0) }; grid.Children.Add(input);
-        if (icon.Length > 0) grid.Children.Add(new Border { Padding = new Thickness(8, 0), HorizontalAlignment = HorizontalAlignment.Left, IsHitTestVisible = false, Child = Ui.Icon(icon, 22) });
-        if (label.Length > 0) grid.Children.Add(new Border { Background = Ui.CardSurface, Padding = new Thickness(3.2, 0), Margin = new Thickness(12, -8, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Child = Ui.LocalText(label, 12, color: Ui.Muted) });
-        var error = Ui.LocalText("", 12, color: Brushes.Firebrick);
-        error.Bind(TextBlock.TextProperty, new Binding(nameof(FormField.Error)) { Source = field });
-        error.Bind(IsVisibleProperty, new Binding(nameof(FormField.Error)) { Source = field, Converter = new Avalonia.Data.Converters.FuncValueConverter<string, bool>(text => !string.IsNullOrEmpty(text)) });
-        return Ui.Stack(3.2, grid, error);
-    }
+        => new InvoiceInputView { DataContext = new InvoiceInputViewModel(field, label, icon) };
 
     private static Control InvoiceSizeChoice(FormField field, string label, bool signature)
         => new InvoiceSizeChoiceView(field, label, signature);
 
     private Control InvoiceLongText(FormField field, string icon)
     {
-        var box = new TextBox { MinHeight = 76.8, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, PlaceholderText = field.Label, Padding = new Thickness(35.2, 11.2, 32, 9.6), MaxLength = 10000, Background = Ui.Palette("#FFFFFF", "#252525") };
-        box.Bind(TextBox.TextProperty, new Binding(nameof(FormField.Value)) { Source = field, Mode = BindingMode.TwoWay });
-        var expand = Ui.Button("Expand " + field.Label, () =>
+        var expand = new CommunityToolkit.Mvvm.Input.RelayCommand(() =>
         {
-            var editor = new TextBox { Text = field.Value, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 260, MaxLength = 10000 };
-            ShowOverlay(field.Label, editor, Ui.Wrap(Ui.Button("Cancel", CloseOverlay), Ui.Button("Apply", () => { field.Value = editor.Text ?? ""; CloseOverlay(); }, true)), width: 700);
+            var editor = new ExpandedTextViewModel(field.Value);
+            ShowOverlay(field.Label, editor, new DialogActions([
+                new DialogAction("Cancel", new CommunityToolkit.Mvvm.Input.RelayCommand(CloseOverlay)),
+                new DialogAction("Apply", new CommunityToolkit.Mvvm.Input.RelayCommand(() => { field.Value = editor.Text; CloseOverlay(); }), true)
+            ]), width: 700);
         });
-        expand.Content = Ui.Icon("open_in_full", 20); expand.Classes.Add("text"); expand.HorizontalAlignment = HorizontalAlignment.Right;
-        var grid = new Grid(); grid.Children.Add(box); grid.Children.Add(new Border { HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(8), Child = Ui.Icon(icon, 23), IsHitTestVisible = false }); grid.Children.Add(expand);
-        return grid;
+        return new InvoiceLongTextView { DataContext = new InvoiceLongTextViewModel(field, icon, expand) };
     }
 
     private Control InvoiceImageUpload(FormField field, string name)
-    {
-        var preview = new Image { Height = 48, MaxWidth = 200, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left };
-        Avalonia.Media.Imaging.Bitmap? bitmap = null;
-        var remove = Ui.Button("Remove " + name, () => { });
-        remove.Click += (_, _) => { field.Value = ""; Refresh(); };
-        var upload = Ui.Button("Upload " + name, () => { });
-        upload.Content = Ui.Columns("Auto,8,*", Ui.Icon("upload", 16, Brush.Parse("#6750A4")), new Border(), Ui.LocalText("Upload " + name, 14, color: Brush.Parse("#6750A4")));
-        upload.MinHeight = 25.6; upload.Padding = new Thickness(12.8, 4); upload.CornerRadius = new CornerRadius(18);
-        var error = Ui.LocalText("", 12, color: Brushes.Firebrick);
-        error.Bind(TextBlock.TextProperty, new Binding(nameof(FormField.Error)) { Source = field });
-        error.Bind(IsVisibleProperty, new Binding(nameof(FormField.Error)) { Source = field, Converter = new Avalonia.Data.Converters.FuncValueConverter<string, bool>(value => !string.IsNullOrEmpty(value)) });
-        var panel = Ui.Stack(6.4, preview, Ui.Wrap(upload, remove), error);
-        void Refresh()
-        {
-            preview.Source = null; bitmap?.Dispose(); bitmap = Ui.LoadLogo(field.Value); preview.Source = bitmap;
-            preview.IsVisible = remove.IsVisible = bitmap != null;
-        }
-        upload.Click += async (_, _) =>
-        {
-            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Upload " + name, AllowMultiple = false, FileTypeFilter = [new FilePickerFileType("PNG or JPEG image") { Patterns = ["*.png", "*.jpg", "*.jpeg"] }] });
-            if (files.Count == 0) return;
-            try
-            {
-                await using var stream = await files[0].OpenReadAsync();
-                using var bytes = new MemoryStream(); await stream.CopyToAsync(bytes);
-                if (!Model.SetInvoiceBrandingImage(field.Label, bytes.ToArray())) return;
-                Refresh();
-            }
-            catch (Exception ex) when (ex is IOException or ArgumentException) { field.Error = "The selected image could not be read."; }
-        };
-        panel.AttachedToVisualTree += (_, _) => Refresh();
-        panel.DetachedFromVisualTree += (_, _) => { preview.Source = null; bitmap?.Dispose(); bitmap = null; };
-        return panel;
-    }
+        => new InvoiceImageUploadView { DataContext = new InvoiceImageUploadViewModel(field, name,
+            bytes => Model.SetInvoiceBrandingImage(field.Label, bytes)) };
 }

@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:converters="using:Avalonia.Data.Converters"
+             x:Class="LedgerNest.Desktop.Views.InvoiceImageUploadView" x:DataType="vm:InvoiceImageUploadViewModel">
+  <StackPanel Spacing="6.4">
+    <Image Source="{Binding Preview}" Height="48" MaxWidth="200" Stretch="Uniform" HorizontalAlignment="Left" IsVisible="{Binding HasImage}" />
+    <WrapPanel>
+      <Button Tag="{Binding UploadLabel}" Classes="action outline" Click="UploadImage" ToolTip.Tip="{Binding UploadLabel}"
+              Foreground="#6750A4" Margin="0,0,8,8" AutomationProperties.Name="{Binding UploadLabel}">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="upload" Classes="action-icon-glyph" />
+          <TextBlock vm:UiLocalization.Text="{Binding UploadLabel}" FontSize="14" />
+        </StackPanel>
+      </Button>
+      <Button Content="{Binding RemoveLabel}" Command="{Binding RemoveCommand}" Classes="action outline" IsVisible="{Binding HasImage}" Margin="0,0,8,8" />
+    </WrapPanel>
+    <TextBlock Text="{Binding Field.Error}" FontSize="12" Foreground="Firebrick" IsVisible="{Binding Field.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+  </StackPanel>
+</UserControl>

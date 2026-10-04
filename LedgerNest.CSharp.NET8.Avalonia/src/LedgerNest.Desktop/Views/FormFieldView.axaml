@@ -14,12 +14,15 @@
     </DataTemplate>
     <DataTemplate x:Key="DateInput" x:DataType="vm:FormFieldViewModel">
       <Grid>
-        <TextBox Text="{Binding DateText}" IsReadOnly="True" PlaceholderText="{Binding Label}" Padding="10,5,36,5" AutomationProperties.Name="{Binding Field.Label}" PointerPressed="OpenCalendar" />
+        <TextBox Text="{Binding DateText}" IsReadOnly="True" PlaceholderText="{Binding Label}" Padding="10,5,36,5" AutomationProperties.Name="{Binding Field.Label}" PointerPressed="OpenCalendar" KeyDown="CalendarKeyDown" />
         <Button x:Name="CalendarButton" Classes="action-icon text" HorizontalAlignment="Right" ToolTip.Tip="Choose date" Tag="Choose date">
           <TextBlock Text="calendar_today" Classes="action-icon-glyph" />
           <Button.Flyout>
             <Flyout>
-              <Calendar DisplayDate="{Binding CalendarDisplayDate}" SelectedDate="{Binding SelectedDate, Mode=TwoWay}" SelectedDatesChanged="DateSelected" />
+              <StackPanel Spacing="6.4">
+                <Calendar DisplayDate="{Binding CalendarDisplayDate}" SelectedDate="{Binding SelectedDate, Mode=TwoWay}" SelectedDatesChanged="DateSelected" />
+                <Button Content="Clear date" Classes="action outline" Click="ClearDate" />
+              </StackPanel>
             </Flyout>
           </Button.Flyout>
         </Button>
@@ -39,7 +42,7 @@
       </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="ToggleInput" x:DataType="vm:FormFieldViewModel">
-      <local:InvoiceToggleSettingView Field="{Binding Field}" Title="{Binding Label}" Help="{Binding Field.Help}" Icon="{Binding Field.Icon}" />
+      <local:InvoiceToggleSettingView Field="{Binding Field}" Title="{Binding Label}" Help="{Binding Field.Help}" Icon="{Binding Field.Icon}" Compact="True" />
     </DataTemplate>
   </UserControl.Resources>
   <UserControl.Styles>

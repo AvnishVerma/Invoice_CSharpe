@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:converters="using:Avalonia.Data.Converters"
+             x:Class="LedgerNest.Desktop.Views.InvoiceInputView" x:DataType="vm:InvoiceInputViewModel">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="InvoiceInputSurface">#FFFFFF</SolidColorBrush></ResourceDictionary>
+        <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="InvoiceInputSurface">#252525</SolidColorBrush></ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+      <DataTemplate x:Key="TextInput" x:DataType="vm:InvoiceInputViewModel">
+        <TextBox Text="{Binding Field.Value, Mode=TwoWay}" MaxLength="{Binding MaxLength}" AutomationProperties.Name="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" />
+      </DataTemplate>
+      <DataTemplate x:Key="ChoiceInput" x:DataType="vm:InvoiceInputViewModel">
+        <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption, Mode=TwoWay}" HorizontalAlignment="Stretch"
+                  AutomationProperties.Name="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" Classes.time-format="{Binding IsTimeFormat}">
+          <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:InvoiceInputOption"><TextBlock Text="{Binding Caption}" /></DataTemplate></ComboBox.ItemTemplate>
+        </ComboBox>
+      </DataTemplate>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="TextBox, ComboBox"><Setter Property="MinHeight" Value="38.4" /><Setter Property="Padding" Value="10,8,10,8" /><Setter Property="Background" Value="{DynamicResource InvoiceInputSurface}" /></Style>
+    <Style Selector="TextBox.with-icon, ComboBox.with-icon"><Setter Property="Padding" Value="36,8,10,8" /></Style>
+    <Style Selector="ComboBox.time-format TextBlock"><Setter Property="FontSize" Value="15" /></Style>
+    <Style Selector="ContentControl#Input.text"><Setter Property="ContentTemplate" Value="{StaticResource TextInput}" /></Style>
+    <Style Selector="ContentControl#Input.choice"><Setter Property="ContentTemplate" Value="{StaticResource ChoiceInput}" /></Style>
+  </UserControl.Styles>
+  <StackPanel Spacing="3.2">
+    <Grid Margin="0,8,0,0">
+      <ContentControl x:Name="Input" Content="{Binding}" Classes.text="{Binding !IsChoice}" Classes.choice="{Binding IsChoice}" />
+      <Border Padding="8,0" HorizontalAlignment="Left" IsHitTestVisible="False" IsVisible="{Binding HasIcon}">
+        <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="17.6" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
+      </Border>
+      <Border Background="{DynamicResource AppCardBrush}" Padding="3.2,0" Margin="12,-8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" IsVisible="{Binding HasLabel}">
+        <TextBlock vm:UiLocalization.Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+      </Border>
+    </Grid>
+    <TextBlock Text="{Binding Field.Error}" FontSize="12" Foreground="Firebrick" IsVisible="{Binding Field.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+  </StackPanel>
+</UserControl>

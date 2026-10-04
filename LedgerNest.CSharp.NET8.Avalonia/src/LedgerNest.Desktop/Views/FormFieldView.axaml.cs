@@ -20,6 +20,17 @@ public sealed partial class FormFieldView : UserControl
         if (CalendarTrigger is { } trigger) trigger.Flyout?.ShowAt(trigger);
     }
     private void DateSelected(object? sender, SelectionChangedEventArgs args) => CalendarTrigger?.Flyout?.Hide();
+    private void CalendarKeyDown(object? sender, KeyEventArgs args)
+    {
+        if (args.Key is not (Key.Enter or Key.Space)) return;
+        if (CalendarTrigger is { } trigger) trigger.Flyout?.ShowAt(trigger);
+        args.Handled = true;
+    }
+    private void ClearDate(object? sender, RoutedEventArgs args)
+    {
+        if (DataContext is FormFieldViewModel model) model.SelectedDate = null;
+        CalendarTrigger?.Flyout?.Hide();
+    }
     private async void UploadImage(object? sender, RoutedEventArgs args)
     {
         if (DataContext is not FormFieldViewModel model || TopLevel.GetTopLevel(this) is not { } top) return;

@@ -31,6 +31,39 @@ internal static class Program
     }
 
     private static int assertions;
+    private static void CheckInvoiceSettingAdapters()
+    {
+        var field = new FormField("Time Format", "12 hour", "choice", ["12 hour", "24 hour"]);
+        var input = new InvoiceInputViewModel(field, "Time Format", "schedule");
+        input.Attach();
+        Check(input.SelectedOption!.Caption == "12-hour (2:30 PM)", "Time format choices must retain friendly presentation independently of stored values");
+        input.SelectedOption = input.Options.Single(option => option.Value == "24 hour");
+        Check(field.Value == "24 hour", "Invoice choice selection must persist the original option value");
+        field.Value = "12 hour";
+        Check(input.SelectedOption!.Value == "12 hour", "External setting changes must update invoice choice state");
+        input.Detach();
+        Check(new InvoiceInputViewModel(new FormField("Invoice Prefix"), "Prefix", "").MaxLength == 25,
+            "Invoice prefix input must preserve its existing length limit");
+        var imageField = new FormField("Signature Image", kind: "file");
+        using var bitmap = new SKBitmap(2, 2);
+        using var encoded = bitmap.Encode(SKEncodedImageFormat.Png, 100);
+        var image = new InvoiceImageUploadViewModel(imageField, "Signature", bytes => { imageField.Value = "base64:" + Convert.ToBase64String(bytes); return true; });
+        image.Attach();
+        Check(image.SetImage(encoded.ToArray()) && image.HasImage, "Image upload state must reload the validated stored image");
+        image.RemoveCommand.Execute(null);
+        Check(imageField.Value == "" && !image.HasImage, "Removing a branding image must clear the stored value and preview");
+        image.Detach();
+        var toggleField = new FormField("Example toggle", "false", "toggle");
+        var toggle = new InvoiceToggleSettingView { Field = toggleField, Title = toggleField.Label, Compact = true, Leading = true };
+        var fixture = new Window { Content = toggle, Width = 400, Height = 200 };
+        fixture.Show(); Dispatcher.UIThread.RunJobs(); fixture.UpdateLayout();
+        var button = toggle.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().Single();
+        Check(Grid.GetColumn(toggle.GetVisualDescendants().OfType<FormToggleSwitchView>().Single()) == 0,
+            "Leading switch layout must be selected by AXAML templates");
+        button.IsChecked = true;
+        Check(toggleField.IsChecked, "Compact switches must retain two-way checked-state binding");
+        fixture.Close();
+    }
     private static void CheckSettingsFormModel()
     {
         var saved = 0;
@@ -180,6 +213,14 @@ internal static class Program
         fields[2].SelectedDate = new DateTime(2030, 2, 3);
         Dispatcher.UIThread.RunJobs();
         Check(date.Value == "2030-02-03" && fields[2].DateText == new DateTime(2030, 2, 3).ToString("dd/MM/yyyy"), "Date presentation must preserve the database date format and existing locale-aware display");
+        var dateBox = view.GetVisualDescendants().OfType<TextBox>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Date");
+        dateBox.Focus(); fixture.KeyPressQwerty(PhysicalKey.Space, Avalonia.Input.RawInputModifiers.None); fixture.KeyReleaseQwerty(PhysicalKey.Space, Avalonia.Input.RawInputModifiers.None); Dispatcher.UIThread.RunJobs();
+        var calendarButton = view.GetVisualDescendants().OfType<Button>().Single(control => control.Name == "CalendarButton");
+        var flyout = (Flyout)calendarButton.Flyout!;
+        Check(flyout.IsOpen, "Read-only date input must support opening its calendar with the keyboard");
+        var clear = ((Control)flyout.Content!).GetVisualDescendants().OfType<Button>().Single(button => button.Content as string == "Clear date");
+        clear.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Dispatcher.UIThread.RunJobs();
+        Check(date.Value == "" && !flyout.IsOpen, "Clearing a date must clear the stored value and close the calendar");
         text.Value = ""; text.Validate(); Dispatcher.UIThread.RunJobs();
         Check(view.GetVisualDescendants().OfType<TextBlock>().Any(control => control.IsEffectivelyVisible && control.Text == "Name is required."),
             "AXAML validation must display business-field errors");
@@ -435,6 +476,7 @@ internal static class Program
         CheckAxamlDialogs();
         CheckAxamlActions();
         CheckSettingsFormModel();
+        CheckInvoiceSettingAdapters();
         CheckOnboardingViewModel();
         CheckAxamlFields();
         var model = CreateModel();

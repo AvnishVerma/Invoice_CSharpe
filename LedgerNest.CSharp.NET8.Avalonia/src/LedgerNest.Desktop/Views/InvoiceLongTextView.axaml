@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.InvoiceLongTextView" x:DataType="vm:InvoiceLongTextViewModel">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="LongTextSurface">#FFFFFF</SolidColorBrush></ResourceDictionary>
+        <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="LongTextSurface">#252525</SolidColorBrush></ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <Grid>
+    <TextBox Text="{Binding Field.Value, Mode=TwoWay}" MinHeight="76.8" AcceptsReturn="True" TextWrapping="Wrap"
+             PlaceholderText="{Binding Field.Label}" Padding="35.2,11.2,32,9.6" MaxLength="10000" Background="{DynamicResource LongTextSurface}" />
+    <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18.4"
+               Foreground="{DynamicResource AppMutedBrush}" Margin="8" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" />
+    <Button Classes="action-icon text" Command="{Binding ExpandCommand}" HorizontalAlignment="Right"
+            Tag="{Binding ExpandLabel}" ToolTip.Tip="{Binding ExpandLabel}" AutomationProperties.Name="{Binding ExpandLabel}">
+      <TextBlock Text="open_in_full" Classes="action-icon-glyph" />
+    </Button>
+  </Grid>
+</UserControl>

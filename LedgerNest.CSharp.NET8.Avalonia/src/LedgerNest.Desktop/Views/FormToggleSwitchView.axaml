@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LedgerNest.Desktop.Views.FormToggleSwitchView" x:Name="Root">
+  <UserControl.Styles>
+    <Style Selector="ToggleButton Border#Track"><Setter Property="Background" Value="White" /><Setter Property="BorderBrush" Value="#BDBDBD" /></Style>
+    <Style Selector="ToggleButton Ellipse#Thumb"><Setter Property="Fill" Value="#BDBDBD" /><Setter Property="HorizontalAlignment" Value="Left" /></Style>
+    <Style Selector="ToggleButton:checked Border#Track"><Setter Property="Background" Value="#8097BD" /><Setter Property="BorderBrush" Value="Transparent" /></Style>
+    <Style Selector="ToggleButton:checked Ellipse#Thumb"><Setter Property="Fill" Value="{DynamicResource PageHeaderBrush}" /><Setter Property="HorizontalAlignment" Value="Right" /></Style>
+  </UserControl.Styles>
+  <ToggleButton x:Name="Toggle" IsChecked="{Binding Field.IsChecked, ElementName=Root, Mode=TwoWay}"
+                AutomationProperties.Name="{Binding Field.Label, ElementName=Root}" Classes="form-toggle"
+                Padding="0" BorderThickness="0" Background="Transparent" VerticalAlignment="Center">
+    <Border x:Name="Track" Width="42" Height="26" CornerRadius="18" BorderThickness="2" Padding="3">
+      <Ellipse x:Name="Thumb" Width="16" Height="16" />
+    </Border>
+  </ToggleButton>
+</UserControl>
