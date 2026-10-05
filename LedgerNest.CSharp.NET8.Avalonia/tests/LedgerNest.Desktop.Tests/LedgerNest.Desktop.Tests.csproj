@@ -1,21 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <StartupObject>Program</StartupObject>
     <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <IsTestProject>true</IsTestProject>
+    <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
-    <PackageReference Include="ScottPlot.Avalonia" Version="5.1.59" />
-    <ProjectReference Include="../../src/LedgerNest.Desktop/LedgerNest.Desktop.csproj" />
     <PackageReference Include="Avalonia.Headless" Version="12.1.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+    <ProjectReference Include="../../src/LedgerNest.Desktop/LedgerNest.Desktop.csproj" />
+    <Using Include="Xunit" />
   </ItemGroup>
 </Project>

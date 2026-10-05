@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[LedgerNest.*]*</Include>
+          <Exclude>[LedgerNest.Desktop.Tests]*,[LedgerNest.UiChecks]*,[LedgerNest.UnitTests]*,[LedgerNest.IntegrationTests]*,[LedgerNest.ViewModelTests]*</Exclude>
+          <ExcludeByFile>**/obj/**/*.cs,**/bin/**/*.cs</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

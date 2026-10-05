@@ -517,7 +517,7 @@ internal static class Program
     private static void Check(bool condition, string message)
     { assertions++; if (!condition) throw new InvalidOperationException(message); }
     [STAThread]
-    private static void Main(string[] args)
+    internal static void Main(string[] args)
     {
         var output = args.FirstOrDefault() ?? "/tmp/invoiso-ui-captures";
         Directory.CreateDirectory(output);

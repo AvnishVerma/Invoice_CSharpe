@@ -6,40 +6,36 @@ on:
 permissions:
   contents: read
 jobs:
-  headless:
+  automated-tests:
     runs-on: ubuntu-22.04
-    timeout-minutes: 15
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash
+        working-directory: LedgerNest.CSharp.NET8.Avalonia
     steps:
       - uses: actions/checkout@v6
-      - name: Prepare evidence directory
-        run: |
-          mkdir -p artifacts/ui
-          uname -a > artifacts/runner.log
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: LedgerNest.CSharp.NET8.Avalonia/global.json
       - name: Record toolchain
-        working-directory: LedgerNest.CSharp.NET8.Avalonia
-        run: dotnet --info 2>&1 | tee ../artifacts/toolchain.log
-      - name: Restore solution and checks
         run: |
-          dotnet restore LedgerNest.CSharp.NET8.Avalonia/LedgerNest.CSharp.sln 2>&1 | tee artifacts/restore-solution.log
-          dotnet restore LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks/LedgerNest.UiChecks.csproj 2>&1 | tee artifacts/restore-checks.log
-      - name: Build solution and checks
-        run: |
-          dotnet build LedgerNest.CSharp.NET8.Avalonia/LedgerNest.CSharp.sln --no-restore 2>&1 | tee artifacts/build-solution.log
-          dotnet build LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks/LedgerNest.UiChecks.csproj --no-restore 2>&1 | tee artifacts/build-checks.log
-      - name: Run regression checks
-        run: |
-          dotnet run --no-build --project LedgerNest.CSharp.NET8.Avalonia/tests/LedgerNest.UiChecks -- artifacts/ui 2>&1 | tee artifacts/checks.log
+          mkdir -p artifacts/test-results
+          dotnet --info 2>&1 | tee artifacts/toolchain.log
+      - name: Restore
+        run: dotnet restore LedgerNest.CSharp.sln 2>&1 | tee artifacts/restore.log
+      - name: Build
+        run: dotnet build LedgerNest.CSharp.sln --no-restore 2>&1 | tee artifacts/build.log
+      - name: Run all automated tests
+        run: dotnet test LedgerNest.CSharp.sln --no-build --no-restore --logger trx --results-directory artifacts/test-results --settings tests/coverage.runsettings --collect:"XPlat Code Coverage" 2>&1 | tee artifacts/tests.log
+      - name: Summarize test evidence
+        if: always()
+        run: pwsh -File tests/Report-TestResults.ps1 -ResultsDirectory artifacts/test-results
       - name: Retain evidence
         if: always()
         uses: actions/upload-artifact@v6
         with:
           name: ledgernest-checks-${{ github.sha }}
-          path: artifacts/
+          path: LedgerNest.CSharp.NET8.Avalonia/artifacts/
           if-no-files-found: warn
           retention-days: 14
