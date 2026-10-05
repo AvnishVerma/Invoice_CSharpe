@@ -1633,9 +1633,11 @@ internal static class Program
         F("Show Quantity").IsChecked = false;
         Check(Text(record).Contains("Rate"), "Hiding quantity must rename Price to Rate");
         Pdf("Template").Value = "Classic";
-        Check(!Compact(record).Contains("DELIVERY-KEEP") && !Compact(record).Contains("MFG42"), "Custom fields and metadata columns must only print on Grid Classic");
+        F("Metadata: Manufacturer Name").IsChecked = true;
+        Check(Compact(record).Contains("DELIVERY-KEEP") && Compact(record).Contains("MFG42"), "Classic must print historical custom fields and enabled product metadata");
         Check(Text(record).Contains("email-stable@example.com") && Text(record).Contains("DescriptionStable"), "Standard PDFs must honor enabled email and description");
         Pdf("Page Size").Value = "Thermal 80mm";
+        Check(Compact(record).Contains("DELIVERY-KEEP") && !Compact(record).Contains("MFG42"), "Thermal output must print custom fields while omitting metadata columns");
         Check(!Text(record).Contains("email-stable@example.com") && !Text(record).Contains("DescriptionStable") && Text(record).Contains("AliasStable"), "Thermal output must omit customer email and description while honoring aliases");
         Pdf("Page Size").Value = "A4";
         foreach (var label in new[] { "Business Name", "Address", "Phone", "Email", "GSTIN" }) F("Show Customer " + label).IsChecked = false;

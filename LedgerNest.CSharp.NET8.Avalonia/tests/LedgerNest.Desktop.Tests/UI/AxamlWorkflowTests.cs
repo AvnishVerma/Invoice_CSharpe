@@ -15,6 +15,28 @@ namespace LedgerNest.Desktop.Tests.UI;
 public sealed class AxamlWorkflowTests(HeadlessFixture headless)
 {
     [Fact]
+    public Task PdfFonts_ActualAxaml_BindsPresetsAndHidesNonthermalSettingsForThermal() => headless.Run(() =>
+    {
+        var model = new PdfSettingsViewModel(new MainWindowViewModel(licenseService: new TestLicenseService()),
+            new LedgerNest.Desktop.Tests.Settings.PdfSettingsTests.StubPrintService());
+        var view = new PdfSettingsView { DataContext = model };
+        var window = new Window { Content = view, Width = 1200, Height = 800 };
+        try
+        {
+            window.Show(); Settle(window);
+            var fonts = view.GetVisualDescendants().OfType<Expander>().Single(item => item.Header?.ToString() == "Font sizes");
+            fonts.IsExpanded = true; Settle(window);
+            var combo = view.GetVisualDescendants().OfType<ComboBox>().Single(item => Avalonia.Automation.AutomationProperties.GetName(item) == "PDF Font Size");
+            combo.SelectedItem = "Large"; Settle(window);
+            Assert.Equal("Large", model.FontSize.Value);
+            Assert.True(model.HasChanges);
+            model.Template.Value = "Thermal"; Settle(window);
+            Assert.False(fonts.IsEffectivelyVisible);
+        }
+        finally { window.Close(); }
+    });
+
+    [Fact]
     public Task VoidedInvoice_ActualPaymentDialog_ShowsHistoryWithoutNewPaymentForm() => headless.Run(() =>
     {
         var view = new PaymentDialogView(new PaymentDialogModel { IsVoided = true });

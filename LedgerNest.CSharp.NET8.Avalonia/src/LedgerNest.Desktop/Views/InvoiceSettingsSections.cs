@@ -41,7 +41,7 @@ public partial class MainWindow
             InvoiceToggle(F("Show Description"), "Show Product Description", "Print each item's description as a row under it on A4 PDFs (not on thermal receipts)", "view_list"), newline), 8);
         description.Background = Ui.Palette("#F0F1F3", "#303030");
         var metadata = Ui.Stack(8, Ui.LocalText("Product metadata columns", 14), Ui.LocalText("Print product metadata as extra columns in the items table.", 12, color: Ui.Muted),
-            Ui.LocalText("Note: Metadata columns are only applied to the Grid Classic PDF template.", 12, color: Brushes.Red));
+            new InvoiceDocumentFieldHelpView(metadata: true));
         foreach (var label in MainWindowViewModel.InvoiceMetadataLabels) metadata.Children.Add(InvoiceToggle(F("Metadata: " + label), label, "", "", true));
         return Ui.Stack(16,
             Ui.LocalText("Choose which columns appear in the invoice PDF items table. Item Name, Price and Total are always shown.", 13, color: Ui.Muted), new Border { Height = 4 },
@@ -114,7 +114,7 @@ public partial class MainWindow
         example.Content = samplePreview; example.Height = 140; example.ClipToBounds = true; example.HorizontalAlignment = HorizontalAlignment.Stretch; example.HorizontalContentAlignment = HorizontalAlignment.Stretch;
         var panel = Ui.Stack(19.2,
             Ui.LocalText("Define fields once here (e.g. Vehicle No, Delivery Note), then fill their values on each invoice. Not tied to the customer.", 13, color: Ui.Muted),
-            Ui.LocalText("Note: Custom fields are only printed on the Grid Classic PDF template.", 14, color: Brushes.Red), example,
+            new InvoiceDocumentFieldHelpView(metadata: false), example,
             Ui.LocalText("Tap to view full size", 11, color: Ui.Muted),
             InvoiceToggle(Model.InvoiceSetting("Enable Custom Fields"), "Enable Custom Fields", "Show a Custom Fields section on the create-invoice screen", "dashboard"), definitionEditor);
         System.Collections.Specialized.NotifyCollectionChangedEventHandler changed = (_, _) => Render();

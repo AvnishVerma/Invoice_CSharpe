@@ -48,7 +48,10 @@ public static class FormCatalog
             new("TEMPLATES", [Choice("Template", "Classic", "Modern", "Minimal", "Executive", "Compact", "Thermal", "Grid Classic")]),
             new("DISPLAY OPTIONS", [Toggle("Show Total Quantity", true), Choice("Item Layout", "Table", "Detailed"), Number("Company Name Size", "18")]),
             new("THEME COLOR", [Text("Theme Color", "#002E78")]),
-            new("PRINTING", [Choice("Printer", PlatformPrinterService.DefaultPrinter), Toggle("Show Printer Selection Dialog", false, "Allow choosing a printer for every print job")])],
+            new("PRINTING", [Choice("Printer", PlatformPrinterService.DefaultPrinter), Toggle("Show Printer Selection Dialog", false, "Allow choosing a printer for every print job")]),
+            new("FONT SIZES", [new("PDF Font Size", "Medium", "choice", LedgerNest.Application.PdfFontSizeRules.Presets),
+                .. new[] { "Company Font Size", "Document Title Font Size", "Table Header Font Size", "Table Items Font Size", "Totals Font Size" }
+                    .Select(label => new FormField(label, "Inherit", "choice", LedgerNest.Application.PdfFontSizeRules.SectionPresets))])],
         ["Product Details"] = [
             new("Product Fields", [Toggle("Name", true, "Always required"), Toggle("Price", true, "Always required"), Toggle("Stock", true), Toggle("Alias Name", true), Toggle("Tax Rate", true), Toggle("HSN/SAC", true), Toggle("Description", true), Toggle("Purchase Price", true), Toggle("Default Discount", true), Toggle("Unit", true), Toggle("Product / Service Type", true), Toggle("Advanced Information", true), Toggle("Extra Cost", true)]),
             new("Advanced Information", [Toggle("Storage Location", true), Toggle("Container Number", true), Toggle("Batch Number", true), Toggle("Expiry Date", true), Toggle("Manufacture Date", true), Toggle("Manufacturer Name", true), Toggle("Supplier Name", true), Toggle("SKU Code", true), Toggle("Notes", true)])],

@@ -53,6 +53,12 @@ internal static class DocumentPdf
         public BankPaymentAccount[] BankAccounts { get; init; } = [];
         public string[] MetadataColumns { get; init; } = [];
         public decimal PreviousBalance { get; init; }
+        public float FontScale { get; init; } = 1;
+        public float CompanyFontScale { get; init; } = 1;
+        public float DocumentTitleFontScale { get; init; } = 1;
+        public float TableHeaderFontScale { get; init; } = 1;
+        public float TableItemsFontScale { get; init; } = 1;
+        public float TotalsFontScale { get; init; } = 1;
     }
 
     internal static string DisplayNumber(Invoice invoice, PdfExportOptions options)
@@ -132,7 +138,10 @@ internal static class DocumentPdf
         using var watermark = thermal ? null : DecodeImage(options.WatermarkImage);
         var margin = narrow ? 12f : compact ? 24f : 32f;
         var usable = width - 2 * margin;
-        var size = narrow ? 8f : compact ? 8.5f : 10f;
+        var baseSize = narrow ? 8f : compact ? 8.5f : 10f;
+        var size = baseSize * (thermal ? 1 : options.FontScale);
+        var titleScale = thermal ? 1 : options.DocumentTitleFontScale;
+        var titleSpacing = Math.Max(0, 25 * (titleScale - 1));
         using var regularStream = typeof(DocumentPdf).Assembly.GetManifestResourceStream("LedgerNest.Pdf.Regular");
         using var boldStream = typeof(DocumentPdf).Assembly.GetManifestResourceStream("LedgerNest.Pdf.Bold");
         using var regular = SKTypeface.FromStream(regularStream);
@@ -165,8 +174,8 @@ internal static class DocumentPdf
         {
             if (minimal) { paint.Color = accent; canvas.DrawRect(margin, height - 31, usable, 1, paint); }
             else Rule(height - 29);
-            Text($"{Branding.Name} · {invoice.Type} · {template}", margin, height - 16, 7, color: muted);
-            Text($"Page {page}", width - margin, height - 16, 7, color: muted, right: true);
+            Text($"{Branding.Name} · {invoice.Type} · {template}", margin, height - 16, 7 * (thermal ? 1 : options.FontScale), color: muted);
+            Text($"Page {page}", width - margin, height - 16, 7 * (thermal ? 1 : options.FontScale), color: muted, right: true);
             pdf.EndPage();
         }
         void NewPage()
@@ -182,25 +191,25 @@ internal static class DocumentPdf
             }
             if (modern)
             {
-                paint.Color = accent; canvas.DrawRect(0, 0, width, narrow ? 58 : 82, paint);
-                Text(title.ToUpperInvariant(), margin, margin + 22, narrow ? 15 : 24, true, SKColors.White);
+                paint.Color = accent; canvas.DrawRect(0, 0, width, (narrow ? 58 : 82) + titleSpacing, paint);
+                Text(title.ToUpperInvariant(), margin, margin + 22 + titleSpacing, (narrow ? 15 : 24) * titleScale, true, SKColors.White);
                 if (displayNumber.Length > 0) Text("#" + displayNumber, width - margin, margin + 22, size, true, SKColors.White, true);
-                y = narrow ? 76 : 104;
+                y = (narrow ? 76 : 104) + titleSpacing;
             }
             else if (executive)
             {
                 paint.Color = accent; canvas.DrawRect(0, 0, 14, height, paint);
-                paint.Color = WithAlpha(accent, 24); canvas.DrawRoundRect(new SKRoundRect(new SKRect(margin, margin - 5, width - margin, margin + 48), 8, 8), paint);
-                Text(title.ToUpperInvariant(), margin + 12, margin + 22, narrow ? 16 : 24, true, accent);
+                paint.Color = WithAlpha(accent, 24); canvas.DrawRoundRect(new SKRoundRect(new SKRect(margin, margin - 5, width - margin, margin + 48 + titleSpacing), 8, 8), paint);
+                Text(title.ToUpperInvariant(), margin + 12, margin + 22 + titleSpacing, (narrow ? 16 : 24) * titleScale, true, accent);
                 if (displayNumber.Length > 0) Text("#" + displayNumber, width - margin - 12, margin + 22, size, true, muted, true);
-                y = margin + 72;
+                y = margin + 72 + titleSpacing;
             }
             else if (minimal)
             {
-                Text(title.ToUpperInvariant(), margin, margin + 20, narrow ? 16 : 24, true, ink);
-                paint.Color = accent; canvas.DrawRect(margin, margin + 30, usable, 1.2f, paint);
+                Text(title.ToUpperInvariant(), margin, margin + 20 + titleSpacing, (narrow ? 16 : 24) * titleScale, true, ink);
+                paint.Color = accent; canvas.DrawRect(margin, margin + 30 + titleSpacing, usable, 1.2f, paint);
                 if (displayNumber.Length > 0) Text("#" + displayNumber, width - margin, margin + 20, size, color: muted, right: true);
-                y = margin + 54;
+                y = margin + 54 + titleSpacing;
             }
             else if (narrow)
             {
@@ -213,9 +222,9 @@ internal static class DocumentPdf
             else
             {
                 paint.Color = accent; canvas.DrawRect(0, 0, width, compact ? 4 : 6, paint);
-                Text(title.ToUpperInvariant(), margin, margin + 20, compact ? 21 : 25, true, accent);
-                if (displayNumber.Length > 0) Text("#" + displayNumber, margin, margin + 36, size, color: muted);
-                y = margin + (compact ? 44 : 53);
+                Text(title.ToUpperInvariant(), margin, margin + 20 + titleSpacing, (compact ? 21 : 25) * titleScale, true, accent);
+                if (displayNumber.Length > 0) Text("#" + displayNumber, margin, margin + 36 + titleSpacing, size, color: muted);
+                y = margin + (compact ? 44 : 53) + titleSpacing;
             }
         }
         void Ensure(float space) { if (y + space > height - 45) NewPage(); }
@@ -239,10 +248,11 @@ internal static class DocumentPdf
                 }
             }
         }
-        void Paragraph(string? text, bool strong = false)
+        void Paragraph(string? text, bool strong = false, float? fontSize = null)
         {
-            foreach (var line in Wrap(text, usable, size).ToArray())
-            { Ensure(size + 7); Text(line, margin, y, size, strong); y += size + 5; }
+            var actualSize = fontSize ?? size;
+            foreach (var line in Wrap(text, usable, actualSize).ToArray())
+            { Ensure(actualSize + 7); Text(line, margin, y, actualSize, strong); y += actualSize + 5; }
         }
         string Money(decimal amount) => amount.ToString("N2", CultureInfo.InvariantCulture);
         string DateTimeText(DateTime value)
@@ -269,7 +279,7 @@ internal static class DocumentPdf
             }
             catch (Exception ex) when (ex is IOException or FormatException or ArgumentException) { }
         }
-        Paragraph(string.IsNullOrWhiteSpace(business.Name) ? Branding.Name : business.Name, true);
+        Paragraph(string.IsNullOrWhiteSpace(business.Name) ? Branding.Name : business.Name, true, baseSize * (thermal ? 1 : options.CompanyFontScale));
         Paragraph(business.Address); Paragraph(business.Phone); Paragraph(business.Email);
         if (options.ShowGst && business.TaxId.Length > 0) Paragraph("GST / Tax ID: " + business.TaxId);
         y += compact ? 3 : 8; Ensure(45); Rule(y); y += narrow ? 12 : 18;
@@ -313,7 +323,12 @@ internal static class DocumentPdf
         else
             foreach (var entry in information) Paragraph(entry.Text, entry.Bold);
         y += 8;
-        if (grid && !thermal)
+        if (thermal)
+        {
+            foreach (var field in (invoice.Snapshot?.CustomFields ?? []).Where(field => !string.IsNullOrWhiteSpace(field.Value)))
+                Paragraph(field.Label + ": " + field.Value);
+        }
+        else
         {
             var customFields = (invoice.Snapshot?.CustomFields ?? []).Where(field => !string.IsNullOrWhiteSpace(field.Value)).ToArray();
             for (var start = 0; start < customFields.Length; start += 3)
@@ -334,7 +349,7 @@ internal static class DocumentPdf
             }
             if (customFields.Length > 0) y += 14;
         }
-        var metadataColumns = grid && !thermal ? options.MetadataColumns : [];
+        var metadataColumns = !thermal ? options.MetadataColumns : [];
         var columns = new List<(string Key, string Label, float Weight)>();
         if (options.ShowSlNo) columns.Add(("serial", "#", .45f));
         columns.Add(("item", "Item / Service", 3));
@@ -345,10 +360,11 @@ internal static class DocumentPdf
         if (options.ShowDiscount) columns.Add(("discount", "Discount", 1));
         columns.Add(("total", "Total", 1));
         columns.AddRange(metadataColumns.Select(label => ("meta:" + label, label, 1.2f)));
-        var tableSize = Math.Min(size, columns.Count > 10 ? 6.5f : 8.5f);
+        var tableSize = Math.Min(baseSize, columns.Count > 10 ? 6.5f : 8.5f) * (thermal ? 1 : options.TableItemsFontScale);
+        var headerSize = Math.Min(baseSize, columns.Count > 10 ? 6.5f : 8.5f) * (thermal ? 1 : options.TableHeaderFontScale);
         var widths = columns.Select(column => usable * column.Weight / columns.Sum(c => c.Weight)).ToArray();
-        var headers = columns.Select((column, i) => Wrap(column.Label, widths[i] - 8, tableSize).ToArray()).ToArray();
-        var headerHeight = headers.Max(lines => lines.Length) * (tableSize + 4) + 8;
+        var headers = columns.Select((column, i) => Wrap(column.Label, widths[i] - 8, headerSize).ToArray()).ToArray();
+        var headerHeight = headers.Max(lines => lines.Length) * (headerSize + 4) + 8;
         void TableHeader()
         {
             if (!thermal)
@@ -359,7 +375,7 @@ internal static class DocumentPdf
                 var x = margin;
                 for (var i = 0; i < columns.Count; i++)
                 {
-                    for (var line = 0; line < headers[i].Length; line++) Text(headers[i][line], x + 4, y + tableSize + 4 + line * (tableSize + 4), tableSize, true, grid || minimal ? ink : SKColors.White);
+                    for (var line = 0; line < headers[i].Length; line++) Text(headers[i][line], x + 4, y + headerSize + 4 + line * (headerSize + 4), headerSize, true, grid || minimal ? ink : SKColors.White);
                     x += widths[i];
                 }
                 y += headerHeight;
@@ -472,15 +488,17 @@ internal static class DocumentPdf
         void Total(string label, decimal amount, bool strong = false) => TotalText(label, Money(amount), strong);
         void TotalText(string label, string value, bool strong = false)
         {
-            Ensure(24);
+            var totalSize = baseSize * (thermal ? 1 : options.TotalsFontScale);
+            var totalHeight = Math.Max(21, totalSize + 11);
+            Ensure(totalHeight + 3);
             if (!minimal && !narrow)
             {
                 paint.Color = WithAlpha(accent, modern || executive ? (byte)20 : (byte)12);
-                canvas.DrawRect(width - margin - Math.Min(usable, 245), y - size - 5, Math.Min(usable, 245), 21, paint);
+                canvas.DrawRect(width - margin - Math.Min(usable, 245), y - totalSize - 5, Math.Min(usable, 245), totalHeight, paint);
             }
-            Text(label, margin, y, size, strong);
-            Text(value, width - margin - (!minimal && !narrow ? 10 : 0), y, size, strong, right: true);
-            y += 21;
+            Text(label, margin, y, totalSize, strong);
+            Text(value, width - margin - (!minimal && !narrow ? 10 : 0), y, totalSize, strong, right: true);
+            y += totalHeight;
         }
         if (options.ShowTotalQuantity) TotalText("Total quantity", items.Sum(i => i.Quantity).ToString("0.###", CultureInfo.InvariantCulture));
         Total("Subtotal", invoice.SubTotal);

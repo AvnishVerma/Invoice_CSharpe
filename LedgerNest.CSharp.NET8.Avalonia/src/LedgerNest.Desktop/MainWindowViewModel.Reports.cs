@@ -383,30 +383,27 @@ public partial class MainWindowViewModel
     // Builds inventory valuation totals from finite-stock product records.
     public InventoryReportSnapshot BuildInventoryReport()
     {
-        var included = Products.Where(product => !product["Type"].Equals("Service", StringComparison.OrdinalIgnoreCase)
-                && !(bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited))
-            .Select(product =>
-            {
-                var stock = Math.Max(0, ParseDecimal(product["Stock"]));
-                var purchasePrice = Math.Max(0, ParseDecimal(product["Purchase Price"]));
-                var salePrice = Math.Max(0, ParseDecimal(product["Sale Price"]));
-                return new InventoryProductSnapshot(product.Name, stock, purchasePrice, salePrice, stock * purchasePrice, stock * salePrice);
-            })
-            .OrderByDescending(product => product.StockValue)
-            .ThenBy(product => product.Name)
-            .ToArray();
-        return new InventoryReportSnapshot(
-            included.Sum(product => product.StockValue),
-            included.Sum(product => product.SaleValue),
-            included.Sum(product => product.SaleValue - product.StockValue),
-            included.Sum(product => product.Stock),
-            included.Length,
-            Products.Count - included.Length,
-            included);
+        InventoryValuationInput[] inputs;
+        if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            inputs = db.Products.AsNoTracking().Select(product => new InventoryValuationInput(product.Name,
+                product.StockQuantity, product.PurchasePrice, product.SalePrice, product.Type, product.UnlimitedStock)).ToArray();
+        }
+        else inputs = Products.Select(product => new InventoryValuationInput(product.Name, ParseDecimal(product["Stock"]),
+            ParseDecimal(product["Purchase Price"]), ParseDecimal(product["Sale Price"]), product["Type"],
+            bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited)).ToArray();
+        var result = InventoryValuationCalculator.Calculate(inputs);
+        return new InventoryReportSnapshot(result.StockValue, result.SaleValue, result.PotentialProfit, result.Units,
+            result.Items.Length, result.ExcludedCount, result.Items.Select(item => new InventoryProductSnapshot(
+                item.Name, item.Stock, item.PurchasePrice, item.SalePrice, item.StockValue, item.SaleValue)).ToArray());
     }
 
     // Formats inventory valuation rows for CSV and PDF exports.
-    private string[][] InventoryReportRows() => BuildInventoryReport().Products
+    private string[][] InventoryReportRows() => InventoryReportRows(BuildInventoryReport());
+
+    private string[][] InventoryReportRows(InventoryReportSnapshot report) => report.Products
         .Select(product => new[] { product.Name, product.Stock.ToString("0.###"), Money(product.PurchasePrice), Money(product.StockValue), Money(product.SaleValue) })
         .Prepend(["Product", "Stock", "Purchase Price", "Stock Value", "Sale Value"])
         .ToArray();
@@ -418,6 +415,22 @@ public partial class MainWindowViewModel
     // Performs the export report pdf action for this screen or workflow.
     public byte[] ExportReportPdf(string name)
     {
+        if (name == "Inventory")
+        {
+            var inventory = BuildInventoryReport();
+            var inventoryLines = new List<string>
+            {
+                Branding.Name, "Inventory Valuation Report",
+                $"Stock value: {Money(inventory.InventoryValue)}",
+                $"Retail value: {Money(inventory.PotentialSaleValue)}",
+                $"Potential profit: {Money(inventory.ProfitLockedInStock)}",
+                $"Units: {inventory.TotalUnits:0.############################}",
+                $"Products tracked: {inventory.ProductsTracked}; excluded: {inventory.ExcludedItemCount}", ""
+            };
+            inventoryLines.AddRange(InventoryReportRows(inventory).Select(row => string.Join("  |  ", row)));
+            Status = "Exported inventory valuation PDF.";
+            return SimplePdf.Create(inventoryLines);
+        }
         var report = BuildReport(name);
         var lines = new List<string>
         {
@@ -438,9 +451,15 @@ public partial class MainWindowViewModel
     // Performs the export report csv action for this screen or workflow.
     public string ExportReportCsv(string name)
     {
-        var rows = BuildReport(name).Rows;
+        var rows = name == "Inventory" ? InventoryCsvRows() : BuildReport(name).Rows;
         Status = $"Exported {name} report.";
         return string.Join(Environment.NewLine, rows.Select(row => string.Join(",", row.Select(EscapeCsv)))) + Environment.NewLine;
+    }
+
+    private string[][] InventoryCsvRows()
+    {
+        var report = BuildInventoryReport();
+        return [.. InventoryReportRows(report), ["TOTAL", report.TotalUnits.ToString("0.############################"), "", Money(report.InventoryValue), Money(report.PotentialSaleValue)]];
     }
 
 }

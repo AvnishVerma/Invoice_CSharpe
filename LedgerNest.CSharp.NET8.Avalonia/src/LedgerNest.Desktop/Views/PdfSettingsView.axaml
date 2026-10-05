@@ -72,6 +72,23 @@
                   </StackPanel>
                 </Border>
                 <TextBlock Text="THEME COLOR" FontWeight="Bold" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+                <Expander Header="Font sizes" IsVisible="{Binding SupportsFontSizes}">
+                  <StackPanel Spacing="8" Margin="0,10,0,0">
+                    <TextBlock Text="Default PDF font size"/>
+                    <ComboBox ItemsSource="{Binding FontSize.Options}" SelectedItem="{Binding FontSize.Value, Mode=TwoWay}" AutomationProperties.Name="PDF Font Size"/>
+                    <TextBlock Text="Company name"/>
+                    <ComboBox ItemsSource="{Binding CompanyFontSize.Options}" SelectedItem="{Binding CompanyFontSize.Value, Mode=TwoWay}" AutomationProperties.Name="Company Font Size"/>
+                    <TextBlock Text="Document title"/>
+                    <ComboBox ItemsSource="{Binding DocumentTitleFontSize.Options}" SelectedItem="{Binding DocumentTitleFontSize.Value, Mode=TwoWay}" AutomationProperties.Name="Document Title Font Size"/>
+                    <TextBlock Text="Table headings"/>
+                    <ComboBox ItemsSource="{Binding TableHeaderFontSize.Options}" SelectedItem="{Binding TableHeaderFontSize.Value, Mode=TwoWay}" AutomationProperties.Name="Table Header Font Size"/>
+                    <TextBlock Text="Table items"/>
+                    <ComboBox ItemsSource="{Binding TableItemsFontSize.Options}" SelectedItem="{Binding TableItemsFontSize.Value, Mode=TwoWay}" AutomationProperties.Name="Table Items Font Size"/>
+                    <TextBlock Text="Totals"/>
+                    <ComboBox ItemsSource="{Binding TotalsFontSize.Options}" SelectedItem="{Binding TotalsFontSize.Value, Mode=TwoWay}" AutomationProperties.Name="Totals Font Size"/>
+                    <TextBlock Text="Inherit uses the default font size. Thermal receipt sizes are configured separately." TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}" FontSize="12"/>
+                  </StackPanel>
+                </Expander>
                 <Border Classes="card" Padding="12">
                   <StackPanel Spacing="8">
                     <TextBlock Text="Theme Color" />

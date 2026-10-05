@@ -65,7 +65,7 @@ public sealed class InventoryReportViewModel : INotifyPropertyChanged
         InventoryValue = Money(report.InventoryValue);
         PotentialSaleValue = Money(report.PotentialSaleValue);
         ProfitLockedInStock = Money(report.ProfitLockedInStock);
-        TotalUnits = report.TotalUnits.ToString("N0");
+        TotalUnits = report.TotalUnits.ToString("#,0.############################");
         ProductsTracked = report.ProductsTracked;
         ExcludedItemCount = report.ExcludedItemCount;
         allRows = report.Products.Select(InventoryReportRowViewModel.From).ToArray();

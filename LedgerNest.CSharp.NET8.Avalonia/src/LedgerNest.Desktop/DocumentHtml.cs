@@ -40,7 +40,8 @@ table{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:auto
 .notes{white-space:pre-wrap;margin-top:22px;line-height:1.5}.footer{margin-top:24px;border-top:1px solid #DDE5E7;padding-top:10px;color:#52616B;font-size:10px}
 .modern .top-rule{height:82px;margin-bottom:-58px}.modern .title,.modern .number{color:white;position:relative}.executive{border-left:14px solid ACCENT}.executive .top-rule{display:none}.executive .header{background:#F2F7F7;padding:16px;border-radius:8px}.minimal .top-rule{height:1px;margin-top:12px}.minimal th{background:white;color:#172B3A;border-bottom:2px solid ACCENT}.grid-classic th,.grid-classic td{border:1px solid #DDE5E7}.grid-classic th{background:#F7F2FA;color:#172B3A}.compact{padding:24px}.compact .top-rule{margin:-24px -24px 18px;height:4px}.compact td{padding:7px}.thermal{padding:12px;font-size:9px}.thermal .top-rule{margin:-12px -12px 10px;height:4px}.thermal .header{display:block;text-align:center}.thermal .title{font-size:16px}.thermal .meta{display:block}.thermal th,.thermal td{padding:5px 3px;font-size:8px}.thermal .optional-wide{display:none}.thermal .summary{margin-top:12px}
 </style></head><body><main class="sheet TEMPLATE_CLASS">
-""".Replace("SIZE_RULE", pageRule).Replace("ACCENT", accent).Replace("TEMPLATE_CLASS", thermal ? "thermal" : templateClass));
+""".Replace("SIZE_RULE", pageRule).Replace("ACCENT", accent).Replace("TEMPLATE_CLASS", thermal ? "thermal" : templateClass)
+            .Replace("</style>", FontStyles(options, thermal) + "</style>"));
 
         html.Append("<div class=\"top-rule\"></div><header class=\"header\"><div><div class=\"title\">")
             .Append(E(title)).Append("</div>");
@@ -63,8 +64,13 @@ table{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:auto
         if (!thermal && options.ShowCustomerEmail) html.Append(Line(customer?.Email));
         if (options.ShowGst && options.ShowCustomerGstin) html.Append(Line(customer?.GstNumber, "GSTIN: "));
         html.Append("</div></section>");
-        var metadataColumns = !thermal && template == "Grid Classic" ? options.MetadataColumns : [];
-        if (!thermal && template == "Grid Classic")
+        var metadataColumns = !thermal ? options.MetadataColumns : [];
+        if (thermal)
+        {
+            foreach (var field in (invoice.Snapshot?.CustomFields ?? []).Where(field => !string.IsNullOrWhiteSpace(field.Value)))
+                html.Append("<div class=\"custom-field\"><strong>").Append(E(field.Label)).Append(": </strong>").Append(E(field.Value)).Append("</div>");
+        }
+        else
         {
             var fields = (invoice.Snapshot?.CustomFields ?? []).Where(field => !string.IsNullOrWhiteSpace(field.Value)).ToArray();
             html.Append("<table><tbody>");
@@ -139,6 +145,17 @@ table{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:auto
     private static string PageRule(string pageSize, bool landscape, bool thermal) => thermal
         ? pageSize.Contains("58", StringComparison.Ordinal) ? "size:58mm auto;" : "size:80mm auto;"
         : $"size:{(pageSize is "A5" or "A6" ? pageSize : "A4")} {(landscape ? "landscape" : "portrait")};";
+
+    private static string FontStyles(DocumentPdf.PdfExportOptions options, bool thermal)
+    {
+        if (thermal) return "";
+        static string Size(float baseline, float scale) => (baseline * scale).ToString("0.###", CultureInfo.InvariantCulture) + "px";
+        return ".sheet{font-size:" + Size(12, options.FontScale) + "}.title{font-size:" + Size(28, options.DocumentTitleFontScale)
+            + "}.business-name{font-size:" + Size(16, options.CompanyFontScale) + "}th{font-size:" + Size(11, options.TableHeaderFontScale)
+            + "}td{font-size:" + Size(12, options.TableItemsFontScale) + "}.description{font-size:" + Size(11, options.TableItemsFontScale)
+            + "}.summary{font-size:" + Size(12, options.TotalsFontScale) + "}.summary-row.total{font-size:" + Size(15, options.TotalsFontScale)
+            + "}.footer{font-size:" + Size(10, options.FontScale) + "}";
+    }
 
     // Formats a configured invoice date without allowing an invalid format to stop printing.
     private static string DateText(DateTime value, DocumentPdf.PdfExportOptions options)

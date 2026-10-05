@@ -52,7 +52,7 @@ public sealed class PdfSettingsTests
         Assert.Contains("Office", settings.Printer.Options);
     }
 
-    private sealed class StubPrintService : IPrintService
+    internal sealed class StubPrintService : IPrintService
     {
         public Task<IReadOnlyList<PrinterInfo>> GetPrintersAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<PrinterInfo>>([new("Office", true), new("office"), new("Microsoft Print to PDF")]);

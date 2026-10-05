@@ -72,6 +72,7 @@ public partial class MainWindowViewModel
             Setting("Company Info", "Phone"), Setting("Company Info", "Email"), Setting("Company Info", "GSTIN"),
             showLogo ? Setting("Company Info", "Company logo") : "", Setting("Invoice Settings", "Thank You Note"));
         bool Checked(string category, string label) => Settings[category].SelectMany(s => s.Fields).FirstOrDefault(f => f.Label == label)?.IsChecked ?? false;
+        float FontScale(string label) => LedgerNest.Application.PdfFontSizeRules.Resolve(Setting("PDF Settings", label), Setting("PDF Settings", "PDF Font Size"));
         var pdfOptions = new DocumentPdf.PdfExportOptions(
             Setting("Invoice Settings", "Date Format"),
             Setting("Invoice Settings", "Time Format"),
@@ -120,7 +121,10 @@ public partial class MainWindowViewModel
                 .Select(account => new DocumentPdf.BankPaymentAccount(account[0].Value.Trim(), account[1].Value.Trim(), account[2].Value.Trim(), account[3].Value.Trim()))
                 .ToArray(),
             MetadataColumns = InvoiceMetadataLabels.Where(label => Checked("Invoice Settings", "Metadata: " + label)).ToArray(),
-            PreviousBalance = PreviousBalanceFor(invoice)
+            PreviousBalance = PreviousBalanceFor(invoice),
+            FontScale = FontScale("PDF Font Size"), CompanyFontScale = FontScale("Company Font Size"),
+            DocumentTitleFontScale = FontScale("Document Title Font Size"), TableHeaderFontScale = FontScale("Table Header Font Size"),
+            TableItemsFontScale = FontScale("Table Items Font Size"), TotalsFontScale = FontScale("Totals Font Size")
         };
         return new DocumentExportContext(
             invoice,

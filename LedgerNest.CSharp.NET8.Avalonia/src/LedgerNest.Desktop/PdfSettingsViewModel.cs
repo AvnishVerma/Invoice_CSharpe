@@ -30,6 +30,13 @@ public sealed partial class PdfSettingsViewModel : ObservableObject
     public FormField ThemeColor { get; }
     public FormField Printer { get; }
     public FormField ShowPrinterDialog { get; }
+    public FormField FontSize { get; }
+    public FormField CompanyFontSize { get; }
+    public FormField DocumentTitleFontSize { get; }
+    public FormField TableHeaderFontSize { get; }
+    public FormField TableItemsFontSize { get; }
+    public FormField TotalsFontSize { get; }
+    public bool SupportsFontSizes => Template.Value != "Thermal" && !PageSize.Value.StartsWith("Thermal", StringComparison.Ordinal);
     public ObservableCollection<PdfTemplateOptionViewModel> Templates { get; } = [];
     public string[] ThemeColors { get; } = ["#002E78", "#2563EB", "#047857", "#7C2D12", "#6D28D9"];
     public bool SupportsQuantity => Template.Value is "Compact" or "Grid Classic" or "Thermal";
@@ -47,6 +54,8 @@ public sealed partial class PdfSettingsViewModel : ObservableObject
         PageSize = Field("Page Size"); Orientation = Field("Orientation"); Template = Field("Template");
         ShowTotalQuantity = Field("Show Total Quantity"); ItemLayout = Field("Item Layout"); CompanyNameSize = Field("Company Name Size");
         ThemeColor = Field("Theme Color"); Printer = Field("Printer"); ShowPrinterDialog = Field("Show Printer Selection Dialog");
+        FontSize = Field("PDF Font Size"); CompanyFontSize = Field("Company Font Size"); DocumentTitleFontSize = Field("Document Title Font Size");
+        TableHeaderFontSize = Field("Table Header Font Size"); TableItemsFontSize = Field("Table Items Font Size"); TotalsFontSize = Field("Totals Font Size");
         trackedFields = sections.SelectMany(section => section.Fields).ToArray();
         savedValues = trackedFields.Select(field => field.Value).ToArray();
         foreach (var name in Template.Options.OrderBy(value => value == "Grid Classic" ? 0 : 1))
@@ -78,6 +87,7 @@ public sealed partial class PdfSettingsViewModel : ObservableObject
             };
         }
         OnPropertyChanged(nameof(SupportsQuantity));
+        OnPropertyChanged(nameof(SupportsFontSizes));
         OnPropertyChanged(nameof(IsPortrait));
         OnPropertyChanged(nameof(IsLandscape));
         OnPropertyChanged(nameof(Template));
