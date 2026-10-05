@@ -14,6 +14,21 @@ namespace LedgerNest.Desktop.Tests.UI;
 [Trait("Category", "UI")]
 public sealed class AxamlWorkflowTests(HeadlessFixture headless)
 {
+    [Fact]
+    public Task VoidedInvoice_ActualPaymentDialog_ShowsHistoryWithoutNewPaymentForm() => headless.Run(() =>
+    {
+        var view = new PaymentDialogView(new PaymentDialogModel { IsVoided = true });
+        var window = new Window { Content = view, Width = 800, Height = 600 };
+        try
+        {
+            window.Show(); Settle(window);
+            Assert.Contains(view.GetVisualDescendants().OfType<TextBlock>(), text => text.IsEffectivelyVisible && text.Text == "Invoice voided — payment history is read-only");
+            Assert.DoesNotContain(view.GetVisualDescendants().OfType<TextBlock>(), text => text.IsEffectivelyVisible && text.Text == "New Payment");
+            Assert.DoesNotContain(view.GetVisualDescendants().OfType<TextBlock>(), text => text.IsEffectivelyVisible && text.Text == "Invoice fully paid");
+        }
+        finally { window.Close(); }
+    });
+
     [Theory]
     [InlineData(960, 600)]
     [InlineData(1440, 900)]

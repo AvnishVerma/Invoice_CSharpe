@@ -124,8 +124,8 @@ table{width:100%;border-collapse:collapse;margin-top:20px;page-break-inside:auto
             html.Append(Summary("Round off", Money(rounded - amount))).Append(Summary("Net Amount", Money(rounded), true));
             html.Append("<div>").Append(E(LedgerNest.Application.AmountInWords.Format(rounded, CurrencyDisplay.UsesIndianNumbering(invoice.Snapshot?.Currency)))).Append("</div>");
         }
-        html.Append(Summary("Paid", Money(invoice.PaidAmount))).Append(Summary("Balance due", Money(Math.Max(0, invoice.GrandTotal - invoice.PaidAmount)), true)).Append("</section>");
-        if (options.PreviousBalance > 0) html.Append(Summary("Total due", Money(Math.Max(0, invoice.GrandTotal - invoice.PaidAmount) + options.PreviousBalance), true));
+        html.Append(Summary("Paid", Money(invoice.PaidAmount))).Append(Summary("Balance due", Money(invoice.BalanceAmount), true)).Append("</section>");
+        if (options.PreviousBalance > 0) html.Append(Summary("Total due", Money(invoice.BalanceAmount + options.PreviousBalance), true));
         if (!string.IsNullOrWhiteSpace(invoice.Snapshot?.Notes) || !string.IsNullOrWhiteSpace(business.Note) || !string.IsNullOrWhiteSpace(options.AdditionalInformation))
             html.Append("<section class=\"notes\">").Append(E(invoice.Snapshot?.Notes)).Append(Line(options.AdditionalInformation)).Append(Line(business.Note)).Append("</section>");
         if (!string.IsNullOrWhiteSpace(options.SignatureImage))

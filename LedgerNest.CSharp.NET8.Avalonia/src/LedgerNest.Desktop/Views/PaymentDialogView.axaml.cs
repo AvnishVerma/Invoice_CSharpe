@@ -30,7 +30,9 @@ public sealed class PaymentDialogModel
     public bool HasPayments => Payments.Count > 0;
     public bool HasNoPayments => Payments.Count == 0;
     public bool IsFullyPaid { get; init; }
-    public bool CanRecordPayment => !IsFullyPaid;
+    public bool IsVoided { get; init; }
+    public bool HasUpdatePermission { get; init; } = true;
+    public bool CanRecordPayment => !IsFullyPaid && !IsVoided && HasUpdatePermission;
     public FormFieldsViewModel? AmountAndDate { get; init; }
     public FormFieldsViewModel? MethodAndTax { get; init; }
     public FormFieldViewModel? Note { get; init; }

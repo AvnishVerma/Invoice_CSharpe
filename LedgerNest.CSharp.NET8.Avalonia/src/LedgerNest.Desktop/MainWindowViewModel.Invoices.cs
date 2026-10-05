@@ -122,7 +122,7 @@ public partial class MainWindowViewModel
     public bool IsEditingDocument => editingDocument != null;
     public bool CanVoidCurrentInvoice => editingDocument is { SourceId: > 0 }
         && editingDocument["Type"] == "Invoice"
-        && !string.Equals(editingDocument["Status"], "Voided", StringComparison.OrdinalIgnoreCase)
+        && !InvoiceStatusRules.IsVoided(editingDocument["Status"])
         && HasPermission("Invoice", "Update");
     public string EditorDocumentNumber => editingDocument?.Name ?? PeekNextDocumentNumber(InvoiceDetails[0].Value);
     public UiRecord? LastSavedDocument { get; private set; }
@@ -188,7 +188,7 @@ public partial class MainWindowViewModel
         if (invoice == null || invoice.DeletedAt != null) { Status = "Document is unavailable or in trash."; return false; }
         if (invoice.PaidAmount != 0 || db.Payments.Any(p => p.InvoiceId == invoice.Id))
         { Status = "Documents with payments cannot be edited yet."; return false; }
-        if (invoice.Status is "Cancelled" or "Voided")
+        if (invoice.Status == "Cancelled" || InvoiceStatusRules.IsVoided(invoice.Status))
         { Status = $"{invoice.Status} documents cannot be edited."; return false; }
         if (invoice.Snapshot is not { Version: 1 } snapshot)
         { Status = "This document lacks a supported historical snapshot and cannot be safely edited."; return false; }
@@ -234,23 +234,15 @@ public partial class MainWindowViewModel
         if (dbFactory == null || editingDocument is not { SourceId: > 0 } record || record["Type"] != "Invoice")
         { Status = "Only a saved invoice can be voided."; return false; }
 
-        using var db = dbFactory.CreateDbContext();
-        db.EnsureCurrentSchema();
-        var invoice = db.Invoices.SingleOrDefault(item => item.Id == record.SourceId);
-        if (invoice == null || invoice.DeletedAt != null)
-        { Status = "Invoice is unavailable or in trash."; return false; }
-        if (string.Equals(invoice.Status, "Voided", StringComparison.OrdinalIgnoreCase))
-        { Status = "This invoice is already voided."; return false; }
-        if (invoice.Type != "Invoice")
-        { Status = "Only invoices can be voided."; return false; }
-        if (invoice.PaidAmount > 0.005m || db.Payments.Any(payment => payment.InvoiceId == invoice.Id))
-        { Status = "Invoices with payments cannot be voided. Refund or remove the payment first."; return false; }
-
-        invoice.Status = "Voided";
-        invoice.CancellationReason = "Voided by user";
-        invoice.CancelledBy = CurrentUsername ?? "system";
-        invoice.CancelledAt = DateTime.UtcNow;
-        db.SaveChanges();
+        if (!RequireBusinessLicense()) return false;
+        Invoice invoice;
+        try
+        {
+            invoice = new InvoiceLifecycleService(dbFactory)
+                .Void(record.SourceId, CurrentUsername ?? "", "Voided by user");
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or UnauthorizedAccessException or DbUpdateException or Microsoft.Data.Sqlite.SqliteException)
+        { Status = "Unable to void invoice: " + ex.Message; return false; }
 
         record.Values["Status"] = "Voided";
         record.Values["Outstanding"] = "0.00";

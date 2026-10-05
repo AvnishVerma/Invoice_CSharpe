@@ -202,6 +202,7 @@ public partial class MainWindowViewModel
         db.EnsureCurrentSchema();
         var invoices = db.Invoices.AsNoTracking()
             .Include(invoice => invoice.Items)
+            .Where(InvoiceStatusRules.FinancialInvoices)
             .Where(invoice => invoice.DeletedAt == null && invoice.Type == "Invoice" && invoice.InvoiceDate >= start && invoice.InvoiceDate < end)
             .ToArray();
         var calculated = invoices.Select(invoice =>
@@ -268,7 +269,7 @@ public partial class MainWindowViewModel
             db.EnsureCurrentSchema();
             lines = db.InvoiceItems.AsNoTracking()
                 .Join(db.Invoices.AsNoTracking(), item => item.InvoiceId, invoice => invoice.Id, (item, invoice) => new { item, invoice })
-                .Where(x => x.invoice.Status != "Draft" && x.invoice.Type == "Invoice" && x.invoice.DeletedAt == null && x.invoice.InvoiceDate >= DateTime.Today.AddMonths(-3))
+                .Where(x => x.invoice.Status != "Draft" && x.invoice.Status.ToLower() != "voided" && x.invoice.Status.ToLower() != "declined" && x.invoice.Type == "Invoice" && x.invoice.DeletedAt == null && x.invoice.InvoiceDate >= DateTime.Today.AddMonths(-3))
                 .Select(x => new ProductReportLine(x.item.Description, x.item.Quantity, x.item.UnitPrice, x.item.DiscountPerUnit ? x.item.Discount * x.item.Quantity : x.item.Discount, x.item.PurchasePrice))
                 .ToArray();
         }
@@ -344,7 +345,8 @@ public partial class MainWindowViewModel
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
         var invoices = db.Invoices.AsNoTracking().Include(invoice => invoice.Items)
-            .Where(invoice => invoice.DeletedAt == null && invoice.Type == "Invoice" && invoice.Status != "Draft")
+            .Where(InvoiceStatusRules.FinancialInvoices)
+            .Where(invoice => invoice.Status != "Draft")
             .ToArray();
         var daily = invoices.GroupBy(invoice => invoice.InvoiceDate.Date)
             .Select(group =>

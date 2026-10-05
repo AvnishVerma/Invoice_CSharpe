@@ -40,7 +40,7 @@ public partial class MainWindowViewModel : ObservableObject
     public ObservableCollection<UiRecord> Products { get; } = [];
     public ObservableCollection<UiRecord> Users { get; } = [];
     public ObservableCollection<UiRecord> Invoices { get; } = [];
-    public IEnumerable<UiRecord> ActiveInvoices => Invoices.Where(i => i["Type"] == "Invoice" && !DeletedRecords.Contains(i.Id));
+    public IEnumerable<UiRecord> ActiveInvoices => Invoices.Where(i => i["Type"] == "Invoice" && !DeletedRecords.Contains(i.Id) && !InvoiceStatusRules.IsVoided(i["Status"]));
     public ObservableCollection<UiRecord> Payments { get; } = [];
     public UnitMasterViewModel UnitMaster { get; }
     public ProductPriceMasterViewModel ProductPriceMaster { get; }

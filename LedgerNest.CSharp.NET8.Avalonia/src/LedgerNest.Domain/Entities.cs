@@ -62,7 +62,7 @@ public sealed class Invoice
     public decimal DiscountTotal { get; set; }
     public decimal GrandTotal { get; set; }
     public decimal PaidAmount { get; set; }
-    public decimal BalanceAmount => GrandTotal - PaidAmount <= 0.005m ? 0m : GrandTotal - PaidAmount;
+    public decimal BalanceAmount => InvoiceStatusRules.Outstanding(this);
     public List<InvoiceItem> Items { get; set; } = [];
 }
 

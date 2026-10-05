@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddSingleton<InvoiceRefundService>();
         services.AddSingleton<AuthorizationService>();
         services.AddSingleton<QuotationService>();
+        services.AddSingleton<InvoiceLifecycleService>();
         return services;
     }
 }

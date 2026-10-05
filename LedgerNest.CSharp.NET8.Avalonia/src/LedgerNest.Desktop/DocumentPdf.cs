@@ -79,7 +79,7 @@ internal static class DocumentPdf
         {
             ("pa", account.UpiId.Trim()),
             ("pn", payeeName.Trim()),
-            ("am", invoice.GrandTotal.ToString("0.00", CultureInfo.InvariantCulture)),
+            ("am", InvoiceStatusRules.Outstanding(invoice).ToString("0.00", CultureInfo.InvariantCulture)),
             ("cu", currency),
             ("tn", "Invoice " + displayNumber)
         };
@@ -499,10 +499,10 @@ internal static class DocumentPdf
             Paragraph(LedgerNest.Application.AmountInWords.Format(rounded, CurrencyDisplay.UsesIndianNumbering(invoice.Snapshot?.Currency)));
         }
         Total("Paid", invoice.PaidAmount);
-        Total("Balance due", invoice.GrandTotal - invoice.PaidAmount, true);
-        if (options.PreviousBalance > 0) Total("Total due", Math.Max(0, invoice.GrandTotal - invoice.PaidAmount) + options.PreviousBalance, true);
+        Total("Balance due", invoice.BalanceAmount, true);
+        if (options.PreviousBalance > 0) Total("Total due", invoice.BalanceAmount + options.PreviousBalance, true);
         var bankAccounts = options.ShowBankDetails ? options.BankAccounts : [];
-        var upiAccounts = options.ShowPaymentQr ? options.UpiAccounts : [];
+        var upiAccounts = options.ShowPaymentQr && InvoiceStatusRules.CanRequestPayment(invoice) ? options.UpiAccounts : [];
         var paymentRows = Math.Max(bankAccounts.Length, upiAccounts.Length);
         for (var index = 0; index < paymentRows; index++)
         {

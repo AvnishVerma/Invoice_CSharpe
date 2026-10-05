@@ -450,6 +450,7 @@ public partial class MainWindowViewModel
     // Performs the apply payment action for this screen or workflow.
     public bool ApplyPayment(UiRecord invoiceRecord, FormField[] fields)
     {
+        if (!HasPermission("Invoice", "Update")) { Status = "You do not have permission to record payments."; return false; }
         if (!RequireBusinessLicense()) return false;
         if (dbFactory == null)
         {
@@ -466,10 +467,17 @@ public partial class MainWindowViewModel
 
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
+        using var paymentTransaction = db.Database.BeginTransaction();
         var invoice = db.Invoices.Include(i => i.Items).FirstOrDefault(i => i.Id == invoiceRecord.SourceId);
         if (invoice == null || invoice.DeletedAt != null)
         {
             Status = "Invoice was not found or is in trash.";
+            return false;
+        }
+
+        if (InvoiceStatusRules.IsVoided(invoice.Status))
+        {
+            Status = "Payments cannot be added to a voided invoice.";
             return false;
         }
 
@@ -498,6 +506,7 @@ public partial class MainWindowViewModel
         invoice.PaidAmount = previousPaid + amount;
         invoice.Status = invoice.BalanceAmount == 0 ? "Paid" : invoice.PaidAmount > 0.005m ? "Partial" : "Unpaid";
         db.SaveChanges();
+        paymentTransaction.Commit();
 
         var receiptNumber = NextReceiptNumber(invoice.InvoiceNumber, Payments.Where(p => p["InvoiceId"] == invoice.Id.ToString()).Select(p => p.Name).ToArray());
         Payments.Add(new UiRecord

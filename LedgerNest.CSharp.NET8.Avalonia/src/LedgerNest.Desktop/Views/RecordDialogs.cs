@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using LedgerNest.Domain;
 using LedgerNest.Desktop.Views;
 
 namespace LedgerNest.Desktop;
@@ -88,8 +89,10 @@ public partial class MainWindow
         fields[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
         fields[3].Value = invoice["Tax"].Length > 0 ? invoice["Tax"] : "0.00";
 
-        var fullyPaid = outstanding <= 0.005m;
-        var footer = new DialogActions(fullyPaid
+        var isVoided = InvoiceStatusRules.IsVoided(invoice["Status"]);
+        var fullyPaid = !isVoided && outstanding <= 0.005m;
+        var canRecord = !isVoided && !fullyPaid && Model.HasPermission("Invoice", "Update");
+        var footer = new DialogActions(!canRecord
             ? [new DialogAction("Close", new RelayCommand(CloseOverlay), true)]
             : [new DialogAction("Close", new RelayCommand(CloseOverlay)),
                 new DialogAction("Save Payment", new RelayCommand(() => { if (Model.ApplyPayment(invoice, fields)) ShowPayment(invoice); }), true)]);
@@ -100,6 +103,8 @@ public partial class MainWindow
             PaidText = Money(paid),
             OutstandingText = Money(outstanding),
             IsFullyPaid = fullyPaid,
+            IsVoided = isVoided,
+            HasUpdatePermission = Model.HasPermission("Invoice", "Update"),
             AmountAndDate = new FormFieldsViewModel(fields.Take(2).Select(field => new FormFieldViewModel(field)).ToArray(), 2),
             MethodAndTax = new FormFieldsViewModel(fields.Skip(2).Take(2).Select(field => new FormFieldViewModel(field)).ToArray(), 2),
             Note = new FormFieldViewModel(fields[4]),

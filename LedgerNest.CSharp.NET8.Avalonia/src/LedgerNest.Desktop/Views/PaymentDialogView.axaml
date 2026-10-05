@@ -65,6 +65,9 @@
       </StackPanel>
     </Border>
 
+    <Border IsVisible="{Binding IsVoided}" Classes="card" Padding="12.8,11.2">
+      <TextBlock loc:UiLocalization.Text="Invoice voided — payment history is read-only" TextWrapping="Wrap"/>
+    </Border>
     <Border IsVisible="{Binding IsFullyPaid}" BorderBrush="#5916A34A" BorderThickness="1" Background="#1416A34A" CornerRadius="7" Padding="12.8,11.2">
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6.4">
         <TextBlock Text="✓" FontSize="18" FontWeight="Bold" Foreground="#16A34A" />

@@ -81,7 +81,7 @@ public partial class MainWindowViewModel
         if (dbFactory == null || invoice.Type != "Invoice" || invoice.CustomerId == null || !InvoiceSetting("Show Previous Balance").IsChecked) return 0;
         using var db = dbFactory.CreateDbContext();
         var currency = invoice.Snapshot?.Currency;
-        return db.Invoices.AsNoTracking().Where(other => other.CustomerId == invoice.CustomerId && other.Type == "Invoice" && other.DeletedAt == null && other.Id != invoice.Id)
+        return db.Invoices.AsNoTracking().Where(InvoiceStatusRules.FinancialInvoices).Where(other => other.CustomerId == invoice.CustomerId && other.Id != invoice.Id)
             .AsEnumerable().Where(other => (other.InvoiceDate.Date < invoice.InvoiceDate.Date || other.InvoiceDate.Date == invoice.InvoiceDate.Date && other.Id < invoice.Id)
                 && other.Snapshot?.Currency == currency).Sum(other => Math.Max(0, other.GrandTotal - other.PaidAmount));
     }
