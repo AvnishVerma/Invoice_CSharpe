@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using LedgerNest.Domain;
 using LedgerNest.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.Sqlite;
 
 namespace LedgerNest.Desktop;
 
@@ -132,15 +133,31 @@ public sealed partial class PermissionManagementViewModel : ObservableObject
     private async Task CreateRoleAsync()
     {
         if (!CanManage || factory == null) { Error = "Only administrators can create roles."; return; }
-        var name = NewRoleName.Trim();
+        var name = NewRoleName?.Trim() ?? "";
         if (name.Length < 2) { Error = "Enter a role name."; return; }
-        await using var db = await factory.CreateDbContextAsync();
-        if (await db.Roles.AnyAsync(item => item.Name.ToLower() == name.ToLower())) { Error = "Role already exists."; return; }
-        db.Roles.Add(new AppRole { Name = name });
-        await db.SaveChangesAsync();
-        NewRoleName = ""; RefreshUsers(); SelectedRole = name; LoadUserRoleAssignments();
-        NotifyAuthorizationChanged();
-        Status = $"Role {name} created.";
+        IsBusy = true; Error = ""; Status = "";
+        var created = false;
+        try
+        {
+            await using var db = await factory.CreateDbContextAsync();
+            if (await db.Roles.AnyAsync(item => item.Name.ToLower() == name.ToLower())) { Error = "Role already exists."; return; }
+            db.Roles.Add(new AppRole { Name = name });
+            await db.SaveChangesAsync();
+            created = true;
+            NewRoleName = ""; RefreshUsers(); SelectedRole = name; LoadUserRoleAssignments();
+            NotifyAuthorizationChanged();
+            Status = $"Role {name} created.";
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqliteException { SqliteExtendedErrorCode: 2067 })
+        {
+            Error = "Role already exists.";
+        }
+        catch (Exception exception)
+        {
+            Error = created ? $"Role {name} was created, but the role list could not refresh: {exception.Message}"
+                : $"Could not create role: {exception.Message}";
+        }
+        finally { IsBusy = false; }
     }
 
     [RelayCommand]
@@ -149,20 +166,33 @@ public sealed partial class PermissionManagementViewModel : ObservableObject
         if (!CanManage || factory == null) { Error = "Only administrators can delete roles."; return; }
         var selectedRoleName = EffectiveSelectedRole;
         if (selectedRoleName.Equals("Admin", StringComparison.OrdinalIgnoreCase)) { Error = "The Admin role cannot be deleted."; return; }
-        await using var db = await factory.CreateDbContextAsync();
-        var role = await db.Roles.SingleOrDefaultAsync(item => item.Name == selectedRoleName);
-        if (role == null) return;
-        var fallbackRole = await db.Roles.SingleAsync(item => item.Name == "User");
-        db.RolePermissions.RemoveRange(db.RolePermissions.Where(item => item.Role == role.Name));
-        db.UserRoles.RemoveRange(db.UserRoles.Where(item => item.RoleId == role.Id));
-        foreach (var user in await db.Users.Where(item => item.Role == role.Name).ToListAsync())
+        IsBusy = true; Error = ""; Status = "";
+        var deleted = false;
+        try
         {
-            user.Role = fallbackRole.Name;
-            if (!await db.UserRoles.AnyAsync(item => item.UserId == user.Id && item.RoleId == fallbackRole.Id))
-                db.UserRoles.Add(new AppUserRole { UserId = user.Id, RoleId = fallbackRole.Id });
+            await using var db = await factory.CreateDbContextAsync();
+            var role = await db.Roles.SingleOrDefaultAsync(item => item.Name == selectedRoleName);
+            if (role == null) return;
+            var fallbackRole = await db.Roles.SingleAsync(item => item.Name == "User");
+            db.RolePermissions.RemoveRange(db.RolePermissions.Where(item => item.Role == role.Name));
+            db.UserRoles.RemoveRange(db.UserRoles.Where(item => item.RoleId == role.Id));
+            foreach (var user in await db.Users.Where(item => item.Role == role.Name).ToListAsync())
+            {
+                user.Role = fallbackRole.Name;
+                if (!await db.UserRoles.AnyAsync(item => item.UserId == user.Id && item.RoleId == fallbackRole.Id))
+                    db.UserRoles.Add(new AppUserRole { UserId = user.Id, RoleId = fallbackRole.Id });
+            }
+            db.Roles.Remove(role);
+            await db.SaveChangesAsync();
+            deleted = true;
+            RefreshUsers(); NotifyAuthorizationChanged(); Status = $"Role {role.Name} deleted.";
         }
-        db.Roles.Remove(role);
-        await db.SaveChangesAsync(); RefreshUsers(); NotifyAuthorizationChanged(); Status = $"Role {role.Name} deleted.";
+        catch (Exception exception)
+        {
+            Error = deleted ? $"Role {selectedRoleName} was deleted, but the role list could not refresh: {exception.Message}"
+                : $"Could not delete role: {exception.Message}";
+        }
+        finally { IsBusy = false; }
     }
 
     [RelayCommand]

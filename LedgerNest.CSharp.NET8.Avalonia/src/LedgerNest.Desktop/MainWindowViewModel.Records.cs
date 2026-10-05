@@ -28,6 +28,15 @@ public partial class MainWindowViewModel
             if (unlimited != null) unlimited.IsChecked = true;
         }
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
+        if (kind == "User")
+        {
+            var password = fields.FirstOrDefault(field => field.Label == "Password");
+            if (password != null && (original == null || password.Value.Length > 0) && password.Value.Length < 8)
+            {
+                password.Error = "Password must be at least 8 characters.";
+                return false;
+            }
+        }
         var records = kind == "Customer" ? Customers : kind == "Product" ? Products : Users;
         var databaseValues = fields.ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Kind == "password" ? f.Value : f.Value.Trim());
         var values = fields.Where(f => f.Kind != "password").ToDictionary(f => f.Label, f => f.Kind == "toggle" ? f.IsChecked.ToString() : f.Value.Trim());

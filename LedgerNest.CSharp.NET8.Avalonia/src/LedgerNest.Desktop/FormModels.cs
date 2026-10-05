@@ -17,11 +17,17 @@ public sealed partial class FormField : ObservableObject
     [ObservableProperty] private bool isChecked;
     [ObservableProperty] private string error = "";
     public FormField(string label, string value = "", string kind = "text", string[]? options = null, bool required = false)
-    { Label = label; this.value = value; Kind = kind; Options = options ?? []; Required = required; isChecked = value == "true"; }
+    { Label = label; this.value = value ?? ""; Kind = kind; Options = options ?? []; Required = required; isChecked = value == "true"; }
+    partial void OnValueChanged(string value)
+    {
+        // Text bindings and imported values may supply null despite the non-null data contract.
+        if (value is null) Value = "";
+    }
     // Performs the validate action for this screen or workflow.
     public bool Validate()
     {
         Error = Required && string.IsNullOrWhiteSpace(Value) ? $"{Label} is required." : "";
+        if (Value.Length > MaxLength) Error = $"{Label} must not exceed {MaxLength} characters.";
         if (Kind == "number" && Value.Length > 0 && (!decimal.TryParse(Value, NumberStyles.Number, CultureInfo.CurrentCulture, out var n) || n < 0))
             Error = "Enter a valid, non-negative number.";
         if (Kind is "text" or "multiline" && Label.Contains("Email") && Value.Length > 0 && !System.Net.Mail.MailAddress.TryCreate(Value, out _)) Error = "Enter a valid email address.";
