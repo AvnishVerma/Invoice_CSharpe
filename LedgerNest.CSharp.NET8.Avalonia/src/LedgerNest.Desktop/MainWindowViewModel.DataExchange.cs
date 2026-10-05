@@ -206,6 +206,7 @@ public partial class MainWindowViewModel
     // Performs the create database backup action for this screen or workflow.
     public byte[] CreateDatabaseBackup()
     {
+        if (!CanUseCompanyBackup(false)) return [];
         if (string.IsNullOrWhiteSpace(databasePath) || !File.Exists(databasePath))
         {
             Status = "Database file backup is not available.";
@@ -245,6 +246,7 @@ public partial class MainWindowViewModel
     // Performs the restore database backup action for this screen or workflow.
     public bool RestoreDatabaseBackup(byte[] bytes)
     {
+        if (!CanUseCompanyBackup(true)) return false;
         if (string.IsNullOrWhiteSpace(databasePath) || bytes.Length == 0)
         {
             Status = "Database backup is empty or unsupported.";
@@ -254,7 +256,7 @@ public partial class MainWindowViewModel
         string? cleanupWarning;
         try
         {
-            cleanupWarning = DatabaseBackupRestore.Restore(bytes, databasePath);
+            cleanupWarning = DatabaseBackupRestore.Restore(bytes, databasePath, CompanyContext?.ActiveCompany.Id, CompanyContext?.ActiveCompany.IsOriginal == true);
         }
         catch (Exception ex)
         {
@@ -280,6 +282,7 @@ public partial class MainWindowViewModel
     // Performs the create json backup action for this screen or workflow.
     public string CreateJsonBackup()
     {
+        if (!CanUseCompanyBackup(false)) return "";
         if (dbFactory == null)
         {
             Status = "Backup storage is not available.";
@@ -303,6 +306,8 @@ public partial class MainWindowViewModel
                 ["version"] = "1.0",
                 ["app_name"] = Branding.Name,
                 ["backup_type"] = "json_export",
+                ["company_id"] = CompanyContext?.ActiveCompany.Id,
+                ["company_name"] = CompanyContext?.ActiveCompany.Name,
                 ["record_count"] = 7
             }
         };
@@ -365,6 +370,7 @@ public partial class MainWindowViewModel
     // Performs the restore json backup action for this screen or workflow.
     public bool RestoreJsonBackup(string json)
     {
+        if (!CanUseCompanyBackup(true)) return false;
         if (dbFactory == null)
         {
             Status = "Backup storage is not available.";
@@ -382,8 +388,15 @@ public partial class MainWindowViewModel
                     throw new JsonException("Unsupported or missing backup version.");
             }
             ValidateJsonBackup(backup);
+            var identity = ReadRows<AppSetting>(backup, "settings").SingleOrDefault(setting => setting.Key == CompanyRegistryService.IdentitySetting)?.Value;
+            ValidateBackupCompany(identity);
+            if (backup["_metadata"] is JsonObject companyMetadata && companyMetadata["company_id"] is JsonValue companyValue)
+            {
+                if (!companyValue.TryGetValue<string>(out var declaredId) || declaredId != identity)
+                    throw new InvalidDataException("Backup company metadata does not match its database identity.");
+            }
         }
-        catch (Exception ex) when (ex is JsonException or InvalidDataException or ArgumentException)
+        catch (Exception ex) when (ex is JsonException or InvalidDataException or ArgumentException or InvalidOperationException)
         {
             Status = $"Backup file is corrupted or invalid: {ex.Message}";
             return false;
@@ -407,6 +420,8 @@ public partial class MainWindowViewModel
             AddRange(db.Products, backup, "products");
             AddRange(db.CompanyInfos, backup, "company_info");
             AddRange(db.Settings, backup, "settings");
+            if (CompanyContext != null && !db.Settings.Local.Any(setting => setting.Key == CompanyRegistryService.IdentitySetting))
+                db.Settings.Add(new AppSetting { Key = CompanyRegistryService.IdentitySetting, Value = CompanyContext.ActiveCompany.Id });
             foreach (var row in ReadRows<InvoiceBackupRow>(backup, "invoices"))
             {
                 db.Invoices.Add(new Invoice

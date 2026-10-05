@@ -67,11 +67,13 @@ public partial class MainWindowViewModel : ObservableObject
         InvoiceOptions[4].Number, AdditionalCosts.Sum(c => c[1].Number),
         InvoiceOptions[0].Value switch { "Amount" => InvoiceDiscountKind.Amount, "Percentage" => InvoiceDiscountKind.Percent, _ => InvoiceDiscountKind.None }, InvoiceOptions[1].Number);
     public event Action? InvoiceChanged;
-    public MainWindowViewModel(IDbContextFactory<LedgerNestDbContext>? dbFactory = null, string? databasePath = null, ILicenseService? licenseService = null)
+    public MainWindowViewModel(IDbContextFactory<LedgerNestDbContext>? dbFactory = null, string? databasePath = null, ILicenseService? licenseService = null, CompanyWorkspaceContext? companyContext = null)
     {
         this.dbFactory = dbFactory;
         this.databasePath = databasePath;
+        CompanyContext = companyContext;
         this.licenseService = licenseService ?? new UnavailableLicenseService();
+        EnsureCompanyIdentity();
         UnitMaster = new UnitMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, action => HasPermission("Unit", action));
         ProductPriceMaster = new ProductPriceMasterViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, action => HasPermission("Price", action));
         Inventory = new InventoryViewModel(dbFactory, () => CurrentUsername ?? "system", () => CurrentRole, () => HasPermission("Inventory", "Adjust"));
@@ -98,6 +100,7 @@ public partial class MainWindowViewModel : ObservableObject
         LoadThemeMode();
         LoadLanguage();
         ApplyDefaultCustomer();
+        if (companyContext != null) CompanyManagement = new CompanyManagementViewModel(this, companyContext);
     }
     // Performs the line changed action for this screen or workflow.
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();

@@ -14,6 +14,7 @@ namespace LedgerNest.Desktop;
 public partial class App : Avalonia.Application
 {
     private ServiceProvider? serviceProvider;
+    private bool exitHandlerAttached;
     public App()
     {
         Dispatcher.UIThread.UnhandledException += (_, e) =>
@@ -45,7 +46,9 @@ public partial class App : Avalonia.Application
             Directory.CreateDirectory(dataDirectory);
             var databasePath = Path.Combine(dataDirectory, "ledgernest.db");
             var profilePath = Path.Combine(dataDirectory, "database-profile.json");
-            var profile = DatabaseProfileStore.Load(profilePath);
+            // An established registry is authoritative even when the old setup profile is missing.
+            var profile = File.Exists(Path.Combine(dataDirectory, "companies.json"))
+                ? DatabaseProfile.LocalSqlite(databasePath) : DatabaseProfileStore.Load(profilePath);
             if (profile == null && File.Exists(databasePath))
             {
                 profile = DatabaseProfile.LocalSqlite(databasePath);
@@ -67,7 +70,26 @@ public partial class App : Avalonia.Application
 
     private void StartDesktop(IClassicDesktopStyleApplicationLifetime desktop, DatabaseProfile profile, string dataDirectory)
     {
-        serviceProvider = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
+        var registry = new CompanyRegistryService(dataDirectory);
+        try { OpenCompany(desktop, registry, registry.Initialize(profile).ActiveCompanyId, dataDirectory); }
+        catch (Exception ex)
+        {
+            AppErrorLog.Write(ex, "Opening company workspace");
+            var failure = new StartupFailureViewModel("LedgerNest could not open the company workspace. " + ex.Message,
+                () => StartDesktop(desktop, profile, dataDirectory), () => desktop.Shutdown());
+            var previous = desktop.MainWindow;
+            desktop.MainWindow = new StartupFailureWindow { DataContext = failure };
+            desktop.MainWindow.Show();
+            previous?.Close();
+        }
+    }
+
+    private void OpenCompany(IClassicDesktopStyleApplicationLifetime desktop, CompanyRegistryService registry, string companyId, string dataDirectory)
+    {
+        var company = registry.Read().Companies.SingleOrDefault(item => item.Id == companyId)
+            ?? throw new InvalidOperationException("This company is unavailable. Refresh the company list.");
+        var profile = company.Database;
+        var nextProvider = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
             .AddInfrastructure(profile)
             .AddSingleton<IPdfGenerator, TemporaryPdfGenerator>()
             .AddSingleton<IPrintServiceFactory, PrintServiceFactory>()
@@ -75,17 +97,53 @@ public partial class App : Avalonia.Application
             .AddSingleton<ILicenseService>(_ => CreateLicenseService(dataDirectory))
             .BuildServiceProvider();
 
-        var printService = serviceProvider.GetRequiredService<IPrintServiceFactory>().Create();
-        desktop.MainWindow = new MainWindow(printService, serviceProvider.GetRequiredService<IPdfGenerator>(), serviceProvider.GetRequiredService<IToastService>())
+        try
         {
-            DataContext = new MainWindowViewModel(serviceProvider.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(), profile.ConnectionString, serviceProvider.GetRequiredService<ILicenseService>())
-        };
+            var companyContext = new CompanyWorkspaceContext(registry, company, selected =>
+            {
+                if (desktop.MainWindow is MainWindow owner)
+                    owner.ConfirmCompanySwitch(selected, () => OpenCompany(desktop, registry, selected.Id, dataDirectory));
+            });
+            var databasePath = profile.Provider == DatabaseProvider.Sqlite
+                ? new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(profile.ConnectionString).DataSource : null;
+            var nextModel = new MainWindowViewModel(nextProvider.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(),
+                databasePath, nextProvider.GetRequiredService<ILicenseService>(), companyContext);
+            var printService = nextProvider.GetRequiredService<IPrintServiceFactory>().Create();
+            var nextWindow = new MainWindow(printService, nextProvider.GetRequiredService<IPdfGenerator>(), nextProvider.GetRequiredService<IToastService>())
+            { DataContext = nextModel };
+            var previousWindow = desktop.MainWindow;
+            var previousProvider = serviceProvider;
+            try
+            {
+                DatabaseProfileStore.Save(Path.Combine(dataDirectory, "database-profile.json"), profile);
+                CompanySessionTransition.Switch(registry, previousWindow?.DataContext as MainWindowViewModel, nextModel, () =>
+                {
+                    desktop.MainWindow = nextWindow;
+                    nextWindow.Show();
+                });
+                serviceProvider = nextProvider;
+            }
+            catch
+            {
+                desktop.MainWindow = previousWindow;
+                nextWindow.Close();
+                throw;
+            }
+            try { previousWindow?.Close(); previousProvider?.Dispose(); }
+            catch (Exception ex)
+            {
+                AppErrorLog.Write(ex, "Cleaning up the previous company workspace");
+                nextModel.Status = "Company switched. The previous workspace could not finish cleanup; restart before switching again.";
+            }
+        }
+        catch { nextProvider.Dispose(); throw; }
+        if (exitHandlerAttached) return;
+        exitHandlerAttached = true;
         desktop.Exit += async (_, _) =>
         {
             if (serviceProvider != null) await serviceProvider.DisposeAsync();
             serviceProvider = null;
         };
-        desktop.MainWindow.Show();
     }
     private static ILicenseService CreateLicenseService(string dataDirectory)
     {

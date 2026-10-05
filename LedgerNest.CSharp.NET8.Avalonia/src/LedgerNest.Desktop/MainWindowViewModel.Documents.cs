@@ -117,8 +117,8 @@ public partial class MainWindowViewModel
                 .Select(account => new DocumentPdf.UpiPaymentAccount(account[0].Value.Trim(), account[1].Value.Trim()))
                 .ToArray(),
             BankAccounts = BankAccounts
-                .Where(account => !string.IsNullOrWhiteSpace(account[2].Value))
-                .Select(account => new DocumentPdf.BankPaymentAccount(account[0].Value.Trim(), account[1].Value.Trim(), account[2].Value.Trim(), account[3].Value.Trim()))
+                .Where(account => !string.IsNullOrWhiteSpace(account[2].Value) || !string.IsNullOrWhiteSpace(account[4].Value))
+                .Select(account => new DocumentPdf.BankPaymentAccount(account[0].Value.Trim(), account[1].Value.Trim(), account[2].Value.Trim(), account[3].Value.Trim(), account[4].Value.Trim()))
                 .ToArray(),
             MetadataColumns = InvoiceMetadataLabels.Where(label => Checked("Invoice Settings", "Metadata: " + label)).ToArray(),
             PreviousBalance = PreviousBalanceFor(invoice),

@@ -6,7 +6,7 @@ namespace LedgerNest.Infrastructure;
 public static class DatabaseBackupRestore
 {
     // Performs the restore action for this screen or workflow.
-    public static string? Restore(byte[] bytes, string destinationPath)
+    public static string? Restore(byte[] bytes, string destinationPath, string? companyId = null, bool allowLegacyCompany = false)
     {
         if (bytes.Length == 0) throw new InvalidDataException("Database backup is empty.");
         var staging = Directory.CreateTempSubdirectory("ledgernest-restore-");
@@ -31,6 +31,17 @@ public static class DatabaseBackupRestore
             {
                 // Apply existing C# compatibility upgrades only to the isolated candidate.
                 candidate.EnsureCurrentSchema();
+                if (companyId != null)
+                {
+                    var identity = candidate.Settings.Find(CompanyRegistryService.IdentitySetting);
+                    if (identity?.Value != companyId && !(identity == null && allowLegacyCompany))
+                        throw new InvalidDataException("This backup belongs to another company or has no company identity. Select its company before restoring it.");
+                    if (identity == null)
+                    {
+                        candidate.Settings.Add(new LedgerNest.Domain.AppSetting { Key = CompanyRegistryService.IdentitySetting, Value = companyId });
+                        candidate.SaveChanges();
+                    }
+                }
                 ValidateRows(candidate.Customers);
                 ValidateRows(candidate.Products);
                 ValidateRows(candidate.Invoices);

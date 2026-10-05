@@ -66,6 +66,12 @@ public partial class MainWindowViewModel
     // Performs the validate session action for this screen or workflow.
     public bool ValidateSession()
     {
+        if (!IsCurrentCompany())
+        {
+            SetSession(null, "", false);
+            Status = "The active company changed. Reopen its workspace and sign in again.";
+            return false;
+        }
         if (dbFactory == null) return true;
         if (sessionAccount == null) return false;
         try
@@ -99,6 +105,7 @@ public partial class MainWindowViewModel
         RequiresPasswordChange = false;
         OnPropertyChanged(nameof(RequiresPasswordChange));
         OnPropertyChanged(nameof(CanAccessWorkspace));
+        RefreshAuthorizationState();
         return true;
     }
 

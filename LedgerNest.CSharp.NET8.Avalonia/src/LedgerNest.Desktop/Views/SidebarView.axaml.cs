@@ -22,6 +22,8 @@ public sealed class SidebarViewModel
     public string Role { get; }
     public string Initial { get; }
     public string Version => $"v{AppVersion.Display}";
+    public CompanyManagementViewModel? CompanyManagement { get; }
+    public bool HasCompanySwitcher => Expanded && CompanyManagement != null;
     public ICommand ToggleCommand { get; }
     public ICommand LogoutCommand { get; }
     public ObservableCollection<SidebarItemViewModel> Items { get; } = [];
@@ -29,6 +31,7 @@ public sealed class SidebarViewModel
     public SidebarViewModel(MainWindowViewModel model, Action<string> navigate, Action toggleSidebar, Action logout)
     {
         Expanded = model.SidebarExpanded;
+        CompanyManagement = model.CompanyManagement;
         Username = model.CurrentUsername ?? "Not signed in";
         Role = model.CurrentRole;
         Initial = string.IsNullOrWhiteSpace(model.CurrentUsername) ? "?" : model.CurrentUsername[..1].ToUpperInvariant();

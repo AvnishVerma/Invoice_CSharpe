@@ -14,6 +14,16 @@ internal static class DatabaseProfileStore
     public static void Save(string path, DatabaseProfile profile)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, JsonSerializer.Serialize(profile));
+        var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+            {
+                JsonSerializer.Serialize(stream, profile);
+                stream.Flush(true);
+            }
+            File.Move(temporary, path, true);
+        }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 }

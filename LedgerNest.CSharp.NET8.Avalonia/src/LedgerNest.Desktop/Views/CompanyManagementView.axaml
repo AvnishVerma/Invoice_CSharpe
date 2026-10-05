@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:shared="using:LedgerNest.Desktop.Views" xmlns:infra="using:LedgerNest.Infrastructure"
+             x:Class="LedgerNest.Desktop.Views.CompanyManagementView" x:DataType="vm:CompanyManagementViewModel" x:Name="PageRoot">
+  <shared:ScreenScaffoldView>
+    <shared:ScreenScaffoldView.PageHeader>
+      <shared:PageHeaderView Title="Companies" DataContext="{Binding DataContext, ElementName=PageRoot}">
+        <shared:PageHeaderView.HeaderActions>
+          <Button Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh">
+            <TextBlock Text="refresh" Classes="action-icon-glyph"/>
+          </Button>
+        </shared:PageHeaderView.HeaderActions>
+      </shared:PageHeaderView>
+    </shared:ScreenScaffoldView.PageHeader>
+    <shared:ScreenScaffoldView.PageBody>
+      <ScrollViewer HorizontalScrollBarVisibility="Auto">
+        <Grid ColumnDefinitions="240,*" Margin="{DynamicResource PageContentPadding}" MinWidth="620">
+          <StackPanel Spacing="12" Margin="0,0,16,0">
+            <TextBlock Text="Active company" Foreground="{DynamicResource AppMutedBrush}"/>
+            <TextBlock Text="{Binding ActiveCompanyName}" FontWeight="Bold" TextWrapping="Wrap"/>
+            <TextBlock Text="Select company"/>
+            <ComboBox ItemsSource="{Binding Companies}" SelectedItem="{Binding SelectedCompany, Mode=TwoWay}" AutomationProperties.Name="Company">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="infra:CompanyProfile"><TextBlock Text="{Binding Name}"/></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button Content="Switch company" Command="{Binding SwitchCompanyCommand}" IsEnabled="{Binding CanSwitch}" Classes="action"/>
+            <StackPanel Spacing="8" IsVisible="{Binding CanManage}">
+              <TextBlock Text="Create company" FontWeight="SemiBold"/>
+              <TextBox Text="{Binding NewCompanyName, Mode=TwoWay}" PlaceholderText="New company name" MaxLength="100"/>
+              <Button Content="Create company" Command="{Binding CreateCompanyCommand}" Classes="action primary"/>
+              <TextBlock Text="Rename selected company" FontWeight="SemiBold"/>
+              <TextBox Text="{Binding RenameCompanyName, Mode=TwoWay}" MaxLength="100"/>
+              <Button Content="Rename company" Command="{Binding RenameCompanyCommand}" Classes="action"/>
+              <Button Content="Delete company" Command="{Binding RequestDeleteCommand}" IsEnabled="{Binding CanDelete}" Classes="action"/>
+            </StackPanel>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="12">
+            <Border Classes="card" Padding="16"><StackPanel Spacing="8">
+              <TextBlock Text="Separate company workspaces" FontWeight="Bold"/>
+              <TextBlock Text="Each company has its own database, users, permissions, invoices and backups. Switching signs you out and opens a fresh workspace." TextWrapping="Wrap"/>
+              <TextBlock Text="Deleting removes a company from the registry. Its database is retained for recovery; the active and last company cannot be deleted." TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
+            </StackPanel></Border>
+            <ItemsControl ItemsSource="{Binding Companies}">
+              <ItemsControl.ItemTemplate><DataTemplate x:DataType="infra:CompanyProfile"><Border Classes="card" Padding="16" Margin="0,0,0,8">
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+              </Border></DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
+          </StackPanel>
+        </Grid>
+      </ScrollViewer>
+    </shared:ScreenScaffoldView.PageBody>
+  </shared:ScreenScaffoldView>
+</UserControl>

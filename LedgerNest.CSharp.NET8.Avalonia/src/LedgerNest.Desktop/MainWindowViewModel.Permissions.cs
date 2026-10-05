@@ -24,6 +24,7 @@ public partial class MainWindowViewModel
 
     public bool CanPerformAction(string resource, string action)
     {
+        if (!IsCurrentCompany()) return false;
         if (dbFactory == null) return true;
         if (sessionAccount == null) return false;
         action = action switch { "Edit" or "Manage" or "Adjust" or "Cancel" or "Refund" => "Update", "Create" => "Add", _ => action };
@@ -41,5 +42,6 @@ public partial class MainWindowViewModel
         ProductPriceMaster.RefreshAuthorizationState();
         Inventory.RefreshAuthorizationState();
         PermissionManagement.RefreshAuthorizationState();
+        CompanyManagement?.RefreshAuthorizationState();
     }
 }

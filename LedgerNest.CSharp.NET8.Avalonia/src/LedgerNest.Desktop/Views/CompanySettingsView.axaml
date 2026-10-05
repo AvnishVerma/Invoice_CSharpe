@@ -116,11 +116,12 @@
             <ItemsControl ItemsSource="{Binding BankAccounts}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Grid ColumnDefinitions="*,8,*,8,1.25*,8,*,8,Auto" Margin="0,0,0,8">
+                  <Grid ColumnDefinitions="*,8,*,8,1.25*,8,*,8,Auto" RowDefinitions="Auto,Auto" Margin="0,0,0,8">
                     <TextBox Text="{Binding [0].Value, Mode=TwoWay}" PlaceholderText="Label" />
                     <TextBox Grid.Column="2" Text="{Binding [1].Value, Mode=TwoWay}" PlaceholderText="Bank Name" />
                     <TextBox Grid.Column="4" Text="{Binding [2].Value, Mode=TwoWay}" PlaceholderText="Account Number" />
                     <TextBox Grid.Column="6" Text="{Binding [3].Value, Mode=TwoWay}" PlaceholderText="IFSC Code" />
+                    <TextBox Grid.Row="1" Grid.ColumnSpan="7" Text="{Binding [4].Value, Mode=TwoWay}" PlaceholderText="IBAN (optional)" Margin="0,8,0,0" />
                     <Button Grid.Column="8" Content="−" Command="{Binding $parent[UserControl].DataContext.RemoveBankCommand}" CommandParameter="{Binding}" ToolTip.Tip="Remove bank account" />
                   </Grid>
                 </DataTemplate>

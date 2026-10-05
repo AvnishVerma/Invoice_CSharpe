@@ -9,7 +9,7 @@ internal static class DocumentPdf
 {
     internal sealed record Business(string Name, string Address, string Phone, string Email, string TaxId, string Logo, string Note);
     internal sealed record UpiPaymentAccount(string Label, string UpiId);
-    internal sealed record BankPaymentAccount(string Label, string BankName, string AccountNumber, string IfscCode);
+    internal sealed record BankPaymentAccount(string Label, string BankName, string AccountNumber, string IfscCode, string Iban = "");
     internal sealed record PdfExportOptions(
         string DateFormat,
         string TimeFormat,
@@ -534,6 +534,7 @@ internal static class DocumentPdf
                 if (!string.IsNullOrWhiteSpace(account.BankName)) { Text("Bank: " + account.BankName, margin, y, size); y += 17; }
                 Text("Account number: " + account.AccountNumber, margin, y, size); y += 17;
                 if (!string.IsNullOrWhiteSpace(account.IfscCode)) { Text("IFSC: " + account.IfscCode, margin, y, size); y += 17; }
+                if (!string.IsNullOrWhiteSpace(account.Iban)) { Text("IBAN: " + account.Iban, margin, y, size); y += 17; }
             }
             if (index < upiAccounts.Length)
             {

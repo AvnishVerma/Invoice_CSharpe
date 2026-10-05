@@ -264,7 +264,8 @@ public partial class MainWindowViewModel
         new("Label", values?.GetValueOrDefault("Label", "") ?? ""),
         new("Bank Name", values?.GetValueOrDefault("Bank Name", "") ?? ""),
         new("Account Number", values?.GetValueOrDefault("Account Number", "") ?? ""),
-        new("IFSC Code", values?.GetValueOrDefault("IFSC Code", "") ?? "")
+        new("IFSC Code", values?.GetValueOrDefault("IFSC Code", "") ?? ""),
+        new("IBAN", values?.GetValueOrDefault("IBAN", "") ?? "")
     ];
 
     // Deserializes account rows without preventing Settings from opening when stored data is malformed.
