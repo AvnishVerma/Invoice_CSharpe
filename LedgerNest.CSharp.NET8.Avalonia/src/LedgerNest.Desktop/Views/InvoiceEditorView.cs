@@ -119,18 +119,7 @@ public partial class MainWindow
         var quickAdd = new InvoiceQuickAddView(productSearch, EditorButton("＋ Custom Item", ShowCustomItem), suggestions);
         var items = new InvoiceItemsPanelView(count, quickAdd, lineHost);
         var details = new InvoiceDocumentDetailsPanelView(editorModel);
-        var additional = Ui.Stack(8);
-        void AddCost(FormField[] fields) => additional.Children.Add(Ui.Columns("*,Auto", Fields(fields, 2), EditorButton("×", () => { editorModel.AdditionalCosts.Remove(fields); additional.Children.Clear(); foreach (var cost in editorModel.AdditionalCosts) AddCost(cost); })));
-        foreach (var cost in editorModel.AdditionalCosts) AddCost(cost);
-        var costs = new Expander { Header = "⊞  Charges and Adjustments", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(8, additional, EditorButton("＋ Add Cost", () => { FormField[] fields = [new("Description"), new("Amount", "0", "number")]; editorModel.AdditionalCosts.Add(fields); AddCost(fields); })) };
-        var discount = Ui.Card(Fields(editorModel.InvoiceOptions.Take(2), 2), 8); discount.Background = Ui.Palette("#FFF4F4", "#392A30"); discount.BorderBrush = Brush.Parse("#FFD6A5");
-        var tax = Fields(editorModel.InvoiceOptions.Skip(3));
-        var options = Ui.Stack(10, new Expander { Header = "Discount & additional charges", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(10, discount, costs) }, new Expander { Header = "Notes", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Field(editorModel.InvoiceOptions[2]) }, new Expander { Header = "Tax settings", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(10, tax, Field(editorModel.InterState)) });
-        if (editorModel.InvoiceCustomFields.Count > 0)
-        {
-            options.Children.Insert(0, new Expander { Header = "Custom fields", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Fields(editorModel.InvoiceCustomFields.Select(field => field.Field)) });
-        }
-        var optionsCard = new InvoiceOptionsPanelView(options);
+        var optionsCard = new InvoiceOptionsPanelView(editorModel);
         var left = new InvoiceEditorPaneView(customer, items); var right = new InvoiceEditorPaneView(details, optionsCard);
         var viewport = new InvoiceWorkspace(left, right, items, optionsCard);
         var actions = new InvoiceDocumentActionsView();

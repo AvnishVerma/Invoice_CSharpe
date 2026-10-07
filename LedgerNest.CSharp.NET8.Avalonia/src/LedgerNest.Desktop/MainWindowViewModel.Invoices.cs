@@ -168,7 +168,7 @@ public partial class MainWindowViewModel
         InvoiceOptions[3].Value = snapshot.TaxMode;
         InvoiceOptions[4].Value = snapshot.TaxRate.ToString(CultureInfo.CurrentCulture);
         foreach (var cost in snapshot.AdditionalCosts)
-            AdditionalCosts.Add([new("Description", cost.Description), new("Amount", cost.Amount.ToString(CultureInfo.CurrentCulture), "number")]);
+            AdditionalCosts.Add(InvoiceOptionsViewModel.CreateCost(cost.Description, cost.Amount));
         foreach (var item in invoice.Items)
         {
             var line = new InvoiceLineViewModel { ProductKey = item.ProductId is int productId ? $"id:{productId}" : "", ProductType = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count)?.ProductType ?? "Product", SavedPresentation = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count), SellingUnitId = item.SellingUnitId, UnitConversionFactor = item.UnitConversionFactor <= 0 ? 1 : item.UnitConversionFactor, Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
@@ -218,7 +218,7 @@ public partial class MainWindowViewModel
         InvoiceOptions[3].Value = snapshot.TaxMode;
         InvoiceOptions[4].Value = snapshot.TaxRate.ToString(CultureInfo.CurrentCulture);
         foreach (var cost in snapshot.AdditionalCosts)
-            AdditionalCosts.Add([new("Description", cost.Description), new("Amount", cost.Amount.ToString(CultureInfo.CurrentCulture), "number")]);
+            AdditionalCosts.Add(InvoiceOptionsViewModel.CreateCost(cost.Description, cost.Amount));
         foreach (var item in invoice.Items)
         {
             var line = new InvoiceLineViewModel { ProductKey = item.ProductId is int productId ? $"id:{productId}" : "", ProductType = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count)?.ProductType ?? "Product", SavedPresentation = snapshot.LinePresentations?.ElementAtOrDefault(Lines.Count), SellingUnitId = item.SellingUnitId, UnitConversionFactor = item.UnitConversionFactor <= 0 ? 1 : item.UnitConversionFactor, Name = item.Description, Price = item.UnitPrice, Quantity = item.Quantity, Discount = item.Discount, DiscountPerUnit = item.DiscountPerUnit, TaxRate = item.TaxRate, PriceIncludesTax = item.PriceIncludesTax, ExtraCost = item.ExtraCost };
@@ -273,6 +273,8 @@ public partial class MainWindowViewModel
         { Status = "Duplicate products are disabled in Invoice Settings."; return false; }
         if (Lines.Any(l => string.IsNullOrWhiteSpace(l.Name) || l.Quantity <= 0 || l.Price < 0 || l.TaxRate < 0 || l.Discount < 0))
         { Status = "Check item names, quantities, prices, tax and discounts."; return false; }
+        if (AdditionalCosts.SelectMany(fields => fields).Any(field => !field.Validate()))
+        { Status = "Check charges and adjustments: enter a valid amount."; return false; }
         var documentStatus = InvoiceDetails[0].Value == "Quotation" ? "Open" : "Unpaid";
         var values = new Dictionary<string, string> {
             ["Name"] = PeekNextDocumentNumber(InvoiceDetails[0].Value), ["Customer"] = InvoiceCustomer[0].Value,

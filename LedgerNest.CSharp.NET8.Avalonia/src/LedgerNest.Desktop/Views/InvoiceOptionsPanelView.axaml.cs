@@ -8,11 +8,13 @@ public sealed partial class InvoiceOptionsPanelView : UserControl
     public InvoiceOptionsPanelView()
     {
         InitializeComponent();
+        AttachedToVisualTree += (_, _) => (DataContext as InvoiceOptionsViewModel)?.Attach();
+        DetachedFromVisualTree += (_, _) => (DataContext as InvoiceOptionsViewModel)?.Detach();
     }
 
-    public InvoiceOptionsPanelView(Control options)
+    public InvoiceOptionsPanelView(MainWindowViewModel workspace)
         : this()
     {
-        OptionsHost.Content = options;
+        DataContext = new InvoiceOptionsViewModel(workspace);
     }
 }

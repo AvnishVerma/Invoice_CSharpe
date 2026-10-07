@@ -1,9 +1,51 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.InvoiceOptionsPanelView">
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.InvoiceOptionsPanelView" x:DataType="vm:InvoiceOptionsViewModel">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="InvoiceDiscountSurface">#FFF4F4</SolidColorBrush></ResourceDictionary>
+        <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="InvoiceDiscountSurface">#392A30</SolidColorBrush></ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+      <SolidColorBrush x:Key="InvoiceDiscountOutline">#FFD6A5</SolidColorBrush>
+    </ResourceDictionary>
+  </UserControl.Resources>
   <Border CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="10">
-      <ContentControl x:Name="OptionsHost" />
+      <StackPanel Spacing="10">
+        <Expander Header="Custom fields" HorizontalAlignment="Stretch" IsVisible="{Binding HasCustomFields}">
+          <local:FormFieldsView DataContext="{Binding CustomFields}" />
+        </Expander>
+        <Expander Header="Discount &amp; additional charges" HorizontalAlignment="Stretch">
+          <StackPanel Spacing="10">
+            <Border Padding="8" CornerRadius="12" Background="{DynamicResource InvoiceDiscountSurface}" BorderBrush="{StaticResource InvoiceDiscountOutline}" BorderThickness="1">
+              <local:FormFieldsView DataContext="{Binding DiscountFields}" />
+            </Border>
+            <Expander Header="Charges and Adjustments" HorizontalAlignment="Stretch">
+              <StackPanel Spacing="8">
+                <ItemsControl ItemsSource="{Binding Costs}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:InvoiceCostRowViewModel">
+                      <Grid ColumnDefinitions="*,Auto">
+                        <local:FormFieldsView DataContext="{Binding Fields}" />
+                        <Button Grid.Column="1" Classes="action-icon" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove adjustment" AutomationProperties.Name="Remove adjustment" VerticalAlignment="Top">
+                          <TextBlock vm:UiLocalization.Text="close" Classes="action-icon-glyph" />
+                        </Button>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <local:ActionButtonView ActionLabel="Add Cost" Caption="Add Cost" Icon="add" Tooltip="Add a charge or adjustment" Command="{Binding AddCostCommand}" HorizontalAlignment="Left" />
+              </StackPanel>
+            </Expander>
+          </StackPanel>
+        </Expander>
+        <Expander Header="Notes" HorizontalAlignment="Stretch"><local:FormFieldView DataContext="{Binding NotesField}" /></Expander>
+        <Expander Header="Tax settings" HorizontalAlignment="Stretch">
+          <StackPanel Spacing="10"><local:FormFieldsView DataContext="{Binding TaxFields}" /><local:FormFieldView DataContext="{Binding InterStateField}" /></StackPanel>
+        </Expander>
+      </StackPanel>
     </ScrollViewer>
   </Border>
 </UserControl>

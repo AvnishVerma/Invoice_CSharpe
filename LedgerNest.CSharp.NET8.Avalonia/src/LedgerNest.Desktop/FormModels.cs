@@ -11,6 +11,7 @@ public sealed partial class FormField : ObservableObject
     public string[] Options { get; set; }
     public bool Required { get; }
     public int MaxLength { get; init; } = 1000;
+    public bool AllowNegative { get; init; }
     public string Icon { get; init; } = "";
     public string Help { get; init; } = "";
     [ObservableProperty] private string value;
@@ -28,8 +29,8 @@ public sealed partial class FormField : ObservableObject
     {
         Error = Required && string.IsNullOrWhiteSpace(Value) ? $"{Label} is required." : "";
         if (Value.Length > MaxLength) Error = $"{Label} must not exceed {MaxLength} characters.";
-        if (Kind == "number" && Value.Length > 0 && (!decimal.TryParse(Value, NumberStyles.Number, CultureInfo.CurrentCulture, out var n) || n < 0))
-            Error = "Enter a valid, non-negative number.";
+        if (Kind == "number" && Value.Length > 0 && (!decimal.TryParse(Value, NumberStyles.Number, CultureInfo.CurrentCulture, out var n) || !AllowNegative && n < 0))
+            Error = AllowNegative ? "Enter a valid number." : "Enter a valid, non-negative number.";
         if (Kind is "text" or "multiline" && Label.Contains("Email") && Value.Length > 0 && !System.Net.Mail.MailAddress.TryCreate(Value, out _)) Error = "Enter a valid email address.";
         return Error.Length == 0;
     }
