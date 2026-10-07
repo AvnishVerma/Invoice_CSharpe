@@ -16,6 +16,7 @@ public sealed partial class FormField : ObservableObject
     public string Help { get; init; } = "";
     [ObservableProperty] private string value;
     [ObservableProperty] private bool isChecked;
+    [ObservableProperty] private bool isReadOnly;
     [ObservableProperty] private string error = "";
     public FormField(string label, string value = "", string kind = "text", string[]? options = null, bool required = false)
     { Label = label; this.value = value ?? ""; Kind = kind; Options = options ?? []; Required = required; isChecked = value == "true"; }

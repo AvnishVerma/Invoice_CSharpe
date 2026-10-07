@@ -666,7 +666,7 @@ internal static class Program
                 Check(model.InvoiceCustomer[0].Value == "Dashboard", "Language changes must not translate customer-entered data");
                 Check(ReferenceEquals(originalPage, window.GetVisualDescendants().OfType<InvoiceEditorShellView>().Single()), "Language switching must preserve the active editor");
                 Check(FindButton("Dashboard").Content is Grid, "Language changes must preserve navigation icons and selection markers");
-                Check(FindButton("Select customer").Content is TextBlock, "Text actions must retain their localized caption control");
+                Check(FindButton("Select customer").GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsVisible && text.Text == UiLocalization.Translate("Select customer")), "Text actions must retain their localized caption control");
             }
             model.SetLanguage("Français"); Capture("appearance-french");
             Check(originalPage.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().Where(t => t.Name == "ExpanderHeader").All(t => t.Bounds.Height <= 38), "Accordion headers must use compact height");
@@ -1605,6 +1605,8 @@ internal static class Program
         model.Lines.RemoveAt(2); model.Lines.RemoveAt(1);
         var customerFields = FormCatalog.Customer();
         customerFields[0].Value = "Presentation customer"; customerFields[2].Value = "9876543210";
+        customerFields[1].Value = "BusinessStable"; customerFields[3].Value = "email-stable@example.com";
+        customerFields[4].Value = "GST-Stable"; customerFields[5].Value = "AddressStable";
         Check(model.SaveRecord("Customer", customerFields), "Customer fixture must save");
         string[] customer = ["Presentation customer", "BusinessStable", "9876543210", "email-stable@example.com", "GST-Stable", "AddressStable"];
         for (var i = 0; i < customer.Length; i++) model.InvoiceCustomer[i].Value = customer[i];
@@ -2556,7 +2558,7 @@ internal static class Program
         var product = FormCatalog.Product();
         product[1].Value = "Historical product"; product[5].Value = "100";
         Check(model.SaveRecord("Product", product), "Deletion test product must save");
-        model.InvoiceCustomer[0].Value = customer[0].Value;
+        Check(model.SelectInvoiceCustomer(model.Customers.Single()), "Deletion fixture must explicitly link the historical customer");
         model.AddProductLine(model.Products.Single());
         Check(model.SaveInvoice(), "Deletion test invoice must save");
         using (var db = factory.CreateDbContext())

@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Alternate validation outputs are generated files, never source or web content. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts/**;**/artifacts/**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

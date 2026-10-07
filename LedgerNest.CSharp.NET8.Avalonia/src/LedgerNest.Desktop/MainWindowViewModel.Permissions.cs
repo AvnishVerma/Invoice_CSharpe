@@ -38,6 +38,7 @@ public partial class MainWindowViewModel
         AuthorizationVersion++;
         OnPropertyChanged(nameof(AuthorizationVersion));
         OnPropertyChanged(nameof(VisibleRoutes));
+        OnPropertyChanged(nameof(CanSaveInvoiceCustomer));
         UnitMaster.RefreshAuthorizationState();
         ProductPriceMaster.RefreshAuthorizationState();
         Inventory.RefreshAuthorizationState();

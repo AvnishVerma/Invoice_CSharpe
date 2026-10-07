@@ -31,6 +31,7 @@ public partial class MainWindowViewModel
     private void SetSession(string? username, string role, bool requiresPasswordChange)
     {
         SessionVersion++;
+        if (CurrentUsername != null && !string.Equals(CurrentUsername, username, StringComparison.OrdinalIgnoreCase)) ClearInvoiceCustomer();
         if (username == null) sessionAccount = null;
         CurrentUsername = username;
         CurrentRole = role;

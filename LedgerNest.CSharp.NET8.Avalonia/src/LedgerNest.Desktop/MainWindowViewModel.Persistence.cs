@@ -219,8 +219,13 @@ public partial class MainWindowViewModel
 
         if (kind == "Customer")
         {
-            var customer = sourceId > 0 ? db.Customers.Find(sourceId) ?? new Customer() : new Customer();
+            var customer = sourceId > 0 ? db.Customers.Find(sourceId) : new Customer();
+            if (customer == null) { Status = "Customer no longer exists."; return -1; }
+            var phone = values.GetValueOrDefault("Phone", "").Trim();
+            if (phone.Length > 0 && db.Customers.AsNoTracking().Where(item => item.Id != sourceId).Select(item => item.Phone).AsEnumerable().Any(value => CustomerIdentityRules.Equal(value, phone)))
+            { Status = "Phone number is already assigned to another customer. Select that customer instead."; return -1; }
             var customerCode = values.GetValueOrDefault("Customer ID", "").Trim();
+            if (customer.Id > 0 && customerCode.Length == 0) customerCode = customer.CustomerCode ?? "";
             if (customer.Id == 0 && customerCode.Length == 0)
                 customerCode = new NumberSeriesService(dbFactory).ReserveAsync("Customer", "CUS", 1, 1, 6).GetAwaiter().GetResult();
             if (db.Customers.Any(item => item.Id != sourceId && item.CustomerCode == customerCode)) { Status = "Customer ID is already in use."; return -1; }
@@ -358,7 +363,7 @@ public partial class MainWindowViewModel
         }
         values["Name"] = existing?.InvoiceNumber ?? ReserveDocumentNumber(db, values["Type"]);
         var customerName = InvoiceCustomer[0].Value.Trim();
-        var customerId = db.Customers.AsNoTracking().FirstOrDefault(c => c.Name == customerName)?.Id;
+        var customerId = ResolveInvoiceCustomerId(db);
         var invoice = new Invoice
         {
             InvoiceNumber = values["Name"],

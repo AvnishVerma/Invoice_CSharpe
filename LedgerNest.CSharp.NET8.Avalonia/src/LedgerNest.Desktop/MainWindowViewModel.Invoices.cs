@@ -153,6 +153,7 @@ public partial class MainWindowViewModel
         AdditionalCosts.Clear();
         string[] customer = [snapshot.Customer.Name, snapshot.Customer.BusinessName, snapshot.Customer.Phone, snapshot.Customer.Email, snapshot.Customer.GstNumber, snapshot.Customer.Address];
         for (var i = 0; i < customer.Length; i++) InvoiceCustomer[i].Value = customer[i];
+        RestoreCustomerSelection(invoice.CustomerId);
         InvoiceDetails[0].Value = invoice.Type;
         InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");
         InvoiceDetails[2].Value = snapshot.DueDate?.ToString("yyyy-MM-dd") ?? "";
@@ -203,6 +204,7 @@ public partial class MainWindowViewModel
         Lines.Clear(); AdditionalCosts.Clear();
         string[] customer = [snapshot.Customer.Name, snapshot.Customer.BusinessName, snapshot.Customer.Phone, snapshot.Customer.Email, snapshot.Customer.GstNumber, snapshot.Customer.Address];
         for (var i = 0; i < customer.Length; i++) InvoiceCustomer[i].Value = customer[i];
+        RestoreCustomerSelection(invoice.CustomerId);
         InvoiceDetails[0].Value = invoice.Type;
         InvoiceDetails[1].Value = invoice.InvoiceDate.ToString("yyyy-MM-dd");
         InvoiceDetails[2].Value = snapshot.DueDate?.ToString("yyyy-MM-dd") ?? "";
@@ -337,7 +339,7 @@ public partial class MainWindowViewModel
         editingDocument = null; editingSnapshot = null; editingFingerprint = null; editingHasPayments = false; historicalLines.Clear();
         Lines.Clear();
         AdditionalCosts.Clear();
-        foreach (var field in InvoiceCustomer) field.Value = "";
+        ClearInvoiceCustomer();
         ApplyDefaultCustomer();
         InvoiceDetails[0].Value = type;
         InvoiceDetails[1].Value = DateTime.Today.ToString("yyyy-MM-dd");

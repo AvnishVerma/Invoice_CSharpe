@@ -1,7 +1,7 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views" xmlns:converters="using:Avalonia.Data.Converters" x:Class="LedgerNest.Desktop.Views.FormFieldView" x:DataType="vm:FormFieldViewModel" x:Name="Root">
   <UserControl.Resources>
     <DataTemplate x:Key="TextInput" x:DataType="vm:FormFieldViewModel">
-      <TextBox Text="{Binding Field.Value, Mode=TwoWay}" PlaceholderText="{Binding Label}" MaxLength="{Binding Field.MaxLength}" AcceptsReturn="{Binding IsMultiline}" Classes.multiline="{Binding IsMultiline}" Classes.with-icon="{Binding WithIcon}" TextWrapping="Wrap" PasswordChar="{Binding PasswordChar}" AutomationProperties.Name="{Binding Field.Label}" />
+      <TextBox Text="{Binding Field.Value, Mode=TwoWay}" IsReadOnly="{Binding Field.IsReadOnly}" PlaceholderText="{Binding Label}" MaxLength="{Binding Field.MaxLength}" AcceptsReturn="{Binding IsMultiline}" Classes.multiline="{Binding IsMultiline}" Classes.with-icon="{Binding WithIcon}" TextWrapping="Wrap" PasswordChar="{Binding PasswordChar}" AutomationProperties.Name="{Binding Field.Label}" />
     </DataTemplate>
     <DataTemplate x:Key="ChoiceInput" x:DataType="vm:FormFieldViewModel">
       <ComboBox ItemsSource="{Binding Field.Options}" SelectedItem="{Binding Field.Value, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Field.Label}">

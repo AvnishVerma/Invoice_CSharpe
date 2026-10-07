@@ -8,15 +8,13 @@ public sealed partial class InvoiceCustomerPanelView : UserControl
     public InvoiceCustomerPanelView()
     {
         InitializeComponent();
+        AttachedToVisualTree += (_, _) => (DataContext as InvoiceCustomerPanelViewModel)?.Attach();
+        DetachedFromVisualTree += (_, _) => (DataContext as InvoiceCustomerPanelViewModel)?.Detach();
     }
 
-    public InvoiceCustomerPanelView(Control selectCustomer, Control customerName, Control customerPhone, Control detailsToggle, Control details)
+    public InvoiceCustomerPanelView(MainWindowViewModel workspace, Action selectCustomer)
         : this()
     {
-        SelectCustomerHost.Content = selectCustomer;
-        CustomerNameHost.Content = customerName;
-        CustomerPhoneHost.Content = customerPhone;
-        DetailsToggleHost.Content = detailsToggle;
-        CustomerDetailsHost.Content = details;
+        DataContext = new InvoiceCustomerPanelViewModel(workspace, selectCustomer);
     }
 }

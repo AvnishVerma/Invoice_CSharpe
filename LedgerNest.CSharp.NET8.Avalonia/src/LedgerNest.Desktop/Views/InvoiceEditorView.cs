@@ -14,8 +14,6 @@ public partial class MainWindow
     // Performs the invoice editor action for this screen or workflow.
     private Control InvoiceEditor()
     {
-        Control Field(FormField field) => Ui.Field(field, compact: true);
-        Control Fields(IEnumerable<FormField> fields, int columns = 1) => Ui.Fields(fields, columns, compact: true);
         Button EditorButton(string label, Action? action = null, bool primary = false)
         {
             var button = Ui.Button(label, action, primary);
@@ -24,26 +22,7 @@ public partial class MainWindow
         }
         invoiceCompletionVisible = false;
         var editorModel = Model;
-        var saveCustomer = EditorButton("Save customer", () => editorModel.SaveRecord("Customer", editorModel.InvoiceCustomer)); saveCustomer.Classes.Add("text");
-        var extraCustomerFields = editorModel.InvoiceCustomer.Where((_, index) => index is not (0 or 2) && (index != 4 || editorModel.InvoiceSetting("Show GST fields").IsChecked));
-        var customerMore = Ui.Stack(10, Fields(extraCustomerFields, 2), saveCustomer);
-        customerMore.IsVisible = false;
-        var customerMoreToggle = new ToggleButton
-        {
-            Content = Ui.Icon("expand_more", 19),
-            Padding = new Thickness(5),
-            MinWidth = 32,
-            MinHeight = 32,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        ToolTip.SetTip(customerMoreToggle, "Show business, address, and contact details");
-        customerMoreToggle.Classes.Add("outline");
-        customerMoreToggle.IsCheckedChanged += (_, _) =>
-        {
-            customerMore.IsVisible = customerMoreToggle.IsChecked == true;
-            ((TextBlock)customerMoreToggle.Content!).Text = customerMoreToggle.IsChecked == true ? "expand_less" : "expand_more";
-        };
-        var customer = new InvoiceCustomerPanelView(EditorButton("Select customer", SelectCustomer), Field(editorModel.InvoiceCustomer[0]), Field(editorModel.InvoiceCustomer[2]), customerMoreToggle, customerMore);
+        var customer = new InvoiceCustomerPanelView(editorModel, SelectCustomer);
         var productSearch = new TextBox { PlaceholderText = "Search & add a product or service (Ctrl+F)", MinWidth = 120, MinHeight = 32, Height = 32, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(10, 5), Background = Ui.Canvas };
         var suggestions = new ListBox
         {
@@ -232,10 +211,9 @@ public partial class MainWindow
     {
         void Apply(UiRecord customer)
         {
-            foreach (var field in Model.InvoiceCustomer) field.Value = customer[field.Label];
-            CloseOverlay();
+            if (Model.SelectInvoiceCustomer(customer)) CloseOverlay();
         }
-        ShowOverlay("Choose a customer", new CustomerChooserView(Model.Customers, Apply), new Border(), width: 420);
+        ShowOverlay("Choose a customer", new CustomerChooserView(Model.Customers, Apply), width: 420);
     }
     // Performs the show invoice success action for this screen or workflow.
     private void ShowInvoiceSuccess()

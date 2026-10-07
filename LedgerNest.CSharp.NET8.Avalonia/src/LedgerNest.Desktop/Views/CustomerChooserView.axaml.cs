@@ -45,7 +45,6 @@ public sealed partial class CustomerChooserView : UserControl
                 .Where(value => !string.IsNullOrWhiteSpace(value));
             Items.Add(new CustomerChooserItem(customer, customer.Name, string.Join("  •  ", detail)));
         }
-        CustomersList.ItemsSource = Items;
     }
 }
 
