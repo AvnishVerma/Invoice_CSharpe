@@ -116,7 +116,8 @@ public partial class MainWindowViewModel
                 .Where(account => !string.IsNullOrWhiteSpace(account[1].Value))
                 .Select(account => new DocumentPdf.UpiPaymentAccount(account[0].Value.Trim(), account[1].Value.Trim()))
                 .ToArray(),
-            BankAccounts = BankAccounts
+            BankAccounts = invoice.Snapshot?.BankAccount is { } selectedBank
+                ? [new DocumentPdf.BankPaymentAccount(selectedBank.Label, selectedBank.BankName, selectedBank.AccountNumber, selectedBank.IfscCode, selectedBank.Iban)] : BankAccounts
                 .Where(account => !string.IsNullOrWhiteSpace(account[2].Value) || !string.IsNullOrWhiteSpace(account[4].Value))
                 .Select(account => new DocumentPdf.BankPaymentAccount(account[0].Value.Trim(), account[1].Value.Trim(), account[2].Value.Trim(), account[3].Value.Trim(), account[4].Value.Trim()))
                 .ToArray(),

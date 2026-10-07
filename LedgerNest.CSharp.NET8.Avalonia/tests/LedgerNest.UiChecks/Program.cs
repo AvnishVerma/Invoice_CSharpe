@@ -2168,9 +2168,9 @@ internal static class Program
         Check(!fresh.SaveInvoice(), "Payment arriving after editor load must prevent overwrite");
         var paid = CreateModel(factory, path);
         Check(paid.SignIn("admin", "admin"), "Paid invoice editor must sign in");
-        Check(!paid.LoadDocumentForEditing(paid.Invoices.Single()), "Paid documents must not open in this edit workflow");
+        Check(paid.LoadDocumentForEditing(paid.Invoices.Single()) && paid.SaveInvoice(), "Paid documents may be edited while preserving payments and the paid-total minimum");
         using (var db = factory.CreateDbContext())
-            Check(db.Invoices.Single().PaidAmount == 10 && db.Invoices.Single().GrandTotal == 315, "Rejected edit must preserve payment and invoice totals");
+            Check(db.Invoices.Single().PaidAmount == 10 && db.Invoices.Single().GrandTotal == 315, "Paid edit must preserve payment and invoice totals");
         editor.StartDocument("Quotation");
         Check(!editor.IsEditingDocument && editor.Lines.Count == 0, "Starting a new document must clear edit state");
     }

@@ -118,8 +118,7 @@ public partial class MainWindow
         }
         var quickAdd = new InvoiceQuickAddView(productSearch, EditorButton("＋ Custom Item", ShowCustomItem), suggestions);
         var items = new InvoiceItemsPanelView(count, quickAdd, lineHost);
-        var detailFields = Ui.Stack(8, Fields(editorModel.InvoiceDetails.Take(3), 2), new Expander { Header = "Document title & numbering", HorizontalAlignment = HorizontalAlignment.Stretch, Content = Ui.Stack(10, Field(editorModel.InvoiceDetails[3]), Field(editorModel.HideInvoiceNumber)) });
-        var details = new InvoiceDocumentDetailsPanelView(detailFields);
+        var details = new InvoiceDocumentDetailsPanelView(editorModel);
         var additional = Ui.Stack(8);
         void AddCost(FormField[] fields) => additional.Children.Add(Ui.Columns("*,Auto", Fields(fields, 2), EditorButton("×", () => { editorModel.AdditionalCosts.Remove(fields); additional.Children.Clear(); foreach (var cost in editorModel.AdditionalCosts) AddCost(cost); })));
         foreach (var cost in editorModel.AdditionalCosts) AddCost(cost);

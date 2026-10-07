@@ -159,7 +159,10 @@ public sealed record InvoiceSnapshot(
     public string[]? LineHsnCodes { get; init; }
     public InvoiceLinePresentation[]? LinePresentations { get; init; }
     public InvoiceCustomFieldValue[]? CustomFields { get; init; }
+    public InvoiceBankAccountSnapshot? BankAccount { get; init; }
 }
+
+public sealed record InvoiceBankAccountSnapshot(string Id, string Label, string BankName, string AccountNumber, string IfscCode, string Iban);
 
 public sealed record InvoiceLinePresentation(string Alias, string ProductType, Dictionary<string, string> Metadata);
 public sealed record InvoiceCustomFieldValue(string Id, string Label, string Value);

@@ -10,9 +10,9 @@ public sealed partial class InvoiceDocumentDetailsPanelView : UserControl
         InitializeComponent();
     }
 
-    public InvoiceDocumentDetailsPanelView(Control details)
+    public InvoiceDocumentDetailsPanelView(MainWindowViewModel workspace)
         : this()
     {
-        DetailsHost.Content = details;
+        DataContext = new InvoiceDocumentDetailsViewModel(workspace);
     }
 }

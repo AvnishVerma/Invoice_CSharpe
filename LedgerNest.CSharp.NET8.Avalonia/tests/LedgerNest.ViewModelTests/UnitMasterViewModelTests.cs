@@ -442,12 +442,12 @@ public sealed class UnitMasterViewModelTests
         try
         {
             await SeedInvoice(fixture.Factory, paidAmount: 0);
-            var model = new MainWindowViewModel(fixture.Factory, fixture.Path);
+            var model = new MainWindowViewModel(fixture.Factory, fixture.Path, new ActiveTestLicense());
             Assert.True(model.SignIn("admin", "admin"));
             var record = model.Invoices.Single(item => item.Name == "INV-VOID-1");
             Assert.True(model.LoadDocumentForEditing(record));
             Assert.True(model.CanVoidCurrentInvoice);
-            Assert.True(model.VoidCurrentInvoice());
+            Assert.True(model.VoidCurrentInvoice(), model.Status);
             Assert.Equal("Voided", record["Status"]);
             Assert.False(model.CanVoidCurrentInvoice);
             Assert.False(model.VoidCurrentInvoice());
@@ -469,12 +469,13 @@ public sealed class UnitMasterViewModelTests
         try
         {
             await SeedInvoice(fixture.Factory, paidAmount: 25);
-            var model = new MainWindowViewModel(fixture.Factory, fixture.Path);
+            var model = new MainWindowViewModel(fixture.Factory, fixture.Path, new ActiveTestLicense());
             Assert.True(model.SignIn("admin", "admin"));
             var record = model.Invoices.Single(item => item.Name == "INV-VOID-1");
-            // Paid documents are deliberately not editable; direct void calls must also fail.
-            Assert.False(model.LoadDocumentForEditing(record));
+            Assert.True(model.LoadDocumentForEditing(record), model.Status);
+            Assert.False(model.CanVoidCurrentInvoice);
             Assert.False(model.VoidCurrentInvoice());
+            Assert.Contains("payment", model.Status, StringComparison.OrdinalIgnoreCase);
             await using var db = fixture.Factory.CreateDbContext();
             Assert.NotEqual("Voided", (await db.Invoices.SingleAsync()).Status);
         }
@@ -510,5 +511,11 @@ public sealed class UnitMasterViewModelTests
     private sealed class TestFactory(DbContextOptions<LedgerNestDbContext> options) : IDbContextFactory<LedgerNestDbContext>
     {
         public LedgerNestDbContext CreateDbContext() => new(options);
+    }
+    private sealed class ActiveTestLicense : ILicenseService
+    {
+        public string DeviceId => "test-device";
+        public LicenseStatus GetStatus() => new(LicenseState.Active, "Test license", new LicenseClaims { Features = [LicenseFeatures.BusinessWrite] });
+        public LicenseStatus Activate(string document) => GetStatus();
     }
 }

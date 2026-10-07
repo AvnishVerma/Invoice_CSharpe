@@ -265,7 +265,10 @@ public partial class MainWindowViewModel
         new("Bank Name", values?.GetValueOrDefault("Bank Name", "") ?? ""),
         new("Account Number", values?.GetValueOrDefault("Account Number", "") ?? ""),
         new("IFSC Code", values?.GetValueOrDefault("IFSC Code", "") ?? ""),
-        new("IBAN", values?.GetValueOrDefault("IBAN", "") ?? "")
+        new("IBAN", values?.GetValueOrDefault("IBAN", "") ?? ""),
+        new("Account ID", values?.GetValueOrDefault("Account ID") ?? (values == null ? Guid.NewGuid().ToString("N")
+            : Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+                string.Join("\n", new[] { "Label", "Bank Name", "Account Number", "IFSC Code", "IBAN" }.Select(key => values.GetValueOrDefault(key, ""))))))[..32].ToLowerInvariant()))
     ];
 
     // Deserializes account rows without preventing Settings from opening when stored data is malformed.

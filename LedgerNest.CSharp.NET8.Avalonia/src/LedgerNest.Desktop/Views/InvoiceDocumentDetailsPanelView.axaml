@@ -1,10 +1,19 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.InvoiceDocumentDetailsPanelView">
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.InvoiceDocumentDetailsPanelView" x:DataType="vm:InvoiceDocumentDetailsViewModel">
   <Border Padding="10" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
     <StackPanel Spacing="13">
       <TextBlock Text="Document details" FontSize="16" FontWeight="SemiBold" />
-      <ContentControl x:Name="DetailsHost" />
+      <local:FormFieldsView DataContext="{Binding MainFields}" />
+      <local:FormFieldView DataContext="{Binding TimeField}" />
+      <TextBlock Text="Bank account" Foreground="{DynamicResource AppMutedBrush}" />
+      <ComboBox ItemsSource="{Binding Workspace.InvoiceBankChoices}" SelectedItem="{Binding Workspace.SelectedInvoiceBank, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="Invoice bank account">
+        <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:InvoiceBankChoice"><TextBlock Text="{Binding Caption}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
+      </ComboBox>
+      <Expander Header="Document title &amp; numbering" HorizontalAlignment="Stretch">
+        <StackPanel Spacing="10"><local:FormFieldView DataContext="{Binding TitleField}"/><local:FormFieldView DataContext="{Binding HideNumberField}"/></StackPanel>
+      </Expander>
     </StackPanel>
   </Border>
 </UserControl>

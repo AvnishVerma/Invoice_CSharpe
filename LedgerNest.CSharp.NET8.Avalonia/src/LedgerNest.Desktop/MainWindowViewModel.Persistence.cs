@@ -330,6 +330,7 @@ public partial class MainWindowViewModel
             AdditionalCosts.Select(c => new InvoiceAdditionalCost(c[0].Value, c[1].Number)).ToArray())
         {
             LineUnits = Lines.Select(line => line.Unit).ToArray(),
+            BankAccount = SelectedInvoiceBank?.Account,
             LinePresentations = Lines.Select(CaptureLinePresentation).ToArray(),
             CustomFields = InvoiceCustomFields.Select(field => new InvoiceCustomFieldValue(field.Id, field.Field.Label, field.Field.Value)).ToArray(),
             LineHsnCodes = Lines.Select(line => historicalLines.TryGetValue(line, out var original)
@@ -344,14 +345,14 @@ public partial class MainWindowViewModel
         if (dbFactory == null) return 0;
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
+        using var transaction = db.Database.IsSqlite() ? db.Database.BeginTransaction() : null;
         Invoice? existing = null;
         if (editingDocument != null)
         {
             existing = db.Invoices.Include(i => i.Items).SingleOrDefault(i => i.Id == editingDocument.SourceId);
             if (existing == null || existing.DeletedAt != null || Fingerprint(existing) != editingFingerprint)
             { Status = "Document changed since it was opened. Reopen it before saving."; return -1; }
-            if (existing.PaidAmount != 0 || db.Payments.Any(p => p.InvoiceId == existing.Id))
-            { Status = "Documents with payments cannot be edited yet."; return -1; }
+            InvoiceEditRules.Validate(existing, Totals.Total, db.Payments.Where(payment => payment.InvoiceId == existing.Id).AsEnumerable().Sum(payment => payment.Amount));
             if (values["Type"] != existing.Type)
             { Status = "Changing document type during editing is not supported."; return -1; }
         }
@@ -362,8 +363,7 @@ public partial class MainWindowViewModel
         {
             InvoiceNumber = values["Name"],
             Type = values["Type"],
-            InvoiceDate = (DateTime.TryParse(InvoiceDetails[1].Value, out var date) ? date.Date : DateTime.Today)
-                + (existing?.InvoiceDate.TimeOfDay ?? DateTime.Now.TimeOfDay),
+            InvoiceDate = InvoiceEditRules.ResolveDate(InvoiceDetails[1].Value, OrderTime.Value, existing?.InvoiceDate.Kind ?? DateTimeKind.Unspecified),
             CustomerId = customerId,
             CustomerName = customerName,
             Snapshot = CaptureInvoiceSnapshot(),
@@ -372,6 +372,7 @@ public partial class MainWindowViewModel
             TaxTotal = Totals.Tax,
             DiscountTotal = Totals.ItemDiscount + Totals.InvoiceDiscount,
             GrandTotal = Totals.Total,
+            PaidAmount = existing?.PaidAmount ?? 0,
             Items = Lines.Select(line =>
             {
                 var product = Products.FirstOrDefault(p => p.Name.Equals(line.Name, StringComparison.OrdinalIgnoreCase));
@@ -409,6 +410,7 @@ public partial class MainWindowViewModel
             existing.TaxTotal = invoice.TaxTotal;
             existing.DiscountTotal = invoice.DiscountTotal;
             existing.GrandTotal = invoice.GrandTotal;
+            if (existing.Type == "Invoice") existing.Status = InvoiceEditRules.PaymentStatus(existing.GrandTotal, existing.PaidAmount);
             invoice = existing;
         }
         if (invoice.Type == "Invoice")
@@ -443,7 +445,15 @@ public partial class MainWindowViewModel
             }
         }
         db.SaveChanges();
-        if (editingDocument != null) editingFingerprint = Fingerprint(db.Invoices.AsNoTracking().Include(i => i.Items).Single(i => i.Id == invoice.Id));
+        // Compare the normalized persisted graph on the next save, rather than
+        // EF's tracked graph after line replacement and relationship fixups.
+        var savedFingerprint = editingDocument == null ? null
+            : Fingerprint(db.Invoices.AsNoTracking().Include(item => item.Items).Single(item => item.Id == invoice.Id));
+        transaction?.Commit();
+        values["Paid"] = invoice.PaidAmount.ToString("0.00", CultureInfo.InvariantCulture);
+        values["Outstanding"] = invoice.BalanceAmount.ToString("0.00", CultureInfo.InvariantCulture);
+        values["Status"] = invoice.Status;
+        if (editingDocument != null) editingFingerprint = savedFingerprint;
         return invoice.Id;
     }
 

@@ -117,12 +117,14 @@ public partial class MainWindowViewModel
 
     private UiRecord? editingDocument;
     private string? editingFingerprint;
+    private bool editingHasPayments;
     private InvoiceSnapshot? editingSnapshot;
     private readonly Dictionary<InvoiceLineViewModel, InvoiceItem> historicalLines = [];
     public bool IsEditingDocument => editingDocument != null;
     public bool CanVoidCurrentInvoice => editingDocument is { SourceId: > 0 }
         && editingDocument["Type"] == "Invoice"
         && !InvoiceStatusRules.IsVoided(editingDocument["Status"])
+        && !editingHasPayments && ParseDecimal(editingDocument["Paid"]) <= InvoiceStatusRules.MoneyTolerance
         && HasPermission("Invoice", "Update");
     public string EditorDocumentNumber => editingDocument?.Name ?? PeekNextDocumentNumber(InvoiceDetails[0].Value);
     public UiRecord? LastSavedDocument { get; private set; }
@@ -145,6 +147,7 @@ public partial class MainWindowViewModel
         editingDocument = null;
         editingSnapshot = null;
         editingFingerprint = null;
+        editingHasPayments = false;
         historicalLines.Clear();
         Lines.Clear();
         AdditionalCosts.Clear();
@@ -155,6 +158,8 @@ public partial class MainWindowViewModel
         InvoiceDetails[2].Value = snapshot.DueDate?.ToString("yyyy-MM-dd") ?? "";
         InvoiceDetails[3].Value = snapshot.DocumentTitle;
         InvoiceDetails[4].Value = "";
+        SetOrderTime(DateTime.Now);
+        RestoreInvoiceBank(snapshot.BankAccount);
         HideInvoiceNumber.IsChecked = snapshot.HideInvoiceNumber;
         InterState.IsChecked = snapshot.IsInterState;
         InvoiceOptions[0].Value = snapshot.DiscountKind;
@@ -186,15 +191,14 @@ public partial class MainWindowViewModel
         db.EnsureCurrentSchema();
         var invoice = db.Invoices.Include(i => i.Items).SingleOrDefault(i => i.Id == record.SourceId);
         if (invoice == null || invoice.DeletedAt != null) { Status = "Document is unavailable or in trash."; return false; }
-        if (invoice.PaidAmount != 0 || db.Payments.Any(p => p.InvoiceId == invoice.Id))
-        { Status = "Documents with payments cannot be edited yet."; return false; }
-        if (invoice.Status == "Cancelled" || InvoiceStatusRules.IsVoided(invoice.Status))
+        if (invoice.Status is "Cancelled" or "Converted" || InvoiceStatusRules.IsVoided(invoice.Status))
         { Status = $"{invoice.Status} documents cannot be edited."; return false; }
         if (invoice.Snapshot is not { Version: 1 } snapshot)
         { Status = "This document lacks a supported historical snapshot and cannot be safely edited."; return false; }
         editingDocument = record;
         editingSnapshot = snapshot;
         editingFingerprint = Fingerprint(invoice);
+        editingHasPayments = db.Payments.Any(payment => payment.InvoiceId == invoice.Id);
         historicalLines.Clear();
         Lines.Clear(); AdditionalCosts.Clear();
         string[] customer = [snapshot.Customer.Name, snapshot.Customer.BusinessName, snapshot.Customer.Phone, snapshot.Customer.Email, snapshot.Customer.GstNumber, snapshot.Customer.Address];
@@ -204,6 +208,8 @@ public partial class MainWindowViewModel
         InvoiceDetails[2].Value = snapshot.DueDate?.ToString("yyyy-MM-dd") ?? "";
         InvoiceDetails[3].Value = snapshot.DocumentTitle;
         InvoiceDetails[4].Value = snapshot.CustomInvoiceNumber;
+        SetOrderTime(invoice.InvoiceDate);
+        RestoreInvoiceBank(snapshot.BankAccount);
         HideInvoiceNumber.IsChecked = snapshot.HideInvoiceNumber;
         InterState.IsChecked = snapshot.IsInterState;
         InvoiceOptions[0].Value = snapshot.DiscountKind;
@@ -276,7 +282,14 @@ public partial class MainWindowViewModel
             ["Paid"] = "0.00", ["Outstanding"] = Totals.Total.ToString("0.00"),
             ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = documentStatus
         };
-        var sourceId = SaveInvoiceToDatabase(values);
+        int sourceId;
+        try
+        {
+            _ = InvoiceEditRules.ResolveDate(InvoiceDetails[1].Value, OrderTime.Value);
+            sourceId = SaveInvoiceToDatabase(values);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or DbUpdateException or Microsoft.Data.Sqlite.SqliteException)
+        { Status = "Unable to save invoice: " + ex.Message; return false; }
         if (sourceId < 0) return false;
         var saved = new UiRecord { SourceId = sourceId, Values = values };
         if (editingDocument == null) Invoices.Add(saved);
@@ -319,7 +332,7 @@ public partial class MainWindowViewModel
             throw new ArgumentException("Unknown document type.", nameof(type));
         var resource = type == "Quotation" ? "Quotation" : "Invoice";
         if (!HasPermission(resource, "Add")) { Status = $"You do not have permission to create {type.ToLowerInvariant()} records."; return; }
-        editingDocument = null; editingSnapshot = null; editingFingerprint = null; historicalLines.Clear();
+        editingDocument = null; editingSnapshot = null; editingFingerprint = null; editingHasPayments = false; historicalLines.Clear();
         Lines.Clear();
         AdditionalCosts.Clear();
         foreach (var field in InvoiceCustomer) field.Value = "";
@@ -329,6 +342,8 @@ public partial class MainWindowViewModel
         InvoiceDetails[2].Value = "";
         InvoiceDetails[3].Value = type == "Invoice" ? InvoiceSetting("Default GST Title").Value : type;
         InvoiceDetails[4].Value = "";
+        SetOrderTime(DateTime.Now);
+        RestoreInvoiceBank(null);
         HideInvoiceNumber.IsChecked = InvoiceSetting("Hide Invoice Number").IsChecked;
         InterState.IsChecked = false;
         InvoiceOptions[0].Value = "None";

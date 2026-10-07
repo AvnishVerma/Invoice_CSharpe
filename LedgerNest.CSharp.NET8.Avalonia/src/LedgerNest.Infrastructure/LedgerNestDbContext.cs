@@ -179,6 +179,11 @@ public sealed class LedgerNestDbContext(DbContextOptions<LedgerNestDbContext> op
         modelBuilder.Entity<Product>().ToTable("products").HasIndex(x => x.ProductCode).IsUnique();
         modelBuilder.Entity<Product>().HasIndex(x => new { x.Name, x.HsnCode, x.Code, x.Barcode });
         modelBuilder.Entity<Invoice>().ToTable("invoices").HasIndex(i => new { i.Type, i.InvoiceNumber }).IsUnique();
+        // Existing scalar values provide optimistic protection without adding a schema column.
+        modelBuilder.Entity<Invoice>().Property(i => i.PaidAmount).IsConcurrencyToken();
+        modelBuilder.Entity<Invoice>().Property(i => i.GrandTotal).IsConcurrencyToken();
+        modelBuilder.Entity<Invoice>().Property(i => i.Status).IsConcurrencyToken();
+        modelBuilder.Entity<Invoice>().Property(i => i.InvoiceDate).IsConcurrencyToken();
         modelBuilder.Entity<Invoice>().Property(i => i.Snapshot).HasConversion(
             snapshot => JsonSerializer.Serialize(snapshot, (JsonSerializerOptions?)null),
             json => JsonSerializer.Deserialize<InvoiceSnapshot>(json, (JsonSerializerOptions?)null));
