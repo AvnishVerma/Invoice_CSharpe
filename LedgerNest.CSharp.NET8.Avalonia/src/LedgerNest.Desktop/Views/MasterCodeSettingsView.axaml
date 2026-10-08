@@ -30,6 +30,5 @@
       </ItemsControl.ItemTemplate>
     </ItemsControl>
     <TextBlock Text="{Binding Error}" Foreground="Red" TextWrapping="Wrap"/>
-    <views:ActionButtonView ActionLabel="Save Code Settings" Caption="Save Code Settings" Icon="save" Tooltip="Save Code Settings" Command="{Binding SaveCommand}" Available="{Binding CanSave}"/>
   </StackPanel>
 </UserControl>

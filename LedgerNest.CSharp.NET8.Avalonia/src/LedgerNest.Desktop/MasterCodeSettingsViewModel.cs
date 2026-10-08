@@ -61,17 +61,20 @@ public sealed partial class MasterCodeSettingsViewModel : ObservableObject
             catch (Exception ex) { loadingFailed = true; Error = "Code settings could not load: " + ex.Message; Configurations.Add(new(codeEntity, new AutoCodeSettings(codeEntity == "Customer" ? "CUST" : "PROD"))); }
         }
     }
-    [RelayCommand] private void Save()
+    [RelayCommand] private void Save() => TrySave();
+
+    public bool TrySave(Action<LedgerNestDbContext>? saveRelatedSettings = null)
     {
         try
         {
             if (!CanSave) throw new UnauthorizedAccessException("Your role cannot change code settings.");
             if (generator == null) throw new InvalidOperationException("Connect a database before saving code settings.");
-            generator.SaveSettings(Configurations.ToDictionary(item => item.Entity, item => item.Configuration()), workspace.CurrentUsername ?? "");
+            generator.SaveSettings(Configurations.ToDictionary(item => item.Entity, item => item.Configuration()), workspace.CurrentUsername ?? "", saveRelatedSettings);
             foreach (var item in Configurations) item.NextNumber = generator.Load(item.Entity).NextNumber;
             Error = ""; workspace.Status = Configurations.Count == 1 ? Configurations[0].Title + " settings saved." : "Customer and product code settings saved.";
+            return true;
         }
-        catch (Exception ex) { Error = ex.Message; workspace.Status = "Code settings could not save: " + ex.Message; }
+        catch (Exception ex) { Error = ex.Message; workspace.Status = "Code settings could not save: " + ex.Message; return false; }
     }
 }
 

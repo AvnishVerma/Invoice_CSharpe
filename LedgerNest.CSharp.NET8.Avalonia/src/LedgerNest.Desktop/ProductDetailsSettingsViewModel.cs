@@ -42,6 +42,6 @@ public sealed class ProductDetailsSettingsViewModel
         foreach (var field in model.Settings["Product Details"].Single(section => section.Title == "Advanced Information").Fields)
             MetadataFields.Add(new ProductFieldOption(field, field.Label, "", ""));
         InvoiceFields.Add(Option("Extra Cost", "Extra Cost", "Optional flat extra charge on an invoice line item.", "payments"));
-        SaveCommand = new RelayCommand(() => model.SaveSettings("Product Details"));
+        SaveCommand = new RelayCommand(() => model.SaveSettings("Product Details", CodeSettings));
     }
 }

@@ -19,6 +19,7 @@ public partial class MainWindow
         string[] keys = ["General", "Branding", "Tax", "Items", "Customer", "Columns", "Custom Fields"];
         string[] labels = ["General", "Branding", "Tax & GST", "Invoice Items", "Customer Details", "Invoice Columns", "Custom Fields"];
         string[] icons = ["settings", "image", "percent", "view_list", "person", "view_column", "dashboard"];
+        var customerSettings = new InvoiceCustomerSettingsViewModel(Model);
         var content = new ContentControl();
         var nav = Ui.Stack(4);
         var buttons = new List<Button>();
@@ -31,7 +32,7 @@ public partial class MainWindow
                 1 => InvoiceBrandingSettings(),
                 2 => InvoiceTaxSettings(),
                 3 => InvoiceItemSettings(),
-                4 => InvoiceCustomerSettings(),
+                4 => new InvoiceCustomerSettingsView { DataContext = customerSettings },
                 5 => InvoiceColumnSettings(),
                 6 => InvoiceCustomSettings(),
                 _ => Ui.Stack(16, Model.Settings["Invoice Settings"].Single(section => section.Title == keys[index]).Fields
@@ -56,7 +57,7 @@ public partial class MainWindow
             Ui.Columns("34,14,*", Ui.Icon("tune", 20, InvoiceSettingsBlue), new Border(), Ui.LocalText("Need more fields on your invoices?", 14, color: InvoiceSettingsBlue)),
             Ui.LocalText("Add PO number, project code, department, or any custom field.", 12, color: Ui.Muted), options), 14);
         promo.Background = Ui.Palette("#EAEEF3", "#252D38"); promo.BorderBrush = Brush.Parse("#BDCAE0");
-        var save = Ui.Button("Save", () => Model.SaveSettings("Invoice Settings"), true);
+        var save = Ui.Button("Save", () => Model.SaveSettings("Invoice Settings", customerSettings.CodeSettings), true);
         save.Background = InvoiceSettingsBlue; save.HorizontalAlignment = HorizontalAlignment.Stretch; save.MinHeight = 25.6;
         save.Content = Ui.Columns("Auto,8,Auto", Ui.Icon("save", 17, Brushes.White), new Border(), Ui.LocalText("Save", 13, true, Brushes.White));
         var layout = new SettingsNavigationShellView(nav, promo, save, content);

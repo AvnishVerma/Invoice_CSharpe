@@ -185,7 +185,7 @@ public partial class MainWindowViewModel
     }
 
     // Performs the save settings action for this screen or workflow.
-    public bool SaveSettings(string name)
+    public bool SaveSettings(string name, MasterCodeSettingsViewModel? codeSettings = null)
     {
         if (!HasPermission("Settings", "Update")) { Status = "You do not have permission to change settings."; return false; }
         if (!Settings.TryGetValue(name, out var sections)) return false;
@@ -194,10 +194,8 @@ public partial class MainWindowViewModel
         if (!fields.Select(f => f.Validate()).ToArray().All(v => v)) return false;
         if (name == "Invoice Settings" && !ValidateInvoiceSettings()) return false;
 
-        if (dbFactory != null)
+        void PersistSettings(LedgerNestDbContext db)
         {
-            using var db = dbFactory.CreateDbContext();
-            db.EnsureCurrentSchema();
             foreach (var section in sections)
             {
                 foreach (var field in section.Fields)
@@ -209,6 +207,17 @@ public partial class MainWindowViewModel
             if (name == "Company Info") SaveCompanyInfo(db, sections);
             if (name == "Company Info") SavePaymentAccounts(db);
             if (name == "Invoice Settings") SetSetting(db, "invoice.custom_field_definitions", JsonSerializer.Serialize(InvoiceCustomFieldDefinitions));
+        }
+
+        if (codeSettings != null)
+        {
+            if (!codeSettings.TrySave(PersistSettings)) return false;
+        }
+        else if (dbFactory != null)
+        {
+            using var db = dbFactory.CreateDbContext();
+            db.EnsureCurrentSchema();
+            PersistSettings(db);
             db.SaveChanges();
         }
 

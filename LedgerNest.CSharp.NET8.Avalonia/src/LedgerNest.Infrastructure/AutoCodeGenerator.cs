@@ -54,7 +54,7 @@ public sealed class AutoCodeGenerator(IDbContextFactory<LedgerNestDbContext> fac
         Put(db, key + "LeadingZeros", settings.LeadingZeros.ToString(CultureInfo.InvariantCulture));
         Put(db, key + "AutoGenerate", settings.AutoGenerate.ToString().ToLowerInvariant());
     }
-    public void SaveSettings(IReadOnlyDictionary<string, AutoCodeSettings> settings, string username)
+    public void SaveSettings(IReadOnlyDictionary<string, AutoCodeSettings> settings, string username, Action<LedgerNestDbContext>? saveRelatedSettings = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
         foreach (var pair in settings) { Key(pair.Key); AutoCodeRules.Validate(pair.Value); }
@@ -69,6 +69,7 @@ public sealed class AutoCodeGenerator(IDbContextFactory<LedgerNestDbContext> fac
             var next = AutoCodeRules.NextCompatible(pair.Value, Codes(db, pair.Key).AsEnumerable());
             Write(db, pair.Key, pair.Value with { NextNumber = next });
         }
+        saveRelatedSettings?.Invoke(db);
         db.SaveChanges(); transaction.Commit();
     }
 
