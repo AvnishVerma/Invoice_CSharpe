@@ -87,7 +87,7 @@ public partial class App : Avalonia.Application
     private void OpenCompany(IClassicDesktopStyleApplicationLifetime desktop, CompanyRegistryService registry, string companyId, string dataDirectory)
     {
         var company = registry.Read().Companies.SingleOrDefault(item => item.Id == companyId)
-            ?? throw new InvalidOperationException("This company is unavailable. Refresh the company list.");
+            ?? throw new InvalidOperationException("The configured workspace is unavailable. Check database configuration.");
         var profile = company.Database;
         var nextProvider = new Microsoft.Extensions.DependencyInjection.ServiceCollection()
             .AddInfrastructure(profile)
@@ -101,8 +101,7 @@ public partial class App : Avalonia.Application
         {
             var companyContext = new CompanyWorkspaceContext(registry, company, selected =>
             {
-                if (desktop.MainWindow is MainWindow owner)
-                    owner.ConfirmCompanySwitch(selected, () => OpenCompany(desktop, registry, selected.Id, dataDirectory));
+                OpenCompany(desktop, registry, selected.Id, dataDirectory);
             });
             var databasePath = profile.Provider == DatabaseProvider.Sqlite
                 ? new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(profile.ConnectionString).DataSource : null;
@@ -133,7 +132,7 @@ public partial class App : Avalonia.Application
             catch (Exception ex)
             {
                 AppErrorLog.Write(ex, "Cleaning up the previous company workspace");
-                nextModel.Status = "Company switched. The previous workspace could not finish cleanup; restart before switching again.";
+                nextModel.Status = "The database workspace opened, but the previous workspace could not finish cleanup. Restart the application.";
             }
         }
         catch { nextProvider.Dispose(); throw; }

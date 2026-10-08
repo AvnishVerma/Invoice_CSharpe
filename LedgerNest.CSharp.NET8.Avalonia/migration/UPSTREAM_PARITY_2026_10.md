@@ -95,3 +95,9 @@ Baseline: full solution build passed with zero warnings/errors; 326 of 327 autom
 
 - Company registry, isolation and backup infrastructure must remain, but company management, switching, navigation chips and company-management help/search entries must not be exposed in the application UI. This supersedes the earlier user-facing company management acceptance criteria; ordinary business information settings remain.
 - Add persistent customer/product automatic code prefix, next number, padding width and enablement settings with AXAML live previews. Existing manual code entry is intentional and must remain compatible. Allocation must share the record transaction, scan compatible existing codes, preserve old codes and use existing unique indexes with concurrency retry handling. Invoice numbering is independent.
+
+### Single-company UI batch (supersedes exposed company management)
+
+- Removed the Companies settings tab, sidebar selector and switch action, company management AXAML screen and management confirmation dialogs. No company-management help/search entry currently exists; future search metadata must omit company-management topics. Ordinary business information used on invoices remains in Company Information.
+- Retained the registry, separate databases, company identity, session transition, ownership validation and company-safe backup storage. User-facing recovery/backup messages refer to the current database/workspace and no longer direct users to a hidden switcher.
+- Updated actual AXAML tests to verify Settings and sidebar contain no company controls at 800/1400 widths, including a registry containing multiple entries and stale Companies content requests. Retained backend company/session/backup isolation regression tests. The shared focused run passed 81 cases (`artifacts/upstream-tests/master-codes`), including these visibility and backend cases. Full solution build passed with zero warnings/errors. No database/schema change.

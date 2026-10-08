@@ -35,7 +35,7 @@ public static class DatabaseBackupRestore
                 {
                     var identity = candidate.Settings.Find(CompanyRegistryService.IdentitySetting);
                     if (identity?.Value != companyId && !(identity == null && allowLegacyCompany))
-                        throw new InvalidDataException("This backup belongs to another company or has no company identity. Select its company before restoring it.");
+                        throw new InvalidDataException("This backup does not belong to the current database and cannot be restored here.");
                     if (identity == null)
                     {
                         candidate.Settings.Add(new LedgerNest.Domain.AppSetting { Key = CompanyRegistryService.IdentitySetting, Value = companyId });

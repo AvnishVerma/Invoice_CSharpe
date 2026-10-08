@@ -184,7 +184,7 @@ public sealed class CompanyParityTests
         fixture.Registry.Activate(fixture.Original.Id);
         var restored = sqlite ? original.RestoreDatabaseBackup(bytes) : original.RestoreJsonBackup(json);
         Assert.False(restored);
-        Assert.Contains("another company", original.Status);
+        Assert.Contains("current database", original.Status);
         using var intact = fixture.OriginalDatabase.CreateDbContext();
         Assert.Equal("Preserve original", Assert.Single(intact.Products).Name);
         Assert.Equal(fixture.Original.Id, intact.Settings.Find(CompanyRegistryService.IdentitySetting)!.Value);
@@ -224,7 +224,7 @@ public sealed class CompanyParityTests
         var settings = json["settings"]!.AsArray();
         settings.Remove(settings.Single(setting => setting!["Key"]!.GetValue<string>() == CompanyRegistryService.IdentitySetting));
         Assert.False(model.RestoreJsonBackup(json.ToJsonString()));
-        Assert.Contains("no company identity", model.Status);
+        Assert.Contains("current database", model.Status);
     }
 
     [Fact]

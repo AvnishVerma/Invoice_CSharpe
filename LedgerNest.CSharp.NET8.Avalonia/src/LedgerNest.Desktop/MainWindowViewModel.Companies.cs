@@ -25,7 +25,7 @@ public partial class MainWindowViewModel
         db.EnsureCurrentSchema();
         var saved = db.Settings.Find(CompanyRegistryService.IdentitySetting);
         if (saved != null && saved.Value != CompanyContext.ActiveCompany.Id)
-            throw new InvalidOperationException("This database belongs to a different company. Company switching was cancelled.");
+            throw new InvalidOperationException("This database belongs to another workspace. Opening it was cancelled.");
         SetSetting(db, CompanyRegistryService.IdentitySetting, CompanyContext.ActiveCompany.Id);
         db.SaveChanges();
     }
@@ -40,14 +40,14 @@ public partial class MainWindowViewModel
         if (CompanyContext == null) return;
         if (string.IsNullOrWhiteSpace(id) && CompanyContext.ActiveCompany.IsOriginal) return;
         if (id != CompanyContext.ActiveCompany.Id)
-            throw new InvalidOperationException("This backup belongs to another company or has no company identity. Select its company before restoring it.");
+            throw new InvalidOperationException("This backup does not belong to the current database and cannot be restored here.");
     }
 
     private bool CanUseCompanyBackup(bool restore)
     {
         if (CompanyContext == null) return true;
         if (!CanContinueWorkspaceOperation(SessionVersion) || !HasPermission("Settings", restore ? "Update" : "View"))
-        { Status = "You do not have permission to use company backups."; return false; }
+        { Status = "You do not have permission to use backups."; return false; }
         return !restore || RequireBusinessLicense();
     }
 }

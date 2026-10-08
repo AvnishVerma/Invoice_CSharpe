@@ -393,7 +393,7 @@ public partial class MainWindowViewModel
             if (backup["_metadata"] is JsonObject companyMetadata && companyMetadata["company_id"] is JsonValue companyValue)
             {
                 if (!companyValue.TryGetValue<string>(out var declaredId) || declaredId != identity)
-                    throw new InvalidDataException("Backup company metadata does not match its database identity.");
+                    throw new InvalidDataException("Backup metadata does not match its database identity.");
             }
         }
         catch (Exception ex) when (ex is JsonException or InvalidDataException or ArgumentException or InvalidOperationException)

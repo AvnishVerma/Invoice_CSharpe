@@ -70,7 +70,7 @@ public partial class MainWindowViewModel
         if (!IsCurrentCompany())
         {
             SetSession(null, "", false);
-            Status = "The active company changed. Reopen its workspace and sign in again.";
+            Status = "The database workspace changed. Reopen the application and sign in again.";
             return false;
         }
         if (dbFactory == null) return true;

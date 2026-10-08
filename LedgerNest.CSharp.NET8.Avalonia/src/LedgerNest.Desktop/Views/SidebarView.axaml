@@ -1,25 +1,17 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:LedgerNest.Desktop.Views" xmlns:loc="using:LedgerNest.Desktop" xmlns:infra="using:LedgerNest.Infrastructure" x:Class="LedgerNest.Desktop.Views.SidebarView" x:DataType="vm:SidebarViewModel">
+             xmlns:vm="using:LedgerNest.Desktop.Views" xmlns:loc="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.SidebarView" x:DataType="vm:SidebarViewModel">
   <UserControl.Resources><ResourceDictionary><ResourceDictionary.ThemeDictionaries>
     <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="SidebarSurface">#FAFAFA</SolidColorBrush><SolidColorBrush x:Key="SidebarOutline">#E0E0E0</SolidColorBrush></ResourceDictionary>
     <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="SidebarSurface">#18212B</SolidColorBrush><SolidColorBrush x:Key="SidebarOutline">#526171</SolidColorBrush></ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries></ResourceDictionary></UserControl.Resources>
   <Border Width="{Binding Width}" Background="{DynamicResource SidebarSurface}" BorderBrush="{DynamicResource SidebarOutline}" BorderThickness="0,0,1,0">
-    <Grid RowDefinitions="76,Auto,*,Auto">
+    <Grid RowDefinitions="76,*,Auto">
       <Grid Margin="12,0" ColumnDefinitions="*,Auto" IsVisible="{Binding Expanded}">
         <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"><Border Width="34" Height="34" CornerRadius="6" Background="{DynamicResource AppPrimaryBrush}"><TextBlock Text="receipt_long" Classes="action-icon-glyph" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><TextBlock Text="LedgerNest" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" VerticalAlignment="Center"/></StackPanel>
         <Button Grid.Column="1" Content="‹" Command="{Binding ToggleCommand}" ToolTip.Tip="Collapse navigation" Classes="action-icon"/>
       </Grid>
       <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4" IsVisible="{Binding !Expanded}"><Border Width="34" Height="34" CornerRadius="6" Background="{DynamicResource AppPrimaryBrush}"><TextBlock Text="receipt_long" Classes="action-icon-glyph" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><Button Content="›" Command="{Binding ToggleCommand}" ToolTip.Tip="Expand navigation" Classes="action-icon"/></StackPanel>
-      <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="12,0,12,8" IsVisible="{Binding HasCompanySwitcher}">
-        <ComboBox ItemsSource="{Binding CompanyManagement.Companies}" SelectedItem="{Binding CompanyManagement.SelectedCompany, Mode=TwoWay}" AutomationProperties.Name="Company switcher" MinWidth="0">
-          <ComboBox.ItemTemplate><DataTemplate x:DataType="infra:CompanyProfile"><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/></DataTemplate></ComboBox.ItemTemplate>
-        </ComboBox>
-        <Button Grid.Column="1" Command="{Binding CompanyManagement.SwitchCompanyCommand}" IsEnabled="{Binding CompanyManagement.CanSwitch}" Classes="action-icon" ToolTip.Tip="Switch Company" AutomationProperties.Name="Switch Company">
-          <TextBlock Text="swap_horiz" Classes="action-icon-glyph"/>
-        </Button>
-      </Grid>
-      <Border Grid.Row="2" Padding="0,6.4,0,0" BorderBrush="{DynamicResource SidebarOutline}" BorderThickness="0,1,0,0">
+      <Border Grid.Row="1" Padding="0,6.4,0,0" BorderBrush="{DynamicResource SidebarOutline}" BorderThickness="0,1,0,0">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"><ItemsControl ItemsSource="{Binding Items}"><ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:SidebarItemViewModel"><Button Command="{Binding NavigateCommand}" Tag="{Binding Route}" Classes="nav" Classes.selected="{Binding IsSelected}" ToolTip.Tip="{Binding Route}" HorizontalContentAlignment="Stretch"><Grid>
             <Grid ColumnDefinitions="18,12,*,Auto" IsVisible="{Binding Expanded}"><TextBlock Text="{Binding Icon}" Classes="action-icon-glyph" FontSize="18" VerticalAlignment="Center"/><TextBlock Grid.Column="2" loc:UiLocalization.Text="{Binding Route}" FontSize="13.5" FontWeight="{Binding Weight}" VerticalAlignment="Center"/><Border Grid.Column="3" Width="3" Height="18" CornerRadius="2" Background="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding IsSelected}"/></Grid>
@@ -27,7 +19,7 @@
           </Grid></Button></DataTemplate>
         </ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
       </Border>
-      <Border Grid.Row="3" Padding="11.2,9.6" BorderBrush="{DynamicResource SidebarOutline}" BorderThickness="0,1,0,0"><StackPanel Spacing="8"><Grid ColumnDefinitions="30,10,*,Auto"><Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource AppCanvasBrush}"><TextBlock Text="{Binding Initial}" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="2" Spacing="2" IsVisible="{Binding Expanded}"><TextBlock Text="{Binding Username}" FontSize="13"/><TextBlock Text="{Binding Role}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}"/></StackPanel><Button Grid.Column="3" Command="{Binding LogoutCommand}" Tag="Sign out" ToolTip.Tip="Sign out" Classes="action-icon"><TextBlock Text="logout" Classes="action-icon-glyph"/></Button></Grid><TextBlock Text="{Binding Version}" FontSize="12" Foreground="{DynamicResource AppOutlineBrush}" HorizontalAlignment="Center" IsVisible="{Binding Expanded}"/></StackPanel></Border>
+      <Border Grid.Row="2" Padding="11.2,9.6" BorderBrush="{DynamicResource SidebarOutline}" BorderThickness="0,1,0,0"><StackPanel Spacing="8"><Grid ColumnDefinitions="30,10,*,Auto"><Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource AppCanvasBrush}"><TextBlock Text="{Binding Initial}" FontWeight="Bold" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><StackPanel Grid.Column="2" Spacing="2" IsVisible="{Binding Expanded}"><TextBlock Text="{Binding Username}" FontSize="13"/><TextBlock Text="{Binding Role}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}"/></StackPanel><Button Grid.Column="3" Command="{Binding LogoutCommand}" Tag="Sign out" ToolTip.Tip="Sign out" Classes="action-icon"><TextBlock Text="logout" Classes="action-icon-glyph"/></Button></Grid><TextBlock Text="{Binding Version}" FontSize="12" Foreground="{DynamicResource AppOutlineBrush}" HorizontalAlignment="Center" IsVisible="{Binding Expanded}"/></StackPanel></Border>
     </Grid>
   </Border>
 </UserControl>
