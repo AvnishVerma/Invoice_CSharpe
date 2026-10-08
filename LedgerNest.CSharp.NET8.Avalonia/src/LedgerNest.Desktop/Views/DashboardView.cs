@@ -7,7 +7,6 @@ namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
-    private string dashboardLayout = "Default";
     // Performs the dashboard action by preparing dashboard data and loading the XAML dashboard view.
     private Control Dashboard()
     {
@@ -39,6 +38,7 @@ public partial class MainWindow
             EditCommand = new RelayCommand(() => Model.LoadDocumentForEditing(invoice)),
             CloneCommand = new RelayCommand(() => Model.CloneDocumentForEditing(invoice)),
             PdfCommand = new AsyncRelayCommand(async () => await ShowPdfPreviewAsync(invoice)),
+            DownloadCommand = new AsyncRelayCommand(() => DownloadDocumentPdf(invoice)),
             PrintCommand = new AsyncRelayCommand(async () => await PrintDocumentAsync(invoice)),
             PaymentCommand = new RelayCommand(() => ShowPayment(invoice)),
             DeleteCommand = new RelayCommand(() => DeleteDocumentFromDashboard(invoice))
@@ -65,7 +65,18 @@ public partial class MainWindow
         var outOfStock = Model.Products.FirstOrDefault(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
         var outOfStockCount = Model.Products.Count(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
 
-        return new DashboardPageView(new DashboardPageModel(tiles, recent, quickActions, topCustomers, topProducts, ShortMoney(paid), CurrencyDisplay.Format(outstanding), outOfStockCount.ToString(), outOfStock?.Name ?? "No product", Model.CurrentUsername ?? "User", () => page.Content = Dashboard(), dashboardLayout, selected => dashboardLayout = selected));
+        var stockProducts = Model.Products.Where(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0)
+            .Select(product => new DashboardStockModel(product.Name, product["Type"], CurrencyDisplay.Format(decimal.TryParse(product["Sale Price"], out var price) ? price : 0),
+                "Stock: " + product["Stock"], new RelayCommand(() =>
+                {
+                    Model.NavigateCommand.Execute("Inventory");
+                    if (Model.Title != "Inventory") return;
+                    Model.Inventory.RefreshCommand.Execute(null);
+                    Model.Inventory.SelectedProduct = Model.Inventory.Products.FirstOrDefault(item => item.Id == product.SourceId);
+                }, () => Model.HasPermission("Inventory", "View") && Model.HasPermission("Inventory", "Adjust"))));
+        return new DashboardPageView(new DashboardPageModel(tiles, recent, quickActions, topCustomers, topProducts, ShortMoney(paid), CurrencyDisplay.Format(outstanding), outOfStockCount.ToString(), outOfStock?.Name ?? "No product", Model.CurrentUsername ?? "User",
+            () => { Model.RefreshPersistedData(); page.Content = Dashboard(); }, Model.DashboardLayout,
+            saveLayout: Model.SetDashboardLayout, outOfStockProducts: stockProducts, defaultCollectedText: CurrencyDisplay.Format(paid)));
     }
 
     // Performs the quick action creation action for dashboard shortcut cards.

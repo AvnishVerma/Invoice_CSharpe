@@ -1062,18 +1062,22 @@ internal static class Program
                 {
                     model.NavigateCommand.Execute(route); Capture($"compact-{route.Replace(" ", "-")}-{width}");
                     var headerBand = window.GetVisualDescendants().OfType<Border>().First(b => b.IsEffectivelyVisible && b.Background is Avalonia.Media.ISolidColorBrush headerBrush && headerBrush.Color == Avalonia.Media.Color.Parse(Branding.HeaderColor));
-                    Check(Math.Abs(headerBand.Bounds.Height - 44.8) < 1, "Header height must stay consistent on " + route);
+                    var referenceDashboard = route == "Dashboard" && model.DashboardLayout == "default";
+                    Check(Math.Abs(headerBand.Bounds.Height - (referenceDashboard ? 56 : 44.8)) < 1, "Header height must follow the shared shell or requested Default Dashboard reference on " + route);
                     Check(headerBand.Classes.Contains("page-header"), "Every route must use the shared page-header AXAML style on " + route);
                     Check(!headerBand.GetVisualAncestors().OfType<ScrollViewer>().Any(), "Page headers must remain outside scrolling content on " + route);
                     if (route == "Dashboard")
                     {
                         var dashboard = window.GetVisualDescendants().OfType<DashboardPageView>().Single();
                         var dashboardBody = dashboard.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Name == "DashboardContent");
-                        Check(Math.Abs(dashboardBody.TranslatePoint(default, dashboard)!.Value.X - 12.8) < 1, "Dashboard content must align with the left page gutter");
+                        var state = (DashboardPageModel)dashboard.DataContext!;
+                        var gutter = state.IsDefaultLayout ? state.IsCompact ? 16 : 28 : 12.8;
+                        Check(Math.Abs(dashboardBody.TranslatePoint(default, dashboard)!.Value.X - gutter) < 1, "Dashboard content must align with its AXAML page gutter");
                     }
                     foreach (var iconAction in window.GetVisualDescendants().OfType<Button>().Where(button => button.IsEffectivelyVisible && button.Classes.Contains("action-icon")))
                     {
-                        Check(Math.Abs(iconAction.Bounds.Width - 32) < 1 && Math.Abs(iconAction.Bounds.Height - 32) < 1,
+                        var actionSize = iconAction.Classes.Contains("dashboard-document-action") ? 42 : 32;
+                        Check(Math.Abs(iconAction.Bounds.Width - actionSize) < 1 && Math.Abs(iconAction.Bounds.Height - actionSize) < 1,
                             $"Icon actions must use the global 32x32 size on {route}");
                         Check(ToolTip.GetTip(iconAction) is string tooltip && !string.IsNullOrWhiteSpace(tooltip),
                             $"Icon actions must expose a tooltip on {route}");

@@ -5,6 +5,8 @@ using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.Input;
+using LedgerNest.Application;
+using System.Globalization;
 
 namespace LedgerNest.Desktop.Views;
 
@@ -14,12 +16,14 @@ public sealed partial class DashboardPageView : UserControl
     public DashboardPageView()
     {
         InitializeComponent();
+        SizeChanged += (_, _) => { if (DataContext is DashboardPageModel model) model.ViewportWidth = Bounds.Width; };
     }
 
     // Performs the dashboard page view data context assignment action for this screen or workflow.
     public DashboardPageView(DashboardPageModel model)
     {
         InitializeComponent();
+        SizeChanged += (_, _) => model.ViewportWidth = Bounds.Width;
         DataContext = model;
     }
 }
@@ -28,23 +32,39 @@ public sealed partial class DashboardPageView : UserControl
 public sealed class DashboardPageModel : INotifyPropertyChanged
 {
     private readonly Action<string> layoutChanged;
+    private readonly Func<string, bool>? saveLayout;
     private string layout = "Default";
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<DashboardTileModel> Tiles { get; } = [];
+    public ObservableCollection<DashboardTileModel> DefaultTiles { get; } = [];
+    public ObservableCollection<DashboardStockModel> OutOfStockProducts { get; } = [];
     public ObservableCollection<DashboardInvoiceModel> RecentInvoices { get; } = [];
     public ObservableCollection<DashboardQuickActionModel> QuickActions { get; } = [];
     public ObservableCollection<DashboardSummaryLineModel> TopCustomers { get; } = [];
     public ObservableCollection<DashboardSummaryLineModel> TopProducts { get; } = [];
     public bool HasNoInvoices => RecentInvoices.Count == 0;
     public bool ShowHero => Layout != "Default";
-    public bool ShowKpiRow => Layout is "Default" or "Classic" or "Simple Feed";
+    public bool ShowKpiRow => Layout is "Classic" or "Simple";
     public bool ShowChartGrid => Layout == "Classic";
     public bool ShowClassicLowerGrid => Layout == "Classic";
     public bool ShowBentoGrid => Layout == "Bento";
-    public bool ShowSimpleFeedGrid => Layout == "Simple Feed";
+    public bool ShowSimpleFeedGrid => Layout == "Simple";
     public bool ShowDefaultFeed => Layout == "Default";
-    public string RecentCaption => Layout == "Simple Feed" ? "Last 10" : Layout == "Bento" ? "Last 8" : "Last 7";
+    public string RecentCaption => Layout == "Simple" ? "Last 10" : Layout == "Bento" ? "Last 8" : "Last 7";
+    public string OutOfStockCaption => OutOfStockCount == "1" ? "1 item" : OutOfStockCount + " items";
+    public bool HasNoOutOfStock => OutOfStockProducts.Count == 0;
+    public string DayText { get; }
+    public string DateText { get; }
+    private double viewportWidth = 1144;
+    public double ViewportWidth
+    {
+        get => viewportWidth;
+        set { if (Math.Abs(viewportWidth - value) < .1) return; viewportWidth = value;
+            OnPropertyChanged(); OnPropertyChanged(nameof(IsCompact)); OnPropertyChanged(nameof(SummaryColumns)); }
+    }
+    public bool IsCompact => ViewportWidth < 960;
+    public int SummaryColumns => ViewportWidth >= 1000 ? 5 : ViewportWidth >= 700 ? 3 : ViewportWidth >= 450 ? 2 : 1;
     public string CollectedText { get; }
     public string OutstandingText { get; }
     public string OutOfStockCount { get; }
@@ -53,7 +73,7 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
     public bool IsDefaultLayout => Layout == "Default";
     public bool IsClassicLayout => Layout == "Classic";
     public bool IsBentoLayout => Layout == "Bento";
-    public bool IsSimpleFeedLayout => Layout == "Simple Feed";
+    public bool IsSimpleFeedLayout => Layout == "Simple";
     public string LayoutTitle => $"Layout: {Layout}";
     public ICommand RefreshCommand { get; }
     public ICommand SelectLayoutCommand { get; }
@@ -96,10 +116,23 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
         string username,
         Action refresh,
         string initialLayout = "Default",
-        Action<string>? layoutChanged = null)
+        Action<string>? layoutChanged = null,
+        Func<string, bool>? saveLayout = null,
+        IEnumerable<DashboardStockModel>? outOfStockProducts = null,
+        string? defaultCollectedText = null,
+        DateTime? today = null)
     {
         this.layoutChanged = layoutChanged ?? (_ => { });
+        this.saveLayout = saveLayout;
         foreach (var tile in tiles) Tiles.Add(tile);
+        foreach (var label in new[] { "Customers", "Products", "Total Invoices", "Revenue Collected", "Outstanding" })
+        {
+            var tile = Tiles.FirstOrDefault(item => item.Label == label);
+            if (tile != null) DefaultTiles.Add(tile with { Label = label == "Total Invoices" ? "Invoices" : label,
+                Value = label == "Revenue Collected" ? defaultCollectedText ?? collectedText : tile.Value,
+                Warning = label == "Products" && outOfStockCount != "0" ? outOfStockCount + " out of stock" : "" });
+        }
+        foreach (var product in outOfStockProducts ?? []) OutOfStockProducts.Add(product);
         foreach (var invoice in recentInvoices) RecentInvoices.Add(invoice);
         foreach (var action in quickActions) QuickActions.Add(action);
         foreach (var customer in topCustomers) TopCustomers.Add(customer);
@@ -111,15 +144,19 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
         Username = string.IsNullOrWhiteSpace(username) ? "User" : username.Trim();
         RefreshCommand = new RelayCommand(refresh);
         SelectLayoutCommand = new RelayCommand<string>(SelectLayout);
-        layout = initialLayout;
+        layout = DashboardLayoutRules.DisplayName(initialLayout);
+        var date = today ?? DateTime.Today;
+        DayText = date.ToString("dddd", CultureInfo.CurrentCulture);
+        DateText = date.ToString("MMM d, yyyy", CultureInfo.CurrentCulture);
     }
 
     // Performs the dashboard layout selection action for this screen or workflow.
     private void SelectLayout(string? selectedLayout)
     {
-        if (string.IsNullOrWhiteSpace(selectedLayout)) return;
-        Layout = selectedLayout;
-        layoutChanged(selectedLayout);
+        var selected = DashboardLayoutRules.Parse(selectedLayout);
+        if (selected == null || saveLayout?.Invoke(selected) == false) return;
+        layoutChanged(selected);
+        Layout = DashboardLayoutRules.DisplayName(selected);
     }
 
     // Performs the property changed notification action for this screen or workflow.
@@ -127,7 +164,13 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
 }
 
 // Describes one dashboard KPI tile rendered by the dashboard AXAML template.
-public sealed record DashboardTileModel(string Label, string Value, string Icon, IBrush Accent, IBrush IconBackground);
+public sealed record DashboardTileModel(string Label, string Value, string Icon, IBrush Accent, IBrush IconBackground)
+{
+    public string Warning { get; init; } = "";
+    public bool HasWarning => Warning.Length > 0;
+}
+
+public sealed record DashboardStockModel(string Name, string Type, string Price, string Stock, ICommand RestockCommand);
 
 // Describes one quick action row rendered by the dashboard AXAML template.
 public sealed record DashboardQuickActionModel(string Label, string Icon, IBrush Accent, IBrush IconBackground, ICommand Command);
@@ -152,6 +195,7 @@ public sealed class DashboardInvoiceModel
     public ICommand EditCommand { get; init; } = new RelayCommand(() => { });
     public ICommand CloneCommand { get; init; } = new RelayCommand(() => { });
     public ICommand PdfCommand { get; init; } = new RelayCommand(() => { });
+    public ICommand DownloadCommand { get; init; } = new RelayCommand(() => { });
     public ICommand PrintCommand { get; init; } = new RelayCommand(() => { });
     public ICommand PaymentCommand { get; init; } = new RelayCommand(() => { });
     public ICommand DeleteCommand { get; init; } = new RelayCommand(() => { });

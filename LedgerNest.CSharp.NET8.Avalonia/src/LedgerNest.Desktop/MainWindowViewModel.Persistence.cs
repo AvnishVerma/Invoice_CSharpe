@@ -174,6 +174,7 @@ public partial class MainWindowViewModel
         db.EnsureCurrentSchema();
 
         var settings = db.Settings.AsNoTracking().ToDictionary(s => s.Key, s => s.Value);
+        DashboardLayout = DashboardLayoutRules.Parse(settings.GetValueOrDefault(DashboardLayoutRules.SettingKey)) ?? "default";
         UpdateManifestUrl = settings.GetValueOrDefault("updates.manifest_url", "");
         foreach (var (name, sections) in Settings)
         {

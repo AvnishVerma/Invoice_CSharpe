@@ -1,0 +1,129 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.DashboardDefaultView" x:DataType="views:DashboardPageModel" x:CompileBindings="False">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="DefaultDocumentBrush">#F7F2FB</SolidColorBrush>
+          <SolidColorBrush x:Key="DefaultAmountBrush">#EEDDF5</SolidColorBrush>
+          <SolidColorBrush x:Key="DefaultAmountTextBrush">#A21CAF</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="DefaultDocumentBrush">#272033</SolidColorBrush>
+          <SolidColorBrush x:Key="DefaultAmountBrush">#492551</SolidColorBrush>
+          <SolidColorBrush x:Key="DefaultAmountTextBrush">#E8A8F4</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+  <UserControl.Styles>
+    <!-- Default's 42px document actions reproduce the supplied reference; other layouts keep the global action size. -->
+    <Style Selector="Button.dashboard-document-action">
+      <Setter Property="Width" Value="42"/><Setter Property="Height" Value="42"/>
+      <Setter Property="MinWidth" Value="42"/><Setter Property="MinHeight" Value="42"/>
+      <Setter Property="Padding" Value="0"/><Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="StackPanel.document-actions"><Setter Property="Grid.Column" Value="3"/><Setter Property="HorizontalAlignment" Value="Right"/></Style>
+    <Style Selector="Grid.document-layout.compact &gt; StackPanel.document-actions">
+      <Setter Property="Grid.Column" Value="2"/><Setter Property="Grid.Row" Value="1"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,12,0,0"/>
+    </Style>
+    <Style Selector="Grid.welcome-layout &gt; StackPanel.welcome-date"><Setter Property="Grid.Column" Value="1"/></Style>
+    <Style Selector="Grid.welcome-layout.compact &gt; StackPanel.welcome-date">
+      <Setter Property="Grid.Column" Value="0"/><Setter Property="Grid.Row" Value="1"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/><Setter Property="Margin" Value="0,14,0,0"/>
+    </Style>
+    <Style Selector="Grid.stock-layout &gt; WrapPanel.stock-actions"><Setter Property="Grid.Column" Value="3"/></Style>
+    <Style Selector="Grid.stock-layout.compact &gt; WrapPanel.stock-actions"><Setter Property="Grid.Column" Value="2"/><Setter Property="Grid.Row" Value="1"/><Setter Property="Margin" Value="0,8,0,0"/></Style>
+  </UserControl.Styles>
+  <StackPanel Spacing="28">
+    <Border x:Name="DefaultWelcomeBanner" CornerRadius="16" Padding="28" MinHeight="104" BoxShadow="0 8 22 0 #30000000">
+      <Border.Background><LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%"><GradientStop Color="#1E293B" Offset="0"/><GradientStop Color="#334155" Offset="1"/></LinearGradientBrush></Border.Background>
+      <Grid Classes="welcome-layout" Classes.compact="{Binding IsCompact}" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+        <StackPanel Spacing="8" VerticalAlignment="Center">
+          <WrapPanel><TextBlock loc:UiLocalization.Text="Welcome back," FontSize="22" FontWeight="Bold" Foreground="White" Margin="0,0,6,0"/><TextBlock Text="{Binding Username}" FontSize="22" FontWeight="Bold" Foreground="White"/></WrapPanel>
+          <TextBlock loc:UiLocalization.Text="Here's your business at a glance" FontSize="13" Foreground="#D6D9DF" TextWrapping="Wrap"/>
+        </StackPanel>
+        <StackPanel Classes="welcome-date" Spacing="4" HorizontalAlignment="Right" VerticalAlignment="Center">
+          <TextBlock Text="{Binding DayText}" FontSize="12" Foreground="#D6D9DF" HorizontalAlignment="Right"/>
+          <TextBlock Text="{Binding DateText}" FontSize="18" FontWeight="Bold" Foreground="White"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+    <ItemsControl x:Name="DefaultSummaryCards" ItemsSource="{Binding DefaultTiles}">
+      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding SummaryColumns}" RowSpacing="16" ColumnSpacing="16"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate><DataTemplate>
+        <Border MinHeight="80" Padding="18" CornerRadius="16" Background="{DynamicResource DashboardCard}" BoxShadow="0 6 18 0 #0C000000">
+          <Grid ColumnDefinitions="38,12,*">
+            <Border Width="38" Height="38" CornerRadius="10" Background="{Binding IconBackground}" VerticalAlignment="Center"><TextBlock Text="{Binding Icon}" Classes="action-icon-glyph" Foreground="{Binding Accent}"/></Border>
+            <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Center">
+              <Grid ColumnDefinitions="Auto,8,*"><TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource DashboardMuted}"/><TextBlock Grid.Column="2" Text="{Binding Warning}" IsVisible="{Binding HasWarning}" FontSize="9" Foreground="#F44336" TextTrimming="CharacterEllipsis"/></Grid>
+              <TextBlock Text="{Binding Value}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource DashboardText}"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+      </DataTemplate></ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <StackPanel x:Name="DefaultOutOfStockSection" Spacing="20" Margin="0,8,0,0">
+      <Grid ColumnDefinitions="4,12,Auto,10,Auto,*,Auto" MinHeight="28">
+        <Border Background="#F44336" CornerRadius="3" Height="24"/>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"><TextBlock Text="inventory_2" Classes="action-icon-glyph" Foreground="#F44336"/><TextBlock loc:UiLocalization.Text="Out of Stock" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource DashboardText}"/></StackPanel>
+        <Border Grid.Column="4" Padding="8,4" CornerRadius="14" BorderBrush="#FF999F" BorderThickness="1" Background="#0CF44336" VerticalAlignment="Center"><TextBlock Text="{Binding OutOfStockCaption}" FontSize="12" Foreground="#F44336"/></Border>
+        <TextBlock Grid.Column="6" loc:UiLocalization.Text="Tap to restock" FontSize="13" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" IsVisible="{Binding !IsCompact}"/>
+      </Grid>
+      <ItemsControl ItemsSource="{Binding OutOfStockProducts}"><ItemsControl.ItemTemplate><DataTemplate>
+        <Border MinHeight="70" Margin="4,0,4,8" Padding="18,12" CornerRadius="10" Background="{DynamicResource DefaultDocumentBrush}" BorderBrush="#FFB7C0" BorderThickness="1" BoxShadow="0 2 2 0 #28000000">
+          <Grid Classes="stock-layout" Classes.compact="{Binding $parent[UserControl].DataContext.IsCompact}" ColumnDefinitions="38,16,*,Auto" RowDefinitions="Auto,Auto">
+            <Border Width="38" Height="38" CornerRadius="10" Background="#1AF44336"><TextBlock Text="inventory_2" Classes="action-icon-glyph" Foreground="#F44336"/></Border>
+            <StackPanel Grid.Column="2" Spacing="4" VerticalAlignment="Center"><TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource DashboardText}"/><TextBlock Text="{Binding Type}" FontSize="12" Foreground="{DynamicResource DashboardMuted}"/></StackPanel>
+            <WrapPanel Classes="stock-actions" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Price}" FontSize="14" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" Margin="0,0,16,0"/>
+              <Border Padding="10,8" CornerRadius="6" Background="#0CF44336" BorderBrush="#FFB7C0" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,12,0"><TextBlock Text="{Binding Stock}" Foreground="#F44336" FontSize="12"/></Border>
+              <Button Command="{Binding RestockCommand}" Classes="action-icon dashboard-document-action" Background="#122E7D32" BorderBrush="#C8E1C9" ToolTip.Tip="Restock" AutomationProperties.Name="Restock"><TextBlock Text="add_box" Classes="action-icon-glyph" Foreground="#4CAF50"/></Button>
+            </WrapPanel>
+          </Grid>
+        </Border>
+      </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+      <TextBlock loc:UiLocalization.Text="No products out of stock" IsVisible="{Binding HasNoOutOfStock}" Foreground="{DynamicResource DashboardMuted}" Margin="4,0"/>
+    </StackPanel>
+    <StackPanel x:Name="DefaultRecentDocumentsSection" Margin="0,12,0,0">
+      <Grid ColumnDefinitions="4,12,*,Auto" MinHeight="28">
+        <Border Background="#083B88" CornerRadius="3" Height="24"/>
+        <TextBlock Grid.Column="2" loc:UiLocalization.Text="Recent Documents" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="3" loc:UiLocalization.Text="Last 5 documents" FontSize="13" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" IsVisible="{Binding !IsCompact}"/>
+      </Grid>
+      <ItemsControl ItemsSource="{Binding RecentInvoices}"><ItemsControl.ItemTemplate><DataTemplate>
+        <Border Classes="default-document-card" Margin="4,22,4,0" Padding="16" CornerRadius="10" MinHeight="129" Background="{DynamicResource DefaultDocumentBrush}">
+          <Grid Classes="document-layout" Classes.compact="{Binding $parent[UserControl].DataContext.IsCompact}" ColumnDefinitions="38,16,*,Auto" RowDefinitions="Auto,Auto">
+            <Border Width="38" Height="38" CornerRadius="10" VerticalAlignment="Center"><Border.Background><LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%"><GradientStop Color="#083B88" Offset="0"/><GradientStop Color="#4B699E" Offset="1"/></LinearGradientBrush></Border.Background><TextBlock Text="{Binding Number}" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+            <StackPanel Grid.Column="2" Spacing="8" VerticalAlignment="Center">
+              <WrapPanel>
+                <TextBlock Text="{Binding InvoiceTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" Margin="0,0,8,0"/>
+                <Border Padding="8,5" Margin="0,0,8,0" CornerRadius="4" Background="#180B4A9A" BorderBrush="#B8B6E8" BorderThickness="1"><TextBlock loc:UiLocalization.Text="Invoice" FontSize="12" Foreground="#3949AB"/></Border>
+                <Border Padding="8,5" CornerRadius="4" Background="{Binding StatusBackground}" BorderBrush="{Binding StatusBrush}" BorderThickness="1"><TextBlock Text="{Binding Status}" FontSize="12" Foreground="{Binding StatusBrush}"/></Border>
+              </WrapPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="person_outline" Classes="action-icon-glyph" Foreground="{DynamicResource DashboardMuted}" FontSize="16"/><TextBlock Text="{Binding CustomerName}" FontSize="14" Foreground="{DynamicResource DashboardText}"/></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="calendar_today" Classes="action-icon-glyph" Foreground="{DynamicResource DashboardMuted}" FontSize="16"/><TextBlock Text="{Binding RawDate}" FontSize="14" Foreground="{DynamicResource DashboardText}"/></StackPanel>
+            </StackPanel>
+            <StackPanel Classes="document-actions" Spacing="8" VerticalAlignment="Center">
+              <Border Padding="16,10" CornerRadius="8" Background="{DynamicResource DefaultAmountBrush}" HorizontalAlignment="Right"><TextBlock Text="{Binding TotalText}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource DefaultAmountTextBrush}"/></Border>
+              <WrapPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Command="{Binding ViewCommand}" Classes="action-icon dashboard-document-action" Margin="0,0,6,0" Background="#122E7D32" BorderBrush="#C8E1C9" ToolTip.Tip="View"><TextBlock Text="visibility" Classes="action-icon-glyph" Foreground="#4CAF50"/></Button>
+                <Button Command="{Binding EditCommand}" Classes="action-icon dashboard-document-action" Margin="0,0,6,0" Background="#121E88E5" BorderBrush="#B8DCFF" ToolTip.Tip="Edit"><TextBlock Text="edit" Classes="action-icon-glyph" Foreground="#1E88E5"/></Button>
+                <Button Command="{Binding CloneCommand}" Classes="action-icon dashboard-document-action" Margin="0,0,6,0" Background="#120097A7" BorderBrush="#A8DFE5" ToolTip.Tip="Clone"><TextBlock Text="content_copy" Classes="action-icon-glyph" Foreground="#0097A7"/></Button>
+                <Button Command="{Binding PdfCommand}" Classes="action-icon dashboard-document-action" Margin="0,0,6,0" Background="#12FB8C00" BorderBrush="#FFD4A1" ToolTip.Tip="Preview PDF"><TextBlock Text="picture_as_pdf" Classes="action-icon-glyph" Foreground="#FB8C00"/></Button>
+                <Button Command="{Binding DownloadCommand}" Classes="action-icon dashboard-document-action" Margin="0,0,6,0" Background="#126D28D9" BorderBrush="#D1B8F2" ToolTip.Tip="Download PDF"><TextBlock Text="download" Classes="action-icon-glyph" Foreground="#6D28D9"/></Button>
+                <Button Command="{Binding PrintCommand}" Classes="action-icon dashboard-document-action" Margin="0,0,6,0" Background="#12607D8B" BorderBrush="#CCD6DC" ToolTip.Tip="Print"><TextBlock Text="print" Classes="action-icon-glyph" Foreground="#607D8B"/></Button>
+                <Button Command="{Binding PaymentCommand}" Classes="action-icon dashboard-document-action" Margin="0,0,6,0" Background="#129C27B0" BorderBrush="#E9B3EF" ToolTip.Tip="Record Payment"><TextBlock Text="payments" Classes="action-icon-glyph" Foreground="#C026D3"/></Button>
+                <Button Command="{Binding DeleteCommand}" Classes="action-icon dashboard-document-action" Background="#12F44336" BorderBrush="#FFBDC5" ToolTip.Tip="Delete"><TextBlock Text="delete" Classes="action-icon-glyph" Foreground="#F44336"/></Button>
+              </WrapPanel>
+            </StackPanel>
+          </Grid>
+        </Border>
+      </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+    </StackPanel>
+  </StackPanel>
+</UserControl>

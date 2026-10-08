@@ -1,5 +1,6 @@
 <UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="using:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.DashboardPageView"
              x:CompileBindings="False">
   <UserControl.Resources>
@@ -134,11 +135,20 @@
       </DataTemplate>
     </ResourceDictionary>
   </UserControl.Resources>
+  <UserControl.Styles>
+    <!-- Reference dimensions apply only to Default; alternative layouts retain the shared shell sizes. -->
+    <Style Selector="TextBlock#DashboardTitle"><Setter Property="HorizontalAlignment" Value="Left"/><Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector="StackPanel#DashboardContent"><Setter Property="Margin" Value="12.8"/></Style>
+    <Style Selector="Border#DashboardHeader.default"><Setter Property="Height" Value="56"/><Setter Property="MinHeight" Value="56"/></Style>
+    <Style Selector="Border#DashboardHeader.default TextBlock#DashboardTitle"><Setter Property="HorizontalAlignment" Value="Center"/><Setter Property="FontSize" Value="22"/><Setter Property="FontWeight" Value="Normal"/></Style>
+    <Style Selector="StackPanel#DashboardContent.default"><Setter Property="Margin" Value="28"/></Style>
+    <Style Selector="StackPanel#DashboardContent.default.compact"><Setter Property="Margin" Value="16"/></Style>
+  </UserControl.Styles>
 
   <Grid RowDefinitions="Auto,*">
-    <Border Classes="page-header">
+    <Border x:Name="DashboardHeader" Classes="page-header" Classes.default="{Binding IsDefaultLayout}">
       <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="30.4">
-        <TextBlock Grid.Column="1" loc:UiLocalization.Text="Dashboard Overview" Foreground="White" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Left" VerticalAlignment="Center" />
+        <TextBlock x:Name="DashboardTitle" Grid.ColumnSpan="3" loc:UiLocalization.Text="Dashboard Overview" Foreground="White" VerticalAlignment="Center" />
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6.4">
           <Button ToolTip.Tip="Dashboard layout" Classes="action-icon header-icon-action">
             <TextBlock loc:UiLocalization.Text="dashboard_customize" Classes="action-icon-glyph" Foreground="White" />
@@ -180,12 +190,12 @@
                     </Grid>
                   </MenuItem.Header>
                 </MenuItem>
-                <MenuItem Tag="Simple Feed" Command="{Binding SelectLayoutCommand}" CommandParameter="Simple Feed">
+                <MenuItem Tag="Simple" Command="{Binding SelectLayoutCommand}" CommandParameter="Simple">
                   <MenuItem.Header>
                     <Grid ColumnDefinitions="22,*,24" Width="170" Margin="2,4">
                       <TextBlock loc:UiLocalization.Text="view_list" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="16" Foreground="#6E6E6E" VerticalAlignment="Center" />
                       <StackPanel Grid.Column="1" Spacing="0.8">
-                        <TextBlock loc:UiLocalization.Text="Simple Feed" FontSize="13" Foreground="#1F1F29" />
+                        <TextBlock loc:UiLocalization.Text="Simple" FontSize="13" Foreground="#1F1F29" />
                         <TextBlock loc:UiLocalization.Text="Clean list view" FontSize="11" Foreground="#6E6E78" />
                       </StackPanel>
                       <TextBlock Grid.Column="2" Text="✓" FontSize="16" Foreground="#083B88" IsVisible="{Binding IsSimpleFeedLayout}" VerticalAlignment="Center" HorizontalAlignment="Right" />
@@ -204,8 +214,8 @@
 
     <Border Grid.Row="1" Background="{DynamicResource DashboardSurface}">
       <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-        <StackPanel x:Name="DashboardContent" Margin="12.8" Spacing="16" HorizontalAlignment="Stretch">
-          <Border CornerRadius="16" Padding="22.4,19.2" MinHeight="83.2" BoxShadow="0 8 22 0 #16000000">
+        <StackPanel x:Name="DashboardContent" Classes.default="{Binding IsDefaultLayout}" Classes.compact="{Binding IsCompact}" Spacing="16" HorizontalAlignment="Stretch">
+          <Border IsVisible="{Binding ShowHero}" CornerRadius="16" Padding="22.4,19.2" MinHeight="83.2" BoxShadow="0 8 22 0 #16000000">
             <Border.Background>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
                 <GradientStop Color="#1E293B" Offset="0" />
@@ -336,57 +346,7 @@
             </StackPanel>
           </Grid>
 
-          <StackPanel IsVisible="{Binding ShowDefaultFeed}">
-            <Grid ColumnDefinitions="4,12,*,Auto">
-              <Border Background="#0B4A9A" CornerRadius="3" Height="24" />
-              <TextBlock Grid.Column="2" loc:UiLocalization.Text="Recent Invoices" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
-              <TextBlock Grid.Column="3" loc:UiLocalization.Text="Last 5 invoices" FontSize="13" Foreground="{DynamicResource DashboardMuted}" VerticalAlignment="Center" />
-            </Grid>
-            <ItemsControl ItemsSource="{Binding RecentInvoices}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <Border Margin="0,18,0,0" Padding="12.8" CornerRadius="8" Background="{DynamicResource DashboardRecent}">
-                    <Grid ColumnDefinitions="54,16,*,Auto">
-                      <Border Width="38" Height="30.4" CornerRadius="9" Background="#0B4A9A" VerticalAlignment="Center"><TextBlock Text="{Binding Number}" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
-                      <StackPanel Grid.Column="2" Spacing="5.6">
-                        <StackPanel Orientation="Horizontal" Spacing="6.4"><TextBlock Text="{Binding InvoiceTitle}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" /><Border Padding="7.2,3.2" CornerRadius="4" Background="{DynamicResource AppCardBrush}" BorderBrush="#0B4A9A" BorderThickness="1"><TextBlock loc:UiLocalization.Text="Invoice" FontSize="12" Foreground="#0B4A9A" /></Border><Border Padding="7.2,3.2" CornerRadius="4" Background="{Binding StatusBackground}" BorderBrush="{Binding StatusBrush}" BorderThickness="1"><TextBlock Text="{Binding Status}" FontSize="12" Foreground="{Binding StatusBrush}" /></Border></StackPanel>
-                        <TextBlock Text="{Binding CustomerLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
-                        <TextBlock Text="{Binding DateLine}" FontSize="14" Foreground="{DynamicResource DashboardText}" />
-                      </StackPanel>
-                      <StackPanel Grid.Column="3" Spacing="8" HorizontalAlignment="Right">
-                        <Border Padding="14.4,8" CornerRadius="7" Background="{DynamicResource AppCardBrush}" HorizontalAlignment="Right">
-                          <TextBlock Text="{Binding TotalText}" FontSize="20" FontWeight="Bold" Foreground="#A21CAF" />
-                        </Border>
-                        <StackPanel Orientation="Horizontal" Spacing="5.6" HorizontalAlignment="Right">
-                          <Button Command="{Binding ViewCommand}" Classes="action-icon" Background="{DynamicResource AppCardBrush}" BorderBrush="#A5D6A7" ToolTip.Tip="View">
-                            <TextBlock loc:UiLocalization.Text="visibility" Classes="action-icon-glyph" Foreground="#4CAF50" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                          </Button>
-                          <Button Command="{Binding EditCommand}" Classes="action-icon" Background="{DynamicResource AppCardBrush}" BorderBrush="#90CAF9" ToolTip.Tip="Edit">
-                            <TextBlock loc:UiLocalization.Text="edit" Classes="action-icon-glyph" Foreground="#1E88E5" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                          </Button>
-                          <Button Command="{Binding CloneCommand}" Classes="action-icon" Background="{DynamicResource AppCardBrush}" BorderBrush="#80DEEA" ToolTip.Tip="Clone">
-                            <TextBlock loc:UiLocalization.Text="content_copy" Classes="action-icon-glyph" Foreground="#0097A7" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                          </Button>
-                          <Button Command="{Binding PdfCommand}" Classes="action-icon" Background="{DynamicResource AppCardBrush}" BorderBrush="#FFCC80" ToolTip.Tip="Preview PDF">
-                            <TextBlock loc:UiLocalization.Text="picture_as_pdf" Classes="action-icon-glyph" Foreground="#FB8C00" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                          </Button>
-                          <Button Command="{Binding PrintCommand}" Classes="action-icon" Background="{DynamicResource AppCardBrush}" BorderBrush="#CFD8DC" ToolTip.Tip="Print">
-                            <TextBlock loc:UiLocalization.Text="print" Classes="action-icon-glyph" Foreground="#607D8B" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                          </Button>
-                          <Button Command="{Binding PaymentCommand}" Classes="action-icon" Background="{DynamicResource AppCardBrush}" BorderBrush="#CE93D8" ToolTip.Tip="Record Payment">
-                            <TextBlock loc:UiLocalization.Text="account_balance_wallet" Classes="action-icon-glyph" Foreground="#9C27B0" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                          </Button>
-                          <Button Command="{Binding DeleteCommand}" Classes="action-icon" Background="{DynamicResource AppCardBrush}" BorderBrush="#EF9A9A" ToolTip.Tip="Delete">
-                            <TextBlock loc:UiLocalization.Text="delete" Classes="action-icon-glyph" Foreground="#F44336" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                          </Button>
-                        </StackPanel>
-                      </StackPanel>
-                    </Grid>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </StackPanel>
+          <views:DashboardDefaultView IsVisible="{Binding ShowDefaultFeed}"/>
 
           <TextBlock loc:UiLocalization.Text="No invoices yet" IsVisible="{Binding HasNoInvoices}" Foreground="{DynamicResource DashboardMuted}" HorizontalAlignment="Center" FontSize="14" />
         </StackPanel>
