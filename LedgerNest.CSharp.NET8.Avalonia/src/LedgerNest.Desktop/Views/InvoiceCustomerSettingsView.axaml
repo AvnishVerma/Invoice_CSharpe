@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" xmlns:shared="using:LedgerNest.Desktop.Views"
+             x:Class="LedgerNest.Desktop.Views.InvoiceCustomerSettingsView" x:DataType="vm:InvoiceCustomerSettingsViewModel">
+  <StackPanel Spacing="16">
+    <shared:MasterCodeSettingsView DataContext="{Binding CodeSettings}" Margin="0,0,0,12"/>
+    <TextBlock Text="Choose which customer details print on invoice PDFs and thermal receipts. A field only shows when it's enabled and the customer has a value for it. Customer name is always shown." FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/>
+    <shared:InvoiceToggleSettingView Field="{Binding BusinessName}" Title="Show Business Name" Help="Print the customer's business name under their name" Icon="business"/>
+    <shared:InvoiceToggleSettingView Field="{Binding Address}" Title="Show Address" Help="Print the customer's address in the Bill To block" Icon="location_on"/>
+    <shared:InvoiceToggleSettingView Field="{Binding Phone}" Title="Show Phone" Help="Print the customer's phone number" Icon="phone"/>
+    <shared:InvoiceToggleSettingView Field="{Binding Email}" Title="Show Email" Help="Print the customer's email address (not shown on thermal receipts)" Icon="email"/>
+    <shared:InvoiceToggleSettingView Field="{Binding Gstin}" Title="Show GSTIN / Tax ID" Help="Print the customer's GSTIN / tax id (requires GST fields on)" Icon="badge"/>
+  </StackPanel>
+</UserControl>

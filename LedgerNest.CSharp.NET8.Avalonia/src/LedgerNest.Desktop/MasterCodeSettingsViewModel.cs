@@ -41,6 +41,7 @@ public sealed partial class MasterCodeSettingsViewModel : ObservableObject
     private readonly AutoCodeGenerator? generator;
     private readonly bool loadingFailed;
     public ObservableCollection<CodeConfigurationViewModel> Configurations { get; } = [];
+    public string SectionTitle => Configurations.Count == 1 ? Configurations[0].Title.ToUpperInvariant() : "CUSTOMER & PRODUCT CODES";
     [ObservableProperty] private string error = "";
     public bool CanSave
     {
@@ -50,13 +51,14 @@ public sealed partial class MasterCodeSettingsViewModel : ObservableObject
             catch (Exception ex) when (ex is DbException or InvalidOperationException or IOException) { return false; }
         }
     }
-    public MasterCodeSettingsViewModel(MainWindowViewModel workspace, AutoCodeGenerator? generator)
+    public MasterCodeSettingsViewModel(MainWindowViewModel workspace, AutoCodeGenerator? generator, string? entity = null)
     {
         this.workspace = workspace; this.generator = generator;
-        foreach (var entity in new[] { "Customer", "Product" })
+        if (entity != null && entity is not ("Customer" or "Product")) throw new ArgumentException("Select Customer or Product code settings.", nameof(entity));
+        foreach (var codeEntity in entity == null ? new[] { "Customer", "Product" } : new[] { entity })
         {
-            try { Configurations.Add(new(entity, generator?.Load(entity) ?? new AutoCodeSettings(entity == "Customer" ? "CUST" : "PROD"))); }
-            catch (Exception ex) { loadingFailed = true; Error = "Code settings could not load: " + ex.Message; Configurations.Add(new(entity, new AutoCodeSettings(entity == "Customer" ? "CUST" : "PROD"))); }
+            try { Configurations.Add(new(codeEntity, generator?.Load(codeEntity) ?? new AutoCodeSettings(codeEntity == "Customer" ? "CUST" : "PROD"))); }
+            catch (Exception ex) { loadingFailed = true; Error = "Code settings could not load: " + ex.Message; Configurations.Add(new(codeEntity, new AutoCodeSettings(codeEntity == "Customer" ? "CUST" : "PROD"))); }
         }
     }
     [RelayCommand] private void Save()
@@ -67,7 +69,7 @@ public sealed partial class MasterCodeSettingsViewModel : ObservableObject
             if (generator == null) throw new InvalidOperationException("Connect a database before saving code settings.");
             generator.SaveSettings(Configurations.ToDictionary(item => item.Entity, item => item.Configuration()), workspace.CurrentUsername ?? "");
             foreach (var item in Configurations) item.NextNumber = generator.Load(item.Entity).NextNumber;
-            Error = ""; workspace.Status = "Customer and product code settings saved.";
+            Error = ""; workspace.Status = Configurations.Count == 1 ? Configurations[0].Title + " settings saved." : "Customer and product code settings saved.";
         }
         catch (Exception ex) { Error = ex.Message; workspace.Status = "Code settings could not save: " + ex.Message; }
     }
@@ -75,5 +77,5 @@ public sealed partial class MasterCodeSettingsViewModel : ObservableObject
 
 public partial class MainWindowViewModel
 {
-    public MasterCodeSettingsViewModel CreateMasterCodeSettings() => new(this, dbFactory == null ? null : new AutoCodeGenerator(dbFactory));
+    public MasterCodeSettingsViewModel CreateMasterCodeSettings(string? entity = null) => new(this, dbFactory == null ? null : new AutoCodeGenerator(dbFactory), entity);
 }

@@ -27,6 +27,7 @@
         </Border>
         <ScrollViewer Grid.Column="1">
           <StackPanel Margin="28" MaxWidth="900" HorizontalAlignment="Left">
+            <shared:MasterCodeSettingsView DataContext="{Binding CodeSettings}" Margin="0,0,0,20"/>
             <TextBlock Text="Choose which fields appear on product forms, lists, and invoice line items." Foreground="{DynamicResource AppMutedBrush}" Margin="0,0,0,12" />
             <ItemsControl ItemsSource="{Binding RequiredFields}" ItemTemplate="{StaticResource FieldRow}" />
             <TextBlock Text="Product fields" FontWeight="SemiBold" Margin="0,10,0,6" />

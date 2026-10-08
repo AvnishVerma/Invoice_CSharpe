@@ -128,7 +128,6 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
             <Button Content="＋ Add Bank Account" Command="{Binding AddBankCommand}" Classes="text" HorizontalAlignment="Left" />
-            <shared:MasterCodeSettingsView DataContext="{Binding CodeSettings}"/>
           </StackPanel>
         </ScrollViewer>
       </Grid>

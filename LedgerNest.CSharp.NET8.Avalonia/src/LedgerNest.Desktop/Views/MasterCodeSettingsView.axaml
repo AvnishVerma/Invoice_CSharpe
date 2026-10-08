@@ -2,7 +2,7 @@
              xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.MasterCodeSettingsView" x:DataType="vm:MasterCodeSettingsViewModel">
   <StackPanel Spacing="12">
-    <TextBlock Text="CUSTOMER &amp; PRODUCT CODES" Classes="section-label"/>
+    <TextBlock Text="{Binding SectionTitle}" Classes="section-label"/>
     <ItemsControl ItemsSource="{Binding Configurations}">
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:CodeConfigurationViewModel">

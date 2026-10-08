@@ -14,10 +14,12 @@ public sealed class ProductDetailsSettingsViewModel
     public ObservableCollection<ProductFieldOption> InvoiceFields { get; } = [];
     public FormField MetadataMaster { get; }
     public IRelayCommand SaveCommand { get; }
+    public MasterCodeSettingsViewModel CodeSettings { get; }
 
     public ProductDetailsSettingsViewModel(MainWindowViewModel model)
     {
         this.model = model;
+        CodeSettings = model.CreateMasterCodeSettings("Product");
         ProductFieldOption Option(string key, string title, string help, string icon, bool required = false)
         {
             var field = model.ProductSetting(key);

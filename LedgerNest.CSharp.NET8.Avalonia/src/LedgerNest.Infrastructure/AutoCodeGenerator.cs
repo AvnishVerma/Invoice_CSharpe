@@ -99,7 +99,7 @@ public sealed class AutoCodeGenerator(IDbContextFactory<LedgerNestDbContext> fac
                     var generated = sourceId == 0 && code.Length == 0;
                     if (generated)
                     {
-                        if (!configuration.AutoGenerate) throw new InvalidOperationException("Enter a code or enable automatic code generation in Company Information settings.");
+                        if (!configuration.AutoGenerate) throw new InvalidOperationException("Enter a code or enable automatic code generation in " + (entity == "Customer" ? "Invoice Settings → Customer Details." : "Product Details settings."));
                         if (configuration.NextNumber >= long.MaxValue - 1) throw new InvalidOperationException("Code numbers are exhausted. Choose another prefix and next number.");
                         code = AutoCodeRules.Format(configuration.Prefix, configuration.NextNumber, configuration.LeadingZeros);
                     }

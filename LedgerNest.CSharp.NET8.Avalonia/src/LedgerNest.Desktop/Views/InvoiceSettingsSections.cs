@@ -17,14 +17,7 @@ public partial class MainWindow
         InvoiceToggle(Model.InvoiceSetting("Allow Duplicate Items"), "Allow Duplicate Invoice Items", "Allow adding the same product more than once to an invoice", "content_copy"),
         InvoiceToggle(Model.InvoiceSetting("Show Previous Balance"), "Show Previous Balance Due", "Show calculated prior outstanding balance on invoice PDFs", "account_balance_wallet"));
 
-    private Control InvoiceCustomerSettings() => Ui.Stack(16,
-        Ui.LocalText("Choose which customer details print on invoice PDFs and thermal receipts. A field only shows when it's enabled and the customer has a value for it. Customer name is always shown.", 13, color: Ui.Muted),
-        new Border { Height = 4 },
-        InvoiceToggle(Model.InvoiceSetting("Show Customer Business Name"), "Show Business Name", "Print the customer's business name under their name", "business"),
-        InvoiceToggle(Model.InvoiceSetting("Show Customer Address"), "Show Address", "Print the customer's address in the Bill To block", "location_on"),
-        InvoiceToggle(Model.InvoiceSetting("Show Customer Phone"), "Show Phone", "Print the customer's phone number", "phone"),
-        InvoiceToggle(Model.InvoiceSetting("Show Customer Email"), "Show Email", "Print the customer's email address (not shown on thermal receipts)", "email"),
-        InvoiceToggle(Model.InvoiceSetting("Show Customer GSTIN"), "Show GSTIN / Tax ID", "Print the customer's GSTIN / tax id (requires GST fields on)", "badge"));
+    private Control InvoiceCustomerSettings() => new InvoiceCustomerSettingsView { DataContext = new InvoiceCustomerSettingsViewModel(Model) };
 
     private Control InvoiceColumnSettings()
     {
