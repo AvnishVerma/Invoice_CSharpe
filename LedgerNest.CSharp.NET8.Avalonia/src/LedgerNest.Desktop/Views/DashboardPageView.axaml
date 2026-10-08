@@ -87,11 +87,20 @@
               <TextBlock Grid.Column="1" loc:UiLocalization.Text="Out of Stock" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" />
               <Border Grid.Column="2" Width="22" Height="17.6" CornerRadius="11" Background="{DynamicResource AppCardBrush}"><TextBlock Text="{Binding OutOfStockCount}" FontSize="11" Foreground="#F44336" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
             </Grid>
-            <Grid ColumnDefinitions="*,Auto,8,Auto">
-              <TextBlock Text="{Binding OutOfStockProduct}" FontSize="12" Foreground="{DynamicResource DashboardText}" />
-              <TextBlock Grid.Column="1" loc:UiLocalization.Text="0 left" FontSize="12" Foreground="#F44336" />
-              <Border Grid.Column="3" Padding="7.2,3.2" CornerRadius="7" Background="{DynamicResource AppCardBrush}"><TextBlock loc:UiLocalization.Text="+ Stock" FontSize="11" Foreground="#2E7D32" /></Border>
-            </Grid>
+            <ItemsControl ItemsSource="{Binding OutOfStockProducts}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="*,Auto,8,Auto" Margin="0,3">
+                    <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{DynamicResource DashboardText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="1" Text="{Binding StockLeft}" FontSize="12" Foreground="#F44336" VerticalAlignment="Center" />
+                    <Button Grid.Column="3" Classes="action outline" Command="{Binding RestockCommand}" ToolTip.Tip="Restock" Background="#E8F5E9" Foreground="#2E7D32" BorderThickness="0">
+                      <StackPanel Orientation="Horizontal" Spacing="4"><TextBlock Text="add_box" Classes="action-icon-glyph" /><TextBlock loc:UiLocalization.Text="Stock" FontSize="11" /></StackPanel>
+                    </Button>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock loc:UiLocalization.Text="No products are out of stock" IsVisible="{Binding HasNoOutOfStock}" FontSize="12" Foreground="{DynamicResource DashboardMuted}" />
           </StackPanel>
         </Border>
       </DataTemplate>

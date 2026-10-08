@@ -10,6 +10,7 @@ public partial class MainWindow
     // Performs the dashboard action by preparing dashboard data and loading the XAML dashboard view.
     private Control Dashboard()
     {
+        var stockRecords = Model.GetDashboardStockProducts();
         var invoices = Model.ActiveInvoices.OrderByDescending(i => i["Date"]).ThenByDescending(i => i.SourceId).ToArray();
         var paid = Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Paid"], out var n) ? n : 0);
         var outstanding = Model.ActiveInvoices.Sum(i => decimal.TryParse(i["Outstanding"], out var n) ? n : decimal.TryParse(i["Total"], out var total) ? total : 0);
@@ -62,10 +63,10 @@ public partial class MainWindow
             .Select(p => new DashboardSummaryLineModel(p.Name, ProductUnits(p), Initial(p.Name)))
             .DefaultIfEmpty(new DashboardSummaryLineModel("No products yet", "0 units", "—"))
             .ToArray();
-        var outOfStock = Model.Products.FirstOrDefault(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
-        var outOfStockCount = Model.Products.Count(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0);
+        var outOfStock = stockRecords.FirstOrDefault();
+        var outOfStockCount = stockRecords.Length;
 
-        var stockProducts = Model.Products.Where(p => !HasUnlimitedStock(p) && decimal.TryParse(p["Stock"], out var stock) && stock <= 0)
+        var stockProducts = stockRecords
             .Select(product => new DashboardStockModel(product.Name, product["Type"], CurrencyDisplay.Format(decimal.TryParse(product["Sale Price"], out var price) ? price : 0),
                 "Stock: " + product["Stock"], new RelayCommand(() =>
                 {

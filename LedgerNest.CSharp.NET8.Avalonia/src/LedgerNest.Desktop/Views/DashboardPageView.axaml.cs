@@ -67,7 +67,7 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
     public int SummaryColumns => ViewportWidth >= 1000 ? 5 : ViewportWidth >= 700 ? 3 : ViewportWidth >= 450 ? 2 : 1;
     public string CollectedText { get; }
     public string OutstandingText { get; }
-    public string OutOfStockCount { get; }
+    public string OutOfStockCount => OutOfStockProducts.Count.ToString();
     public string OutOfStockProduct { get; }
     public string Username { get; }
     public bool IsDefaultLayout => Layout == "Default";
@@ -139,7 +139,6 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
         foreach (var product in topProducts) TopProducts.Add(product);
         CollectedText = collectedText;
         OutstandingText = outstandingText;
-        OutOfStockCount = outOfStockCount;
         OutOfStockProduct = outOfStockProduct;
         Username = string.IsNullOrWhiteSpace(username) ? "User" : username.Trim();
         RefreshCommand = new RelayCommand(refresh);
@@ -148,6 +147,12 @@ public sealed class DashboardPageModel : INotifyPropertyChanged
         var date = today ?? DateTime.Today;
         DayText = date.ToString("dddd", CultureInfo.CurrentCulture);
         DateText = date.ToString("MMM d, yyyy", CultureInfo.CurrentCulture);
+        OutOfStockProducts.CollectionChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(OutOfStockCount)); OnPropertyChanged(nameof(OutOfStockCaption)); OnPropertyChanged(nameof(HasNoOutOfStock));
+            var tile = DefaultTiles.FirstOrDefault(item => item.Label == "Products");
+            if (tile != null) DefaultTiles[DefaultTiles.IndexOf(tile)] = tile with { Warning = HasNoOutOfStock ? "" : OutOfStockCount + " out of stock" };
+        };
     }
 
     // Performs the dashboard layout selection action for this screen or workflow.
@@ -170,7 +175,10 @@ public sealed record DashboardTileModel(string Label, string Value, string Icon,
     public bool HasWarning => Warning.Length > 0;
 }
 
-public sealed record DashboardStockModel(string Name, string Type, string Price, string Stock, ICommand RestockCommand);
+public sealed record DashboardStockModel(string Name, string Type, string Price, string Stock, ICommand RestockCommand)
+{
+    public string StockLeft => (Stock.StartsWith("Stock: ", StringComparison.Ordinal) ? Stock[7..] : Stock) + " left";
+}
 
 // Describes one quick action row rendered by the dashboard AXAML template.
 public sealed record DashboardQuickActionModel(string Label, string Icon, IBrush Accent, IBrush IconBackground, ICommand Command);

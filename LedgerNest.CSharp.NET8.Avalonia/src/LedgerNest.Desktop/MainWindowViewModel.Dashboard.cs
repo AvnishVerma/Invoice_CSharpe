@@ -8,6 +8,21 @@ public partial class MainWindowViewModel
 {
     [ObservableProperty] private string dashboardLayout = "default";
 
+    public UiRecord[] GetDashboardStockProducts()
+    {
+        if (dbFactory == null) return Products.Where(product =>
+            !(bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited)
+            && decimal.TryParse(product["Stock"], out var stock) && stock <= 0).ToArray();
+        using var db = dbFactory.CreateDbContext();
+        return db.Products.AsNoTracking().Where(product => !product.UnlimitedStock && product.StockQuantity <= 0)
+            .OrderBy(product => product.Name).ToArray().Select(product => new UiRecord
+            {
+                SourceId = product.Id,
+                Values = new() { ["Name"] = product.Name, ["Type"] = product.Type,
+                    ["Sale Price"] = product.SalePrice.ToString("0.##"), ["Stock"] = product.StockQuantity.ToString("0.###") }
+            }).ToArray();
+    }
+
     public bool SetDashboardLayout(string value)
     {
         var selected = DashboardLayoutRules.Parse(value);
