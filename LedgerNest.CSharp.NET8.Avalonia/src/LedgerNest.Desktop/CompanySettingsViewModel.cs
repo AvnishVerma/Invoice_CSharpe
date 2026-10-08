@@ -22,6 +22,7 @@ public sealed partial class CompanySettingsViewModel : ObservableObject, IDispos
     public FormField BusinessType { get; }
     public FormField ShowQr { get; }
     public FormField ShowBank { get; }
+    public MasterCodeSettingsViewModel CodeSettings { get; }
     public ObservableCollection<FormField[]> UpiAccounts => model.UpiAccounts;
     public ObservableCollection<FormField[]> BankAccounts => model.BankAccounts;
     public string[] Languages => UiLocalization.Languages;
@@ -37,6 +38,7 @@ public sealed partial class CompanySettingsViewModel : ObservableObject, IDispos
     public CompanySettingsViewModel(MainWindowViewModel model)
     {
         this.model = model;
+        CodeSettings = model.CreateMasterCodeSettings();
         var sections = model.Settings["Company Info"];
         LogoValue = sections[0].Fields[0]; LogoPosition = sections[0].Fields[1];
         FormField Field(string label) => sections.SelectMany(section => section.Fields).Single(field => field.Label == label);

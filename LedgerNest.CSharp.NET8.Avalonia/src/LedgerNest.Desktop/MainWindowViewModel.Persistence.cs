@@ -214,8 +214,27 @@ public partial class MainWindowViewModel
     private int SaveRecordToDatabase(string kind, Dictionary<string, string> values, int sourceId)
     {
         if (dbFactory == null) return sourceId;
+        if (kind is "Customer" or "Product")
+        {
+            var codeKey = kind + " ID";
+            try
+            {
+                return new AutoCodeGenerator(dbFactory).SaveRecord(kind, values.GetValueOrDefault(codeKey, ""), sourceId, CurrentUsername ?? "", (context, code) =>
+                {
+                    values[codeKey] = code;
+                    return SaveRecordInContext(context, kind, values, sourceId);
+                });
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or DbUpdateException or SqliteException or UnauthorizedAccessException)
+            { Status = ex.Message; return -1; }
+        }
         using var db = dbFactory.CreateDbContext();
         db.EnsureCurrentSchema();
+        return SaveRecordInContext(db, kind, values, sourceId);
+    }
+
+    private int SaveRecordInContext(LedgerNestDbContext db, string kind, Dictionary<string, string> values, int sourceId)
+    {
 
         if (kind == "Customer")
         {
@@ -226,10 +245,8 @@ public partial class MainWindowViewModel
             { Status = "Phone number is already assigned to another customer. Select that customer instead."; return -1; }
             var customerCode = values.GetValueOrDefault("Customer ID", "").Trim();
             if (customer.Id > 0 && customerCode.Length == 0) customerCode = customer.CustomerCode ?? "";
-            if (customer.Id == 0 && customerCode.Length == 0)
-                customerCode = new NumberSeriesService(dbFactory).ReserveAsync("Customer", "CUS", 1, 1, 6).GetAwaiter().GetResult();
-            if (db.Customers.Any(item => item.Id != sourceId && item.CustomerCode == customerCode)) { Status = "Customer ID is already in use."; return -1; }
-            customer.CustomerCode = customerCode;
+            if (customerCode.Length > 0 && db.Customers.Any(item => item.Id != sourceId && item.CustomerCode == customerCode)) { Status = "Customer ID is already in use."; return -1; }
+            if (customerCode.Length > 0) customer.CustomerCode = customerCode;
             customer.Name = values.GetValueOrDefault("Name", "");
             customer.BusinessName = values.GetValueOrDefault("Business Name", "");
             customer.Phone = values.GetValueOrDefault("Phone");
@@ -243,12 +260,11 @@ public partial class MainWindowViewModel
 
         if (kind == "Product")
         {
-            var product = sourceId > 0 ? db.Products.Find(sourceId) ?? new Product() : new Product();
+            var product = sourceId > 0 ? db.Products.Find(sourceId) : new Product();
+            if (product == null) { Status = "Product no longer exists."; return -1; }
             var productCode = values.GetValueOrDefault("Product ID", "").Trim();
-            if (product.Id == 0 && productCode.Length == 0)
-                productCode = new NumberSeriesService(dbFactory).ReserveAsync("Product", "PRD", 1, 1, 6).GetAwaiter().GetResult();
-            if (db.Products.Any(item => item.Id != sourceId && item.ProductCode == productCode)) { Status = "Product ID is already in use."; return -1; }
-            product.ProductCode = productCode;
+            if (productCode.Length > 0 && db.Products.Any(item => item.Id != sourceId && item.ProductCode == productCode)) { Status = "Product ID is already in use."; return -1; }
+            if (productCode.Length > 0) product.ProductCode = productCode;
             product.Barcode = values.GetValueOrDefault("Barcode");
             product.Name = values.GetValueOrDefault("Name", "");
             product.Code = values.GetValueOrDefault("SKU Code");

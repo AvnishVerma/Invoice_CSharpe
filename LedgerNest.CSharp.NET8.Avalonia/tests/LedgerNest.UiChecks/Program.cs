@@ -519,6 +519,23 @@ internal static class Program
     [STAThread]
     internal static void Main(string[] args)
     {
+        if (args.FirstOrDefault() == "--auto-code-worker")
+        {
+            var factory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={args[1]};Pooling=False").Options);
+            var entity = args[2];
+            for (var index = 0; index < int.Parse(args[3]); index++)
+                new AutoCodeGenerator(factory).SaveRecord(entity, "", 0, "admin", (db, code) =>
+                {
+                    if (entity == "Customer")
+                    {
+                        var customer = new LedgerNest.Domain.Customer { Name = code, CustomerCode = code };
+                        db.Customers.Add(customer); db.SaveChanges(); return customer.Id;
+                    }
+                    var product = new LedgerNest.Domain.Product { Name = code, ProductCode = code };
+                    db.Products.Add(product); db.SaveChanges(); return product.Id;
+                });
+            return;
+        }
         var output = args.FirstOrDefault() ?? "/tmp/invoiso-ui-captures";
         Directory.CreateDirectory(output);
         var pdfSettingsOnly = args.Contains("--pdf-settings-only");

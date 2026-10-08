@@ -52,6 +52,13 @@ public partial class MainWindowViewModel
         }
         var sourceId = SaveRecordToDatabase(kind, databaseValues, original?.SourceId ?? 0);
         if (sourceId < 0) return false;
+        if (kind is "Customer" or "Product")
+        {
+            var codeKey = kind + " ID";
+            values[codeKey] = databaseValues.GetValueOrDefault(codeKey, "");
+            var codeField = fields.FirstOrDefault(field => field.Label == codeKey);
+            if (codeField != null) codeField.Value = values[codeKey];
+        }
         var record = new UiRecord { SourceId = sourceId, Values = values };
         if (original != null) records[records.IndexOf(original)] = record; else records.Add(record);
         if (kind == "User") PermissionManagement.RefreshUsers();
