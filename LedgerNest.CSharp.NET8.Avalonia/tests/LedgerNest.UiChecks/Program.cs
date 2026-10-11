@@ -981,9 +981,13 @@ internal static class Program
               window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Test operation failed."),
             "Error status messages must render as dismissible error toasts");
         Click("×");
+        NavigateForCapture("Dashboard");
         var layoutButton = window.GetVisualDescendants().OfType<Button>().Single(b => b.Flyout is MenuFlyout menu && menu.Items.OfType<MenuItem>().Any(i => i.Tag?.ToString() == "Bento"));
         Check(layoutButton.IsEnabled, "Issue 5: dashboard layout selector must be enabled");
-        ((MenuFlyout)layoutButton.Flyout!).Items.OfType<MenuItem>().Single(i => i.Tag?.ToString() == "Simple Feed").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle();
+        layoutButton.Flyout!.ShowAt(layoutButton); Settle();
+        var simpleLayout = ((MenuFlyout)layoutButton.Flyout!).Items.OfType<MenuItem>().Single(i => i.Tag?.ToString() == "Simple");
+        simpleLayout.Command!.Execute(simpleLayout.CommandParameter); Settle();
+        layoutButton.Flyout.Hide(); Settle();
         Capture("issue-05-simple-feed");
         foreach (var route in MainWindowViewModel.Routes) { NavigateForCapture(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
@@ -1064,9 +1068,9 @@ internal static class Program
                 {
                     NavigateForCapture(route); Capture($"compact-{route.Replace(" ", "-")}-{width}");
                     var headerBand = window.GetVisualDescendants().OfType<Border>().First(b => b.IsEffectivelyVisible && b.Background is Avalonia.Media.ISolidColorBrush headerBrush && headerBrush.Color == Avalonia.Media.Color.Parse(Branding.HeaderColor));
-                    var referenceDashboard = route == "Dashboard" && model.DashboardLayout == "default";
-                    Check(Math.Abs(headerBand.Bounds.Height - (referenceDashboard ? 56 : 44.8)) < 1, "Header height must follow the shared shell or requested Default Dashboard reference on " + route);
+                    Check(Math.Abs(headerBand.Bounds.Height - 44.8) < 1, "Header height must follow the shared header on " + route);
                     Check(headerBand.Classes.Contains("page-header"), "Every route must use the shared page-header AXAML style on " + route);
+                    Check(headerBand.GetVisualAncestors().OfType<PageHeaderView>().Count() == 1, "Every route must use the shared header control on " + route);
                     Check(!headerBand.GetVisualAncestors().OfType<ScrollViewer>().Any(), "Page headers must remain outside scrolling content on " + route);
                     if (route == "Dashboard")
                     {

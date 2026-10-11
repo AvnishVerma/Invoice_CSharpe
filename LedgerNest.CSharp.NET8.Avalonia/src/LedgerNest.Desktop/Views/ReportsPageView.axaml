@@ -1,4 +1,4 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:shared="using:LedgerNest.Desktop.Views" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.ReportsPageView"
@@ -7,14 +7,9 @@
     <local:ReportTabIconConverter x:Key="ReportTabIconConverter" />
   </UserControl.Resources>
   <Grid RowDefinitions="Auto,Auto,*">
-    <Border Classes="page-header">
-      <Grid ColumnDefinitions="*,Auto" MinHeight="30.4">
-        <TextBlock loc:UiLocalization.Text="Reports" Classes="page-header-title" HorizontalAlignment="Left" />
-        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh" Classes="action-icon header-icon-action">
+    <shared:PageHeaderView Title="Reports"><shared:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="12"><Button Tag="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh" Classes="action-icon header-icon-action">
           <TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White" />
-        </Button>
-      </Grid>
-    </Border>
+        </Button></StackPanel></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
 
     <Border Grid.Row="1" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="6.4,4.8">
       <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">

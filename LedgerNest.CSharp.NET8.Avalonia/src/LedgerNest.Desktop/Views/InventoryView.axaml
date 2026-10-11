@@ -1,13 +1,8 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<UserControl xmlns:shared="using:LedgerNest.Desktop.Views" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.InventoryView"
              x:DataType="vm:InventoryViewModel">
   <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppBackgroundBrush}">
-    <Border Classes="page-header">
-      <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Text="Inventory Management" Classes="page-header-title"/>
-        <Button Grid.Column="1" Tag="Refresh" Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh"><TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White"/></Button>
-      </Grid>
-    </Border>
+    <shared:PageHeaderView Title="Inventory Management"><shared:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="12"><Button Tag="Refresh" Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh"><TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White"/></Button></StackPanel></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
     <Grid Grid.Row="1" ColumnDefinitions="340,12,*" Margin="{DynamicResource PageContentPadding}">
       <Border Padding="16" CornerRadius="14" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
         <StackPanel Spacing="12">

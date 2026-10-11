@@ -1,26 +1,8 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:shared="using:LedgerNest.Desktop.Views" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.InvoiceCreatedView">
   <Grid RowDefinitions="Auto,*">
-    <Border Classes="page-header">
-      <Grid ColumnDefinitions="*,Auto,*">
-        <TextBlock loc:UiLocalization.Text="Invoice Created"
-                   Foreground="White"
-                   FontSize="20"
-                   VerticalAlignment="Center" />
-        <TextBlock x:Name="DateText"
-                   Grid.Column="1"
-                   Foreground="White"
-                   FontSize="20"
-                   VerticalAlignment="Center" />
-        <TextBlock x:Name="InvoiceNumberText"
-                   Grid.Column="2"
-                   Foreground="White"
-                   FontSize="16"
-                   HorizontalAlignment="Right"
-                   VerticalAlignment="Center" />
-      </Grid>
-    </Border>
+    <shared:PageHeaderView Title="Invoice Created"><shared:PageHeaderView.CenterContent><TextBlock x:Name="DateText" Foreground="White" FontSize="20" VerticalAlignment="Center" /></shared:PageHeaderView.CenterContent><shared:PageHeaderView.HeaderActions><TextBlock x:Name="InvoiceNumberText" Foreground="White" FontSize="16" VerticalAlignment="Center" /></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
 
     <Grid Grid.Row="1"
           Background="{DynamicResource AppCanvasBrush}">

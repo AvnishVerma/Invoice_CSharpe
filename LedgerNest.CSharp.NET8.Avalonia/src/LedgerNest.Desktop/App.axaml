@@ -87,7 +87,7 @@
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
-    <Style Selector="Button.action-icon">
+    <Style Selector=":is(Button).action-icon">
       <Setter Property="Width" Value="{DynamicResource ActionIconButtonSize}" />
       <Setter Property="Height" Value="{DynamicResource ActionIconButtonSize}" />
       <Setter Property="MinWidth" Value="{DynamicResource ActionIconButtonSize}" />

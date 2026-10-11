@@ -146,19 +146,13 @@
   </UserControl.Resources>
   <UserControl.Styles>
     <!-- Reference dimensions apply only to Default; alternative layouts retain the shared shell sizes. -->
-    <Style Selector="TextBlock#DashboardTitle"><Setter Property="HorizontalAlignment" Value="Left"/><Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
     <Style Selector="StackPanel#DashboardContent"><Setter Property="Margin" Value="12.8"/></Style>
-    <Style Selector="Border#DashboardHeader.default"><Setter Property="Height" Value="56"/><Setter Property="MinHeight" Value="56"/></Style>
-    <Style Selector="Border#DashboardHeader.default TextBlock#DashboardTitle"><Setter Property="HorizontalAlignment" Value="Center"/><Setter Property="FontSize" Value="22"/><Setter Property="FontWeight" Value="Normal"/></Style>
     <Style Selector="StackPanel#DashboardContent.default"><Setter Property="Margin" Value="28"/></Style>
     <Style Selector="StackPanel#DashboardContent.default.compact"><Setter Property="Margin" Value="16"/></Style>
   </UserControl.Styles>
 
   <Grid RowDefinitions="Auto,*">
-    <Border x:Name="DashboardHeader" Classes="page-header" Classes.default="{Binding IsDefaultLayout}">
-      <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="30.4">
-        <TextBlock x:Name="DashboardTitle" Grid.ColumnSpan="3" loc:UiLocalization.Text="Dashboard Overview" Foreground="White" VerticalAlignment="Center" />
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6.4">
+    <views:PageHeaderView x:Name="DashboardHeader" Title="Dashboard Overview" CenterTitle="{Binding IsDefaultLayout}"><views:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="6.4">
           <Button ToolTip.Tip="Dashboard layout" Classes="action-icon header-icon-action">
             <TextBlock loc:UiLocalization.Text="dashboard_customize" Classes="action-icon-glyph" Foreground="White" />
             <Button.Flyout>
@@ -217,9 +211,7 @@
           <Button Tag="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh" Classes="action-icon header-icon-action">
             <TextBlock loc:UiLocalization.Text="refresh" Classes="action-icon-glyph" Foreground="White" />
           </Button>
-        </StackPanel>
-      </Grid>
-    </Border>
+        </StackPanel></views:PageHeaderView.HeaderActions></views:PageHeaderView>
 
     <Border Grid.Row="1" Background="{DynamicResource DashboardSurface}">
       <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">

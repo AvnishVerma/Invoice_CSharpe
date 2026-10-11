@@ -137,3 +137,12 @@ Baseline: full solution build passed with zero warnings/errors; 326 of 327 autom
 - Full solution build passed with zero warnings/errors. Nine focused settings/reference UI tests passed, including a rollback failure test and responsive invoice captures at 1366, 1000 and 800 pixels.
 - Existing None discount mode and bank/custom-number controls remain for backward compatibility. This batch does not complete the remaining project-wide C# UI migration.
 - Final navigation/session/customer/company/Dashboard regression: 103 passed. Invoice-editor headless workflow checks: 114 assertions passed after updating the legacy assertion to Avalonia's effective command-enabled state.
+
+## 2026-10-11 — One shared page header
+- Migrated Dashboard, Create Invoice, Invoice Created, Inventory, Units, Prices and Reports to PageHeaderView; no view outside that component defines the page-header band/title.
+- Added AXAML center-content/title alignment slots; preserved commands, permissions, invoice date/number and Dashboard alignment.
+- Removed Dashboard-only height/title overrides. All pages inherit PageHeaderHeight 44.8, PageHeaderPadding and common title styling from App.axaml.
+- Full solution build passed with zero warnings/errors. Thirteen responsive Dashboard/invoice/settings checks passed; three shared-header checks passed after accounting for device-pixel rounding in rendered bounds.
+- Corrected legacy UI runner navigation and the renamed Simple layout selector so it exercises the current UI.
+- Extended the shared action-icon style to Button-derived toggles so header/content collapse actions inherit the same 32x32 dimensions; no per-screen sizing override was added.
+- Compact application UI validation passed: 386 assertions, including shared header height/control identity, fixed placement outside scrolling content, action dimensions/tooltips and tabbed/non-tabbed routes at 1366 and 800 pixels.
