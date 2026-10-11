@@ -2,14 +2,48 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.SettingsPageView"
              x:CompileBindings="False">
+    <UserControl.Styles>
+        <!-- Touch-friendly dimensions are scoped to settings so other workflows remain unchanged. -->
+        <Style Selector="Border.settings-content-surface TextBox">
+            <Setter Property="MinHeight" Value="50" />
+            <Setter Property="Padding" Value="12,10" />
+        </Style>
+        <Style Selector="Border.settings-content-surface ComboBox">
+            <Setter Property="MinHeight" Value="50" />
+            <Setter Property="Padding" Value="12,10" />
+        </Style>
+        <Style Selector="Border.settings-content-surface DatePicker">
+            <Setter Property="MinHeight" Value="50" />
+        </Style>
+        <Style Selector="Border.settings-content-surface NumericUpDown">
+            <Setter Property="MinHeight" Value="50" />
+        </Style>
+        <Style Selector="Border.settings-content-surface Button">
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+        <Style Selector="Border.settings-content-surface CheckBox">
+            <Setter Property="MinHeight" Value="48" />
+        </Style>
+        <Style Selector="Border.settings-content-surface ToggleSwitch">
+            <Setter Property="MinHeight" Value="48" />
+        </Style>
+    </UserControl.Styles>
+
     <Grid RowDefinitions="Auto,Auto,*">
         <ContentControl Content="{Binding CurrentHeader}" />
-        <Border Grid.Row="1" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Background="{DynamicResource AppSurfaceBrush}" Padding="6,4">
-            <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
+
+        <Border Grid.Row="1"
+                BorderBrush="{DynamicResource AppOutlineBrush}"
+                BorderThickness="0,0,0,1"
+                Background="{DynamicResource AppSurfaceBrush}"
+                Padding="8,6">
+            <ScrollViewer VerticalScrollBarVisibility="Disabled"
+                          HorizontalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Tabs}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="4" />
+                            <StackPanel Orientation="Horizontal" Spacing="6" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
@@ -21,17 +55,20 @@
                                     Classes.selected="{Binding IsSelected}"
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
-                                    MinHeight="36"
+                                    MinHeight="48"
                                     Margin="0"
-                                    Padding="10,6"
+                                    Padding="14,10"
                                     ToolTip.Tip="{Binding Label}">
-                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding Icon}"
                                                FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
-                                               FontSize="18"
+                                               FontSize="20"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center" />
-                                    <TextBlock loc:UiLocalization.Text="{Binding Label}" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock loc:UiLocalization.Text="{Binding Label}"
+                                               FontSize="13"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                         </DataTemplate>
@@ -40,6 +77,10 @@
             </ScrollViewer>
         </Border>
 
-        <ContentControl Grid.Row="2" Content="{Binding CurrentContent}" />
+        <Border Grid.Row="2"
+                Classes="settings-content-surface"
+                Background="{DynamicResource AppCanvasBrush}">
+            <ContentControl Content="{Binding CurrentContent}" />
+        </Border>
     </Grid>
 </UserControl>
