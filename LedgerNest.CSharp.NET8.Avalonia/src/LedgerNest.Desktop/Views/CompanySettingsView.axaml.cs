@@ -11,7 +11,7 @@ public sealed partial class CompanySettingsView : UserControl
     private async void BrowseLogo(object? sender, RoutedEventArgs args)
     {
         if (DataContext is not CompanySettingsViewModel model || TopLevel.GetTopLevel(this)?.StorageProvider is not { } storage) return;
-        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Company Logo", FileTypeFilter = [FilePickerFileTypes.ImageAll] });
+        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Company Logo", FileTypeFilter = [new FilePickerFileType("PNG or JPG") { Patterns = ["*.png", "*.jpg", "*.jpeg"], MimeTypes = ["image/png", "image/jpeg"] }] });
         if (files.Count == 0) return;
         await using var input = await files[0].OpenReadAsync();
         using var bytes = new MemoryStream();

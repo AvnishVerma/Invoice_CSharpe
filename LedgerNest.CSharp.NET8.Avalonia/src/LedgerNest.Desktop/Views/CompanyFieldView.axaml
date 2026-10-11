@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:Avalonia.Data.Converters" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.CompanyFieldView" x:DataType="vm:CompanyFieldModel">
+ <UserControl.Styles>
+  <Style Selector="TextBox, ComboBox"><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="42,8,12,8"/><Setter Property="Background" Value="{DynamicResource AppCanvasBrush}"/><Setter Property="FontSize" Value="15"/></Style>
+  <Style Selector="TextBox.address"><Setter Property="MinHeight" Value="96"/><Setter Property="Padding" Value="42,12,48,12"/></Style>
+ </UserControl.Styles>
+ <StackPanel Spacing="4">
+  <Grid Margin="0,14,0,0">
+   <TextBox Text="{Binding Field.Value, Mode=TwoWay}" IsVisible="{Binding !IsChoice}" IsReadOnly="{Binding Field.IsReadOnly}" AcceptsReturn="{Binding IsMultiline}" TextWrapping="Wrap" Classes.address="{Binding IsMultiline}" AutomationProperties.Name="{Binding Field.Label}"/>
+   <ComboBox ItemsSource="{Binding Field.Options}" SelectedItem="{Binding Field.Value, Mode=TwoWay}" IsVisible="{Binding IsChoice}" HorizontalAlignment="Stretch" AutomationProperties.Name="{Binding Field.Label}"/>
+   <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,0" HorizontalAlignment="Left" IsHitTestVisible="False"/>
+   <Border Classes="field-caption" Padding="3,0" Margin="12,-14,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"><TextBlock vm:UiLocalization.Text="{Binding Field.Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/></Border>
+   <Button Command="{Binding ExpandCommand}" IsVisible="{Binding CanExpand}" ToolTip.Tip="Expand address" Classes="action-icon" HorizontalAlignment="Right" Margin="8"><TextBlock Text="{Binding ExpandIcon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph"/></Button>
+  </Grid>
+  <TextBlock Text="{Binding Field.Error}" IsVisible="{Binding Field.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" Foreground="Firebrick" FontSize="12"/>
+ </StackPanel>
+</UserControl>

@@ -1,104 +1,72 @@
-<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.CompanySettingsView" x:DataType="vm:CompanySettingsViewModel" x:CompileBindings="False" xmlns:shared="using:LedgerNest.Desktop.Views" x:Name="PageRoot">
-  <shared:ScreenScaffoldView>
-    <shared:ScreenScaffoldView.PageHeader>
-      <shared:PageHeaderView Title="Company Information" DataContext="{Binding DataContext, ElementName=PageRoot}">
-        <shared:PageHeaderView.HeaderActions>
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}" MinWidth="145" AutomationProperties.Name="Language" />
-            <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" MinWidth="100" />
-          </StackPanel>
-        </shared:PageHeaderView.HeaderActions>
-      </shared:PageHeaderView>
-    </shared:ScreenScaffoldView.PageHeader>
-    <shared:ScreenScaffoldView.PageBody>
-      <Grid ColumnDefinitions="240,*">
-        <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,1,0">
-          <Grid RowDefinitions="*,Auto">
-            <ScrollViewer>
-              <StackPanel Margin="{DynamicResource PageContentPadding}" Spacing="12">
-                <TextBlock Text="COMPANY LOGO" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
-                <Button Click="BrowseLogo" Width="180" Height="180" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
-                  <Grid>
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" IsVisible="{Binding !HasLogo}">
-                      <TextBlock Text="{icons:FontAwesomeGlyph upload}" Classes="action-icon-glyph" FontSize="40" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" />
-                      <TextBlock Text="Upload Logo" />
-                      <TextBlock Text="Click to browse" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
-                    </StackPanel>
-                    <Image Source="{Binding LogoImage}" Stretch="Uniform" IsVisible="{Binding HasLogo}" />
-                  </Grid>
-                </Button>
-                <TextBlock Text="Company Logo Position" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
-                <ComboBox ItemsSource="{Binding LogoPosition.Options}" SelectedItem="{Binding LogoPosition.Value, Mode=TwoWay}" />
-                <TextBlock Text="{Binding CompanyName.Value}" FontSize="18" FontWeight="Bold" />
-                <TextBlock Text="Max 1080x1080 px - 2 MB&#xA;PNG or JPG only" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
-              </StackPanel>
-            </ScrollViewer>
-            <Button Grid.Row="1" Content="Save" Command="{Binding SaveCommand}" Classes="action primary" Margin="{DynamicResource PageContentPadding}" HorizontalAlignment="Stretch" />
-          </Grid>
-        </Border>
-        <ScrollViewer Grid.Column="1">
-          <StackPanel Margin="{DynamicResource PageContentPadding}" Spacing="18">
-            <TextBlock Text="COMPANY DETAILS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
-            <Grid ColumnDefinitions="*,12,*">
-              <StackPanel>
-                <TextBlock Text="Company Name *" />
-                <TextBox Text="{Binding CompanyName.Value, Mode=TwoWay}" />
-              </StackPanel>
-              <StackPanel Grid.Column="2">
-                <TextBlock Text="GSTIN" />
-                <TextBox Text="{Binding Gstin.Value, Mode=TwoWay}" />
-              </StackPanel>
-            </Grid>
-            <Grid ColumnDefinitions="*,12,*">
-              <StackPanel>
-                <TextBlock Text="PAN" />
-                <TextBox Text="{Binding Pan.Value, Mode=TwoWay}" />
-              </StackPanel>
-              <StackPanel Grid.Column="2">
-                <TextBlock Text="FSSAI Code" />
-                <TextBox Text="{Binding FssaiCode.Value, Mode=TwoWay}" />
-              </StackPanel>
-            </Grid>
-            <Grid ColumnDefinitions="*,12,*,12,*">
-              <StackPanel>
-                <TextBlock Text="Country" />
-                <ComboBox ItemsSource="{Binding Country.Options}" SelectedItem="{Binding Country.Value, Mode=TwoWay}" />
-              </StackPanel>
-              <StackPanel Grid.Column="2">
-                <TextBlock Text="Phone" />
-                <TextBox Text="{Binding Phone.Value, Mode=TwoWay}" />
-              </StackPanel>
-              <StackPanel Grid.Column="4">
-                <TextBlock Text="Email" />
-                <TextBox Text="{Binding Email.Value, Mode=TwoWay}" />
-              </StackPanel>
-            </Grid>
-            <StackPanel>
-              <TextBlock Text="Website" />
-              <TextBox Text="{Binding Website.Value, Mode=TwoWay}" />
-            </StackPanel>
-            <StackPanel>
-              <TextBlock Text="Address" />
-              <TextBox Text="{Binding Address.Value, Mode=TwoWay}" AcceptsReturn="True" MinHeight="84" />
-            </StackPanel>
-            <TextBlock Text="BUSINESS TYPE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
-            <Border Classes="card" Padding="16">
-              <Grid ColumnDefinitions="Auto,16,*">
-                <TextBlock Text="{icons:FontAwesomeGlyph account_tree}" Classes="action-icon-glyph" FontSize="25" Foreground="{DynamicResource AppPrimaryBrush}" />
-                <StackPanel Grid.Column="2" Spacing="6">
-                  <TextBlock Text="Business Type" FontSize="16" />
-                  <TextBlock Text="Controls item type options in the product list and invoices" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
-                  <StackPanel Orientation="Horizontal">
-                    <Button Content="Product" Command="{Binding SelectBusinessTypeCommand}" CommandParameter="Product" Classes="segment" Classes.selected="{Binding IsProduct}" />
-                    <Button Content="Service" Command="{Binding SelectBusinessTypeCommand}" CommandParameter="Service" Classes="segment" Classes.selected="{Binding IsService}" />
-                    <Button Content="Both" Command="{Binding SelectBusinessTypeCommand}" CommandParameter="Both" Classes="segment" Classes.selected="{Binding IsBoth}" />
-                  </StackPanel>
-                </StackPanel>
-              </Grid>
-            </Border>
-            <TextBlock Text="PAYMENT SETTINGS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:icons="using:LedgerNest.Desktop" xmlns:shared="using:LedgerNest.Desktop.Views" x:Class="LedgerNest.Desktop.Views.CompanySettingsView" x:DataType="vm:CompanySettingsViewModel" x:CompileBindings="False" x:Name="PageRoot">
+ <UserControl.Styles>
+  <Style Selector="ComboBox.language"><Setter Property="MinWidth" Value="145"/></Style>
+  <Style Selector="ComboBox.theme"><Setter Property="MinWidth" Value="100"/></Style>
+  <Style Selector="Border#LogoPanel"><Setter Property="DockPanel.Dock" Value="Left"/><Setter Property="Width" Value="240"/><Setter Property="BorderThickness" Value="0,0,1,0"/></Style>
+
+  <Style Selector="UniformGrid.details-pair"><Setter Property="Columns" Value="2"/></Style>
+  <Style Selector="UniformGrid.contact-row"><Setter Property="Columns" Value="3"/></Style>
+  <Style Selector="shared|CompanyFieldView"><Setter Property="Margin" Value="0,0,16,0"/></Style>
+  <Style Selector="TextBlock.section-title"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/><Setter Property="FontWeight" Value="Medium"/></Style>
+  <Style Selector="Button.segment"><Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="0"/><Setter Property="Height" Value="32"/><Setter Property="Padding" Value="12,4"/></Style>
+  <Style Selector="Button.segment.selected"><Setter Property="Background" Value="{DynamicResource AppSelectedBrush}"/><Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/></Style>
+  <ContainerQuery Name="company-page" Query="max-width:720">
+
+
+   <Style Selector="Border#LogoPanel"><Setter Property="DockPanel.Dock" Value="Top"/><Setter Property="Width" Value="NaN"/><Setter Property="Height" Value="300"/><Setter Property="BorderThickness" Value="0,0,0,1"/></Style>
+   <Style Selector="UniformGrid.contact-row"><Setter Property="Columns" Value="1"/></Style>
+   <Style Selector="ComboBox.language"><Setter Property="MinWidth" Value="85"/></Style>
+   <Style Selector="ComboBox.theme"><Setter Property="MinWidth" Value="75"/></Style>
+  </ContainerQuery>
+  <ContainerQuery Name="company-page" Query="max-width:480"><Style Selector="UniformGrid.details-pair"><Setter Property="Columns" Value="1"/></Style></ContainerQuery>
+ </UserControl.Styles>
+ <shared:ScreenScaffoldView Container.Name="company-page" Container.Sizing="Width">
+  <shared:ScreenScaffoldView.PageHeader>
+   <shared:PageHeaderView Title="Company Information" DataContext="{Binding DataContext, ElementName=PageRoot}"><shared:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="10">
+    <ComboBox Classes="language" ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage, Mode=TwoWay}" AutomationProperties.Name="Language"/>
+    <ComboBox Classes="theme" ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme, Mode=TwoWay}" AutomationProperties.Name="Theme"/>
+   </StackPanel></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
+  </shared:ScreenScaffoldView.PageHeader>
+  <shared:ScreenScaffoldView.PageBody>
+   <DockPanel x:Name="CompanyLayout" LastChildFill="True">
+    <Border x:Name="LogoPanel" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}">
+     <Grid RowDefinitions="*,Auto">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="24,32,24,16" Spacing="16">
+       <TextBlock vm:UiLocalization.Text="COMPANY LOGO" Classes="section-title" HorizontalAlignment="Center"/>
+       <Button Click="BrowseLogo" ToolTip.Tip="Upload or replace company logo" Width="180" Height="180" Padding="12" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="10" HorizontalAlignment="Center" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+        <Grid><StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" IsVisible="{Binding !HasLogo}">
+         <Border Background="{DynamicResource AppSelectedBrush}" CornerRadius="32" Width="64" Height="64"><Grid><TextBlock Text="{icons:FontAwesomeGlyph image}" Classes="action-icon-glyph" FontSize="28" Foreground="{DynamicResource AppAccentBrush}"/><TextBlock Text="{icons:FontAwesomeGlyph add}" Classes="action-icon-glyph" FontSize="12" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,10,0"/></Grid></Border>
+         <TextBlock vm:UiLocalization.Text="Upload Logo" HorizontalAlignment="Center" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock vm:UiLocalization.Text="Click to browse" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center"/>
+        </StackPanel><Image Source="{Binding LogoImage}" Stretch="Uniform" IsVisible="{Binding HasLogo}"/></Grid>
+       </Button>
+       <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center"><TextBlock vm:UiLocalization.Text="Show on PDF" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center"/><shared:FormToggleSwitchView Field="{Binding ShowLogo}"/></StackPanel>
+       <Button Command="{Binding RemoveLogoCommand}" IsVisible="{Binding HasLogo}" Classes="action outline" HorizontalAlignment="Center"><TextBlock vm:UiLocalization.Text="Remove logo"/></Button>
+       <TextBlock Text="{Binding CompanyName.Value}" FontSize="18" FontWeight="Bold" TextWrapping="Wrap" TextAlignment="Center"/>
+       <TextBlock vm:UiLocalization.Text="Max 1080x1080 px - 2 MB&#xA;PNG or JPG only" TextWrapping="Wrap" TextAlignment="Center" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+      </StackPanel></ScrollViewer>
+      <shared:ActionButtonView Grid.Row="1" ActionLabel="Save" Caption="Save" Icon="save" Primary="True" Command="{Binding SaveCommand}" Available="{Binding CanSave}" Tooltip="Save company information" Margin="16" HorizontalAlignment="Stretch"/>
+     </Grid>
+    </Border>
+    <ScrollViewer x:Name="CompanyForm" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="32,28,16,24" Spacing="16">
+     <TextBlock vm:UiLocalization.Text="COMPANY DETAILS" Classes="section-title"/>
+     <UniformGrid Classes="details-pair"><shared:CompanyFieldView DataContext="{Binding NameInput}"/><shared:CompanyFieldView DataContext="{Binding GstinInput}"/></UniformGrid>
+     <UniformGrid Classes="details-pair"><shared:CompanyFieldView DataContext="{Binding PanInput}"/><shared:CompanyFieldView DataContext="{Binding FssaiInput}"/></UniformGrid>
+     <UniformGrid Classes="contact-row"><shared:CompanyFieldView DataContext="{Binding CountryInput}"/><StackPanel><shared:CompanyFieldView DataContext="{Binding PhoneInput}"/><TextBlock vm:UiLocalization.Text="Multiple numbers: separate with comma" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" Margin="12,6,16,0"/></StackPanel><shared:CompanyFieldView DataContext="{Binding EmailInput}"/></UniformGrid>
+     <shared:CompanyFieldView DataContext="{Binding WebsiteInput}"/>
+     <shared:CompanyFieldView DataContext="{Binding AddressInput}"/>
+     <TextBlock vm:UiLocalization.Text="BUSINESS TYPE" Classes="section-title" Margin="0,12,0,0"/>
+     <Border Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,16,0"><StackPanel Spacing="8">
+      <StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="{icons:FontAwesomeGlyph category}" Classes="action-icon-glyph" Foreground="{DynamicResource AppAccentBrush}"/><TextBlock vm:UiLocalization.Text="Business Type" FontSize="15" VerticalAlignment="Center"/></StackPanel>
+      <TextBlock vm:UiLocalization.Text="Controls item type options in the product list and invoices" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/>
+      <Border CornerRadius="18" ClipToBounds="True" HorizontalAlignment="Left"><StackPanel Orientation="Horizontal">
+       <Button Command="{Binding SelectBusinessTypeCommand}" CommandParameter="Product" Tag="Product" Classes="segment" Classes.selected="{Binding IsProduct}"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{icons:FontAwesomeGlyph inventory_2}" Classes="action-icon-glyph" FontSize="14"/><TextBlock vm:UiLocalization.Text="Product"/></StackPanel></Button>
+       <Button Command="{Binding SelectBusinessTypeCommand}" CommandParameter="Service" Tag="Service" Classes="segment" Classes.selected="{Binding IsService}"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{icons:FontAwesomeGlyph build}" Classes="action-icon-glyph" FontSize="14"/><TextBlock vm:UiLocalization.Text="Service"/></StackPanel></Button>
+       <Button Command="{Binding SelectBusinessTypeCommand}" CommandParameter="Both" Tag="Both" Classes="segment" Classes.selected="{Binding IsBoth}"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{icons:FontAwesomeGlyph check}" Classes="action-icon-glyph" FontSize="14"/><TextBlock vm:UiLocalization.Text="Both"/></StackPanel></Button>
+      </StackPanel></Border>
+     </StackPanel></Border>
+            <TextBlock vm:UiLocalization.Text="PAYMENT SETTINGS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
             <shared:InvoiceToggleSettingView Field="{Binding ShowQr}" Title="Show QR Code on Invoices" Help="Adds scannable UPI payment QR codes to generated PDFs" Icon="credit_card" />
-            <TextBlock Text="UPI ACCOUNTS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
+            <TextBlock vm:UiLocalization.Text="UPI ACCOUNTS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
             <ItemsControl ItemsSource="{Binding UpiAccounts}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
@@ -110,9 +78,9 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <Button Command="{Binding AddUpiCommand}" Classes="text" HorizontalAlignment="Left" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph add}"/><TextBlock Text="Add UPI Account"/></StackPanel></Button>
+            <Button Command="{Binding AddUpiCommand}" Classes="text" HorizontalAlignment="Left" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph add}"/><TextBlock vm:UiLocalization.Text="Add UPI Account"/></StackPanel></Button>
             <shared:InvoiceToggleSettingView Field="{Binding ShowBank}" Title="Show Bank Details on Invoices" Help="Prints bank account details on generated PDFs" Icon="account_balance" />
-            <TextBlock Text="BANK ACCOUNTS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
+            <TextBlock vm:UiLocalization.Text="BANK ACCOUNTS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
             <ItemsControl ItemsSource="{Binding BankAccounts}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
@@ -127,10 +95,10 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <Button Command="{Binding AddBankCommand}" Classes="text" HorizontalAlignment="Left" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph add}"/><TextBlock Text="Add Bank Account"/></StackPanel></Button>
-          </StackPanel>
-        </ScrollViewer>
-      </Grid>
-    </shared:ScreenScaffoldView.PageBody>
-  </shared:ScreenScaffoldView>
+            <Button Command="{Binding AddBankCommand}" Classes="text" HorizontalAlignment="Left" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph add}"/><TextBlock vm:UiLocalization.Text="Add Bank Account"/></StackPanel></Button>
+
+    </StackPanel></ScrollViewer>
+   </DockPanel>
+  </shared:ScreenScaffoldView.PageBody>
+ </shared:ScreenScaffoldView>
 </UserControl>
