@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns:primitives="using:Avalonia.Controls.Primitives"
              x:Class="LedgerNest.Desktop.Views.ReportTableView" x:DataType="vm:ReportTableViewModel">
   <UserControl.Styles>
@@ -18,8 +18,8 @@
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Text="{Binding Title}" IsVisible="{Binding HasTitle}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
         <WrapPanel Grid.Column="1" IsVisible="{Binding HasTitle}">
-          <Button Command="{Binding ExportCsvCommand}" Classes="action outline" ToolTip.Tip="Export CSV" Margin="0,0,8,8"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="download" Classes="action-icon-glyph" /><TextBlock Text="Export CSV" /></StackPanel></Button>
-          <Button Command="{Binding ExportPdfCommand}" Classes="action outline" ToolTip.Tip="Export PDF" Margin="0,0,8,8"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="download" Classes="action-icon-glyph" /><TextBlock Text="Export PDF" /></StackPanel></Button>
+          <Button Command="{Binding ExportCsvCommand}" Classes="action outline" ToolTip.Tip="Export CSV" Margin="0,0,8,8"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{icons:FontAwesomeGlyph download}" Classes="action-icon-glyph" /><TextBlock Text="Export CSV" /></StackPanel></Button>
+          <Button Command="{Binding ExportPdfCommand}" Classes="action outline" ToolTip.Tip="Export PDF" Margin="0,0,8,8"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{icons:FontAwesomeGlyph download}" Classes="action-icon-glyph" /><TextBlock Text="Export PDF" /></StackPanel></Button>
         </WrapPanel>
       </Grid>
       <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
@@ -39,7 +39,7 @@
           </ItemsControl>
         </StackPanel>
       </ScrollViewer>
-      <Grid Grid.Row="2" ColumnDefinitions="*,Auto"><TextBlock Text="Rows per page: 10      1 – 1 of 1" FontSize="13" /><TextBlock Grid.Column="1" Text="‹   Page 1 of 1   ›" FontSize="13" FontWeight="Bold" /></Grid>
+      <Grid Grid.Row="2" ColumnDefinitions="*,Auto"><TextBlock Text="Rows per page: 10      1 – 1 of 1" FontSize="13" /><StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_left}"/><TextBlock Text="Page 1 of 1"  FontSize="13" FontWeight="Bold" /><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_right}"/></StackPanel></Grid>
     </Grid>
   </Border>
 </UserControl>

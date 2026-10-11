@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.CompanySettingsView" x:DataType="vm:CompanySettingsViewModel" x:CompileBindings="False" xmlns:shared="using:LedgerNest.Desktop.Views" x:Name="PageRoot">
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.CompanySettingsView" x:DataType="vm:CompanySettingsViewModel" x:CompileBindings="False" xmlns:shared="using:LedgerNest.Desktop.Views" x:Name="PageRoot">
   <shared:ScreenScaffoldView>
     <shared:ScreenScaffoldView.PageHeader>
       <shared:PageHeaderView Title="Company Information" DataContext="{Binding DataContext, ElementName=PageRoot}">
@@ -20,7 +20,7 @@
                 <Button Click="BrowseLogo" Width="180" Height="180" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
                   <Grid>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" IsVisible="{Binding !HasLogo}">
-                      <TextBlock Text="upload" Classes="action-icon-glyph" FontSize="40" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" />
+                      <TextBlock Text="{icons:FontAwesomeGlyph upload}" Classes="action-icon-glyph" FontSize="40" Foreground="{DynamicResource AppPrimaryBrush}" HorizontalAlignment="Center" />
                       <TextBlock Text="Upload Logo" />
                       <TextBlock Text="Click to browse" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
                     </StackPanel>
@@ -84,7 +84,7 @@
             <TextBlock Text="BUSINESS TYPE" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
             <Border Classes="card" Padding="16">
               <Grid ColumnDefinitions="Auto,16,*">
-                <TextBlock Text="account_tree" Classes="action-icon-glyph" FontSize="25" Foreground="{DynamicResource AppPrimaryBrush}" />
+                <TextBlock Text="{icons:FontAwesomeGlyph account_tree}" Classes="action-icon-glyph" FontSize="25" Foreground="{DynamicResource AppPrimaryBrush}" />
                 <StackPanel Grid.Column="2" Spacing="6">
                   <TextBlock Text="Business Type" FontSize="16" />
                   <TextBlock Text="Controls item type options in the product list and invoices" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
@@ -105,12 +105,12 @@
                   <Grid ColumnDefinitions="*,12,2*,12,Auto" Margin="0,0,0,8">
                     <TextBox Text="{Binding [0].Value, Mode=TwoWay}" PlaceholderText="Label" />
                     <TextBox Grid.Column="2" Text="{Binding [1].Value, Mode=TwoWay}" PlaceholderText="UPI ID" />
-                    <Button Grid.Column="4" Content="−" Command="{Binding $parent[UserControl].DataContext.RemoveUpiCommand}" CommandParameter="{Binding}" ToolTip.Tip="Remove UPI account" />
+                    <Button Grid.Column="4" Content="{icons:FontAwesomeGlyph remove}" FontFamily="{DynamicResource IconFontFamily}" Command="{Binding $parent[UserControl].DataContext.RemoveUpiCommand}" CommandParameter="{Binding}" ToolTip.Tip="Remove UPI account" />
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <Button Content="＋ Add UPI Account" Command="{Binding AddUpiCommand}" Classes="text" HorizontalAlignment="Left" />
+            <Button Command="{Binding AddUpiCommand}" Classes="text" HorizontalAlignment="Left" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph add}"/><TextBlock Text="Add UPI Account"/></StackPanel></Button>
             <shared:InvoiceToggleSettingView Field="{Binding ShowBank}" Title="Show Bank Details on Invoices" Help="Prints bank account details on generated PDFs" Icon="account_balance" />
             <TextBlock Text="BANK ACCOUNTS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
             <ItemsControl ItemsSource="{Binding BankAccounts}">
@@ -122,12 +122,12 @@
                     <TextBox Grid.Column="4" Text="{Binding [2].Value, Mode=TwoWay}" PlaceholderText="Account Number" />
                     <TextBox Grid.Column="6" Text="{Binding [3].Value, Mode=TwoWay}" PlaceholderText="IFSC Code" />
                     <TextBox Grid.Row="1" Grid.ColumnSpan="7" Text="{Binding [4].Value, Mode=TwoWay}" PlaceholderText="IBAN (optional)" Margin="0,8,0,0" />
-                    <Button Grid.Column="8" Content="−" Command="{Binding $parent[UserControl].DataContext.RemoveBankCommand}" CommandParameter="{Binding}" ToolTip.Tip="Remove bank account" />
+                    <Button Grid.Column="8" Content="{icons:FontAwesomeGlyph remove}" FontFamily="{DynamicResource IconFontFamily}" Command="{Binding $parent[UserControl].DataContext.RemoveBankCommand}" CommandParameter="{Binding}" ToolTip.Tip="Remove bank account" />
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <Button Content="＋ Add Bank Account" Command="{Binding AddBankCommand}" Classes="text" HorizontalAlignment="Left" />
+            <Button Command="{Binding AddBankCommand}" Classes="text" HorizontalAlignment="Left" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph add}"/><TextBlock Text="Add Bank Account"/></StackPanel></Button>
           </StackPanel>
         </ScrollViewer>
       </Grid>

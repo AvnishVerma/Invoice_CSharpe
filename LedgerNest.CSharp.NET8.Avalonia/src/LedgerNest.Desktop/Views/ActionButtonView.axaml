@@ -7,9 +7,10 @@
         Tag="{Binding ActionLabel, ElementName=ActionRoot}" ToolTip.Tip="{Binding Tooltip, ElementName=ActionRoot}"
         AutomationProperties.Name="{Binding ActionLabel, ElementName=ActionRoot}">
   <StackPanel Orientation="Horizontal" Spacing="8">
-    <TextBlock Text="{Binding Icon, ElementName=ActionRoot}" Classes="action-icon-glyph"
+    <TextBlock Text="{Binding Icon, ElementName=ActionRoot, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph"
                IsVisible="{Binding HasIcon, ElementName=ActionRoot}" VerticalAlignment="Center" />
     <TextBlock vm:UiLocalization.Text="{Binding Caption, ElementName=ActionRoot}"
                IsVisible="{Binding HasCaption, ElementName=ActionRoot}" FontSize="14" VerticalAlignment="Center" />
+    <TextBlock Text="{Binding DropdownIcon, ElementName=ActionRoot, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" IsVisible="{Binding HasDropdown, ElementName=ActionRoot}"/>
   </StackPanel>
 </Button>

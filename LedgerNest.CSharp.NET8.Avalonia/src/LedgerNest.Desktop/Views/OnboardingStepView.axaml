@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.OnboardingStepView" x:DataType="vm:OnboardingViewModel">
   <UserControl.Styles>
@@ -15,7 +15,7 @@
     <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" TextWrapping="Wrap" />
     <Border IsVisible="{Binding !IsComplete}"><views:FormFieldsView DataContext="{Binding Fields}" /></Border>
     <StackPanel IsVisible="{Binding IsComplete}" Spacing="14.4" HorizontalAlignment="Center" Margin="32">
-      <TextBlock Text="✓" FontSize="40" HorizontalAlignment="Center" />
+      <TextBlock FontFamily="{DynamicResource IconFontFamily}" Text="{icons:FontAwesomeGlyph check}" FontSize="40" HorizontalAlignment="Center" />
       <TextBlock vm:UiLocalization.Text="You're all set!" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" />
       <TextBlock vm:UiLocalization.Text="Start creating invoices for your business." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
     </StackPanel>

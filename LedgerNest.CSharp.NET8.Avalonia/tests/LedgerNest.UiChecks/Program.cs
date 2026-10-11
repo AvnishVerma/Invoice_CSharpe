@@ -202,7 +202,7 @@ internal static class Program
         fixture.Show(); Dispatcher.UIThread.RunJobs(); fixture.UpdateLayout();
         Check(action.Tag as string == "Refresh" && action.Classes.Contains("primary") && !action.Classes.Contains("outline"),
             "Reusable AXAML actions must retain the label and selected button variant");
-        Check(action.GetVisualDescendants().OfType<TextBlock>().Any(control => control.Text == "refresh" && control.Classes.Contains("action-icon-glyph")),
+        Check(action.GetVisualDescendants().OfType<TextBlock>().Any(control => control.Text == FontAwesomeIcons.Get("refresh") && control.Classes.Contains("action-icon-glyph")),
             "Action icons must be declared by the shared AXAML button");
         action.Command!.Execute(null);
         Check(calls == 1 && Math.Abs(action.Bounds.Height - 32) < 1, "Shared actions must dispatch commands and use the global button height");
@@ -737,10 +737,10 @@ internal static class Program
             model.Lines.Add(new InvoiceLineViewModel { Name = "Layout fixture", Quantity = 1, Price = 100 });
             Check(model.SaveInvoice(), "Layout fixture invoice must save");
             NavigateForCapture("Invoices"); Settle();
-            Check(FindButton("View").Content is TextBlock { Text.Length: 1 }, "Invoice actions must display icons instead of clipped words");
+            Check(FindButton("View").GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text?.Length == 1), "Invoice actions must display icons instead of clipped words");
             Capture("appearance-invoice-actions");
             NavigateForCapture("Customers"); Settle();
-            Check(FindButton("View").Content is TextBlock { Text.Length: 1 }, "Customer actions must display icons instead of clipped words");
+            Check(FindButton("View").GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text?.Length == 1), "Customer actions must display icons instead of clipped words");
             Capture("appearance-customer-actions");
             foreach (var route in new[] { "Customers", "Products" })
             {
@@ -1095,7 +1095,7 @@ internal static class Program
                         Check(refreshAction.Classes.Contains("action-icon") && Math.Abs(refreshAction.Bounds.Width - 32) < 1 && Math.Abs(refreshAction.Bounds.Height - 32) < 1,
                             $"Refresh must use the common icon action on {route}");
                         Check(ToolTip.GetTip(refreshAction)?.ToString() == "Refresh", $"Refresh must use the standard tooltip on {route}");
-                        Check(refreshAction.Content is TextBlock refreshGlyph && refreshGlyph.Classes.Contains("action-icon-glyph"),
+                        Check(refreshAction.GetVisualDescendants().OfType<TextBlock>().Any(glyph => glyph.Classes.Contains("action-icon-glyph")),
                             $"Refresh must use the global icon style on {route}");
                     }
                 }

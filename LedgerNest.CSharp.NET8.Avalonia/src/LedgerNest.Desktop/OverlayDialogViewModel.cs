@@ -5,6 +5,9 @@ namespace LedgerNest.Desktop;
 public sealed record DialogMessage(string Text);
 public sealed record DialogAction(string Label, IRelayCommand? Command, bool IsPrimary = false)
 {
+    public bool HasIcon => Label.StartsWith("✓  ", StringComparison.Ordinal);
+    public string Icon => HasIcon ? "check" : "";
+    public string Caption => HasIcon ? Label[3..] : Label;
     public bool IsEnabled => Command != null;
     public string Tooltip => IsEnabled ? Label : "This service has not yet been migrated.";
 }

@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop"
              xmlns:views="using:LedgerNest.Desktop.Views"
@@ -30,7 +30,7 @@
     <DataTemplate DataType="vm:UserEditorViewModel"><views:UserEditorView /></DataTemplate>
     <DataTemplate DataType="vm:UserPasswordViewModel"><views:UserPasswordView /></DataTemplate>
     <DataTemplate DataType="vm:FormFieldsViewModel"><views:FormFieldsView /></DataTemplate>
-    <DataTemplate DataType="vm:DialogIcon" x:DataType="vm:DialogIcon"><TextBlock Text="{Binding Glyph}" Classes="action-icon-glyph" FontSize="22" Foreground="White" /></DataTemplate>
+    <DataTemplate DataType="vm:DialogIcon" x:DataType="vm:DialogIcon"><TextBlock Text="{Binding Glyph, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" FontSize="22" Foreground="White" /></DataTemplate>
     <DataTemplate DataType="vm:AuthenticationFormViewModel"><views:AuthenticationFormView /></DataTemplate>
     <DataTemplate DataType="vm:OnboardingViewModel"><views:OnboardingStepView /></DataTemplate>
     <DataTemplate DataType="vm:KeyboardShortcutsViewModel"><views:KeyboardShortcutsView /></DataTemplate>
@@ -49,9 +49,9 @@
         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:DialogAction">
-            <Button Content="{Binding Label}" Tag="{Binding Label}" Command="{Binding Command}"
+            <Button Tag="{Binding Label}" Command="{Binding Command}"
                     Classes="action" Classes.primary="{Binding IsPrimary}" Classes.outline="{Binding !IsPrimary}"
-                    Margin="0,0,8,0" IsEnabled="{Binding IsEnabled}" ToolTip.Tip="{Binding Tooltip}" AutomationProperties.Name="{Binding Label}" />
+                    Margin="0,0,8,0" IsEnabled="{Binding IsEnabled}" ToolTip.Tip="{Binding Tooltip}" AutomationProperties.Name="{Binding Caption}"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" IsVisible="{Binding HasIcon}"/><TextBlock Text="{Binding Caption}"/></StackPanel></Button>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
@@ -86,7 +86,7 @@
               <TextBlock IsVisible="{Binding IsProductEditor}" vm:UiLocalization.Text="Enter product details" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
             </StackPanel>
             <ContentControl Grid.Column="2" Content="{Binding HeaderAccessory}" VerticalAlignment="Center" />
-            <Button x:Name="CloseButton" Grid.Column="3" Content="×" Classes="action outline" Classes.product="{Binding IsProductEditor}"
+            <Button Tag="×" FontFamily="{DynamicResource IconFontFamily}" x:Name="CloseButton" Grid.Column="3" Content="{icons:FontAwesomeGlyph close}" Classes="action outline" Classes.product="{Binding IsProductEditor}"
                     Command="{Binding CloseCommand}" IsVisible="{Binding ShowClose}" ToolTip.Tip="Close" AutomationProperties.Name="Close" />
           </Grid>
         </Border>

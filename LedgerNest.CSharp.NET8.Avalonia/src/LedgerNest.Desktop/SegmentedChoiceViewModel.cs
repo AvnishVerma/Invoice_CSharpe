@@ -8,10 +8,10 @@ public sealed class SegmentedChoiceViewModel
 {
     private readonly FormField field;
     public IReadOnlyList<SegmentedOptionViewModel> Options { get; }
-    public SegmentedChoiceViewModel(FormField field)
+    public SegmentedChoiceViewModel(FormField field, IEnumerable<string>? options = null)
     {
         this.field = field;
-        Options = field.Options.Select(option => new SegmentedOptionViewModel(field, option)).ToArray();
+        Options = (options ?? field.Options).Select(option => new SegmentedOptionViewModel(field, option)).ToArray();
     }
     public void Attach() { field.PropertyChanged -= Changed; field.PropertyChanged += Changed; Refresh(); }
     public void Detach() => field.PropertyChanged -= Changed;

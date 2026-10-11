@@ -36,10 +36,10 @@ public partial class MainWindow
     {
         var colors = toast.Type switch
         {
-            ToastType.Success => ("#E8F5E9", "#2E7D32", "\ue86c"),
-            ToastType.Warning => ("#FFF8E1", "#ED6C02", "\ue002"),
-            ToastType.Error => ("#FFEBEE", "#D32F2F", "\ue000"),
-            _ => ("#E3F2FD", "#1565C0", "\ue88e")
+            ToastType.Success => ("#E8F5E9", "#2E7D32", "check_circle"),
+            ToastType.Warning => ("#FFF8E1", "#ED6C02", "warning"),
+            ToastType.Error => ("#FFEBEE", "#D32F2F", "error"),
+            _ => ("#E3F2FD", "#1565C0", "info")
         };
         toastTitle.Text = toast.Title;
         toastMessage.Text = toast.Message;
@@ -47,7 +47,7 @@ public partial class MainWindow
         toastCard.BorderBrush = Brush.Parse(colors.Item2);
         toastIconCircle.Background = Brush.Parse(colors.Item2);
         toastIcon.Foreground = Brushes.White;
-        toastIcon.Text = colors.Item3;
+        toastIcon.Text = FontAwesomeIcons.Get(colors.Item3);
         toastTitle.Foreground = Brush.Parse(colors.Item2);
         toastMessage.Foreground = Brush.Parse("#252525");
         toastCard.IsVisible = true;

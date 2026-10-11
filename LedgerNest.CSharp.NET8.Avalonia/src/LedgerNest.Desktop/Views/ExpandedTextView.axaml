@@ -1,8 +1,8 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.Views.ExpandedTextView" x:DataType="vm:ExpandedTextViewModel">
   <Grid RowDefinitions="*,Auto">
     <TextBox Text="{Binding Text, Mode=TwoWay}" IsReadOnly="{Binding IsReadOnly}" AcceptsReturn="True" TextWrapping="Wrap" Height="{Binding EditorHeight}" MinHeight="180" MaxLength="{Binding MaximumLength}" PlaceholderText="Payment terms, thank-you note..." VerticalContentAlignment="Top" />
     <TextBlock Grid.Row="1" Text="{Binding CharacterCount}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Right" Margin="0,6,8,0" />
-    <Thumb Grid.Row="1" Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Top" DragDelta="ResizeEditor" Cursor="SizeNorthSouth" ToolTip.Tip="Resize editor"><Thumb.Template><ControlTemplate><TextBlock Text="↘" Foreground="{DynamicResource AppMutedBrush}" /></ControlTemplate></Thumb.Template></Thumb>
+    <Thumb Grid.Row="1" Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Top" DragDelta="ResizeEditor" Cursor="SizeNorthSouth" ToolTip.Tip="Resize editor"><Thumb.Template><ControlTemplate><TextBlock FontFamily="{DynamicResource IconFontFamily}" Text="{icons:FontAwesomeGlyph open_in_full}" Foreground="{DynamicResource AppMutedBrush}" /></ControlTemplate></Thumb.Template></Thumb>
   </Grid>
 </UserControl>

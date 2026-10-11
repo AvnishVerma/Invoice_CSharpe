@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.Views.InvoiceEditorShellView" x:CompileBindings="False">
 
@@ -16,7 +16,7 @@
       <local:PageHeaderView.CenterContent><TextBlock x:Name="HeaderDate" Text="{Binding DateText}" Classes.narrow="{Binding IsNarrow}" Foreground="White" VerticalAlignment="Center" /></local:PageHeaderView.CenterContent>
       <local:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock Text="{Binding NumberText}" Foreground="White" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsNarrow}" />
-        <Button Classes="action-icon header-icon-action" Command="{Binding VoidCommand}" IsVisible="{Binding ShowVoid}" ToolTip.Tip="Void Invoice"><TextBlock Text="block" Classes="action-icon-glyph" /></Button>
+        <Button Classes="action-icon header-icon-action" Command="{Binding VoidCommand}" IsVisible="{Binding ShowVoid}" ToolTip.Tip="Void Invoice"><TextBlock Text="{icons:FontAwesomeGlyph block}" Classes="action-icon-glyph" /></Button>
       </StackPanel></local:PageHeaderView.HeaderActions>
     </local:PageHeaderView>
     <local:InvoiceWorkspace Grid.Row="1" DataContext="{Binding}" Margin="10" />

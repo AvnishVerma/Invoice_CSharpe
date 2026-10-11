@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:converters="using:Avalonia.Data.Converters"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:converters="using:Avalonia.Data.Converters"
  x:Class="LedgerNest.Desktop.Views.ProductInputView" x:DataType="vm:ProductInputViewModel" x:Name="Root">
  <UserControl.Resources>
   <ResourceDictionary><ResourceDictionary.ThemeDictionaries>
@@ -10,7 +10,7 @@
   <DataTemplate x:Key="DateInput" x:DataType="vm:ProductInputViewModel">
    <Grid>
     <TextBox Text="{Binding DateAdapter.DateText}" IsReadOnly="True" PlaceholderText="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" AutomationProperties.Name="{Binding Field.Label}" PointerPressed="OpenCalendar" KeyDown="CalendarKeyDown"/>
-    <Button x:Name="CalendarButton" Classes="action-icon text" HorizontalAlignment="Right" ToolTip.Tip="Choose date"><TextBlock Text="calendar_today" Classes="action-icon-glyph"/>
+    <Button x:Name="CalendarButton" Classes="action-icon text" HorizontalAlignment="Right" ToolTip.Tip="Choose date"><TextBlock Text="{icons:FontAwesomeGlyph calendar_today}" Classes="action-icon-glyph"/>
      <Button.Flyout><Flyout><StackPanel Spacing="6.4"><Calendar DisplayDate="{Binding DateAdapter.CalendarDisplayDate}" SelectedDate="{Binding DateAdapter.SelectedDate, Mode=TwoWay}" SelectedDatesChanged="DateSelected"/><Button Content="Clear date" Classes="action outline" Click="ClearDate"/></StackPanel></Flyout></Button.Flyout>
     </Button>
    </Grid>
@@ -32,13 +32,13 @@
   <Border IsVisible="{Binding IsCheck}"><CheckBox IsChecked="{Binding Field.IsChecked, Mode=TwoWay}" AutomationProperties.Name="{Binding Field.Label}"><StackPanel Spacing="2.4"><TextBlock Text="{Binding Field.Label}" FontSize="13"/><TextBlock Text="{Binding Help}" IsVisible="{Binding HasHelp}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/></StackPanel></CheckBox></Border>
   <Grid IsVisible="{Binding !IsCheck}" Margin="0,7,0,0">
    <ContentControl x:Name="Input" Content="{Binding}" Classes.text="{Binding IsText}" Classes.choice="{Binding IsChoice}" Classes.date="{Binding IsDate}"/>
-   <TextBlock Text="{Binding Icon}" Classes="action-icon-glyph" FontSize="18.4" IsVisible="{Binding HasIcon}" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+   <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" FontSize="18.4" IsVisible="{Binding HasIcon}" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
    <Border Background="{DynamicResource ProductInputSurface}" Padding="3.2,0" Margin="9,-7,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" IsHitTestVisible="False">
     <Border.IsVisible><MultiBinding Converter="{x:Static converters:BoolConverters.Or}"><Binding Path="ShowCaption"/><Binding Path="IsKeyboardFocusWithin" ElementName="Root"/></MultiBinding></Border.IsVisible>
     <TextBlock Text="{Binding Field.Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
    </Border>
   </Grid>
   <TextBlock Text="{Binding Field.Error}" FontSize="12" Foreground="Firebrick" IsVisible="{Binding Field.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}"/>
-  <TextBlock Text="info_outline" Classes="action-icon-glyph" Foreground="#6366F1" Margin="16,0,0,0" HorizontalAlignment="Left" IsVisible="{Binding ShowAliasHelp}" ToolTip.Tip="Local-language name used when Show Alias Name in PDF is enabled in Invoice Settings."/>
+  <TextBlock Text="{icons:FontAwesomeGlyph info_outline}" Classes="action-icon-glyph" Foreground="#6366F1" Margin="16,0,0,0" HorizontalAlignment="Left" IsVisible="{Binding ShowAliasHelp}" ToolTip.Tip="Local-language name used when Show Alias Name in PDF is enabled in Invoice Settings."/>
  </StackPanel>
 </UserControl>

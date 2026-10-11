@@ -29,7 +29,7 @@
     <Grid Margin="0,8,0,0">
       <ContentControl x:Name="Input" Content="{Binding}" Classes.text="{Binding !IsChoice}" Classes.choice="{Binding IsChoice}" />
       <Border Padding="8,0" HorizontalAlignment="Left" IsHitTestVisible="False" IsVisible="{Binding HasIcon}">
-        <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="17.6" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" FontFamily="{DynamicResource IconFontFamily}" FontSize="17.6" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
       </Border>
       <Border Background="{DynamicResource AppCardBrush}" Padding="3.2,0" Margin="12,-8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" IsVisible="{Binding HasLabel}">
         <TextBlock vm:UiLocalization.Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />

@@ -1,4 +1,4 @@
-<UserControl xmlns:shared="using:LedgerNest.Desktop.Views" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:shared="using:LedgerNest.Desktop.Views" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.ReportsPageView"
@@ -8,7 +8,7 @@
   </UserControl.Resources>
   <Grid RowDefinitions="Auto,Auto,*">
     <shared:PageHeaderView Title="Reports"><shared:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="12"><Button Tag="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh" Classes="action-icon header-icon-action">
-          <TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White" />
+          <TextBlock Text="{icons:FontAwesomeGlyph refresh}" Classes="action-icon-glyph" Foreground="White" />
         </Button></StackPanel></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
 
     <Border Grid.Row="1" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="6.4,4.8">
@@ -56,7 +56,7 @@
                       FontSize="13">
                 <StackPanel Orientation="Horizontal" Spacing="6.4">
                   <TextBlock Text="{Binding Converter={StaticResource ReportTabIconConverter}}"
-                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                             FontFamily="{DynamicResource IconFontFamily}"
                              FontSize="17"
                              VerticalAlignment="Center" />
                   <TextBlock loc:UiLocalization.Text="{Binding}" VerticalAlignment="Center" />

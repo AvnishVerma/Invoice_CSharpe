@@ -91,7 +91,7 @@ public sealed class InvoiceStatusReportViewModel : INotifyPropertyChanged
                 ? new DateTime(SelectedYear, Array.IndexOf(Months, SelectedMonth) + 1, 1)
                 : DateTime.Today.AddDays(-29);
             var end = monthAndYear ? start.AddMonths(1).AddDays(-1) : DateTime.Today;
-            return $"ⓘ  Showing invoices dated {start:dd/MM/yyyy} - {end:dd/MM/yyyy}";
+            return $"Showing invoices dated {start:dd/MM/yyyy} - {end:dd/MM/yyyy}";
         }
     }
     public string RangeText => VisibleRows.Length == 0 ? "Rows per page:  10      0 items" : $"Rows per page:  10      1 – {VisibleRows.Length} of {VisibleRows.Length}";

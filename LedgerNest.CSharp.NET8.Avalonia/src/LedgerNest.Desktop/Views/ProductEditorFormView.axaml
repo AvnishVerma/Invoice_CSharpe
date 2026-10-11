@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns:primitives="using:Avalonia.Controls.Primitives"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns:primitives="using:Avalonia.Controls.Primitives"
  x:Class="LedgerNest.Desktop.Views.ProductEditorFormView" x:DataType="vm:ProductEditorViewModel">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.ThemeDictionaries>
   <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="ProductTipBrush">#FFF5ED</SolidColorBrush></ResourceDictionary>
@@ -20,9 +20,9 @@
    </StackPanel>
   </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
   <Expander x:Name="ProductAdvancedInformation" IsVisible="{Binding HasAdvanced}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" BorderThickness="0" Padding="0">
-   <Expander.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="more_horiz" Classes="action-icon-glyph" Foreground="#6750A4"/><TextBlock Text="Advanced Information" FontSize="15"/></StackPanel></Expander.Header>
+   <Expander.Header><StackPanel Orientation="Horizontal" Spacing="12"><TextBlock Text="{icons:FontAwesomeGlyph more_horiz}" Classes="action-icon-glyph" Foreground="#6750A4"/><TextBlock Text="Advanced Information" FontSize="15"/></StackPanel></Expander.Header>
    <ItemsControl ItemsSource="{Binding Advanced}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ProductInputViewModel"><Border Margin="0,0,0,16"><views:ProductInputView/></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
   </Expander>
-  <Border Background="{DynamicResource ProductTipBrush}" BorderBrush="#FFD18B" BorderThickness="1" CornerRadius="10" Padding="9.6"><Grid ColumnDefinitions="16,10,*"><TextBlock Text="lightbulb" Classes="action-icon-glyph" Foreground="#FFB300"/><TextBlock Grid.Column="2" Text="Tip: Choose optional product fields in Settings → Product Details." FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/></Grid></Border>
+  <Border Background="{DynamicResource ProductTipBrush}" BorderBrush="#FFD18B" BorderThickness="1" CornerRadius="10" Padding="9.6"><Grid ColumnDefinitions="16,10,*"><TextBlock Text="{icons:FontAwesomeGlyph lightbulb}" Classes="action-icon-glyph" Foreground="#FFB300"/><TextBlock Grid.Column="2" Text="Tip: Choose optional product fields in Settings → Product Details." FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/></Grid></Border>
  </StackPanel>
 </UserControl>

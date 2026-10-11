@@ -1,4 +1,4 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop"
              xmlns:converters="using:Avalonia.Data.Converters"
@@ -61,7 +61,7 @@
               KeyboardNavigation.TabNavigation="Cycle">
         <Grid RowDefinitions="Auto,*,Auto">
           <Grid ColumnDefinitions="Auto,12,*" Margin="0,0,0,16">
-            <TextBlock Text="&#xE8CC;" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+            <TextBlock Text="{icons:FontAwesomeGlyph shopping_cart}" FontFamily="{DynamicResource IconFontFamily}"
                        FontSize="28" Foreground="#003580" VerticalAlignment="Center" />
             <TextBlock Grid.Column="2" Text="{Binding Title}" FontSize="18" VerticalAlignment="Center" TextWrapping="Wrap" />
           </Grid>

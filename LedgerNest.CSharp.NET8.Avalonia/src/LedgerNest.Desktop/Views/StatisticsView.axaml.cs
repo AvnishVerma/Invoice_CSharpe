@@ -19,7 +19,7 @@ public sealed partial class StatisticsView : UserControl
     public StatisticsView(IEnumerable<(string Label, string Value, string Subtitle, string Color)> values) : this()
     {
         var items = values.Select(s => new StatisticItem(s.Label, s.Value, s.Subtitle,
-            s.Label.Contains("Customer") ? "\ue7fb" : s.Label.Contains("Product") ? "\ue1a1" : "\uef6e",
+            s.Label.Contains("Customer") ? "people" : s.Label.Contains("Product") ? "inventory_2" : "receipt_long",
             new SolidColorBrush(Color.Parse(s.Color), .12))).ToArray();
         count = Math.Max(1, items.Length);
         ColumnCount = count;

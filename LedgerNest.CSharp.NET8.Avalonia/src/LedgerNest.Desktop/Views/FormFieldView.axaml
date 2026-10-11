@@ -1,9 +1,9 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views" xmlns:converters="using:Avalonia.Data.Converters" x:Class="LedgerNest.Desktop.Views.FormFieldView" x:DataType="vm:FormFieldViewModel" x:Name="Root">
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views" xmlns:converters="using:Avalonia.Data.Converters" x:Class="LedgerNest.Desktop.Views.FormFieldView" x:DataType="vm:FormFieldViewModel" x:Name="Root">
   <UserControl.Resources>
     <DataTemplate x:Key="TextInput" x:DataType="vm:FormFieldViewModel">
       <Grid>
       <TextBox Text="{Binding Field.Value, Mode=TwoWay}" IsReadOnly="{Binding Field.IsReadOnly}" PlaceholderText="{Binding Label}" MaxLength="{Binding Field.MaxLength}" AcceptsReturn="{Binding IsMultiline}" Classes.multiline="{Binding IsMultiline}" Classes.with-icon="{Binding WithIcon}" Classes.expandable="{Binding CanExpand}" TextWrapping="Wrap" PasswordChar="{Binding PasswordChar}" AutomationProperties.Name="{Binding Field.Label}" />
-      <Button Classes="action-icon text" HorizontalAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding CanExpand}" Command="{Binding ExpandCommand}" ToolTip.Tip="Expand editor"><TextBlock Text="open_in_full" Classes="action-icon-glyph" /></Button>
+      <Button Classes="action-icon text" HorizontalAlignment="Right" VerticalAlignment="Center" IsVisible="{Binding CanExpand}" Command="{Binding ExpandCommand}" ToolTip.Tip="Expand editor"><TextBlock Text="{icons:FontAwesomeGlyph open_in_full}" Classes="action-icon-glyph" /></Button>
       </Grid>
     </DataTemplate>
     <DataTemplate x:Key="ChoiceInput" x:DataType="vm:FormFieldViewModel">
@@ -19,7 +19,7 @@
       <Grid>
         <TextBox Text="{Binding DateText}" IsReadOnly="True" PlaceholderText="{Binding Label}" Padding="10,5,36,5" AutomationProperties.Name="{Binding Field.Label}" PointerPressed="OpenCalendar" KeyDown="CalendarKeyDown" />
         <Button x:Name="CalendarButton" Classes="action-icon text" HorizontalAlignment="Right" ToolTip.Tip="Choose date" Tag="Choose date">
-          <TextBlock Text="calendar_today" Classes="action-icon-glyph" />
+          <TextBlock Text="{icons:FontAwesomeGlyph calendar_today}" Classes="action-icon-glyph" />
           <Button.Flyout>
             <Flyout>
               <StackPanel Spacing="6.4">
@@ -81,7 +81,7 @@
   <StackPanel Spacing="4">
     <Grid Margin="0,7,0,0">
       <ContentControl x:Name="Input" Content="{Binding}" Classes.IsText="{Binding IsText}" Classes.IsChoice="{Binding IsChoice}" Classes.IsDate="{Binding IsDate}" Classes.IsSlider="{Binding IsSlider}" Classes.IsFile="{Binding IsFile}" Classes.IsToggle="{Binding IsToggle}" />
-      <TextBlock Text="{Binding Field.Icon}" Classes="action-icon-glyph" IsVisible="{Binding WithIcon}" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" />
+      <TextBlock Text="{Binding Field.Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" IsVisible="{Binding WithIcon}" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" />
       <Border Background="{DynamicResource AppCardBrush}" Padding="4,0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="9,-7,0,0" IsHitTestVisible="False">
         <Border.IsVisible>
           <MultiBinding Converter="{x:Static converters:BoolConverters.And}">

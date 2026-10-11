@@ -1,4 +1,4 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:loc="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.PaymentDialogView"
              x:CompileBindings="False">
@@ -70,7 +70,7 @@
     </Border>
     <Border IsVisible="{Binding IsFullyPaid}" BorderBrush="#5916A34A" BorderThickness="1" Background="#1416A34A" CornerRadius="7" Padding="12.8,11.2">
       <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6.4">
-        <TextBlock Text="✓" FontSize="18" FontWeight="Bold" Foreground="#16A34A" />
+        <TextBlock FontFamily="{DynamicResource IconFontFamily}" Text="{icons:FontAwesomeGlyph check}" FontSize="18" FontWeight="Bold" Foreground="#16A34A" />
         <TextBlock loc:UiLocalization.Text="Invoice fully paid" FontSize="14" Foreground="#16A34A" VerticalAlignment="Center" />
       </StackPanel>
     </Border>

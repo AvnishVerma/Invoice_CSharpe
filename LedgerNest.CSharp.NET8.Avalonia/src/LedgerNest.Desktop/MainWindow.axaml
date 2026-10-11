@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:LedgerNest.Desktop"
         xmlns:views="using:LedgerNest.Desktop.Views"
@@ -36,13 +36,13 @@
             ZIndex="100">
       <Grid ColumnDefinitions="40,*,Auto">
         <Border x:Name="toastIconCircle" Width="32" Height="32" CornerRadius="16" VerticalAlignment="Top">
-          <TextBlock x:Name="toastIcon" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          <TextBlock x:Name="toastIcon" FontFamily="{DynamicResource IconFontFamily}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
         <StackPanel Grid.Column="1" Margin="10,0" Spacing="3">
           <TextBlock x:Name="toastTitle" FontSize="14" FontWeight="SemiBold" />
           <TextBlock x:Name="toastMessage" FontSize="12.5" TextWrapping="Wrap" MaxWidth="285" />
         </StackPanel>
-        <Button Grid.Column="2" Content="×" Classes="text" Padding="5" MinWidth="28" MinHeight="28" VerticalAlignment="Top" Click="OnDismissToast" />
+        <Button ToolTip.Tip="Close" Tag="×" FontFamily="{DynamicResource IconFontFamily}" Grid.Column="2" Content="{icons:FontAwesomeGlyph close}" Classes="text" Padding="5" MinWidth="28" MinHeight="28" VerticalAlignment="Top" Click="OnDismissToast" />
       </Grid>
     </Border>
   </Grid>

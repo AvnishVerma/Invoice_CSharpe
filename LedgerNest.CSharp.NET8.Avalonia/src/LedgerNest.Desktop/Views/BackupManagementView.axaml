@@ -1,10 +1,10 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.BackupManagementView" x:DataType="vm:BackupManagementViewModel" x:Name="Root">
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.BackupManagementView" x:DataType="vm:BackupManagementViewModel" x:Name="Root">
   <local:ScreenScaffoldView>
     <local:ScreenScaffoldView.PageHeader>
       <local:PageHeaderView Title="Backup Management" DataContext="{Binding DataContext, ElementName=Root}">
         <local:PageHeaderView.HeaderActions>
           <Button Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" Tag="Refresh">
-            <TextBlock Text="refresh" Classes="action-icon-glyph" />
+            <TextBlock Text="{icons:FontAwesomeGlyph refresh}" Classes="action-icon-glyph" />
           </Button>
         </local:PageHeaderView.HeaderActions>
       </local:PageHeaderView>
@@ -18,19 +18,19 @@
               <TextBlock Text="Create, export, or import a protected copy of your business data." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
               <Button Command="{Binding CreateDatabaseCommand}" Tag="Create DB Backup" HorizontalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="backup" Classes="action-icon-glyph" />
+                  <TextBlock Text="{icons:FontAwesomeGlyph backup}" Classes="action-icon-glyph" />
                   <TextBlock Text="Create DB Backup" />
                 </StackPanel>
               </Button>
               <Button Command="{Binding ExportJsonCommand}" Tag="Export JSON" HorizontalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="download" Classes="action-icon-glyph" />
+                  <TextBlock Text="{icons:FontAwesomeGlyph download}" Classes="action-icon-glyph" />
                   <TextBlock Text="Export JSON" />
                 </StackPanel>
               </Button>
               <Button Command="{Binding ImportCommand}" Tag="Import Backup" HorizontalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="upload" Classes="action-icon-glyph" />
+                  <TextBlock Text="{icons:FontAwesomeGlyph upload}" Classes="action-icon-glyph" />
                   <TextBlock Text="Import Backup" />
                 </StackPanel>
               </Button>
@@ -51,14 +51,14 @@
                     <Border Classes="card" Padding="16" Margin="0,0,0,14">
                       <Grid ColumnDefinitions="Auto,16,*,Auto">
                         <Border Width="32" Height="32" CornerRadius="20" Background="#4CAF60" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Icon}" Classes="action-icon-glyph" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <StackPanel Grid.Column="2" Spacing="2.4">
                           <TextBlock Text="{Binding Name}" FontSize="15" TextWrapping="Wrap" />
                           <TextBlock Text="{Binding FormattedSize, StringFormat='Size: {0}'}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
                           <TextBlock Text="{Binding FormattedCreatedAt, StringFormat='Created: {0}'}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
                         </StackPanel>
-                        <Button Grid.Column="3" Classes="action-icon" ToolTip.Tip="Backup actions" Content="⋮">
+                        <Button Grid.Column="3" Classes="action-icon" ToolTip.Tip="Backup actions" Content="{icons:FontAwesomeGlyph more_vert}" FontFamily="{DynamicResource IconFontFamily}">
                           <Button.Flyout>
                             <MenuFlyout>
                               <MenuItem Header="Restore" Command="{Binding #Root.((vm:BackupManagementViewModel)DataContext).RestoreCommand}" CommandParameter="{Binding}" />

@@ -1,4 +1,4 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:scottPlot="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
              x:Class="LedgerNest.Desktop.Views.ReceivablesReportView"
@@ -53,8 +53,8 @@
           <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,14">
             <TextBlock loc:UiLocalization.Text="A/R Aging Summary" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
-              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export aging summary as CSV" Content="↓  Export CSV" />
-              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export aging summary as PDF" Content="↓  Export PDF" />
+              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export aging summary as CSV" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export CSV"/></StackPanel></Button>
+              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export aging summary as PDF" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export PDF"/></StackPanel></Button>
             </StackPanel>
           </Grid>
           <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,1" Padding="16,7.2">
@@ -104,7 +104,7 @@
           </Border>
           <Grid ColumnDefinitions="*,Auto" Margin="20,13">
             <TextBlock Text="{Binding AgingRange}" FontSize="13" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" loc:UiLocalization.Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_left}"/><TextBlock loc:UiLocalization.Text="Page 1 of 1"  FontSize="13" FontWeight="SemiBold" /><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_right}"/></StackPanel>
           </Grid>
         </StackPanel>
       </Border>
@@ -114,8 +114,8 @@
           <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,14">
             <TextBlock Text="{Binding AgedTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
-              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export aged receivables as CSV" Content="↓  Export CSV" />
-              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export aged receivables as PDF" Content="↓  Export PDF" />
+              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export aged receivables as CSV" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export CSV"/></StackPanel></Button>
+              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export aged receivables as PDF" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export PDF"/></StackPanel></Button>
             </StackPanel>
           </Grid>
           <Border Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,1" Padding="16,7.2">
@@ -155,7 +155,7 @@
           </Border>
           <Grid ColumnDefinitions="*,Auto" Margin="20,13">
             <TextBlock Text="{Binding AgedRange}" FontSize="13" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" loc:UiLocalization.Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_left}"/><TextBlock loc:UiLocalization.Text="Page 1 of 1"  FontSize="13" FontWeight="SemiBold" /><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_right}"/></StackPanel>
           </Grid>
         </StackPanel>
       </Border>

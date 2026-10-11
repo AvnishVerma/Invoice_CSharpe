@@ -1,4 +1,4 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.ProductReportView"
              x:CompileBindings="False">
@@ -28,16 +28,16 @@
           <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
             <Border Background="{DynamicResource AppCardBrush}" CornerRadius="18" Padding="9.6,5.6" VerticalAlignment="Center">
-              <TextBlock loc:UiLocalization.Text="▣  Rank: Revenue" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+              <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="{icons:FontAwesomeGlyph payments}" FontFamily="{DynamicResource IconFontFamily}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" /><TextBlock loc:UiLocalization.Text="Rank: Revenue" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" /></StackPanel>
             </Border>
-            <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export product report as CSV" Content="↓  Export CSV" />
-            <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export product report as PDF" Content="↓  Export PDF" />
+            <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export product report as CSV" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export CSV"/></StackPanel></Button>
+            <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export product report as PDF" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export PDF"/></StackPanel></Button>
           </StackPanel>
         </Grid>
 
         <Border IsVisible="{Binding HasMissingCosts}" Background="{DynamicResource AppCardBrush}" BorderBrush="#F4C84A" BorderThickness="1" CornerRadius="8" Margin="20,4,20,10" Padding="11.2,8">
           <Grid ColumnDefinitions="Auto,*">
-            <TextBlock Text="⚠" Foreground="#EA8A00" FontSize="16" VerticalAlignment="Center" />
+            <TextBlock Text="{icons:FontAwesomeGlyph warning}" FontFamily="{DynamicResource IconFontFamily}" Foreground="#EA8A00" FontSize="16" VerticalAlignment="Center" />
             <TextBlock Grid.Column="1" Text="{Binding MissingCostMessage}" Foreground="{DynamicResource AppTextBrush}" FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0" VerticalAlignment="Center" />
           </Grid>
         </Border>
@@ -88,7 +88,7 @@
 
         <Grid ColumnDefinitions="*,Auto" Margin="20,13">
           <TextBlock Text="{Binding RangeText}" FontSize="13" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="1" loc:UiLocalization.Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold" />
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_left}"/><TextBlock loc:UiLocalization.Text="Page 1 of 1"  FontSize="13" FontWeight="SemiBold" /><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_right}"/></StackPanel>
         </Grid>
       </StackPanel>
     </Border>

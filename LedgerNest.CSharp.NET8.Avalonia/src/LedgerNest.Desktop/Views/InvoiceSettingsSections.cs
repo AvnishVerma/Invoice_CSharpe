@@ -99,7 +99,7 @@ public partial class MainWindow
         var add = Ui.Button("Add custom field", Add, true); add.Content = Ui.LocalText("＋ Add", 14, true, Brushes.White); add.Background = Brush.Parse("#6750A4"); add.MinHeight = 25.6; add.CornerRadius = new CornerRadius(18);
         newLabel.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { Add(); e.Handled = true; } };
         var previewCard = InvoiceSettingsCard(Ui.Stack(12.8, Ui.Columns("16,8,*", Ui.Icon("visibility", 16), new Border(), Ui.LocalText("Preview", 13)), livePreview,
-            Ui.LocalText("ⓘ  Preview may slightly differ in the final PDF.", 12, color: Ui.Muted)), 16);
+            new FontAwesomeIconLabelView { DataContext = new FontAwesomeIconLabelModel("info_outline", "Preview may slightly differ in the final PDF.", 12, Ui.Muted) }), 16);
         previewCard.Background = Ui.Palette("#FDF7FF", "#25212B");
         var definitionEditor = Ui.Stack(12.8, rows, Ui.Columns("*,8,Auto", newLabel, new Border(), add), previewCard);
         definitionEditor.Bind(IsVisibleProperty, new Binding(nameof(FormField.IsChecked)) { Source = Model.InvoiceSetting("Enable Custom Fields") });

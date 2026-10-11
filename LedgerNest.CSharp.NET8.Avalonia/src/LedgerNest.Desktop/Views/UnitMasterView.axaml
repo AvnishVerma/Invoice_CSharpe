@@ -1,4 +1,4 @@
-<UserControl xmlns:shared="using:LedgerNest.Desktop.Views" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:shared="using:LedgerNest.Desktop.Views" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop"
              xmlns:domain="using:LedgerNest.Domain"
@@ -21,7 +21,7 @@
     </Style>
   </UserControl.Styles>
   <Grid RowDefinitions="Auto,*" Background="{DynamicResource AppCanvasBrush}">
-    <shared:PageHeaderView Title="Unit Management"><shared:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="12"><Button Tag="Refresh" Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh"><TextBlock Text="refresh" Classes="action-icon-glyph" Foreground="White"/></Button><Button Content="+ New Unit" Command="{Binding NewCommand}" Classes="action primary" IsEnabled="{Binding CanAdd}" /></StackPanel></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
+    <shared:PageHeaderView Title="Unit Management"><shared:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="12"><Button Tag="Refresh" Command="{Binding RefreshCommand}" Classes="action-icon header-icon-action" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh"><TextBlock Text="{icons:FontAwesomeGlyph refresh}" Classes="action-icon-glyph" Foreground="White"/></Button><Button Content="+ New Unit" Command="{Binding NewCommand}" Classes="action primary" IsEnabled="{Binding CanAdd}" /></StackPanel></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
 
     <Grid Grid.Row="1" ColumnDefinitions="*,20,Auto" Margin="{DynamicResource PageContentPadding}">
       <Border Padding="16" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">

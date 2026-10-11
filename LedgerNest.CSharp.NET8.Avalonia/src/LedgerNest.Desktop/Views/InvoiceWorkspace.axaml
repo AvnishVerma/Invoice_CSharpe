@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.Views.InvoiceWorkspace" x:CompileBindings="False">
   <UserControl.Resources>
@@ -13,8 +13,8 @@
               <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto">
                   <TextBox x:Name="ProductSearch" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Search &amp; add a product or service (Ctrl+F)" MinWidth="100" Padding="36,8,10,8" KeyDown="SearchKeyDown" />
-                  <TextBlock Text="search" Classes="action-icon-glyph" Margin="10,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" />
-                  <Button Grid.Column="1" Classes="action outline" Command="{Binding CustomItemCommand}" Margin="12,0,0,0" ToolTip.Tip="Custom item (Ctrl+M)"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="add" Classes="action-icon-glyph" /><TextBlock Text="{Binding CustomItemCaption}" /></StackPanel></Button>
+                  <TextBlock Text="{icons:FontAwesomeGlyph search}" Classes="action-icon-glyph" Margin="10,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" />
+                  <Button Grid.Column="1" Classes="action outline" Command="{Binding CustomItemCommand}" Margin="12,0,0,0" ToolTip.Tip="Custom item (Ctrl+M)"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{icons:FontAwesomeGlyph add}" Classes="action-icon-glyph" /><TextBlock Text="{Binding CustomItemCaption}" /></StackPanel></Button>
                 </Grid>
                 <ListBox ItemsSource="{Binding Suggestions}" SelectedItem="{Binding SelectedSuggestion, Mode=TwoWay}" IsVisible="{Binding ShowSuggestions}" MaxHeight="260">
                   <ListBox.ItemTemplate><DataTemplate><Border Padding="10,8" MinHeight="52"><StackPanel Spacing="3"><TextBlock Text="{Binding Name}" FontSize="13" Classes.out-of-stock="{Binding IsOutOfStock}" /><TextBlock Text="{Binding Metadata}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" /></StackPanel></Border></DataTemplate></ListBox.ItemTemplate>

@@ -9,25 +9,25 @@ using System.Windows.Input;
 
 namespace LedgerNest.Desktop.Views;
 
-// Maps report navigation names to Material Icons glyphs used by the AXAML template.
+// Maps report navigation names to Font Awesome glyphs used by the AXAML template.
 public sealed class ReportTabIconConverter : IValueConverter
 {
     private static readonly IReadOnlyDictionary<string, string> Icons = new Dictionary<string, string>
     {
-        ["Revenue"] = "\ue26b",
-        ["Receivables"] = "\ue8b0",
-        ["Tax"] = "\uef6e",
-        ["Customers"] = "\ue7fb",
-        ["Products"] = "\ue1a1",
-        ["Quotations"] = "\uf1b6",
-        ["Invoice Status"] = "\ue8ec",
-        ["Daily Report"] = "\ue935",
-        ["Inventory"] = "\ue88a"
+        ["Revenue"] = "bar_chart",
+        ["Receivables"] = "receipt",
+        ["Tax"] = "receipt_long",
+        ["Customers"] = "people",
+        ["Products"] = "inventory_2",
+        ["Quotations"] = "request_quote",
+        ["Invoice Status"] = "view_column",
+        ["Daily Report"] = "calendar_today",
+        ["Inventory"] = "inventory"
     };
 
     // Converts a report name into the icon glyph displayed beside it.
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is string name && Icons.TryGetValue(name, out var icon) ? icon : "\ue88f";
+        FontAwesomeIcons.Get(value is string name && Icons.TryGetValue(name, out var icon) ? icon : "info_outline");
 
     // Rejects reverse conversion because report icons are display-only.
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();

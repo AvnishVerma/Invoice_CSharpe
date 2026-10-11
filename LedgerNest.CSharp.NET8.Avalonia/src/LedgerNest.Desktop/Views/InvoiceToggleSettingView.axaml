@@ -5,7 +5,7 @@
     <DataTemplate x:Key="CardLayout" x:DataType="local:InvoiceToggleLayoutModel">
       <Border Padding="12" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
         <Grid ColumnDefinitions="24,16,*,16,Auto">
-          <TextBlock Text="{Binding Icon}" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="22" Foreground="{DynamicResource PageHeaderBrush}" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" FontFamily="{DynamicResource IconFontFamily}" FontSize="22" Foreground="{DynamicResource PageHeaderBrush}" VerticalAlignment="Center" />
           <StackPanel Grid.Column="2" Spacing="3" VerticalAlignment="Center">
             <TextBlock Text="{Binding Title}" FontSize="16" />
             <TextBlock Text="{Binding Help}" IsVisible="{Binding Help, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />

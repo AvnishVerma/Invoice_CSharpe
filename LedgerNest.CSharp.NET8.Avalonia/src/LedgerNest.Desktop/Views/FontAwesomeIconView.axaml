@@ -1,0 +1,5 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.FontAwesomeIconView" x:DataType="vm:FontAwesomeIconModel">
+  <TextBlock Text="{Binding Name, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph"
+             FontSize="{Binding Size}" Foreground="{Binding Color}" />
+</UserControl>

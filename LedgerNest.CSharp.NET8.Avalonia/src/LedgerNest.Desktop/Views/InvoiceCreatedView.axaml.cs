@@ -21,7 +21,7 @@ public sealed partial class InvoiceCreatedView : UserControl
     {
         InitializeComponent();
         DateText.Text = DateTime.Today.ToString("dd/MM/yyyy");
-        InvoiceNumberText.Text = $"Invoice Number : #[{invoiceNumber}] ⓘ";
+        InvoiceNumberText.Text = $"Invoice Number : #[{invoiceNumber}]";
         InvoiceIdText.Text = $"Invoice ID: {invoiceId}";
         ToolTip.SetTip(ViewButton, "View invoice summary");
         ToolTip.SetTip(PreviewButton, "Preview PDF");

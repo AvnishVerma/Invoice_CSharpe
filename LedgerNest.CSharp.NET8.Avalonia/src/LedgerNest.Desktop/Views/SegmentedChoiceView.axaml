@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.SegmentedChoiceView" x:DataType="vm:SegmentedChoiceViewModel">
   <UserControl.Resources>
     <ResourceDictionary>
@@ -18,7 +18,7 @@
         <DataTemplate x:DataType="vm:SegmentedOptionViewModel">
           <Button Classes="action outline segment" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
                   Tag="{Binding Value}" ToolTip.Tip="{Binding Value}" AutomationProperties.Name="{Binding Value}">
-            <TextBlock vm:UiLocalization.Text="{Binding Value}" />
+            <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph check}" IsVisible="{Binding IsSelected}"/><TextBlock vm:UiLocalization.Text="{Binding Value}" /></StackPanel>
           </Button>
         </DataTemplate>
       </ItemsControl.ItemTemplate>

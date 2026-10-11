@@ -1,8 +1,8 @@
-<UserControl xmlns:shared="using:LedgerNest.Desktop.Views" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:shared="using:LedgerNest.Desktop.Views" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.InvoiceCreatedView">
   <Grid RowDefinitions="Auto,*">
-    <shared:PageHeaderView Title="Invoice Created"><shared:PageHeaderView.CenterContent><TextBlock x:Name="DateText" Foreground="White" FontSize="20" VerticalAlignment="Center" /></shared:PageHeaderView.CenterContent><shared:PageHeaderView.HeaderActions><TextBlock x:Name="InvoiceNumberText" Foreground="White" FontSize="16" VerticalAlignment="Center" /></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
+    <shared:PageHeaderView Title="Invoice Created"><shared:PageHeaderView.CenterContent><TextBlock x:Name="DateText" Foreground="White" FontSize="20" VerticalAlignment="Center" /></shared:PageHeaderView.CenterContent><shared:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock x:Name="InvoiceNumberText" Foreground="White" FontSize="16" VerticalAlignment="Center"/><TextBlock Text="{icons:FontAwesomeGlyph info_outline}" Classes="action-icon-glyph" Foreground="White"/></StackPanel></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
 
     <Grid Grid.Row="1"
           Background="{DynamicResource AppCanvasBrush}">
@@ -29,8 +29,8 @@
                       Background="#338E3C"
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center">
-                <TextBlock Text=""
-                           FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                <TextBlock Text="{icons:FontAwesomeGlyph check}"
+                           FontFamily="{DynamicResource IconFontFamily}"
                            FontSize="58"
                            Foreground="White"
                            HorizontalAlignment="Center"
@@ -63,8 +63,8 @@
                         Background="#1A4CAF50"
                         BorderBrush="#594CAF50"
                         BorderThickness="2">
-                  <TextBlock Text=""
-                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                  <TextBlock Text="{icons:FontAwesomeGlyph visibility}"
+                             FontFamily="{DynamicResource IconFontFamily}"
                              FontSize="34"
                              Foreground="#4CAF50" />
                 </Button>
@@ -83,8 +83,8 @@
                             Background="#1A009688"
                             BorderBrush="#59009688"
                             BorderThickness="2">
-                        <TextBlock Text=""
-                                   FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                        <TextBlock Text="{icons:FontAwesomeGlyph restore}"
+                                   FontFamily="{DynamicResource IconFontFamily}"
                                    FontSize="34"
                                    Foreground="#00897B" />
                     </Button>
@@ -102,8 +102,8 @@
                         Background="#1A9C27B0"
                         BorderBrush="#599C27B0"
                         BorderThickness="2">
-                  <TextBlock Text=""
-                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                  <TextBlock Text="{icons:FontAwesomeGlyph picture_as_pdf}"
+                             FontFamily="{DynamicResource IconFontFamily}"
                              FontSize="34"
                              Foreground="#9C27B0" />
                 </Button>
@@ -121,8 +121,8 @@
                         Background="#1A2196F3"
                         BorderBrush="#592196F3"
                         BorderThickness="2">
-                  <TextBlock Text=""
-                             FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                  <TextBlock Text="{icons:FontAwesomeGlyph print}"
+                             FontFamily="{DynamicResource IconFontFamily}"
                              FontSize="34"
                              Foreground="#2196F3" />
                 </Button>
@@ -141,8 +141,8 @@
                     MinHeight="41.6"
                     Classes="action primary">
               <Grid ColumnDefinitions="Auto,10,*">
-                <TextBlock Text=""
-                           FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons"
+                <TextBlock Text="{icons:FontAwesomeGlyph add}"
+                           FontFamily="{DynamicResource IconFontFamily}"
                            FontSize="18"
                            Foreground="White"
                            VerticalAlignment="Center" />

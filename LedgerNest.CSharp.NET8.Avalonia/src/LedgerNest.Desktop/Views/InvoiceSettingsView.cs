@@ -89,24 +89,11 @@ public partial class MainWindow
     private Control InvoiceTaxSettings()
     {
         FormField F(string label) => Model.InvoiceSetting(label);
-        var modes = Ui.Stack(0); modes.Orientation = Orientation.Horizontal;
-        var modeButtons = new List<Button>();
-        void RefreshMode()
+        var modes = new SegmentedChoiceView
         {
-            foreach (var button in modeButtons)
-            {
-                var selected = button.Tag?.ToString() == F("Tax Mode").Value;
-                button.Background = selected ? Ui.Palette("#E8DEF8", "#3A4C69") : Brushes.Transparent;
-                button.Content = (selected ? "✓  " : "") + button.Tag;
-            }
-        }
-        foreach (var mode in F("Tax Mode").Options.Where(mode => mode != "No Tax" || F("Tax Mode").Value == "No Tax"))
-        {
-            var button = Ui.Button(mode, () => { F("Tax Mode").Value = mode; RefreshMode(); });
-            button.MinHeight = 25.6; button.Padding = new Thickness(9.6, 4); button.CornerRadius = new CornerRadius(0);
-            modeButtons.Add(button); modes.Children.Add(button);
-        }
-        RefreshMode();
+            DataContext = new SegmentedChoiceViewModel(F("Tax Mode"),
+                F("Tax Mode").Options.Where(mode => mode != "No Tax" || F("Tax Mode").Value == "No Tax"))
+        };
         var titleLabel = Ui.LocalText("Default TAX Invoice Title", 14);
         titleLabel.Bind(TextBlock.TextProperty, new Binding(nameof(FormField.IsChecked)) { Source = F("Show GST fields"), Converter = new Avalonia.Data.Converters.FuncValueConverter<bool, string>(value => value ? "Default GST Invoice Title" : "Default TAX Invoice Title") });
         return Ui.Stack(16,

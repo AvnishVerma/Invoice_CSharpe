@@ -1,4 +1,4 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.CustomerReportView"
              x:CompileBindings="False">
@@ -31,10 +31,10 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Margin="16" Spacing="11.2">
       <StackPanel Orientation="Horizontal" Spacing="6.4">
-        <Button Classes="reportTab" IsVisible="{Binding IsOverview}" Content="✓  Overview" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppAccentBrush}" Foreground="{DynamicResource AppAccentBrush}" FontWeight="SemiBold" />
+        <Button Classes="reportTab" IsVisible="{Binding IsOverview}"  Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppAccentBrush}" Foreground="{DynamicResource AppAccentBrush}" FontWeight="SemiBold" ><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph check}"/><TextBlock Text="Overview"/></StackPanel></Button>
         <Button Classes="reportTab" IsVisible="{Binding IsStatement}" Content="Overview" Command="{Binding ShowOverviewCommand}" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" Foreground="{DynamicResource AppMutedBrush}" />
         <Button Classes="reportTab" IsVisible="{Binding IsOverview}" Content="Statements" Command="{Binding ShowStatementCommand}" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" Foreground="{DynamicResource AppMutedBrush}" />
-        <Button Classes="reportTab" IsVisible="{Binding IsStatement}" Content="✓  Statements" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppAccentBrush}" Foreground="{DynamicResource AppAccentBrush}" FontWeight="SemiBold" />
+        <Button Classes="reportTab" IsVisible="{Binding IsStatement}"  Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppAccentBrush}" Foreground="{DynamicResource AppAccentBrush}" FontWeight="SemiBold" ><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph check}"/><TextBlock Text="Statements"/></StackPanel></Button>
       </StackPanel>
 
       <Border Classes="customerReportCard" IsVisible="{Binding IsOverview}">
@@ -42,8 +42,8 @@
           <Grid ColumnDefinitions="*,Auto" Margin="20,16,14,12">
             <TextBlock Text="{Binding RevenueTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8">
-              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer report as CSV" Content="↓  Export CSV" />
-              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer report as PDF" Content="↓  Export PDF" />
+              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer report as CSV" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export CSV"/></StackPanel></Button>
+              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer report as PDF" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export PDF"/></StackPanel></Button>
             </StackPanel>
           </Grid>
 
@@ -90,7 +90,7 @@
           </ItemsControl>
           <Grid ColumnDefinitions="*,Auto" Margin="20,13">
             <TextBlock Text="{Binding RevenueRange}" FontSize="13" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" loc:UiLocalization.Text="‹    Page 1 of 1    ›" FontSize="13" FontWeight="SemiBold" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_left}"/><TextBlock loc:UiLocalization.Text="Page 1 of 1"  FontSize="13" FontWeight="SemiBold" /><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph chevron_right}"/></StackPanel>
           </Grid>
         </StackPanel>
       </Border>
@@ -112,8 +112,8 @@
               </ComboBox>
             </StackPanel>
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4.8" VerticalAlignment="Center" Margin="12,0,0,0">
-              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer statement as CSV" Content="↓  Export CSV" />
-              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer statement as PDF" Content="↓  Export PDF" />
+              <Button Classes="action exportButton" Command="{Binding ExportCsvCommand}" ToolTip.Tip="Export customer statement as CSV" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export CSV"/></StackPanel></Button>
+              <Button Classes="action exportButton" Command="{Binding ExportPdfCommand}" ToolTip.Tip="Export customer statement as PDF" ><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph download}"/><TextBlock Text="Export PDF"/></StackPanel></Button>
             </StackPanel>
           </Grid>
 
@@ -126,19 +126,19 @@
 
           <Grid ColumnDefinitions="*,14,*,14,*" RowDefinitions="Auto,14,Auto" Margin="20,0,20,18">
             <Border Grid.Column="0" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="10" Padding="12.8">
-              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▣  Opening" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding OpeningAmount}" Foreground="{DynamicResource AppMutedBrush}" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+              <StackPanel Spacing="9.6"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="{icons:FontAwesomeGlyph payments}" FontFamily="{DynamicResource IconFontFamily}" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock loc:UiLocalization.Text="Opening" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /></StackPanel><TextBlock Text="{Binding OpeningAmount}" Foreground="{DynamicResource AppMutedBrush}" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
             <Border Grid.Column="2" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="10" Padding="12.8">
-              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▤  Invoiced" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding SelectedInvoiced}" Foreground="{DynamicResource AppAccentBrush}" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+              <StackPanel Spacing="9.6"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="{icons:FontAwesomeGlyph receipt_long}" FontFamily="{DynamicResource IconFontFamily}" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock loc:UiLocalization.Text="Invoiced" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /></StackPanel><TextBlock Text="{Binding SelectedInvoiced}" Foreground="{DynamicResource AppAccentBrush}" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
             <Border Grid.Column="4" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="10" Padding="12.8">
-              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▣  Paid" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding SelectedPaid}" Foreground="#16A34A" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+              <StackPanel Spacing="9.6"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="{icons:FontAwesomeGlyph payments}" FontFamily="{DynamicResource IconFontFamily}" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock loc:UiLocalization.Text="Paid" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /></StackPanel><TextBlock Text="{Binding SelectedPaid}" Foreground="#16A34A" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
             <Border Grid.Row="2" Grid.Column="0" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="10" Padding="12.8">
-              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="▧  Closing" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding SelectedClosing}" Foreground="{DynamicResource AppAccentBrush}" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+              <StackPanel Spacing="9.6"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="{icons:FontAwesomeGlyph account_balance_wallet}" FontFamily="{DynamicResource IconFontFamily}" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock loc:UiLocalization.Text="Closing" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /></StackPanel><TextBlock Text="{Binding SelectedClosing}" Foreground="{DynamicResource AppAccentBrush}" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
             <Border Grid.Row="2" Grid.Column="2" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="10" Padding="12.8">
-              <StackPanel Spacing="9.6"><TextBlock loc:UiLocalization.Text="⚠  Overdue" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock Text="{Binding SelectedOverdue}" Foreground="#EF4444" FontSize="18" FontWeight="SemiBold" /></StackPanel>
+              <StackPanel Spacing="9.6"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="{icons:FontAwesomeGlyph warning}" FontFamily="{DynamicResource IconFontFamily}" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /><TextBlock loc:UiLocalization.Text="Overdue" Foreground="{DynamicResource AppMutedBrush}" FontSize="12" /></StackPanel><TextBlock Text="{Binding SelectedOverdue}" Foreground="#EF4444" FontSize="18" FontWeight="SemiBold" /></StackPanel>
             </Border>
           </Grid>
 

@@ -572,7 +572,7 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, action);
         button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
-        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+
         button.Classes.Remove("action");
         button.Classes.Add("action-icon");
         button.Margin = new Thickness(0);
@@ -600,7 +600,7 @@ internal sealed partial class ManagementView : UserControl
         if (record == null) return Ui.Text(value.ToUpperInvariant(), 11, true, Brushes.White);
         return header switch
         {
-            "Invoice / Customer" => Ui.Stack(2.4, Ui.Text(record.Name, 13, true), Ui.LocalText("♙ " + record["Customer"] + "  ⓘ", 11, color: Ui.Muted)),
+            "Invoice / Customer" => Ui.Stack(2.4, Ui.Text(record.Name, 13, true), new FontAwesomeIconLabelView { DataContext = new FontAwesomeIconLabelModel("person", record["Customer"], 11, Ui.Muted) }),
             "Items" => new Border { Background = Ui.Palette("#E3F2FD", "#202B36"), CornerRadius = new CornerRadius(5), Padding = new Thickness(5.6, 2.4), HorizontalAlignment = HorizontalAlignment.Left, Child = Ui.Text(value, 11, true, Brush.Parse("#1976D2")) },
             "Status" => StatusBadge(value),
             "Total" => Ui.Text(value, 13, true, Brush.Parse("#4CAF50")),
@@ -673,7 +673,7 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, action);
         button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
-        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+
         button.Classes.Remove("action");
         button.Classes.Add("action-icon");
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
@@ -688,7 +688,7 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, async () => await action());
         button.Content = Ui.Icon(icon, 18, Brush.Parse(color));
-        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+
         button.Classes.Remove("action");
         button.Classes.Add("action-icon");
         button.Background = new SolidColorBrush(Color.Parse(color), .12);
@@ -703,7 +703,7 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, action);
         button.Content = Ui.Icon(icon, 18, Brushes.White);
-        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+
         button.Classes.Remove("action");
         button.Classes.Remove("outline");
         button.Classes.Add("action-icon");
@@ -717,7 +717,7 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button(label, async () => await action());
         button.Content = Ui.Icon(icon, 18, Brushes.White);
-        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+
         button.Classes.Remove("action");
         button.Classes.Remove("outline");
         button.Classes.Add("action-icon");
@@ -795,12 +795,12 @@ internal sealed partial class ManagementView : UserControl
             view.Fields.Add(new CustomerViewFieldModel(label, icon, value, maxLength > 0 && value != "—" ? $"{value.Length}/{maxLength}" : ""));
         }
 
-        view.Fields.Add(new CustomerViewFieldModel("Name", "👤", record.Name.Length == 0 ? "—" : record.Name, ""));
-        Add("Business Name", "▣", "Business Name", 100);
-        Add("Email", "✉", "Email", 0);
-        Add("Phone", "☎", "Phone", 12);
-        Add("GST / VAT Number", "▣", "GST / VAT Number", 50);
-        Add("Address", "●", "Address", 100);
+        view.Fields.Add(new CustomerViewFieldModel("Name", "person", record.Name.Length == 0 ? "—" : record.Name, ""));
+        Add("Business Name", "business", "Business Name", 100);
+        Add("Email", "email", "Email", 0);
+        Add("Phone", "phone", "Phone", 12);
+        Add("GST / VAT Number", "business", "GST / VAT Number", 50);
+        Add("Address", "location_on", "Address", 100);
         window.ShowOverlay("", new CustomerViewDialog(view), Ui.Button("Close", window.CloseOverlay, true), width: 600);
     }
     // Performs the more menu action for this screen or workflow.
@@ -827,7 +827,7 @@ internal sealed partial class ManagementView : UserControl
     {
         var button = Ui.Button("More actions", () => { });
         button.Content = Ui.Icon("more_horiz", 18);
-        ((TextBlock)button.Content).Classes.Add("action-icon-glyph");
+
         button.Classes.Remove("action");
         button.Classes.Add("action-icon");
         button.Tag = "⋯";

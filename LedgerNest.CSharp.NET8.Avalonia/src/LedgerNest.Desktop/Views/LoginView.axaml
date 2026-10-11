@@ -1,4 +1,4 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop"
              xmlns:converters="using:Avalonia.Data.Converters"
@@ -100,7 +100,7 @@
               <Grid RowDefinitions="*,Auto">
                 <StackPanel VerticalAlignment="Center" Spacing="17.6">
                   <Border Width="72" Height="57.6" CornerRadius="24" Background="#26FFFFFF" HorizontalAlignment="Left">
-                    <TextBlock Text="✓" FontSize="38" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <TextBlock FontFamily="{DynamicResource IconFontFamily}" Text="{icons:FontAwesomeGlyph check}" FontSize="38" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                   </Border>
                   <TextBlock loc:UiLocalization.Text="Welcome back" FontSize="34" FontWeight="Bold" Foreground="White" TextWrapping="Wrap" />
                   <TextBlock loc:UiLocalization.Text="Open your secure workspace and continue managing invoices, payments, customers, and reports."

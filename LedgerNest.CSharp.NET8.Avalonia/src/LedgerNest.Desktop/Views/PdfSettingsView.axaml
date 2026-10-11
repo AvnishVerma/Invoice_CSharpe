@@ -1,4 +1,4 @@
-﻿<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.PdfSettingsView" x:DataType="vm:PdfSettingsViewModel" xmlns:shared="using:LedgerNest.Desktop.Views" x:Name="PageRoot">
+<UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.PdfSettingsView" x:DataType="vm:PdfSettingsViewModel" xmlns:shared="using:LedgerNest.Desktop.Views" x:Name="PageRoot">
   <shared:ScreenScaffoldView>
     <shared:ScreenScaffoldView.PageHeader>
       <shared:PageHeaderView Title="PDF Settings" DataContext="{Binding DataContext, ElementName=PageRoot}">
@@ -34,7 +34,7 @@
                               <TextBlock Text="Default" FontSize="11" />
                             </Border>
                           </StackPanel>
-                          <TextBlock Grid.Column="3" Text="check_circle" Classes="action-icon-glyph" Foreground="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding IsSelected}" />
+                          <TextBlock Grid.Column="3" Text="{icons:FontAwesomeGlyph check_circle}" Classes="action-icon-glyph" Foreground="{DynamicResource AppPrimaryBrush}" IsVisible="{Binding IsSelected}" />
                         </Grid>
                       </Button>
                     </DataTemplate>
@@ -66,8 +66,8 @@
                   <StackPanel Spacing="6">
                     <TextBlock Text="Orientation" />
                     <StackPanel Orientation="Horizontal">
-                      <Button Tag="Portrait" Content="✓ Portrait" Command="{Binding SetOrientationCommand}" CommandParameter="Portrait" Classes.selected="{Binding IsPortrait}" />
-                      <Button Tag="Landscape" Content="✓ Landscape" Command="{Binding SetOrientationCommand}" CommandParameter="Landscape" Classes.selected="{Binding IsLandscape}" />
+                      <Button Tag="Portrait"  Command="{Binding SetOrientationCommand}" CommandParameter="Portrait" Classes.selected="{Binding IsPortrait}"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph check}" IsVisible="{Binding IsPortrait}"/><TextBlock Text="Portrait"/></StackPanel></Button>
+                      <Button Tag="Landscape"  Command="{Binding SetOrientationCommand}" CommandParameter="Landscape" Classes.selected="{Binding IsLandscape}"><StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Classes="action-icon-glyph" Text="{icons:FontAwesomeGlyph check}" IsVisible="{Binding IsLandscape}"/><TextBlock Text="Landscape"/></StackPanel></Button>
                     </StackPanel>
                   </StackPanel>
                 </Border>
