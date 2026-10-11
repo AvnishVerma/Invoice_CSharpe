@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop" xmlns:converters="using:Avalonia.Data.Converters"
-             x:Class="LedgerNest.Desktop.Views.InvoiceInputView" x:DataType="vm:InvoiceInputViewModel">
+             x:Class="LedgerNest.Desktop.Views.InvoiceInputView" x:DataType="vm:InvoiceInputViewModel" x:Name="Root">
   <UserControl.Resources>
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
@@ -8,7 +8,7 @@
         <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="InvoiceInputSurface">#252525</SolidColorBrush></ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
       <DataTemplate x:Key="TextInput" x:DataType="vm:InvoiceInputViewModel">
-        <TextBox Text="{Binding Field.Value, Mode=TwoWay}" MaxLength="{Binding MaxLength}" AutomationProperties.Name="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" />
+        <TextBox PlaceholderText="{Binding Label}" Text="{Binding Field.Value, Mode=TwoWay}" MaxLength="{Binding MaxLength}" AutomationProperties.Name="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" />
       </DataTemplate>
       <DataTemplate x:Key="ChoiceInput" x:DataType="vm:InvoiceInputViewModel">
         <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption, Mode=TwoWay}" HorizontalAlignment="Stretch"
@@ -31,7 +31,7 @@
       <Border Padding="8,0" HorizontalAlignment="Left" IsHitTestVisible="False" IsVisible="{Binding HasIcon}">
         <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" FontFamily="{DynamicResource IconFontFamily}" FontSize="17.6" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
       </Border>
-      <Border Classes="field-caption" Padding="3.2,0" Margin="12,-8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" IsVisible="{Binding HasLabel}">
+      <Border Classes="field-caption" Padding="3.2,0" Margin="12,-8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" ><Border.IsVisible><MultiBinding Converter="{x:Static converters:BoolConverters.And}"><Binding Path="HasLabel"/><Binding Path="IsKeyboardFocusWithin" ElementName="Root"/></MultiBinding></Border.IsVisible>
         <TextBlock vm:UiLocalization.Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
       </Border>
     </Grid>

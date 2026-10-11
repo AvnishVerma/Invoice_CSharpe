@@ -88,10 +88,7 @@
             <Binding Path="!IsToggle" />
             <Binding Path="!IsFile" />
             <Binding Path="!IsSlider" />
-            <MultiBinding Converter="{x:Static converters:BoolConverters.Or}">
-              <Binding Path="ShowCaption" />
-              <Binding Path="IsKeyboardFocusWithin" ElementName="Root" />
-            </MultiBinding>
+            <Binding Path="IsKeyboardFocusWithin" ElementName="Root" />
           </MultiBinding>
         </Border.IsVisible>
         <TextBlock vm:UiLocalization.Text="{Binding Caption}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />

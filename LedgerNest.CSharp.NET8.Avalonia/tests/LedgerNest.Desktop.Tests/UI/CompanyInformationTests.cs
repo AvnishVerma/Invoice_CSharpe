@@ -89,12 +89,15 @@ public sealed class CompanyInformationTests(HeadlessFixture headless)
             if(width>720) Assert.Equal(240,point.X,0); else { Assert.Equal(0,point.X,0); Assert.True(point.Y>=300); }
             Assert.InRange(form.Bounds.Width+point.X,0,width+1);
             Assert.Equal(width>480?2:1,view.GetVisualDescendants().OfType<UniformGrid>().First(grid => grid.Classes.Contains("details-pair")).Columns);
-            foreach (var fieldView in view.GetVisualDescendants().OfType<CompanyFieldView>())
-            {
-                var field = (CompanyFieldModel)fieldView.DataContext!;
-                var caption = fieldView.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Text == UiLocalization.Translate(field.Field.Label));
-                Assert.True(caption.TranslatePoint(default,fieldView)!.Value.Y >= -0.5, field.Field.Label + " caption is clipped");
-            }
+            var nameView = view.GetVisualDescendants().OfType<CompanyFieldView>().First();
+            var caption = nameView.GetVisualDescendants().OfType<Border>().Single(border => border.Classes.Contains("field-caption"));
+            var input = nameView.GetVisualDescendants().OfType<TextBox>().Single();
+            Assert.False(caption.IsVisible);
+            input.Focus(); Dispatcher.UIThread.RunJobs(); window.UpdateLayout();
+            Assert.True(caption.IsVisible);
+            Assert.True(caption.TranslatePoint(default,nameView)!.Value.Y >= -0.5);
+            view.GetVisualDescendants().OfType<ComboBox>().First().Focus(); Dispatcher.UIThread.RunJobs();
+            Assert.False(caption.IsVisible);
             Assert.True(model.AddressInput.CanExpand);
             var save = view.GetVisualDescendants().OfType<ActionButtonView>().Single(button => button.ActionLabel=="Save");
             Assert.True(save.Bounds.Height>0); Assert.True(save.IsEnabled);

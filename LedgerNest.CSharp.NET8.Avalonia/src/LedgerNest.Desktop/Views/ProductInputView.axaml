@@ -34,7 +34,7 @@
    <ContentControl x:Name="Input" Content="{Binding}" Classes.text="{Binding IsText}" Classes.choice="{Binding IsChoice}" Classes.date="{Binding IsDate}"/>
    <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" FontSize="18.4" IsVisible="{Binding HasIcon}" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
    <Border Classes="field-caption" Padding="3.2,0" Margin="9,-7,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" IsHitTestVisible="False">
-    <Border.IsVisible><MultiBinding Converter="{x:Static converters:BoolConverters.Or}"><Binding Path="ShowCaption"/><Binding Path="IsKeyboardFocusWithin" ElementName="Root"/></MultiBinding></Border.IsVisible>
+    <Border.IsVisible><Binding Path="IsKeyboardFocusWithin" ElementName="Root"/></Border.IsVisible>
     <TextBlock Text="{Binding Field.Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
    </Border>
   </Grid>
