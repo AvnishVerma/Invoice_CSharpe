@@ -185,10 +185,42 @@ internal static class Program
         fixture.Show(); Dispatcher.UIThread.RunJobs(); fixture.UpdateLayout();
         Check(view.GetVisualDescendants().OfType<PageHeaderView>().Single().Title == "Example Settings",
             "Generic AXAML settings must consume the shared page header");
-        var save = view.GetVisualDescendants().OfType<Button>().Single(button => button.Content as string == "Save Settings");
+        var save = view.GetVisualDescendants().OfType<Button>().Single(button => button.Tag as string == "Save Settings");
         save.Command!.Execute(null);
         Check(saved == 2, "Declared AXAML save button must retain its command binding");
         fixture.Close();
+        var tabs = new[] { new SettingsTabModel("General", "settings"), new SettingsTabModel("Other", "info_outline") };
+        var selections = 0;
+        var shell = new SettingsPageModel(tabs, "Missing", _ => new SettingsFormPageView { DataContext = model }, _ => selections++);
+        Check(shell.SelectedTab == "General" && tabs[0].IsSelected, "Settings must fall back to a registered category");
+        shell.SelectTabCommand.Execute("Other");
+        Check(shell.SelectedTab == "Other" && tabs[1].IsSelected && !tabs[0].IsSelected && selections == 1, "Settings selection must update a single category and callback");
+        shell.SelectTabCommand.Execute("Unknown");
+        Check(shell.SelectedTab == "Other" && selections == 1, "Unknown settings categories must not bypass routing");
+        field.Error = "Required";
+        Check(model.Sections[0].Fields.Fields.Single().Field.Error == "Required", "Reusable sections must preserve field validation errors");
+        var settingsView = new SettingsPageView(shell);
+        var settingsWindow = new Window { Content = settingsView, Width = 440, Height = 600 };
+        settingsWindow.Show(); Dispatcher.UIThread.RunJobs(); settingsWindow.UpdateLayout();
+        Check(settingsView.GetVisualDescendants().OfType<Button>().Where(button => button.Classes.Contains("nav")).All(button => button.Bounds.Height >= 48), "Settings navigation must have touch-sized targets");
+        Check(settingsView.GetVisualDescendants().OfType<TextBox>().All(input => input.Bounds.Height >= 50), "Settings input dimensions must be scoped to the shared host");
+        settingsWindow.Close();
+        var responsiveFields = new FormFieldsView { DataContext = new FormFieldsViewModel([new FormFieldViewModel(field),new FormFieldViewModel(new FormField("Second", "value"))],2) };
+        var responsiveShell = new SettingsPageView(new SettingsPageModel([new SettingsTabModel("General", "settings")], "General", _ => responsiveFields, _ => { }));
+        var responsiveWindow = new Window { Content = responsiveShell, Width = 440, Height = 600 };
+        responsiveWindow.Show(); Dispatcher.UIThread.RunJobs(); responsiveWindow.UpdateLayout(); Dispatcher.UIThread.RunJobs(); responsiveWindow.UpdateLayout();
+        Check(responsiveFields.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.UniformGrid>().Single().Columns == 1, "Narrow settings field grids must stack vertically");
+        responsiveWindow.Width = 900; Dispatcher.UIThread.RunJobs(); responsiveWindow.UpdateLayout(); Dispatcher.UIThread.RunJobs(); responsiveWindow.UpdateLayout();
+        Check(responsiveFields.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.UniformGrid>().Single().Columns == 2, "Wide settings must restore configured field columns");
+        responsiveWindow.Close();
+        var feedback = new SettingsFeedbackModel { IsLoading = true, HasUnsavedChanges = true, Message = "Pending" };
+        var feedbackView = new SettingsFeedbackView { DataContext = feedback };
+        var feedbackWindow = new Window { Content = feedbackView, Width = 440, Height = 300 };
+        feedbackWindow.Show(); Dispatcher.UIThread.RunJobs();
+        Check(feedbackView.GetVisualDescendants().OfType<ProgressBar>().Single().IsVisible, "Reusable feedback must bind loading state");
+        feedback.IsLoading = false; feedback.IsFailure = true; Dispatcher.UIThread.RunJobs();
+        Check(!feedbackView.GetVisualDescendants().OfType<ProgressBar>().Single().IsVisible && feedbackView.GetVisualDescendants().OfType<TextBlock>().Single(block => block.Text == "Save failed").IsVisible, "Feedback must refresh independently of persistence");
+        feedbackWindow.Close();
     }
     private static void CheckAxamlActions()
     {

@@ -1,0 +1,11 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:converters="using:Avalonia.Data.Converters" x:Class="LedgerNest.Desktop.Views.SettingsFeedbackView" x:DataType="vm:SettingsFeedbackModel">
+ <StackPanel Spacing="8">
+  <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsLoading}" AutomationProperties.Name="Loading settings" />
+  <TextBlock vm:UiLocalization.Text="Loading" IsVisible="{Binding IsLoading}" />
+  <TextBlock vm:UiLocalization.Text="No settings available" IsVisible="{Binding IsEmpty}" />
+  <TextBlock vm:UiLocalization.Text="Saved" IsVisible="{Binding IsSuccess}" />
+  <TextBlock vm:UiLocalization.Text="Save failed" Foreground="Firebrick" IsVisible="{Binding IsFailure}" />
+  <TextBlock vm:UiLocalization.Text="Unsaved changes" IsVisible="{Binding HasUnsavedChanges}" />
+  <TextBlock Text="{Binding Message}" TextWrapping="Wrap" IsVisible="{Binding Message, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+ </StackPanel>
+</UserControl>

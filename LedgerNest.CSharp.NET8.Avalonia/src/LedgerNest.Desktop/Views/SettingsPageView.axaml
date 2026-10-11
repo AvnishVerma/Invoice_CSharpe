@@ -1,7 +1,8 @@
 <UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.SettingsPageView"
-             x:CompileBindings="False">
+             x:CompileBindings="False" Container.Name="settings" Container.Sizing="Width">
+    <UserControl.Styles><StyleInclude Source="/Views/SettingsStyles.axaml" /></UserControl.Styles>
     <Grid RowDefinitions="Auto,Auto,*" Background="{DynamicResource AppCanvasBrush}">
         <ContentControl Content="{Binding CurrentHeader}" VerticalAlignment="Top" />
         <Border Grid.Row="1" Classes="secondary-navigation">
@@ -21,10 +22,10 @@
                                     Classes.selected="{Binding IsSelected}"
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
-                                    MinHeight="36"
+                                    MinHeight="48"
                                     Margin="0"
                                     Padding="10,6"
-                                    ToolTip.Tip="{Binding Label}">
+                                    ToolTip.Tip="{Binding Label}" AutomationProperties.Name="{Binding Label}">
                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}"
                                                FontFamily="{DynamicResource IconFontFamily}"
@@ -40,7 +41,7 @@
             </ScrollViewer>
         </Border>
 
-        <ContentControl Grid.Row="2" Content="{Binding CurrentContent}"
+        <ContentControl Classes="settings-content" Grid.Row="2" Content="{Binding CurrentContent}"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch" />
     </Grid>

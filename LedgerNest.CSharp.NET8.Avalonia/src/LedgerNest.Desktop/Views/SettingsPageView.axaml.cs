@@ -52,7 +52,7 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
         get => selectedTab;
         set
         {
-            if (selectedTab == value || string.IsNullOrWhiteSpace(value)) return;
+            if (selectedTab == value || !Tabs.Any(tab => tab.Label == value)) return;
             selectedTab = value;
             foreach (var tab in Tabs) tab.IsSelected = tab.Label == value;
             selectedChanged(value);
@@ -80,6 +80,8 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
         this.contentFactory = contentFactory;
         this.selectedChanged = selectedChanged;
         Tabs = new ObservableCollection<SettingsTabModel>(tabs);
+        if (Tabs.Count == 0) throw new ArgumentException("Register at least one settings category.", nameof(tabs));
+        selectedTab = Tabs.Any(tab => tab.Label == selectedTab) ? selectedTab : Tabs[0].Label;
         this.selectedTab = selectedTab;
         foreach (var tab in Tabs) tab.IsSelected = tab.Label == selectedTab;
         currentContent = contentFactory(selectedTab);

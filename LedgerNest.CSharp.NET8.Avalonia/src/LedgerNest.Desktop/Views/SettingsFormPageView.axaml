@@ -11,16 +11,13 @@
           <ItemsControl ItemsSource="{Binding Sections}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:SettingsFormSection">
-                <Border Classes="settings-column" Padding="24" Margin="0,0,0,16">
-                  <StackPanel Spacing="12.8">
-                    <TextBlock vm:UiLocalization.Text="{Binding Title}" FontSize="18" FontWeight="Bold" />
-                    <views:FormFieldsView DataContext="{Binding Fields}" />
-                  </StackPanel>
-                </Border>
+                <views:SettingsSectionView Title="{Binding Title}" Margin="0,0,0,16">
+                  <views:SettingsSectionView.Body><views:FormFieldsView DataContext="{Binding Fields}" /></views:SettingsSectionView.Body>
+                </views:SettingsSectionView>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <Button Content="Save Settings" Command="{Binding SaveCommand}" Classes="action primary" />
+          <views:SettingsActionsView SaveCommand="{Binding SaveCommand}" />
         </StackPanel>
       </ScrollViewer>
     </views:ScreenScaffoldView.PageBody>

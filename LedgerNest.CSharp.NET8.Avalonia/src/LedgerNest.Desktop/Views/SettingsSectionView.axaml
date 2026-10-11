@@ -1,0 +1,9 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:converters="using:Avalonia.Data.Converters" x:Class="LedgerNest.Desktop.Views.SettingsSectionView" x:Name="Root">
+ <Border Classes="settings-column">
+  <StackPanel Spacing="16">
+   <TextBlock Classes="settings-section-title" vm:UiLocalization.Text="{Binding Title, ElementName=Root}" TextWrapping="Wrap" />
+   <TextBlock Classes="settings-description" vm:UiLocalization.Text="{Binding Description, ElementName=Root}" IsVisible="{Binding Description, ElementName=Root, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
+   <ContentControl Content="{Binding Body, ElementName=Root}" HorizontalContentAlignment="Stretch" />
+  </StackPanel>
+ </Border>
+</UserControl>
