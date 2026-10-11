@@ -1,6 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:loc="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.Views.PageHeaderView" x:Name="Root">
   <UserControl.Styles>
+    <Style Selector="ComboBox">
+      <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AppTextBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />
+    </Style>
     <Style Selector="TextBlock#Heading.centered">
       <Setter Property="Grid.ColumnSpan" Value="2" />
       <Setter Property="HorizontalAlignment" Value="Center" />
