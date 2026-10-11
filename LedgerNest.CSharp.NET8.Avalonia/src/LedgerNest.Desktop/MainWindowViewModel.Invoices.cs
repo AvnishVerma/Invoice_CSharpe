@@ -143,6 +143,7 @@ public partial class MainWindowViewModel
         if (invoice == null || invoice.DeletedAt != null) { Status = "Document is unavailable or in trash."; return false; }
         if (invoice.Snapshot is not { Version: 1 } snapshot)
         { Status = "This document lacks a supported historical snapshot and cannot be safely cloned."; return false; }
+        if (!RequestInvoiceLeave(() => CloneDocumentForEditing(record))) return false;
 
         editingDocument = null;
         editingSnapshot = null;
@@ -177,6 +178,7 @@ public partial class MainWindowViewModel
             Lines.Add(line);
         }
         InitializeInvoiceCustomValues(snapshot);
+        MarkInvoiceFormClean();
         NavigateCommand.Execute("New Invoice");
         Status = $"Cloned {record.Name} without payment history. Review and save to create a new invoice.";
         return true;
@@ -196,6 +198,7 @@ public partial class MainWindowViewModel
         { Status = $"{invoice.Status} documents cannot be edited."; return false; }
         if (invoice.Snapshot is not { Version: 1 } snapshot)
         { Status = "This document lacks a supported historical snapshot and cannot be safely edited."; return false; }
+        if (!RequestInvoiceLeave(() => LoadDocumentForEditing(record))) return false;
         editingDocument = record;
         editingSnapshot = snapshot;
         editingFingerprint = Fingerprint(invoice);
@@ -229,6 +232,7 @@ public partial class MainWindowViewModel
             Lines.Add(line);
         }
         InitializeInvoiceCustomValues(snapshot);
+        MarkInvoiceFormClean();
         NavigateCommand.Execute("New Invoice");
         return true;
     }
@@ -304,6 +308,7 @@ public partial class MainWindowViewModel
             editingDocument = saved;
         }
         LastSavedDocument = saved;
+        MarkInvoiceFormClean();
         InvoiceChanged?.Invoke();
         Status = $"{InvoiceDetails[0].Value} saved.";
         return true;
@@ -336,6 +341,13 @@ public partial class MainWindowViewModel
             throw new ArgumentException("Unknown document type.", nameof(type));
         var resource = type == "Quotation" ? "Quotation" : "Invoice";
         if (!HasPermission(resource, "Add")) { Status = $"You do not have permission to create {type.ToLowerInvariant()} records."; return; }
+        if (!RequestInvoiceLeave(() => StartDocument(type))) return;
+        ResetInvoiceForm(type);
+        NavigateCommand.Execute("New Invoice");
+    }
+
+    private void ResetInvoiceForm(string type)
+    {
         editingDocument = null; editingSnapshot = null; editingFingerprint = null; editingHasPayments = false; historicalLines.Clear();
         Lines.Clear();
         AdditionalCosts.Clear();
@@ -356,7 +368,7 @@ public partial class MainWindowViewModel
         InvoiceOptions[3].Value = InvoiceSetting("Tax Enabled").IsChecked ? InvoiceSetting("Tax Mode").Value : "No Tax";
         InvoiceOptions[4].Value = InvoiceSetting("Default Tax Rate (%)").Value;
         InitializeInvoiceCustomValues();
-        NavigateCommand.Execute("New Invoice");
+        MarkInvoiceFormClean();
     }
 
     // Performs the set default customer action for this screen or workflow.

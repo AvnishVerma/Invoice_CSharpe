@@ -1,27 +1,10 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.InvoiceTotalsView"
-             x:CompileBindings="False">
-  <ItemsControl ItemsSource="{Binding Totals}"
-                HorizontalAlignment="Right">
-    <ItemsControl.ItemsPanel>
-      <ItemsPanelTemplate>
-        <WrapPanel Orientation="Horizontal" />
-      </ItemsPanelTemplate>
-    </ItemsControl.ItemsPanel>
-    <ItemsControl.ItemTemplate>
-      <DataTemplate>
-        <Border Margin="18,0,18,4" MinWidth="92">
-          <StackPanel Spacing="4" HorizontalAlignment="Right">
-            <TextBlock Text="{Binding Label}" FontSize="11"
-                       Foreground="{DynamicResource AppMutedBrush}"
-                       HorizontalAlignment="Right" TextAlignment="Right" />
-            <TextBlock Text="{Binding Amount}" FontSize="{Binding FontSize}" FontWeight="Bold"
-                       Foreground="{Binding AmountColor}"
-                       HorizontalAlignment="Right" TextAlignment="Right" />
-          </StackPanel>
-        </Border>
-      </DataTemplate>
-    </ItemsControl.ItemTemplate>
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="LedgerNest.Desktop.Views.InvoiceTotalsView" x:CompileBindings="False">
+  <ItemsControl ItemsSource="{Binding Totals}" HorizontalAlignment="Stretch">
+    <ItemsControl.ItemTemplate><DataTemplate>
+      <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+        <TextBlock Text="{Binding Label}" FontSize="{Binding FontSize}" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding Amount}" FontSize="{Binding FontSize}" FontWeight="Bold" Foreground="{Binding AmountColor}" VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate></ItemsControl.ItemTemplate>
   </ItemsControl>
 </UserControl>

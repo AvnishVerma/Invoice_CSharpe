@@ -9,6 +9,7 @@ public partial class MainWindow
     // Performs the close overlay action for this screen or workflow.
     internal void CloseOverlay()
     {
+        if (Model.HasPendingInvoiceNavigation) Model.ResolveInvoiceLeave(InvoiceLeaveChoice.KeepEditing);
         if (!Model.CanAccessWorkspace) { ShowAccessScreen(); return; }
         Model.CurrentOverlay = null;
     }

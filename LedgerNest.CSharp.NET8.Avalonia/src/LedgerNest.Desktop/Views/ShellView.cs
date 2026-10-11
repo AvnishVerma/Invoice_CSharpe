@@ -13,6 +13,7 @@ public partial class MainWindow
     private void InitializeShell(MainWindowViewModel vm)
     {
         if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
+        if (shellModel != null) shellModel.InvoiceLeaveRequested -= ShowInvoiceLeaveConfirmation;
         page.Content = null;
         sidebar.Content = null;
         vm.CurrentOverlay = null;
@@ -36,7 +37,18 @@ public partial class MainWindow
             if (e.PropertyName is nameof(vm.ThemeMode) or nameof(vm.Language)) ApplyAppearance(vm);
         };
         vm.PropertyChanged += shellChanged;
+        vm.InvoiceLeaveRequested += ShowInvoiceLeaveConfirmation;
         RefreshWorkspaceAccess();
+    }
+
+    private void ShowInvoiceLeaveConfirmation()
+    {
+        var actions = new DialogActions([
+            new(UiLocalization.TranslateKey("createInvoiceKeepEditingButton"), new CommunityToolkit.Mvvm.Input.RelayCommand(() => { Model.ResolveInvoiceLeave(InvoiceLeaveChoice.KeepEditing); CloseOverlay(); })),
+            new(UiLocalization.TranslateKey("actionDiscard"), new CommunityToolkit.Mvvm.Input.RelayCommand(() => { Model.ResolveInvoiceLeave(InvoiceLeaveChoice.Discard); if (Model.CurrentUsername == null) ShowAccessScreen(); else CloseOverlay(); })),
+            new(UiLocalization.TranslateKey("actionSave"), new CommunityToolkit.Mvvm.Input.RelayCommand(() => { if (Model.ResolveInvoiceLeave(InvoiceLeaveChoice.Save)) { if (Model.CurrentUsername == null) ShowAccessScreen(); else CloseOverlay(); } }), true)
+        ]);
+        ShowOverlay(UiLocalization.TranslateKey("createInvoiceUnsavedChangesTitle"), new DialogMessage(UiLocalization.TranslateKey("createInvoiceUnsavedChangesMessage")), actions, width: 528, prominentHeader: true);
     }
 
     private void ApplyAppearance(MainWindowViewModel vm)
@@ -53,7 +65,7 @@ public partial class MainWindow
     // Performs the build sidebar action for this screen or workflow.
     private void BuildSidebar()
     {
-        sidebar.Content = new SidebarView(Model, route => Model.NavigateCommand.Execute(route), () => Model.ToggleSidebarCommand.Execute(null), () => { Model.SignOut(); ShowLogin(); });
+        sidebar.Content = new SidebarView(Model, route => Model.NavigateCommand.Execute(route), () => Model.ToggleSidebarCommand.Execute(null), () => { Model.SignOut(); if (Model.CurrentUsername == null) ShowLogin(); });
     }
 
     // Performs direct invoice navigation from a customer row with the customer search applied.

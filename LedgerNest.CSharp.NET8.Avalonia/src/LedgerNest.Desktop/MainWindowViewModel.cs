@@ -101,6 +101,7 @@ public partial class MainWindowViewModel : ObservableObject
         LoadLanguage();
         ApplyDefaultCustomer();
         if (companyContext != null) CompanyManagement = new CompanyManagementViewModel(this, companyContext);
+        MarkInvoiceFormClean();
     }
     // Performs the line changed action for this screen or workflow.
     private void LineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => InvoiceChanged?.Invoke();
@@ -108,6 +109,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (!Routes.Contains(route)) return;
         if (!CanNavigate(route)) { Status = $"Access denied to {route}."; return; }
+        if (route != Title && !RequestInvoiceLeave(() => NavigateCommand.Execute(route))) return;
         Title = route; Status = "";
     }
     [RelayCommand] private void ToggleSidebar() => SidebarExpanded = !SidebarExpanded;

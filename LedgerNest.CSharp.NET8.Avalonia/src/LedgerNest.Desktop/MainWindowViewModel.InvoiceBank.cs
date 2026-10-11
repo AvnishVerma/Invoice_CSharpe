@@ -43,4 +43,8 @@ public sealed class InvoiceDocumentDetailsViewModel(MainWindowViewModel workspac
     public FormFieldViewModel TimeField { get; } = new(workspace.OrderTime);
     public FormFieldViewModel TitleField { get; } = new(workspace.InvoiceDetails[3]);
     public FormFieldViewModel HideNumberField { get; } = new(workspace.HideInvoiceNumber);
+    public FormFieldViewModel TypeField { get; } = new(workspace.InvoiceDetails[0], "Invoice type");
+    public FormFieldViewModel DateField { get; } = new(workspace.InvoiceDetails[1], "Order date");
+    public FormFieldViewModel DueDateField { get; } = new(workspace.InvoiceDetails[2], "Due date");
+    public FormFieldViewModel CustomNumberField { get; } = new(workspace.InvoiceDetails[4]);
 }

@@ -1,79 +1,28 @@
-using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.VisualTree;
 
 namespace LedgerNest.Desktop.Views;
 
-/// <summary>Resizable customer/items and invoice/options panes, stacked on smaller screens.</summary>
+/// <summary>AXAML owns both responsive layouts and the resizable invoice divider.</summary>
 public sealed partial class InvoiceWorkspace : UserControl
 {
-    private readonly Control? left;
-    private readonly Control? right;
-    private readonly Control? items;
-    private readonly Control? options;
-    private bool? previousNarrow;
-
     public InvoiceWorkspace()
     {
         InitializeComponent();
-        ConfigureColumns();
+        SizeChanged += (_, args) => { if (DataContext is InvoiceEditorPageModel model) model.IsNarrow = args.NewSize.Width < 880; };
+        AttachedToVisualTree += (_, _) => { if (DataContext is InvoiceEditorPageModel model) model.FocusSearchRequested += FocusSearch; };
+        DetachedFromVisualTree += (_, _) => { if (DataContext is InvoiceEditorPageModel model) model.FocusSearchRequested -= FocusSearch; };
     }
-
-    public InvoiceWorkspace(Control left, Control right, Control items, Control options)
+    private void FocusSearch()
     {
-        InitializeComponent();
-        this.left = left;
-        this.right = right;
-        this.items = items;
-        this.options = options;
-
-        ConfigureColumns();
-        SizeChanged += (_, e) => ArrangeForWidth(e.NewSize.Width);
-        AttachedToVisualTree += (_, _) => ArrangeForWidth(Bounds.Width);
+        var search = this.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(box => box.Name == "ProductSearch");
+        search?.Focus(); search?.SelectAll();
     }
-
-    // Performs the configure columns action for this screen or workflow.
-    private void ConfigureColumns()
+    private void SearchKeyDown(object? sender, KeyEventArgs args)
     {
-        WideRoot.ColumnDefinitions[0].MinWidth = 550;
-        WideRoot.ColumnDefinitions[2].MinWidth = 300;
-        WideRoot.ColumnDefinitions[2].MaxWidth = 550;
-    }
-
-    // Performs the arrange for width action for this screen or workflow.
-    private void ArrangeForWidth(double width)
-    {
-        if (left == null || right == null || items == null || options == null)
-            return;
-
-        var narrow = width < 880;
-        if (previousNarrow == narrow)
-            return;
-
-        previousNarrow = narrow;
-        WideLeft.Content = null;
-        WideRight.Content = null;
-        NarrowLeft.Content = null;
-        NarrowRight.Content = null;
-
-        items.MinHeight = narrow ? 360 : 0;
-        options.MinHeight = narrow ? 320 : 0;
-        WideRoot.IsVisible = !narrow;
-        NarrowRoot.IsVisible = narrow;
-
-        if (narrow)
-        {
-            WideRoot.Children.Remove(Splitter);
-            NarrowLeft.Content = left;
-            NarrowRight.Content = right;
-            return;
-        }
-
-        if (!WideRoot.Children.Contains(Splitter))
-        {
-            Grid.SetColumn(Splitter, 1);
-            WideRoot.Children.Add(Splitter);
-        }
-        WideLeft.Content = left;
-        WideRight.Content = right;
+        if (DataContext is not InvoiceEditorPageModel model) return;
+        if (args.Key == Key.Escape) { model.ShowSuggestions = false; args.Handled = true; }
+        if (args.Key == Key.Enter) { model.AcceptSearch(); args.Handled = true; }
     }
 }

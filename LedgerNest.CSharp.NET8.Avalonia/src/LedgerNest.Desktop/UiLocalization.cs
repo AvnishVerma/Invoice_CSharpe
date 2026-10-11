@@ -34,6 +34,12 @@ public sealed class UiLocalization : AvaloniaObject
 
     private static string Match(string value) => new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
 
+    public static string TranslateKey(string key)
+    {
+        var code = Codes[Array.IndexOf(Languages, Language)];
+        return Catalog(code).GetValueOrDefault(key) ?? Catalog("en").GetValueOrDefault(key) ?? key;
+    }
+
     public static string Translate(string source)
     {
         if (Language == "English" || string.IsNullOrEmpty(source)) return source;

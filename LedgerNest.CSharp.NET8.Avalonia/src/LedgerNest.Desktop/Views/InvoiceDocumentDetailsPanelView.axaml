@@ -1,19 +1,23 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views"
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.InvoiceDocumentDetailsPanelView" x:DataType="vm:InvoiceDocumentDetailsViewModel">
-  <Border Padding="10" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-    <StackPanel Spacing="13">
-      <TextBlock Text="Document details" FontSize="16" FontWeight="SemiBold" />
-      <local:FormFieldsView DataContext="{Binding MainFields}" />
-      <local:FormFieldView DataContext="{Binding TimeField}" />
-      <TextBlock Text="Bank account" Foreground="{DynamicResource AppMutedBrush}" />
-      <ComboBox ItemsSource="{Binding Workspace.InvoiceBankChoices}" SelectedItem="{Binding Workspace.SelectedInvoiceBank, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="Invoice bank account">
-        <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:InvoiceBankChoice"><TextBlock Text="{Binding Caption}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
-      </ComboBox>
-      <Expander Header="Document title &amp; numbering" HorizontalAlignment="Stretch">
-        <StackPanel Spacing="10"><local:FormFieldView DataContext="{Binding TitleField}"/><local:FormFieldView DataContext="{Binding HideNumberField}"/></StackPanel>
-      </Expander>
-    </StackPanel>
+  <Border Padding="12" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <Expander HorizontalAlignment="Stretch" IsExpanded="True">
+      <Expander.Header><TextBlock vm:UiLocalization.Text="INVOICE DETAILS" FontSize="12" FontWeight="SemiBold" /></Expander.Header>
+      <StackPanel Spacing="10">
+        <local:FormFieldView DataContext="{Binding TypeField}" />
+        <Grid ColumnDefinitions="*,8,*"><local:FormFieldView DataContext="{Binding DateField}" /><local:FormFieldView Grid.Column="2" DataContext="{Binding TimeField}" /></Grid>
+        <local:FormFieldView DataContext="{Binding DueDateField}" />
+        <local:FormFieldView DataContext="{Binding TitleField}" />
+        <local:FormFieldView DataContext="{Binding HideNumberField}" />
+        <Expander Header="Bank account &amp; custom number" HorizontalAlignment="Stretch">
+          <StackPanel Spacing="8">
+            <ComboBox ItemsSource="{Binding Workspace.InvoiceBankChoices}" SelectedItem="{Binding Workspace.SelectedInvoiceBank, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="Invoice bank account">
+              <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:InvoiceBankChoice"><TextBlock Text="{Binding Caption}" TextWrapping="Wrap" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <local:FormFieldView DataContext="{Binding CustomNumberField}" />
+          </StackPanel>
+        </Expander>
+      </StackPanel>
+    </Expander>
   </Border>
 </UserControl>

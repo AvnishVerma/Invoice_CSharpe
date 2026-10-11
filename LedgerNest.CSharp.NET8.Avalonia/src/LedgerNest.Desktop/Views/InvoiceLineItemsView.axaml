@@ -14,11 +14,11 @@
       </Grid>
     </Border>
     <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto">
-      <Grid MinWidth="650">
+      <Grid>
         <ItemsControl ItemsSource="{Binding Lines}" IsVisible="{Binding HasLines}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="6">
+              <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="6" MinWidth="650">
                 <Grid ColumnDefinitions="*,70,85,60,80,90,40">
                   <StackPanel Spacing="2">
                     <TextBlock Text="{Binding Line.Name}" FontSize="13" FontWeight="SemiBold" />
@@ -38,8 +38,8 @@
         </ItemsControl>
         <StackPanel IsVisible="{Binding HasNoLines}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
           <TextBlock Text="shopping_cart" FontFamily="avares://LedgerNest.Desktop/Assets#Material Icons" FontSize="34" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
-          <TextBlock Text="No items added yet" FontSize="16" HorizontalAlignment="Center" />
-          <TextBlock Text="Search above to add a product, or add a custom item." FontSize="13" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
+          <TextBlock Text="No items added yet" FontSize="14" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
+          <TextBlock Text="Search below or press Ctrl+F" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" />
         </StackPanel>
       </Grid>
     </ScrollViewer>

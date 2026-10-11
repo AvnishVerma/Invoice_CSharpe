@@ -1,71 +1,14 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Avalonia;
 using Avalonia.Controls;
 
 namespace LedgerNest.Desktop.Views;
 
 public sealed partial class InvoiceEditorShellView : UserControl
 {
-    // Performs the invoice editor shell view initialization action for this screen or workflow.
     public InvoiceEditorShellView()
     {
         InitializeComponent();
+        AttachedToVisualTree += (_, _) => (DataContext as InvoiceEditorPageModel)?.Attach();
+        DetachedFromVisualTree += (_, _) => (DataContext as InvoiceEditorPageModel)?.Detach();
     }
-
-    // Performs the invoice editor shell view content assignment action for this screen or workflow.
-    public InvoiceEditorShellView(InvoiceEditorShellModel model, Control workspace, Control actions, Control create, Control totals, Control? headerActions = null)
-    {
-        InitializeComponent();
-        DataContext = model;
-        WorkspaceHost.Content = workspace;
-        ActionsHost.Content = actions;
-        CreateHost.Content = create;
-        TotalsHost.Content = totals;
-        HeaderActionsHost.Content = headerActions;
-        SizeChanged += (_, e) =>
-        {
-            FooterFrame.Padding = new Thickness(e.NewSize.Width < 700 ? 8 : 16, 8);
-            ActionsHost.IsVisible = e.NewSize.Width >= 570;
-        };
-    }
-}
-
-// Provides changing header text for the AXAML invoice editor shell.
-public sealed class InvoiceEditorShellModel : INotifyPropertyChanged
-{
-    private string title = "";
-    private string dateText = "";
-    private string numberText = "";
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    // Gets or changes the invoice editor title shown in the shell header.
-    public string Title
-    {
-        get => title;
-        set => SetField(ref title, value);
-    }
-
-    // Gets or changes the invoice editor date shown in the shell header.
-    public string DateText
-    {
-        get => dateText;
-        set => SetField(ref dateText, value);
-    }
-
-    // Gets or changes the invoice or quotation number text shown in the shell header.
-    public string NumberText
-    {
-        get => numberText;
-        set => SetField(ref numberText, value);
-    }
-
-    // Performs the invoice editor shell field update action for this screen or workflow.
-    private void SetField(ref string field, string value, [CallerMemberName] string? propertyName = null)
-    {
-        if (field == value) return;
-        field = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
+    public InvoiceEditorShellView(InvoiceEditorPageModel model) : this() => DataContext = model;
 }

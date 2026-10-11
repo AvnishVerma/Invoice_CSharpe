@@ -30,6 +30,7 @@ public partial class MainWindowViewModel
     // Performs the set session action for this screen or workflow.
     private void SetSession(string? username, string role, bool requiresPasswordChange)
     {
+        pendingInvoiceNavigation = null;
         SessionVersion++;
         if (CurrentUsername != null && !string.Equals(CurrentUsername, username, StringComparison.OrdinalIgnoreCase)) ClearInvoiceCustomer();
         if (username == null) sessionAccount = null;
@@ -46,6 +47,7 @@ public partial class MainWindowViewModel
     // Performs the sign out action for this screen or workflow.
     public void SignOut()
     {
+        if (!RequestInvoiceLeave(SignOut)) return;
         SetSession(null, "", false);
         Status = "Signed out.";
     }

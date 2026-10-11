@@ -1,38 +1,37 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.InvoiceEditorShellView"
-             x:CompileBindings="False">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop"
+             x:Class="LedgerNest.Desktop.Views.InvoiceEditorShellView" x:CompileBindings="False">
+
   <UserControl.Styles>
-    <Style Selector="Expander /template/ ToggleButton">
-      <Setter Property="MinHeight" Value="38" />
-      <Setter Property="Padding" Value="10,6" />
-    </Style>
-    <Style Selector="NumericUpDown /template/ TextBox">
-      <Setter Property="MinHeight" Value="29" />
-      <Setter Property="Padding" Value="6,3" />
-    </Style>
+    <Style Selector="TextBlock#HeaderDate"><Setter Property="Grid.Column" Value="1" /><Setter Property="Margin" Value="12,0" /><Setter Property="FontSize" Value="20" /></Style>
+    <Style Selector="TextBlock#HeaderDate.narrow"><Setter Property="Margin" Value="8,0" /><Setter Property="FontSize" Value="14" /></Style>
+
+
+
+    <Style Selector="Expander /template/ ToggleButton"><Setter Property="MinHeight" Value="38" /><Setter Property="Padding" Value="10,6" /></Style>
+    <Style Selector="NumericUpDown /template/ TextBox"><Setter Property="MinHeight" Value="29" /><Setter Property="Padding" Value="6,3" /></Style>
   </UserControl.Styles>
   <Grid RowDefinitions="Auto,*,Auto">
     <Border Classes="page-header">
-      <Grid ColumnDefinitions="*,Auto,Auto" MinHeight="34">
+      <Grid ColumnDefinitions="*,Auto,*" RowDefinitions="Auto,Auto">
         <TextBlock Text="{Binding Title}" Classes="page-header-title" />
-        <ContentControl x:Name="HeaderActionsHost" Grid.Column="1" VerticalAlignment="Center" Margin="8,0" />
-        <TextBlock Grid.Column="2" Text="{Binding NumberText}" Foreground="White" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="12,0,0,0" />
+        <TextBlock x:Name="HeaderDate" Text="{Binding DateText}" Classes.narrow="{Binding IsNarrow}" Foreground="White" VerticalAlignment="Center" />
+        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="8">
+          <TextBlock Text="{Binding NumberText}" Foreground="White" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsNarrow}" />
+          <Button Classes="action-icon header-icon-action" Command="{Binding VoidCommand}" IsVisible="{Binding ShowVoid}" ToolTip.Tip="Void Invoice"><TextBlock Text="block" Classes="action-icon-glyph" /></Button>
+        </StackPanel>
       </Grid>
     </Border>
-
-    <ContentControl x:Name="WorkspaceHost" Grid.Row="1" />
-
-    <Border x:Name="FooterFrame"
-            Grid.Row="2"
-            BorderBrush="{DynamicResource AppOutlineBrush}"
-            BorderThickness="0,1,0,0"
-            Padding="16,8">
-      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-        <ContentControl x:Name="TotalsHost" Grid.ColumnSpan="2" Margin="0,0,0,8"
-                        HorizontalAlignment="Right" HorizontalContentAlignment="Right" />
-        <ContentControl x:Name="ActionsHost" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Center" />
-        <ContentControl x:Name="CreateHost" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" />
+    <local:InvoiceWorkspace Grid.Row="1" DataContext="{Binding}" Margin="10" />
+    <Border Grid.Row="2" Padding="12,8" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource AppOutlineBrush}">
+      <Grid ColumnDefinitions="*,Auto">
+        <WrapPanel IsVisible="{Binding !IsNarrow}">
+          <local:ActionButtonView ActionLabel="View" Caption="View" Tooltip="View last saved document" Command="{Binding ViewCommand}" />
+          <local:ActionButtonView ActionLabel="Preview" Caption="Preview" Tooltip="Preview last saved PDF" Command="{Binding PreviewCommand}" />
+          <local:ActionButtonView ActionLabel="Download" Caption="Download" Tooltip="Download last saved PDF" Command="{Binding DownloadCommand}" />
+          <local:ActionButtonView ActionLabel="Print" Caption="Print" Tooltip="Print last saved document" Command="{Binding PrintCommand}" />
+        </WrapPanel>
+        <Button Grid.Column="1" Classes="action primary" Content="{Binding SaveCaption}" Tag="{Binding SaveCaption}" Command="{Binding CreateCommand}" ToolTip.Tip="Save invoice (Ctrl+S)" />
       </Grid>
     </Border>
   </Grid>

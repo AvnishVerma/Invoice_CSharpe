@@ -79,6 +79,7 @@ public sealed partial class CompanyManagementViewModel : ObservableObject
     public void SwitchCompany()
     {
         if (!CanSwitch || SelectedCompany == null) return;
+        if (!workspace.RequestInvoiceLeave(SwitchCompany)) return;
         Run(() => context.RequestSwitch(SelectedCompany));
     }
 

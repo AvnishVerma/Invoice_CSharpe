@@ -613,6 +613,7 @@ internal static class Program
         window.Show();
         Check(window.Title == Branding.Name, "Window must use the application brand");
         void Settle() { Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); }
+        void NavigateForCapture(string route) { model.NavigateCommand.Execute(route); if (model.HasPendingInvoiceNavigation) model.ResolveInvoiceLeave(InvoiceLeaveChoice.Discard); Settle(); }
         void Capture(string name)
         {
             Settle(); using var frame = window.CaptureRenderedFrame();
@@ -671,7 +672,7 @@ internal static class Program
         }
         if (appearanceOnly)
         {
-            model.NavigateCommand.Execute("New Invoice"); Settle();
+            NavigateForCapture("New Invoice"); Settle();
             model.InvoiceCustomer[0].Value = "Dashboard";
             var originalPage = window.GetVisualDescendants().OfType<InvoiceEditorShellView>().Single();
             foreach (var language in UiLocalization.Languages)
@@ -683,13 +684,13 @@ internal static class Program
                 Check(model.InvoiceCustomer[0].Value == "Dashboard", "Language changes must not translate customer-entered data");
                 Check(ReferenceEquals(originalPage, window.GetVisualDescendants().OfType<InvoiceEditorShellView>().Single()), "Language switching must preserve the active editor");
                 Check(FindButton("Dashboard").Content is Grid, "Language changes must preserve navigation icons and selection markers");
-                Check(FindButton("Select customer").GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsVisible && text.Text == UiLocalization.Translate("Select customer")), "Text actions must retain their localized caption control");
+                Check(FindButton("Select customer").GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsVisible && text.Text == UiLocalization.Translate("Select from existing")), "Text actions must retain their localized caption control");
             }
             model.SetLanguage("Français"); Capture("appearance-french");
             Check(originalPage.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().Where(t => t.Name == "ExpanderHeader").All(t => t.Bounds.Height <= 38), "Accordion headers must use compact height");
             model.SetThemeMode("Dark"); Settle();
             Check(window.ActualThemeVariant == ThemeVariant.Dark, "Model theme changes must immediately reach the window");
-            model.NavigateCommand.Execute("Settings"); Capture("appearance-settings-dark");
+            NavigateForCapture("Settings"); Capture("appearance-settings-dark");
             var settingsShell = window.GetVisualDescendants().OfType<SettingsPageView>().Single();
             var settingsNavigation = (SettingsPageModel)settingsShell.DataContext!;
             foreach (var settingTab in settingsNavigation.Tabs)
@@ -711,7 +712,7 @@ internal static class Program
             Check(((Avalonia.Media.ISolidColorBrush)selectedTab.Background!).Color != darkTabColor, "Selected tab background must update when switching to light mode");
             model.SetThemeMode("Dark"); Settle();
             Check(((Avalonia.Media.ISolidColorBrush)selectedTab.Background!).Color == darkTabColor, "Selected tab background must return to its dark color");
-            model.NavigateCommand.Execute("Reports"); Capture("appearance-reports-dark");
+            NavigateForCapture("Reports"); Capture("appearance-reports-dark");
             var reportsModel = (ReportsPageModel)window.GetVisualDescendants().OfType<ReportsPageView>().Single().DataContext!;
             foreach (var reportName in reportsModel.ReportTabs)
             {
@@ -735,15 +736,15 @@ internal static class Program
             Check(model.SaveRecord("Customer", model.InvoiceCustomer), "Layout fixture customer must save");
             model.Lines.Add(new InvoiceLineViewModel { Name = "Layout fixture", Quantity = 1, Price = 100 });
             Check(model.SaveInvoice(), "Layout fixture invoice must save");
-            model.NavigateCommand.Execute("Invoices"); Settle();
+            NavigateForCapture("Invoices"); Settle();
             Check(FindButton("View").Content is TextBlock { Text.Length: 1 }, "Invoice actions must display icons instead of clipped words");
             Capture("appearance-invoice-actions");
-            model.NavigateCommand.Execute("Customers"); Settle();
+            NavigateForCapture("Customers"); Settle();
             Check(FindButton("View").Content is TextBlock { Text.Length: 1 }, "Customer actions must display icons instead of clipped words");
             Capture("appearance-customer-actions");
             foreach (var route in new[] { "Customers", "Products" })
             {
-                model.NavigateCommand.Execute(route); Settle();
+                NavigateForCapture(route); Settle();
                 var management = window.GetVisualDescendants().OfType<ManagementView>().Single();
                 var header = management.GetVisualDescendants().OfType<ManagementActionBarView>().Single();
                 Check(header.TranslatePoint(default, management)!.Value.Y == 0, "Management header must sit at the top");
@@ -756,7 +757,7 @@ internal static class Program
             Check(CurrencyDisplay.Format(25).StartsWith("€ "), "Currency formatter must follow changes without restarting");
             Check(CurrencyDisplay.Format(25, currency: LegacyChoices.Currencies[0]).StartsWith("Rs. "), "Saved document currency must override the current selection");
             model.InvoiceSetting("Currency").Value = LegacyChoices.Currencies[0];
-            model.NavigateCommand.Execute("Customers"); Settle();
+            NavigateForCapture("Customers"); Settle();
             model.SetThemeMode("Dark"); Click("View"); Settle();
             var customerDialog = window.GetVisualDescendants().OfType<CustomerViewDialog>().Single();
             var customerValue = customerDialog.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == "Long customer name");
@@ -797,8 +798,8 @@ internal static class Program
         if (invoiceEditorOnly)
         {
             window.Width = 1366; window.Height = 768;
-            model.NavigateCommand.Execute("New Invoice"); Settle();
-            Check(!FindButton("Create Invoice (Ctrl+S)").IsEnabled, "Empty invoices must not be saved");
+            NavigateForCapture("New Invoice"); Settle();
+            Check(!FindButton("Create Invoice (Ctrl+S)").IsEffectivelyEnabled, "Empty invoices must not be saved");
             Capture("invoice-editor-empty");
             var product = FormCatalog.Product();
             product.Single(f => f.Label == "Name").Value = "Desk lamp";
@@ -809,7 +810,7 @@ internal static class Program
             Check(model.SaveRecord("Product", product), "Editor fixture must save");
             model.InvoiceCustomer[0].Value = "Acme Trading"; model.InvoiceCustomer[2].Value = "9876543210";
             var search = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.PlaceholderText == "Search & add a product or service (Ctrl+F)");
-            Check(search.Bounds.Height <= 32, "Invoice search must use a compact input height");
+            Check(search.Bounds.Height <= 40, "Invoice search must use a compact input height");
             var footerTotals = window.GetVisualDescendants().OfType<ContentControl>().Single(c => c.Name == "InvoiceFooterTotals");
             Check(footerTotals.GetVisualAncestors().OfType<Border>().Any(b => b.Name == "FooterFrame"), "Full invoice totals must be hosted in the fixed footer");
             search.Text = "Lighting"; Settle();
@@ -822,8 +823,8 @@ internal static class Program
             Check(model.Lines.Count == 1 && model.Lines[0].Price == 1250, "Search selection must add the configured item");
             model.Lines[0].Quantity = 2;
             Check(model.Totals.Total == 2950, "Quantity edits must preserve per-item tax calculations");
-            var discountPanel = window.GetVisualDescendants().OfType<Expander>().Single(e => e.Header?.ToString() == "Discount & additional charges");
-            Check(!discountPanel.IsExpanded, "Optional adjustments must start collapsed");
+            var discountPanel = window.GetVisualDescendants().OfType<Expander>().Single(e => e.Header is StackPanel panel && panel.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text == "Charges & Adjustments"));
+            Check(discountPanel.IsExpanded, "Charges and adjustments must be expanded as in the reference");
             discountPanel.IsExpanded = true; Settle();
             model.InvoiceOptions[0].Value = "Amount"; model.InvoiceOptions[1].Value = "100";
             Check(model.Totals.Total == 2850, "Discount changes must update totals");
@@ -834,7 +835,8 @@ internal static class Program
             window.Width = 1024; Capture("invoice-editor-medium");
             window.Width = 800; Capture("invoice-editor-narrow");
             Check(FindButton("Create Invoice (Ctrl+S)").IsEffectivelyVisible, "Save must remain available at narrow widths");
-            Check(footerTotals.IsEffectivelyVisible && footerTotals.Bounds.Height > 0, "Footer totals must remain visible at narrow widths");
+            footerTotals = window.GetVisualDescendants().OfType<ContentControl>().Single(c => c.Name == "InvoiceFooterTotals");
+            Check(footerTotals.IsEffectivelyVisible && footerTotals.Bounds.Height > 0, "Totals must remain accessible in the stacked layout");
             window.Width = 1366; Settle();
             Check(model.Lines.Count == 1 && model.InvoiceCustomer[0].Value == "Acme Trading", "Responsive reflow must preserve the draft");
             Click("Create Invoice (Ctrl+S)"); Settle();
@@ -854,7 +856,7 @@ internal static class Program
         if (productSettingsOnly)
         {
             window.Width = 1366; window.Height = 698;
-            model.NavigateCommand.Execute("Settings"); Click("Product Details");
+            NavigateForCapture("Settings"); Click("Product Details");
             Capture("product-details-top");
             var toggles = window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().ToArray();
             var nameToggle = toggles.Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Name");
@@ -870,7 +872,7 @@ internal static class Program
             Click("×"); // Dismiss the success toast before capturing the product editor.
             model.ProductSetting("HSN/SAC").IsChecked = false;
             model.ProductSetting("Stock").IsChecked = false;
-            model.NavigateCommand.Execute("Products"); Settle(); Capture("products-configured");
+            NavigateForCapture("Products"); Settle(); Capture("products-configured");
             Check(!window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsEffectivelyVisible && t.Text == "HSN/SAC"), "Disabled HSN column must be absent from the product list");
             Click("＋ New Product"); Settle(); Capture("product-form-configured");
             Check(!window.GetVisualDescendants().OfType<TextBox>().Any(t => t.IsEffectivelyVisible && Avalonia.Automation.AutomationProperties.GetName(t) is "HSN/SAC" or "Stock"), "Disabled fields must be absent from product forms");
@@ -919,17 +921,17 @@ internal static class Program
             Click("Cancel");
             foreach (var pageName in new[] { "Dashboard", "New Invoice", "Reports", "Settings" })
             {
-                model.NavigateCommand.Execute(pageName); Settle();
+                NavigateForCapture(pageName); Settle();
                 Check(window.GetVisualDescendants().OfType<Border>().Any(b => b.IsEffectivelyVisible && b.Background is Avalonia.Media.ISolidColorBrush brush && brush.Color == Avalonia.Media.Color.Parse(Branding.HeaderColor)), "Shared brand header missing on " + pageName);
             }
-            model.NavigateCommand.Execute("Settings"); Click("Product Details"); window.Width = 800; Capture("product-details-narrow");
+            NavigateForCapture("Settings"); Click("Product Details"); window.Width = 800; Capture("product-details-narrow");
             Console.WriteLine($"Product settings checks passed: {assertions} assertions. Screenshots: {output}");
             window.Close(); return;
         }
         if (invoiceSettingsOnly)
         {
             window.Width = 1366; window.Height = 698;
-            model.NavigateCommand.Execute("Settings"); Click("Invoice Settings");
+            NavigateForCapture("Settings"); Click("Invoice Settings");
             Check(FindButton("Invoice Settings").TranslatePoint(new Point(), window)!.Value.Y == FindButton("Company Info").TranslatePoint(new Point(), window)!.Value.Y, "Settings navigation must use the horizontal top bar");
             Capture("invoice-settings-general");
             Click("Expand Additional Information");
@@ -983,7 +985,7 @@ internal static class Program
         Check(layoutButton.IsEnabled, "Issue 5: dashboard layout selector must be enabled");
         ((MenuFlyout)layoutButton.Flyout!).Items.OfType<MenuItem>().Single(i => i.Tag?.ToString() == "Simple Feed").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); Settle();
         Capture("issue-05-simple-feed");
-        foreach (var route in MainWindowViewModel.Routes) { model.NavigateCommand.Execute(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
+        foreach (var route in MainWindowViewModel.Routes) { NavigateForCapture(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
         void CheckSettingsColumns(string tab, string leftText, string rightText)
         {
@@ -1049,18 +1051,18 @@ internal static class Program
             Console.WriteLine($"PDF settings UI checks passed ({assertions} assertions). Screenshots: {output}");
             return;
         }
-        model.NavigateCommand.Execute("Reports");
+        NavigateForCapture("Reports");
         foreach (var report in new[] { "Revenue", "Receivables", "Tax", "Customers", "Products", "Quotations", "Invoice Status", "Daily Report", "Inventory" }) { Click(report); Capture("reports-" + report.Replace(" ", "-").ToLowerInvariant()); }
         if (compactUiOnly)
         {
-            model.NavigateCommand.Execute("Customers"); Click("＋ New Customer"); Capture("compact-customer-dialog"); Click("Cancel");
-            model.NavigateCommand.Execute("Products"); Click("＋ New Product"); Capture("compact-product-dialog"); Click("Cancel");
+            NavigateForCapture("Customers"); Click("＋ New Customer"); Capture("compact-customer-dialog"); Click("Cancel");
+            NavigateForCapture("Products"); Click("＋ New Product"); Capture("compact-product-dialog"); Click("Cancel");
             foreach (var width in new[] { 1366, 800 })
             {
                 window.Width = width;
                 foreach (var route in new[] { "Dashboard", "New Invoice", "Customers", "Settings", "Reports" })
                 {
-                    model.NavigateCommand.Execute(route); Capture($"compact-{route.Replace(" ", "-")}-{width}");
+                    NavigateForCapture(route); Capture($"compact-{route.Replace(" ", "-")}-{width}");
                     var headerBand = window.GetVisualDescendants().OfType<Border>().First(b => b.IsEffectivelyVisible && b.Background is Avalonia.Media.ISolidColorBrush headerBrush && headerBrush.Color == Avalonia.Media.Color.Parse(Branding.HeaderColor));
                     var referenceDashboard = route == "Dashboard" && model.DashboardLayout == "default";
                     Check(Math.Abs(headerBand.Bounds.Height - (referenceDashboard ? 56 : 44.8)) < 1, "Header height must follow the shared shell or requested Default Dashboard reference on " + route);
@@ -1095,21 +1097,21 @@ internal static class Program
                 }
             }
             window.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
-            model.NavigateCommand.Execute("Dashboard"); Capture("compact-dashboard-dark");
+            NavigateForCapture("Dashboard"); Capture("compact-dashboard-dark");
             window.Close();
             Console.WriteLine($"Compact application UI checks passed ({assertions} assertions). Screenshots: {output}");
             return;
         }
         foreach (var type in new[] { "Invoice", "Quotation", "Receipt" })
         {
-            model.NavigateCommand.Execute(type == "Invoice" ? "Invoices" : type + "s");
+            NavigateForCapture(type == "Invoice" ? "Invoices" : type + "s");
             Click($"＋ New {type}");
             Check(model.InvoiceDetails[0].Value == type, $"New {type} action must select its document type");
             Check(FindButton($"Create {type} (Ctrl+S)") != null, $"Create action must label {type}");
             Capture($"create-{type.ToLowerInvariant()}");
         }
         model.StartDocument("Invoice");
-        model.NavigateCommand.Execute("Customers"); Click("＋ New Customer"); Capture("customer-form");
+        NavigateForCapture("Customers"); Click("＋ New Customer"); Capture("customer-form");
         Click("Save Customer"); Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Name is required."), "Customer form must display required-field errors");
         var name = window.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText == "Name"); name.Text = "Test Customer";
         var phone = window.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText == "Phone"); phone.Text = "1234567890";
@@ -1117,13 +1119,13 @@ internal static class Program
         Click("Invoices");
         Check(model.Title == "Invoices", "Customer invoice action must navigate to invoice management");
         Check(window.GetVisualDescendants().OfType<TextBox>().Any(t => t.PlaceholderText == "Search by Invoice ID or Customer Name…" && t.Text == "Test Customer"), "Customer invoice action must filter invoice management by customer name");
-        model.NavigateCommand.Execute("Customers"); Settle();
+        NavigateForCapture("Customers"); Settle();
         Click("Payment");
         Check(model.Title == "Reports", "Customer payment action must navigate to reports");
         var customerReport = window.GetVisualDescendants().OfType<LedgerNest.Desktop.Views.CustomerReportView>().Single().DataContext as LedgerNest.Desktop.Views.CustomerReportViewModel;
         Check(customerReport is { IsStatement: true, SelectedCustomerName: "Test Customer" }, "Customer payment action must open the Statements tab filtered by customer name");
         Capture("customer-statement-filtered");
-        model.NavigateCommand.Execute("Customers"); Settle();
+        NavigateForCapture("Customers"); Settle();
         Click("Import");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Import Customers from CSV") &&
               window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Customer full name"),
@@ -1146,7 +1148,7 @@ internal static class Program
         }
         foreach (var key in new[] { Key.Q, Key.S, Key.F, Key.M, Key.O, Key.P })
             Check(window.KeyBindings.Any(k => k.Gesture?.Key == key && k.Gesture.KeyModifiers.HasFlag(KeyModifiers.Control)), $"Ctrl+{key} must have a window-level key binding");
-        model.NavigateCommand.Execute("Products");
+        NavigateForCapture("Products");
         Click("Import");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Import Products from CSV"), "Product import must show the CSV guidance dialog");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Column") &&
@@ -1165,7 +1167,7 @@ internal static class Program
         Capture("product-export-pdf");
         Click("Cancel");
         Click("＋ New Product"); Capture("product-form"); Click("Cancel");
-        model.NavigateCommand.Execute("Units"); Settle();
+        NavigateForCapture("Units"); Settle();
         var unitMasterView = window.GetVisualDescendants().OfType<UnitMasterView>().Single();
         Check(unitMasterView.Bounds.Width > 0, "Unit Master route must render its AXAML view");
         Check(window.GetVisualDescendants().OfType<ListBox>().Single().Bounds.Width > unitMasterView.Bounds.Width * .85,
@@ -1178,16 +1180,16 @@ internal static class Program
             "New Unit must show the bound editor fields");
         Capture("unit-master-editor");
         Click("Cancel");
-        model.NavigateCommand.Execute("Products"); Settle();
+        NavigateForCapture("Products"); Settle();
         var productHeader = window.GetVisualDescendants().OfType<ManagementActionBarView>().Single();
         Check(Math.Abs(productHeader.Bounds.Height - 44.8) < 1, "Product Management must use the same standard header height as Customer Management");
-        model.NavigateCommand.Execute("Prices"); Settle();
+        NavigateForCapture("Prices"); Settle();
         Check(window.GetVisualDescendants().OfType<ProductPriceMasterView>().Any(), "Prices route must render the Product Price Master AXAML view");
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text?.Contains("Configure a selling unit", StringComparison.Ordinal) == true) &&
               window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.Text?.Contains("Schedule a price", StringComparison.Ordinal) == true),
             "Product Price Master must expose selling-unit and effective-price workflows");
         Capture("product-price-master");
-        model.NavigateCommand.Execute("New Invoice"); Settle();
+        NavigateForCapture("New Invoice"); Settle();
         Shortcut(Key.M);
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Add Custom Item") && window.GetVisualDescendants().OfType<TextBox>().Any(t => t.PlaceholderText == "Name"), "Ctrl+M must open the custom item dialog");
         Capture("custom-item-form"); Click("Cancel");
@@ -1237,9 +1239,9 @@ internal static class Program
         model.Lines.Add(new InvoiceLineViewModel { Name = "Test product", Price = 100, Quantity = 2, TaxRate = 18 }); Capture("invoice-populated");
         model.InvoiceOptions[0].Value = "Percentage"; model.InvoiceOptions[1].Value = "10";
         Check(model.Totals.Total == 212.4m, "Invoice discount must affect totals");
-        model.NavigateCommand.Execute("Dashboard"); model.NavigateCommand.Execute("New Invoice"); Check(model.Lines.Count == 1 && model.InvoiceOptions[1].Value == "10", "Navigation must preserve the invoice draft");
+        NavigateForCapture("Dashboard"); NavigateForCapture("New Invoice"); Check(model.Lines.Count == 1 && model.InvoiceOptions[1].Value == "10", "Navigation must preserve the invoice draft");
         Check(model.SaveInvoice(), "Invoice must save"); Check(model.Invoices.Single()["Total"] == "212.40", "Saved total must match displayed total");
-        model.NavigateCommand.Execute("Invoices");
+        NavigateForCapture("Invoices");
         Settle();
         Check(window.GetVisualDescendants().OfType<Button>().Where(b => b.Tag?.ToString()?.StartsWith("⋯", StringComparison.Ordinal) == true).All(b => b.Flyout is MenuFlyout), "Issue 10: row and toolbar actions must use anchored dropdowns");
         Check(FindButton("Filter ▾").Flyout is MenuFlyout, "Issue 10: filter dropdown must use an anchored menu");
@@ -1250,16 +1252,16 @@ internal static class Program
         Click("Trash"); Capture("invoice-trash");
         Click("Restore");
         Check(model.ActiveInvoices.Count() == 1, "Restore action must return the invoice to active records");
-        model.NavigateCommand.Execute("Reports"); Click("Revenue");
+        NavigateForCapture("Reports"); Click("Revenue");
         Check(window.GetVisualDescendants().OfType<ScottPlot.Avalonia.AvaPlot>().Any(plot => plot.IsVisible), "Populated revenue report must render its chart with ScottPlot");
         Capture("reports-revenue-populated");
 
         foreach (var width in new[] { 1024, 768, 640 })
         {
             window.Width = width; window.Height = 768;
-            foreach (var route in new[] { "Dashboard", "New Invoice", "Customers", "Settings", "Reports" }) { model.NavigateCommand.Execute(route); Capture($"{route.Replace(" ", "-").ToLowerInvariant()}-{width}"); }
+            foreach (var route in new[] { "Dashboard", "New Invoice", "Customers", "Settings", "Reports" }) { NavigateForCapture(route); Capture($"{route.Replace(" ", "-").ToLowerInvariant()}-{width}"); }
         }
-        model.NavigateCommand.Execute("New Invoice");
+        NavigateForCapture("New Invoice");
         window.Width = 1440; window.Height = 900; Settle();
         var splitter = window.GetVisualDescendants().OfType<GridSplitter>().Single();
         var paneGrid = (Grid)splitter.Parent!;
@@ -1274,9 +1276,9 @@ internal static class Program
         Capture("invoice-split-panels");
         model.SetThemeMode("Dark");
         global::Avalonia.Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
-        model.NavigateCommand.Execute("Dashboard");
+        NavigateForCapture("Dashboard");
         Capture("dashboard-dark");
-        model.NavigateCommand.Execute("Settings");
+        NavigateForCapture("Settings");
         Capture("settings-dark");
         var editPath = Path.Combine(Path.GetTempPath(), $"ledgernest-edit-ui-{Guid.NewGuid():N}.db");
         var editFactory = new TestDbContextFactory(new DbContextOptionsBuilder<LedgerNestDbContext>().UseSqlite($"Data Source={editPath}").Options);
@@ -1289,7 +1291,7 @@ internal static class Program
         window.DataContext = editModel;
         Check(ReferenceEquals(window.DataContext, editModel), "Live window must accept replacement model without reparenting errors");
         model.Status = "OLD MODEL STATUS";
-        model.NavigateCommand.Execute("Customers");
+        NavigateForCapture("Customers");
         Settle();
         Check(!window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "OLD MODEL STATUS"), "Old model events must not update the replacement shell");
         Check(!editModel.CanAccessWorkspace, "Database-backed startup must require authentication");

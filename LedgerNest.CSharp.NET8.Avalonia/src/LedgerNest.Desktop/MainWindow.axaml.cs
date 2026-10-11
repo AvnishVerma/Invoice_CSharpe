@@ -56,6 +56,7 @@ public partial class MainWindow : Window
         };
         Closed += (_, _) =>
         {
+            if (shellModel != null) shellModel.InvoiceLeaveRequested -= ShowInvoiceLeaveConfirmation;
             if (shellModel != null && shellChanged != null) shellModel.PropertyChanged -= shellChanged;
             toastService.Requested -= OnToastRequested;
             toastTimer?.Stop();
@@ -63,6 +64,10 @@ public partial class MainWindow : Window
             page.Content = null;
         };
         Title = Branding.Name;
+        Closing += (_, args) =>
+        {
+            if (DataContext is MainWindowViewModel vm && !vm.RequestInvoiceLeave(Close)) args.Cancel = true;
+        };
         DataContextChanged += (_, _) => { if (DataContext is MainWindowViewModel vm) InitializeShell(vm); };
         RegisterShortcut(Key.Q);
         RegisterShortcut(Key.S);
@@ -103,7 +108,7 @@ public partial class MainWindow : Window
         {
             case Key.Q:
                 Model.StartDocument("Invoice");
-                ShowPage();
+                if (!Model.HasPendingInvoiceNavigation) ShowPage();
                 return true;
             case Key.S when Model.Title == "New Invoice" && !invoiceCompletionVisible:
                 if (Model.SaveInvoice()) ShowInvoiceSuccess();

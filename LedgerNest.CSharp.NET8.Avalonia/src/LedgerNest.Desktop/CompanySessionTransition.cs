@@ -15,6 +15,7 @@ public static class CompanySessionTransition
         var targetProfile = state.Companies.SingleOrDefault(company => company.Id == target.Id)
             ?? throw new InvalidOperationException("The target company no longer exists.");
         if (targetProfile.Database != target.Database) throw new InvalidOperationException("The target database profile changed. Refresh before switching.");
+        if (previous != null && !previous.RequestInvoiceLeave(() => Switch(registry, previous, next, present))) return;
         previous?.SignOut();
         registry.Activate(target.Id);
         try { present(); }

@@ -1,41 +1,59 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="LedgerNest.Desktop.Views.InvoiceWorkspace"
-             Margin="10">
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop"
+             x:Class="LedgerNest.Desktop.Views.InvoiceWorkspace" x:CompileBindings="False">
   <UserControl.Resources>
-    <ResourceDictionary>
-      <ResourceDictionary.ThemeDictionaries>
-        <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="WorkspaceSplitter">#E0F2F1</SolidColorBrush>
-        </ResourceDictionary>
-        <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="WorkspaceSplitter">#163B38</SolidColorBrush>
-        </ResourceDictionary>
-      </ResourceDictionary.ThemeDictionaries>
-    </ResourceDictionary>
-  </UserControl.Resources>
-  <Grid>
-    <Grid x:Name="WideRoot" ColumnDefinitions="*,10,320">
-      <ContentControl x:Name="WideLeft" Grid.Column="0" />
-      <GridSplitter x:Name="Splitter"
-                    Grid.Column="1"
-                    Width="10"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch"
-                    ResizeDirection="Columns"
-                    ResizeBehavior="PreviousAndNext"
-                    Background="{DynamicResource WorkspaceSplitter}"
-                    AutomationProperties.Name="Resize invoice panels"
-                    ToolTip.Tip="Drag to resize invoice panels" />
-      <ContentControl x:Name="WideRight" Grid.Column="2" />
-    </Grid>
-    <ScrollViewer x:Name="NarrowRoot" IsVisible="False"
-                  HorizontalScrollBarVisibility="Disabled"
-                  VerticalScrollBarVisibility="Auto">
-      <StackPanel Spacing="8">
-        <ContentControl x:Name="NarrowLeft" />
-        <ContentControl x:Name="NarrowRight" />
-      </StackPanel>
-    </ScrollViewer>
-  </Grid>
+    <DataTemplate x:Key="LeftPane">
+      <Grid RowDefinitions="Auto,8,*">
+        <local:InvoiceCustomerPanelView DataContext="{Binding Customer}" />
+        <Border Grid.Row="2" Padding="12" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" MinHeight="340">
+          <Grid RowDefinitions="Auto,*,Auto">
+            <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock vm:UiLocalization.Text="ITEMS" FontSize="12" FontWeight="SemiBold" /><Border CornerRadius="8" Background="{DynamicResource AppSurfaceBrush}" Padding="8,1"><TextBlock Text="{Binding ItemCount}" FontSize="11" /></Border></StackPanel>
+            <local:InvoiceLineItemsView Grid.Row="1" DataContext="{Binding LineItems}" Margin="0,10" />
+            <Border Grid.Row="2" Padding="8" CornerRadius="9" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppAccentBrush}" BorderThickness="1">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBox x:Name="ProductSearch" Text="{Binding SearchText, Mode=TwoWay}" PlaceholderText="Search &amp; add a product or service (Ctrl+F)" MinWidth="100" Padding="36,8,10,8" KeyDown="SearchKeyDown" />
+                  <TextBlock Text="search" Classes="action-icon-glyph" Margin="10,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" />
+                  <Button Grid.Column="1" Classes="action outline" Command="{Binding CustomItemCommand}" Margin="12,0,0,0" ToolTip.Tip="Custom item (Ctrl+M)"><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="add" Classes="action-icon-glyph" /><TextBlock Text="{Binding CustomItemCaption}" /></StackPanel></Button>
+                </Grid>
+                <ListBox ItemsSource="{Binding Suggestions}" SelectedItem="{Binding SelectedSuggestion, Mode=TwoWay}" IsVisible="{Binding ShowSuggestions}" MaxHeight="260">
+                  <ListBox.ItemTemplate><DataTemplate><Border Padding="10,8" MinHeight="52"><StackPanel Spacing="3"><TextBlock Text="{Binding Name}" FontSize="13" Classes.out-of-stock="{Binding IsOutOfStock}" /><TextBlock Text="{Binding Metadata}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" /></StackPanel></Border></DataTemplate></ListBox.ItemTemplate>
+                </ListBox>
+              </StackPanel>
+            </Border>
+          </Grid>
+        </Border>
+      </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="RightPane">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <local:InvoiceDocumentDetailsPanelView DataContext="{Binding Details}" />
+        <local:InvoiceOptionsPanelView Grid.Row="1" DataContext="{Binding Options}" Margin="0,8,0,0" />
+        <Border x:Name="FooterFrame" Grid.Row="2" Padding="12" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource AppOutlineBrush}" Background="{DynamicResource AppCardBrush}">
+          <ContentControl x:Name="InvoiceFooterTotals"><local:InvoiceTotalsView DataContext="{Binding TotalsModel}" /></ContentControl>
+        </Border>
+      </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="WideWorkspace">
+      <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*" MinWidth="550" /><ColumnDefinition Width="10" /><ColumnDefinition Width="0.6*" MinWidth="300" MaxWidth="550" /></Grid.ColumnDefinitions>
+        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LeftPane}" />
+        <GridSplitter Grid.Column="1" Width="10" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="{DynamicResource AppSurfaceBrush}" ToolTip.Tip="Drag to resize invoice panels" AutomationProperties.Name="Resize invoice panels" />
+        <ContentControl Grid.Column="2" Content="{Binding}" ContentTemplate="{StaticResource RightPane}" />
+      </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="NarrowWorkspace">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="8">
+          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LeftPane}" MinHeight="520" />
+          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RightPane}" />
+        </StackPanel>
+      </ScrollViewer>
+    </DataTemplate>
+  </UserControl.Resources>  <UserControl.Styles>
+    <Style Selector="ContentControl#WorkspaceHost"><Setter Property="ContentTemplate" Value="{StaticResource WideWorkspace}" /></Style>
+    <Style Selector="ContentControl#WorkspaceHost.narrow"><Setter Property="ContentTemplate" Value="{StaticResource NarrowWorkspace}" /></Style>
+    <Style Selector="TextBlock.out-of-stock"><Setter Property="Foreground" Value="#D32F2F" /></Style>
+  </UserControl.Styles>
+  <ContentControl x:Name="WorkspaceHost" Content="{Binding}" Classes.narrow="{Binding IsNarrow}" />
 </UserControl>

@@ -9,17 +9,23 @@ public sealed partial class InvoiceCustomerPanelViewModel : ObservableObject
     public FormFieldViewModel NameField { get; }
     public FormFieldViewModel PhoneField { get; }
     public FormFieldsViewModel DetailFields { get; }
+    private readonly FormFieldViewModel[] customerFields;
+    public FormFieldsViewModel CustomerFields => new(customerFields, CustomerColumns);
+    [ObservableProperty] private int customerColumns = 3;
+    partial void OnCustomerColumnsChanged(int value) => OnPropertyChanged(nameof(CustomerFields));
     public IRelayCommand SelectCommand { get; }
     public IRelayCommand ToggleLockCommand { get; }
     public IRelayCommand ClearCommand { get; }
     public IRelayCommand RefreshCommand { get; }
     public IRelayCommand SaveCustomerCommand { get; }
-    [ObservableProperty] private bool detailsExpanded;
+    [ObservableProperty] private bool detailsExpanded = true;
     public string DetailsIcon => DetailsExpanded ? "expand_less" : "expand_more";
     partial void OnDetailsExpandedChanged(bool value) => OnPropertyChanged(nameof(DetailsIcon));
-    public InvoiceCustomerPanelViewModel(MainWindowViewModel workspace, Action select)
+    public InvoiceCustomerPanelViewModel(MainWindowViewModel workspace, Action select, Action<FormField>? expand = null)
     {
         Workspace = workspace; NameField = new(workspace.InvoiceCustomer[0]); PhoneField = new(workspace.InvoiceCustomer[2]);
+        customerFields = new[] { 0, 1, 2, 4, 3, 5 }.Where(index => index != 4 || workspace.InvoiceSetting("Show GST fields").IsChecked)
+            .Select(index => new FormFieldViewModel(workspace.InvoiceCustomer[index], index switch { 0 => "Customer Name", 4 => "GSTIN / VAT", _ => workspace.InvoiceCustomer[index].Label }, singleLine: true, expand: index == 5 ? expand : null)).ToArray();
         DetailFields = new(workspace.InvoiceCustomer.Where((_, index) => index is not (0 or 2)
             && (index != 4 || workspace.InvoiceSetting("Show GST fields").IsChecked)).Select(field => new FormFieldViewModel(field)).ToArray(), 2);
         SelectCommand = new RelayCommand(select);
@@ -30,5 +36,5 @@ public sealed partial class InvoiceCustomerPanelViewModel : ObservableObject
     }
     public void Attach() { Workspace.InvoiceCustomerStateChanged -= Reset; Workspace.InvoiceCustomerStateChanged += Reset; }
     public void Detach() => Workspace.InvoiceCustomerStateChanged -= Reset;
-    private void Reset() => DetailsExpanded = false;
+    private void Reset() => DetailsExpanded = true;
 }

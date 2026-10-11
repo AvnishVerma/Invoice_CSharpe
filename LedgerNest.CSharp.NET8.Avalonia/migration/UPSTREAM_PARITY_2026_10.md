@@ -128,3 +128,12 @@ Baseline: full solution build passed with zero warnings/errors; 326 of 327 autom
 - Classic, Bento and Simple now share an AXAML ItemsControl showing every out-of-stock record, actual remaining quantity, count and bound Stock action. Removed the single-name placeholder, hardcoded quantity and decorative non-interactive Stock label. Empty and live collection states update correctly.
 - Dashboard stock data is queried from the current database on every Dashboard build, so restocking and external stock changes do not leave the card using stale cached product quantities. Unlimited and positive-stock records are excluded using the existing eligibility rule.
 - All four focused data/UI checks passed across the three alternative layouts; full solution build passed with zero warnings/errors. No schema change. Invoice UI/navigation work is a separate pending batch.
+
+## 2026-10-08 — Invoice reference layout and settings save actions
+- Reused the invoice editor shell/workspace with AXAML templates for customer fields, product search, adjustments, notes, details and totals; removed four unused wrapper view pairs.
+- Added a shared draft snapshot/navigation guard for Keep Editing, Discard and Save across navigation, logout, document changes and window close. Failed saves retain the draft.
+- Made the adjustment count badge circular (20 x 20) with centered text.
+- Removed embedded Save Code Settings buttons. Product Details and Invoice Settings Save persist scoped code settings and page settings in one transaction. Customer settings state survives internal tab changes.
+- Full solution build passed with zero warnings/errors. Nine focused settings/reference UI tests passed, including a rollback failure test and responsive invoice captures at 1366, 1000 and 800 pixels.
+- Existing None discount mode and bank/custom-number controls remain for backward compatibility. This batch does not complete the remaining project-wide C# UI migration.
+- Final navigation/session/customer/company/Dashboard regression: 103 passed. Invoice-editor headless workflow checks: 114 assertions passed after updating the legacy assertion to Avalonia's effective command-enabled state.

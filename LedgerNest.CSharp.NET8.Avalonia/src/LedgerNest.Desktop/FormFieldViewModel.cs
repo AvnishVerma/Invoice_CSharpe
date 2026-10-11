@@ -30,14 +30,17 @@ public sealed partial class FormFieldViewModel : ObservableObject
     public double SliderValue { get => (double)Field.Number; set => Field.Value = value.ToString("0"); }
     public string ImageStatus => Field.Value.Length == 0 ? "No image selected" : "Image selected";
     public bool HasHelp => Field.Help.Length > 0;
+    public IRelayCommand? ExpandCommand { get; }
+    public bool CanExpand => ExpandCommand != null;
 
-    public FormFieldViewModel(FormField field, string? label = null, bool singleLine = false, bool compact = true)
+    public FormFieldViewModel(FormField field, string? label = null, bool singleLine = false, bool compact = true, Action<FormField>? expand = null)
     {
         Field = field;
         Label = label ?? field.Label;
         WithIcon = label == null && field.Icon.Length > 0;
         Compact = compact;
         IsMultiline = field.Kind == "multiline" && !singleLine;
+        if (expand != null) ExpandCommand = new RelayCommand(() => expand(field));
     }
 
     public void Attach()

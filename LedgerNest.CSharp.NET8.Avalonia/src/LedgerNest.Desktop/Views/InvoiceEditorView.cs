@@ -1,211 +1,44 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.Data;
-using Avalonia.Layout;
-using Avalonia.Media;
-using Avalonia.Controls.Templates;
 using LedgerNest.Desktop.Views;
 
 namespace LedgerNest.Desktop;
 
 public partial class MainWindow
 {
-    // Performs the invoice editor action for this screen or workflow.
+    // Composes the existing AXAML invoice editor; all visual structure belongs to the view.
     private Control InvoiceEditor()
     {
-        Button EditorButton(string label, Action? action = null, bool primary = false)
-        {
-            var button = Ui.Button(label, action, primary);
-            button.VerticalAlignment = VerticalAlignment.Center;
-            return button;
-        }
         invoiceCompletionVisible = false;
-        var editorModel = Model;
-        var customer = new InvoiceCustomerPanelView(editorModel, SelectCustomer);
-        var productSearch = new TextBox { PlaceholderText = "Search & add a product or service (Ctrl+F)", MinWidth = 120, MinHeight = 32, Height = 32, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(10, 5), Background = Ui.Canvas };
-        var suggestions = new ListBox
-        {
-            IsVisible = false,
-            MaxHeight = 260,
-            Background = Ui.CardSurface,
-            BorderBrush = Ui.Outline,
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            ItemTemplate = new FuncDataTemplate<UiRecord>((product, _) => ProductSearchSuggestion(product, editorModel.InvoiceSetting("Show GST fields").IsChecked), true)
-        };
-        productSearch.TextChanged += (_, _) =>
-        {
-            var query = productSearch.Text?.Trim() ?? "";
-            suggestions.ItemsSource = editorModel.SearchProducts(query);
-            suggestions.IsVisible = query.Length > 0;
-        };
-        var selectingProduct = false;
-        void SelectProduct(UiRecord product)
-        {
-            if (selectingProduct || overlay.IsVisible) return;
-            selectingProduct = true;
-            try
-            {
-                suggestions.SelectedItem = null;
-                productSearch.Text = "";
-                suggestions.IsVisible = false;
-                ShowProductItem(product, productSearch);
-            }
-            finally { selectingProduct = false; }
-        }
-        suggestions.SelectionChanged += (_, _) =>
-        {
-            if (suggestions.SelectedItem is UiRecord product) SelectProduct(product);
-        };
-        productSearch.KeyDown += (_, e) =>
-        {
-            if (e.Key == Avalonia.Input.Key.Escape) { suggestions.IsVisible = false; e.Handled = true; return; }
-            if (e.Key != Avalonia.Input.Key.Enter) return;
-            e.Handled = true;
-            var query = productSearch.Text?.Trim() ?? "";
-            if (query.Length == 0) return;
-            var exact = editorModel.ExactProductCodeMatches(query);
-            var matches = exact.Length > 0 ? exact : editorModel.SearchProducts(query);
-            if (matches.Length == 1) SelectProduct(matches[0]);
-        };
-        var lineHost = new InvoiceLineItemsView(); var totals = new InvoiceTotalsView(); var count = Ui.LocalText("0 items", 11, true, Ui.Muted);
-        totals.Name = "InvoiceFooterTotals";
-        var create = EditorButton($"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)", () => { if (!invoiceCompletionVisible && editorModel.SaveInvoice()) ShowInvoiceSuccess(); }, true);
-        create.Background = Ui.HeaderBand; create.MinHeight = 32;
-        System.ComponentModel.PropertyChangedEventHandler typeChanged = (_, _) => create.Content = $"{(editorModel.IsEditingDocument ? "Save" : "Create")} {editorModel.InvoiceDetails[0].Value} (Ctrl+S)";
-        editorModel.InvoiceDetails[0].PropertyChanged += typeChanged;
-        create.DetachedFromVisualTree += (_, _) => editorModel.InvoiceDetails[0].PropertyChanged -= typeChanged;
-        void UpdateTotals()
-        {
-            var t = editorModel.Totals;
-            var rows = new List<InvoiceTotalLine>
-            {
-                new("Subtotal", CurrencyDisplay.Format(t.Subtotal, currency: Model.EditorCurrency), 14),
-                new("Discount", CurrencyDisplay.Format(t.ItemDiscount + t.InvoiceDiscount, currency: Model.EditorCurrency), 14),
-                new("Tax", CurrencyDisplay.Format(t.Tax, currency: Model.EditorCurrency), 14)
-            };
-            if (t.AdditionalCosts != 0) rows.Add(new InvoiceTotalLine("Charges & adjustments", CurrencyDisplay.Format(t.AdditionalCosts, currency: Model.EditorCurrency), 14));
-            rows.Add(new InvoiceTotalLine("Total", CurrencyDisplay.Format(t.Total, currency: Model.EditorCurrency), 19));
-            totals.SetTotals(rows);
-        }
-        void RefreshLines()
-        {
-            count.Text = $"{editorModel.Lines.Count} items";
-            lineHost.SetLines(editorModel.Lines, editorModel.InvoiceSetting("Show Product / Service Tag").IsChecked, line => editorModel.Lines.Remove(line));
-            UpdateTotals(); create.IsEnabled = editorModel.Lines.Count > 0;
-        }
-        var quickAdd = new InvoiceQuickAddView(productSearch, EditorButton("＋ Custom Item", ShowCustomItem), suggestions);
-        var items = new InvoiceItemsPanelView(count, quickAdd, lineHost);
-        var details = new InvoiceDocumentDetailsPanelView(editorModel);
-        var optionsCard = new InvoiceOptionsPanelView(editorModel);
-        var left = new InvoiceEditorPaneView(customer, items); var right = new InvoiceEditorPaneView(details, optionsCard);
-        var viewport = new InvoiceWorkspace(left, right, items, optionsCard);
-        var actions = new InvoiceDocumentActionsView();
-        foreach (var (label, icon) in new[] { ("View", "visibility"), ("Preview", "picture_as_pdf"), ("Download", "download"), ("Print", "print") })
-        {
-            var button = label switch
-            {
-                "View" => EditorButton(label, () => { if (Model.LastSavedDocument != null) ShowDocumentPreview(Model.LastSavedDocument); }),
-                "Preview" => EditorButton(label, async () => { if (Model.LastSavedDocument != null) await ShowPdfPreviewAsync(Model.LastSavedDocument); }),
-                "Download" => EditorButton(label, async () => { if (Model.LastSavedDocument != null) await DownloadDocumentPdf(Model.LastSavedDocument); }),
-                "Print" => EditorButton(label, async () => { if (Model.LastSavedDocument != null) await PrintDocumentAsync(Model.LastSavedDocument); }),
-                _ => EditorButton(label)
-            };
-            button.Content = Ui.Columns("18,8,Auto", Ui.Icon(icon, 18), new Border(), Ui.LocalText(label, 14));
-            button.IsEnabled = editorModel.LastSavedDocument != null; ToolTip.SetTip(button, "Open the last saved document. Save this invoice first to include your changes."); actions.Add(button);
-        }
-        var shellModel = new InvoiceEditorShellModel();
-        void UpdateHeader()
-        {
-            shellModel.Title = $"{(editorModel.IsEditingDocument ? "Edit" : "Create New")} {editorModel.InvoiceDetails[0].Value}";
-            shellModel.DateText = DateTime.Today.ToString("dd/MM/yyyy");
-            shellModel.NumberText = $"#{editorModel.EditorDocumentNumber}";
-        }
-        System.ComponentModel.PropertyChangedEventHandler headerChanged = (_, _) => UpdateHeader();
-        editorModel.InvoiceDetails[0].PropertyChanged += headerChanged;
-        System.Collections.Specialized.NotifyCollectionChangedEventHandler documentsChanged = (_, _) => UpdateHeader();
-        editorModel.Invoices.CollectionChanged += documentsChanged;
-        UpdateHeader();
-
-        var voidGlyph = Ui.Icon("block", 18);
-        voidGlyph.Classes.Add("action-icon-glyph");
-        var voidInvoice = new Button
-        {
-            Content = voidGlyph,
-            IsVisible = editorModel.IsEditingDocument && editorModel.InvoiceDetails[0].Value == "Invoice",
-            IsEnabled = editorModel.CanVoidCurrentInvoice
-        };
-        voidInvoice.Classes.Add("action-icon");
-        voidInvoice.Classes.Add("header-icon-action");
-        ToolTip.SetTip(voidInvoice, "Void Invoice");
-        Avalonia.Automation.AutomationProperties.SetName(voidInvoice, "Void Invoice");
-        voidInvoice.Click += (_, _) => Confirm(
-            "Void Invoice",
-            $"Void {editorModel.EditorDocumentNumber}? This action cannot be undone.",
-            () =>
-            {
-                if (!editorModel.VoidCurrentInvoice()) return;
-                voidInvoice.IsEnabled = false;
-                UpdateHeader();
-            });
-
-        var body = new InvoiceEditorShellView(shellModel, viewport, actions, create, totals, voidInvoice);
-        body.DetachedFromVisualTree += (_, _) => { editorModel.InvoiceDetails[0].PropertyChanged -= headerChanged; editorModel.Invoices.CollectionChanged -= documentsChanged; };
-        editorModel.InvoiceChanged += UpdateTotals;
-        System.Collections.Specialized.NotifyCollectionChangedEventHandler collectionChanged = (_, _) => RefreshLines(); editorModel.Lines.CollectionChanged += collectionChanged;
-        body.DetachedFromVisualTree += (_, _) => { editorModel.InvoiceChanged -= UpdateTotals; editorModel.Lines.CollectionChanged -= collectionChanged; };
-        RefreshLines(); return body;
+        InvoiceEditorPageModel? editor = null;
+        editor = new InvoiceEditorPageModel(Model, SelectCustomer,
+            product => ShowProductItem(product, () => editor!.RequestSearchFocus()), ShowCustomItem, ShowInvoiceSuccess,
+            () => Confirm("Void Invoice", $"Void {Model.EditorDocumentNumber}? This action cannot be undone.", () => Model.VoidCurrentInvoice()),
+            () => { if (Model.LastSavedDocument is { } document) ShowDocumentPreview(document); },
+            async () => { if (Model.LastSavedDocument is { } document) await ShowPdfPreviewAsync(document); },
+            async () => { if (Model.LastSavedDocument is { } document) await DownloadDocumentPdf(document); },
+            async () => { if (Model.LastSavedDocument is { } document) await PrintDocumentAsync(document); }, ExpandInvoiceField);
+        return new InvoiceEditorShellView(editor);
     }
 
-    // Builds a detailed product-search row with the commercial and stock information needed before selection.
-    private Control ProductSearchSuggestion(UiRecord product, bool showGst = true)
+    private void ExpandInvoiceField(FormField field)
     {
-        var hasStock = !Model.ProductFieldVisible("Stock") || !decimal.TryParse(product["Stock"], out var stock) || stock > 0 ||
-            bool.TryParse(product["Unlimited stock"], out var unlimited) && unlimited;
-        var name = Ui.Text(product.Name, 13, false, hasStock ? Ui.TextColor : Brush.Parse("#D32F2F"));
-        name.TextWrapping = TextWrapping.NoWrap;
-        var price = decimal.TryParse(product["Sale Price"], out var amount) ? CurrencyDisplay.Format(amount, currency: Model.EditorCurrency) : CurrencyDisplay.Format(0, currency: Model.EditorCurrency);
-        var stockText = bool.TryParse(product["Unlimited stock"], out unlimited) && unlimited ? "∞" : product["Stock"].Length == 0 ? "0" : product["Stock"];
-        var hsn = product["HSN/SAC"].Length == 0 ? "—" : product["HSN/SAC"];
-        var metadata = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        metadata.Children.Add(Ui.Text(price, 10.5, color: Ui.Muted));
-        if (Model.ProductFieldVisible("Stock"))
-        {
-            metadata.Children.Add(Ui.LocalText("•", 10.5, color: Ui.Muted));
-            metadata.Children.Add(Ui.Text($"Stock: {stockText}", 10.5, color: Ui.Muted));
-        }
-        if (showGst && Model.ProductFieldVisible("HSN/SAC"))
-        {
-            metadata.Children.Add(Ui.LocalText("•", 10.5, color: Ui.Muted));
-            metadata.Children.Add(Ui.Text($"HSN {hsn}", 10.5, color: Ui.Muted));
-        }
-        if (Model.ProductFieldVisible("Storage Location") && !string.IsNullOrWhiteSpace(product["Storage Location"]))
-        {
-            metadata.Children.Add(Ui.LocalText("•", 10.5, color: Ui.Muted));
-            metadata.Children.Add(Ui.Icon("location_on", 12, Brush.Parse("#E91E63")));
-            metadata.Children.Add(Ui.Text(product["Storage Location"], 10.5, true, Brush.Parse("#526780")));
-        }
-        return new Border
-        {
-            Padding = new Thickness(10, 8),
-            MinHeight = 52,
-            Child = Ui.Stack(3, name, metadata)
-        };
+        var editor = new ExpandedTextViewModel(field.Value, field.Label == "Notes" ? 1000 : field.MaxLength, field.IsReadOnly);
+        ShowOverlay(field.Label, editor, new DialogActions([
+            new(UiLocalization.Translate("Cancel"), new CommunityToolkit.Mvvm.Input.RelayCommand(CloseOverlay)),
+            new(UiLocalization.TranslateKey("actionSave"), new CommunityToolkit.Mvvm.Input.RelayCommand(() => { if (!field.IsReadOnly) field.Value = editor.Text; CloseOverlay(); }), true)
+        ]), width: 528, prominentHeader: true);
     }
     // Performs the show product item action for this screen or workflow.
-    private void ShowProductItem(UiRecord product, TextBox search)
+    private void ShowProductItem(UiRecord product, Action focusSearch)
     {
         var dialog = new ProductItemDialogViewModel(product, _ => { }, () =>
         {
             CloseOverlay();
-            search.Focus();
+            focusSearch();
         }, Model.TryAddInvoiceLine, Model.InvoiceSetting("Allow Fractional Quantity").IsChecked, Model.ProductFieldVisible,
             Model.ActiveUnitCodes(product["Unit"]), Model.SellingUnitChoices(product));
         Model.CurrentOverlay = dialog;
     }
-    // Performs the total row action for this screen or workflow.
-    private Control TotalRow(string label, decimal value, bool bold = false) => Ui.Columns("*,Auto", Ui.LocalText(label, bold ? 18 : 13, bold), Ui.Text(CurrencyDisplay.Format(value, currency: Model.EditorCurrency), bold ? 22 : 14, bold, bold ? Brush.Parse("#4CAF50") : null));
     // Performs the select customer action for this screen or workflow.
     private void SelectCustomer()
     {
@@ -221,24 +54,21 @@ public partial class MainWindow
         invoiceCompletionVisible = true;
         var document = Model.LastSavedDocument!;
         var outstanding = decimal.TryParse(document["Outstanding"], out var balance) ? balance : decimal.TryParse(document["Total"], out var total) ? total : 0m;
-        Action? applyPaymentAction = outstanding <= 0.005m ? null : () => ShowPayment(document);
-        var applyPayment = Ui.Button("Apply Payment", applyPaymentAction);
-        applyPayment.IsEnabled = outstanding > 0.005m;
-        page.Content = InvoiceCreatedScreen(document, applyPayment);
+        page.Content = InvoiceCreatedScreen(document, outstanding > 0.005m);
     }
 
     // Performs the invoice created screen action for this screen or workflow.
-    private Control InvoiceCreatedScreen(UiRecord document, Button applyPayment)
+    private Control InvoiceCreatedScreen(UiRecord document, bool canApplyPayment)
     {
         var invoiceId = document.Name.TrimStart('#').Replace("[", "").Replace("]", "");
         return new InvoiceCreatedView(
             invoiceId,
             invoiceId,
-            applyPayment.IsEnabled,
+            canApplyPayment,
             () => ShowDocumentPreview(document),
             () => ShowPdfPreviewAsync(document),
             () => PrintDocumentAsync(document),
-            () => { Model.StartDocument("Invoice"); page.Content = InvoiceEditor(); },
+            () => { Model.StartDocument("Invoice"); if (!Model.HasPendingInvoiceNavigation) page.Content = InvoiceEditor(); },
             () => ShowPayment(document));
     }
 }
