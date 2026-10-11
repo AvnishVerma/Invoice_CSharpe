@@ -7,7 +7,7 @@
               MinHeight="38.4"
               Padding="10,8"
               Background="{DynamicResource AppCardBrush}" />
-    <Border Background="{DynamicResource AppCardBrush}"
+    <Border Classes="field-caption"
             Padding="3.2,0"
             Margin="12,-8,0,0"
             HorizontalAlignment="Left"

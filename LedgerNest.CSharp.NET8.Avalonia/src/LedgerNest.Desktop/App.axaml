@@ -298,6 +298,10 @@
       <Setter Property="Padding" Value="{DynamicResource StandardControlPadding}" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
+    <Style Selector="Border.field-caption">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
     <Style Selector="ComboBox">
       <Setter Property="CornerRadius" Value="10" />
       <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}" />

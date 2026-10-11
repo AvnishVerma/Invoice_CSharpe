@@ -82,7 +82,7 @@
     <Grid Margin="0,7,0,0">
       <ContentControl x:Name="Input" Content="{Binding}" Classes.IsText="{Binding IsText}" Classes.IsChoice="{Binding IsChoice}" Classes.IsDate="{Binding IsDate}" Classes.IsSlider="{Binding IsSlider}" Classes.IsFile="{Binding IsFile}" Classes.IsToggle="{Binding IsToggle}" />
       <TextBlock Text="{Binding Field.Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" IsVisible="{Binding WithIcon}" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsHitTestVisible="False" />
-      <Border Background="{DynamicResource AppCardBrush}" Padding="4,0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="9,-7,0,0" IsHitTestVisible="False">
+      <Border Classes="field-caption" Padding="4,0" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="9,-7,0,0" IsHitTestVisible="False">
         <Border.IsVisible>
           <MultiBinding Converter="{x:Static converters:BoolConverters.And}">
             <Binding Path="!IsToggle" />
