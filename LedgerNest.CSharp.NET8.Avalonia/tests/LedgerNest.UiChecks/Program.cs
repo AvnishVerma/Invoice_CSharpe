@@ -1242,8 +1242,8 @@ internal static class Program
         var searchBox = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.PlaceholderText == "Search & add a product or service (Ctrl+F)");
         searchBox.Text = "Selection"; Settle();
         var suggestions = window.GetVisualDescendants().OfType<ListBox>().Single();
-        Check(window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Stock: 8") &&
-              window.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsVisible && t.Text == "Shelf B2"),
+        Check(suggestions.GetVisualDescendants().OfType<TextBlock>().Any(t => t.IsEffectivelyVisible &&
+              t.Text?.Contains("Stock: 8", StringComparison.Ordinal) == true && t.Text.Contains("Shelf B2", StringComparison.Ordinal)),
             "Product search dropdown must display stock and storage-location details");
         var createInvoiceButton = FindButton("Create Invoice (Ctrl+S)");
         var viewActionButton = FindButton("View");
@@ -1275,7 +1275,10 @@ internal static class Program
         model.Lines.Add(new InvoiceLineViewModel { Name = "Test product", Price = 100, Quantity = 2, TaxRate = 18 }); Capture("invoice-populated");
         model.InvoiceOptions[0].Value = "Percentage"; model.InvoiceOptions[1].Value = "10";
         Check(model.Totals.Total == 212.4m, "Invoice discount must affect totals");
-        NavigateForCapture("Dashboard"); NavigateForCapture("New Invoice"); Check(model.Lines.Count == 1 && model.InvoiceOptions[1].Value == "10", "Navigation must preserve the invoice draft");
+        model.NavigateCommand.Execute("Dashboard");
+        Check(model.HasPendingInvoiceNavigation, "Leaving a changed invoice must request confirmation");
+        model.ResolveInvoiceLeave(InvoiceLeaveChoice.KeepEditing); Settle();
+        Check(model.Title == "New Invoice" && model.Lines.Count == 1 && model.InvoiceOptions[1].Value == "10", "Keeping editing must preserve the invoice draft");
         Check(model.SaveInvoice(), "Invoice must save"); Check(model.Invoices.Single()["Total"] == "212.40", "Saved total must match displayed total");
         NavigateForCapture("Invoices");
         Settle();
@@ -1565,6 +1568,8 @@ internal static class Program
         Check(!PdfText(model.ExportDocumentPdf(record)).Contains("Net Amount"), "Round-off rows must disappear when disabled");
         F("Tax Enabled").IsChecked = false;
         model.StartDocument("Invoice");
+        if (model.HasPendingInvoiceNavigation) model.ResolveInvoiceLeave(InvoiceLeaveChoice.Discard);
+        Check(!model.HasPendingInvoiceNavigation, "Tax-default checks must resolve the existing unsaved-invoice guard");
         Check(model.InvoiceOptions[3].Value == "No Tax", "Disabling tax by default must create a tax-free draft");
         F("Tax Enabled").IsChecked = true;
         F("Tax Mode").Value = "Per Item";

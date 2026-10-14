@@ -21,6 +21,8 @@ Validation: the UiChecks settings checks cover registered-category fallback, sel
 
 ## Validation results
 
-The standard build was attempted but its default desktop DLLs were locked by existing running .NET hosts. The isolated solution build uses `-p:OutputPath=artifacts/settings-framework/` with no framework/dependency changes. The complete UiChecks run stops at the pre-existing `Disabling tax by default must create a tax-free draft` assertion; the prior unchanged build reproduces it. Compact UI checks, including framework checks, are run separately. This change does not alter invoice tax calculations.
+The standard build initially encountered default desktop DLLs locked by running .NET hosts. Isolated solution builds use `-p:OutputPath=artifacts/floating-labels/` with no dependency/framework changes.
 
-Final shared UI run: 396 assertions passed. Focused header/save/Company Information tests: 15 passed. Isolated solution build: zero warnings/errors.
+The initial invoice-tax failure came from a stale test fixture that did not resolve the unsaved-invoice confirmation before starting a fresh draft. Two further stale assertions assumed separate product metadata labels and preservation after the screenshot helper explicitly discarded the draft. The fixtures now resolve Discard/Keep Editing explicitly and inspect the existing combined metadata line. Production invoice tax/navigation behavior is unchanged.
+
+Final complete UiChecks run: **1,096 checks passed**. Shared settings checks include category routing, validation state, commands, touch dimensions, responsive columns and feedback. Focused floating-label/numeric/company tests: **19 passed**. Final isolated solution build: **zero warnings/errors**.
