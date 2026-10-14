@@ -8,10 +8,10 @@
         <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="InvoiceInputSurface">#252525</SolidColorBrush></ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
       <DataTemplate x:Key="TextInput" x:DataType="vm:InvoiceInputViewModel">
-        <TextBox PlaceholderText="{Binding Label}" Text="{Binding Field.Value, Mode=TwoWay}" MaxLength="{Binding MaxLength}" AutomationProperties.Name="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" />
+        <TextBox Classes="floating-input" Background="{DynamicResource InvoiceInputSurface}" PlaceholderText="{Binding Label}" Text="{Binding Field.Value, Mode=TwoWay}" IsReadOnly="{Binding Field.IsReadOnly}" MaxLength="{Binding MaxLength}" AutomationProperties.Name="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" />
       </DataTemplate>
       <DataTemplate x:Key="ChoiceInput" x:DataType="vm:InvoiceInputViewModel">
-        <ComboBox ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption, Mode=TwoWay}" HorizontalAlignment="Stretch"
+        <ComboBox Background="{DynamicResource InvoiceInputSurface}" ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption, Mode=TwoWay}" HorizontalAlignment="Stretch"
                   AutomationProperties.Name="{Binding Field.Label}" Classes.with-icon="{Binding HasIcon}" Classes.time-format="{Binding IsTimeFormat}">
           <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:InvoiceInputOption"><TextBlock Text="{Binding Caption}" /></DataTemplate></ComboBox.ItemTemplate>
         </ComboBox>
@@ -19,6 +19,7 @@
     </ResourceDictionary>
   </UserControl.Resources>
   <UserControl.Styles>
+    <Style Selector="Border.field-caption"><Setter Property="Background" Value="{DynamicResource InvoiceInputSurface}" /></Style>
     <Style Selector="TextBox, ComboBox"><Setter Property="MinHeight" Value="38.4" /><Setter Property="Padding" Value="10,8,10,8" /><Setter Property="Background" Value="{DynamicResource InvoiceInputSurface}" /></Style>
     <Style Selector="TextBox.with-icon, ComboBox.with-icon"><Setter Property="Padding" Value="36,8,10,8" /></Style>
     <Style Selector="ComboBox.time-format TextBlock"><Setter Property="FontSize" Value="15" /></Style>
@@ -31,8 +32,8 @@
       <Border Padding="8,0" HorizontalAlignment="Left" IsHitTestVisible="False" IsVisible="{Binding HasIcon}">
         <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" FontFamily="{DynamicResource IconFontFamily}" FontSize="17.6" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
       </Border>
-      <Border Classes="field-caption" Padding="3.2,0" Margin="12,-8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" IsHitTestVisible="False" ><Border.IsVisible><MultiBinding Converter="{x:Static converters:BoolConverters.And}"><Binding Path="HasLabel"/><Binding Path="IsKeyboardFocusWithin" ElementName="Root"/></MultiBinding></Border.IsVisible>
-        <TextBlock vm:UiLocalization.Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
+      <Border Classes="field-caption" ><Border.IsVisible><MultiBinding Converter="{x:Static converters:BoolConverters.And}"><Binding Path="HasLabel"/><Binding Path="IsKeyboardFocusWithin" ElementName="Root"/></MultiBinding></Border.IsVisible>
+        <TextBlock vm:UiLocalization.Text="{Binding Label}" />
       </Border>
     </Grid>
     <TextBlock Text="{Binding Field.Error}" FontSize="12" Foreground="Firebrick" IsVisible="{Binding Field.Error, Converter={x:Static converters:StringConverters.IsNotNullOrEmpty}}" />
