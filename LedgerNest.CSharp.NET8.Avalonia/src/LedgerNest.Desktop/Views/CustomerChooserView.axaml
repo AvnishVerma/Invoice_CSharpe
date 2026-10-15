@@ -6,7 +6,7 @@
   <Grid RowDefinitions="Auto,*" RowSpacing="12">
     <Grid ColumnDefinitions="Auto,10,*">
       <TextBlock Text="{icons:FontAwesomeGlyph search}" FontFamily="{DynamicResource IconFontFamily}" FontSize="19" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
-      <TextBox x:Name="SearchBox" Grid.Column="2" PlaceholderText="Search customer" MinHeight="38" />
+      <TextBox x:Name="SearchBox" Grid.Column="2" PlaceholderText="Search customer" MinHeight="{DynamicResource TextInputHeight}" />
     </Grid>
     <ListBox x:Name="CustomersList" Grid.Row="1" ItemsSource="{Binding Items, ElementName=ChooserRoot}" BorderThickness="0" Background="Transparent" MinHeight="220" MaxHeight="420">
       <ListBox.ItemTemplate>

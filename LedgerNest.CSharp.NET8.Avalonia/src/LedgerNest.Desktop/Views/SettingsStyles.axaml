@@ -1,7 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <!-- Scope dimensions to the settings content, preserving application/editor sizes. -->
   <Style Selector="ContentControl.settings-content TextBox, ContentControl.settings-content ComboBox, ContentControl.settings-content NumericUpDown">
-    <Setter Property="MinHeight" Value="50" />
+    <Setter Property="MinHeight" Value="{DynamicResource TextInputHeight}" />
   </Style>
   <Style Selector="ContentControl.settings-content Button.action">
     <Setter Property="Height" Value="NaN" /><Setter Property="MinHeight" Value="48" />

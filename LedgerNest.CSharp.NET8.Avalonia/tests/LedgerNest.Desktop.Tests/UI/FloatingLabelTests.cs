@@ -46,6 +46,8 @@ public sealed class FloatingLabelTests(HeadlessFixture headless)
             Assert.IsAssignableFrom<ISolidColorBrush>(caption.Background); Assert.Equal((byte)255, ((ISolidColorBrush)caption.Background!).Color.A);
             Assert.Equal(((ISolidColorBrush)input.Background!).Color, ((ISolidColorBrush)caption.Background!).Color);
             Assert.Equal(16, caption.Bounds.Height); Assert.True(caption.TranslatePoint(default,view)!.Value.Y >= 0);
+            Assert.Equal(50, input.Bounds.Height);
+            Assert.Equal(15, input.FontSize);
             Assert.True(input.Padding.Left >= 32, "Leading icon must have reserved text padding");
             var inputY = input.TranslatePoint(default, view)!.Value.Y;
             var captionY = caption.TranslatePoint(default, view)!.Value.Y;

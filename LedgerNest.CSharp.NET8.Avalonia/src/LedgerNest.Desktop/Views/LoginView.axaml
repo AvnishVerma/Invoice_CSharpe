@@ -43,9 +43,9 @@
 
   <UserControl.Styles>
     <Style Selector="TextBox.login-input">
-      <Setter Property="Height" Value="38.4" />
-      <Setter Property="MinHeight" Value="38.4" />
-      <Setter Property="Padding" Value="16,0" />
+      <Setter Property="Height" Value="{DynamicResource TextInputHeight}" />
+      <Setter Property="MinHeight" Value="{DynamicResource TextInputHeight}" />
+      <Setter Property="Padding" Value="{DynamicResource TextInputPadding}" />
       <Setter Property="FontSize" Value="15" />
       <Setter Property="CornerRadius" Value="12" />
       <Setter Property="Background" Value="{DynamicResource LoginCardSurface}" />

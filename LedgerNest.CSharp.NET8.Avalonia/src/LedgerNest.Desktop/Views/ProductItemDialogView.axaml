@@ -23,7 +23,7 @@
   </UserControl.Resources>
   <UserControl.Styles>
     <Style Selector="TextBox">
-      <Setter Property="MinHeight" Value="38.4" />
+      <Setter Property="MinHeight" Value="{DynamicResource TextInputHeight}" />
       <Setter Property="Background" Value="{DynamicResource DialogInput}" />
     </Style>
     <Style Selector="ComboBox">

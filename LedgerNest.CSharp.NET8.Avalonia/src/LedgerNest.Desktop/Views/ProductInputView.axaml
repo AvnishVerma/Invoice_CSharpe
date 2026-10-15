@@ -19,11 +19,11 @@
  </UserControl.Resources>
  <UserControl.Styles>
     <Style Selector="Border.field-caption"><Setter Property="Background" Value="{DynamicResource ProductInputSurface}" /></Style>
-  <Style Selector="TextBox"><Setter Property="MinHeight" Value="38.4"/><Setter Property="Padding" Value="10,8"/><Setter Property="FontSize" Value="15"/><Setter Property="Background" Value="{DynamicResource ProductInputSurface}"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="CornerRadius" Value="10"/><Setter Property="TextWrapping" Value="NoWrap"/></Style>
-  <Style Selector="TextBox.with-icon"><Setter Property="Padding" Value="34,8,10,8"/></Style>
+  <Style Selector="TextBox"><Setter Property="MinHeight" Value="{DynamicResource TextInputHeight}"/><Setter Property="Padding" Value="{DynamicResource TextInputPadding}"/><Setter Property="FontSize" Value="15"/><Setter Property="Background" Value="{DynamicResource ProductInputSurface}"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="CornerRadius" Value="10"/><Setter Property="TextWrapping" Value="NoWrap"/></Style>
+  <Style Selector="TextBox.with-icon"><Setter Property="Padding" Value="{DynamicResource TextInputIconPadding}"/></Style>
   <Style Selector="TextBox.multiline"><Setter Property="MinHeight" Value="76.8"/><Setter Property="Padding" Value="10,20,10,8"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
   <Style Selector="TextBox.multiline.with-icon"><Setter Property="Padding" Value="34,20,10,8"/></Style>
-  <Style Selector="ComboBox"><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="MinHeight" Value="38.4"/><Setter Property="Padding" Value="10,6"/><Setter Property="Background" Value="{DynamicResource ProductInputSurface}"/><Setter Property="CornerRadius" Value="10"/></Style>
+  <Style Selector="ComboBox"><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="MinHeight" Value="{DynamicResource TextInputHeight}"/><Setter Property="Padding" Value="10,6"/><Setter Property="Background" Value="{DynamicResource ProductInputSurface}"/><Setter Property="CornerRadius" Value="10"/></Style>
   <Style Selector="ComboBox.with-icon"><Setter Property="Padding" Value="34,6,10,6"/></Style>
   <Style Selector="ContentControl#Input.text"><Setter Property="ContentTemplate" Value="{StaticResource TextInput}"/></Style>
   <Style Selector="ContentControl#Input.choice"><Setter Property="ContentTemplate" Value="{StaticResource ChoiceInput}"/></Style>

@@ -20,8 +20,8 @@
   </UserControl.Resources>
   <UserControl.Styles>
     <Style Selector="Border.field-caption"><Setter Property="Background" Value="{DynamicResource InvoiceInputSurface}" /></Style>
-    <Style Selector="TextBox, ComboBox"><Setter Property="MinHeight" Value="38.4" /><Setter Property="Padding" Value="10,8,10,8" /><Setter Property="Background" Value="{DynamicResource InvoiceInputSurface}" /></Style>
-    <Style Selector="TextBox.with-icon, ComboBox.with-icon"><Setter Property="Padding" Value="36,8,10,8" /></Style>
+    <Style Selector="TextBox, ComboBox"><Setter Property="MinHeight" Value="{DynamicResource TextInputHeight}" /><Setter Property="Padding" Value="{DynamicResource TextInputPadding}" /><Setter Property="Background" Value="{DynamicResource InvoiceInputSurface}" /></Style>
+    <Style Selector="TextBox.with-icon, ComboBox.with-icon"><Setter Property="Padding" Value="{DynamicResource TextInputIconPadding}" /></Style>
     <Style Selector="ComboBox.time-format TextBlock"><Setter Property="FontSize" Value="15" /></Style>
     <Style Selector="ContentControl#Input.text"><Setter Property="ContentTemplate" Value="{StaticResource TextInput}" /></Style>
     <Style Selector="ContentControl#Input.choice"><Setter Property="ContentTemplate" Value="{StaticResource ChoiceInput}" /></Style>

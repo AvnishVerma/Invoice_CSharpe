@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:Avalonia.Data.Converters" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.CompanyFieldView" x:DataType="vm:CompanyFieldModel" x:Name="Root">
  <UserControl.Styles>
     <Style Selector="Border.field-caption"><Setter Property="Background" Value="{DynamicResource AppCanvasBrush}" /></Style>
-  <Style Selector="TextBox, ComboBox"><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="42,8,12,8"/><Setter Property="Background" Value="{DynamicResource AppCanvasBrush}"/><Setter Property="FontSize" Value="15"/></Style>
+  <Style Selector="TextBox, ComboBox"><Setter Property="MinHeight" Value="{DynamicResource TextInputHeight}"/><Setter Property="Padding" Value="{DynamicResource TextInputIconPadding}"/><Setter Property="Background" Value="{DynamicResource AppCanvasBrush}"/><Setter Property="FontSize" Value="15"/></Style>
   <Style Selector="TextBox.address"><Setter Property="MinHeight" Value="96"/><Setter Property="Padding" Value="42,12,48,12"/></Style>
  </UserControl.Styles>
  <StackPanel Spacing="4">
