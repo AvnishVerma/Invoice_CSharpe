@@ -22,7 +22,7 @@
         <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,1,0">
           <Grid RowDefinitions="*,Auto">
             <TextBlock Margin="20" Text="Choose the product fields your business uses. Required fields remain enabled." Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
-            <Button Grid.Row="1" Content="Save" Command="{Binding SaveCommand}" Classes="action primary" Margin="14" />
+            <Button Grid.Row="1" Content="Save" Command="{Binding SaveCommand}" Classes="settings-save-source action primary" Margin="14" />
           </Grid>
         </Border>
         <ScrollViewer Grid.Column="1">

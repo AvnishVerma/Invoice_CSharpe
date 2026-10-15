@@ -41,6 +41,8 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
     private string selectedTab;
     private Control currentContent;
     public Control? CurrentHeader { get; private set; }
+    public Button? CurrentSaveSource { get; private set; }
+    public bool HasSaveAction => CurrentSaveSource != null;
 
     public event PropertyChangedEventHandler? PropertyChanged;
     public ObservableCollection<SettingsTabModel> Tabs { get; }
@@ -95,6 +97,10 @@ public sealed class SettingsPageModel : INotifyPropertyChanged
     // Keep each page's existing header actions while hosting its header above navigation.
     private void ExtractHeader(Control content)
     {
+        CurrentSaveSource = content.GetLogicalDescendants().OfType<Button>().FirstOrDefault(button =>
+            button.Classes.Contains("settings-save-source") || button is ActionButtonView { IsSettingsSaveSource: true });
+        OnPropertyChanged(nameof(CurrentSaveSource));
+        OnPropertyChanged(nameof(HasSaveAction));
         var scaffold = content as ScreenScaffoldView ?? content.GetLogicalDescendants().OfType<ScreenScaffoldView>().FirstOrDefault();
         if (scaffold != null)
         {

@@ -1,9 +1,10 @@
-<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui"
+<UserControl xmlns:loc="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views" xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="LedgerNest.Desktop.Views.SettingsPageView"
              x:CompileBindings="False" Container.Name="settings" Container.Sizing="Width">
-    <UserControl.Styles><StyleInclude Source="/Views/SettingsStyles.axaml" /></UserControl.Styles>
-    <Grid RowDefinitions="Auto,Auto,*" Background="{DynamicResource AppCanvasBrush}">
+    <UserControl.Styles><StyleInclude Source="/Views/SettingsStyles.axaml" />
+      <Style Selector="Button.settings-save-source:not(.settings-save-primary)"><Setter Property="IsVisible" Value="False" /></Style></UserControl.Styles>
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Background="{DynamicResource AppCanvasBrush}">
         <ContentControl Content="{Binding CurrentHeader}" VerticalAlignment="Top" />
         <Border Grid.Row="1" Classes="secondary-navigation">
             <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto">
@@ -44,5 +45,9 @@
         <ContentControl Classes="settings-content" Grid.Row="2" Content="{Binding CurrentContent}"
                         HorizontalContentAlignment="Stretch"
                         VerticalContentAlignment="Stretch" />
+        <Border Grid.Row="3" IsVisible="{Binding HasSaveAction}" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,0" Padding="16,12">
+          <views:ActionButtonView Classes="settings-save-primary" ActionLabel="Save" Caption="Save" Icon="save" Primary="True"
+              Command="{Binding CurrentSaveSource.Command}" Available="{Binding CurrentSaveSource.IsEnabled}" Height="48" MinHeight="48" MinWidth="140" HorizontalAlignment="Right" Tooltip="Save settings" />
+        </Border>
     </Grid>
 </UserControl>

@@ -1074,13 +1074,13 @@ internal static class Program
         Check(window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsEffectivelyVisible && text.Text == "Old-style bordered tabular bill, for A4, A5 and A6") &&
               window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsEffectivelyVisible && text.Text == "Default"),
             "PDF template cards must show descriptions and the default badge");
-        Check(FindButton("Save Settings").IsEnabled, "Changing PDF template must enable saving");
+        Check(FindButton("Save").IsEnabled, "Changing PDF template must enable saving");
         Click("Landscape");
         Check(model.Settings["PDF Settings"][0].Fields[1].Value == "Landscape", "PDF orientation selector must update the stored field");
         Click("Portrait");
         Capture("settings-pdf-grid-classic");
-        Click("Save Settings");
-        Check(!FindButton("Save Settings").IsEnabled, "Saving PDF settings must clear the dirty state");
+        Click("Save");
+        Check(!FindButton("Save").IsEnabled, "Saving PDF settings must clear the dirty state");
         if (pdfSettingsOnly)
         {
             window.Close();

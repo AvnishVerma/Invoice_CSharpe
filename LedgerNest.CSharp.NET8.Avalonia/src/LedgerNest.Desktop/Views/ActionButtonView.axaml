@@ -1,7 +1,7 @@
 <Button xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
         x:Class="LedgerNest.Desktop.Views.ActionButtonView" x:Name="ActionRoot" x:DataType="views:ActionButtonView"
-        Classes="action" Classes.primary="{Binding Primary, ElementName=ActionRoot}"
+        Classes="action" Classes.settings-save-source="{Binding IsSettingsSaveSource, ElementName=ActionRoot}" Classes.primary="{Binding Primary, ElementName=ActionRoot}"
         Classes.outline="{Binding !Primary, ElementName=ActionRoot}"
         IsEnabled="{Binding Available, ElementName=ActionRoot}"
         Tag="{Binding ActionLabel, ElementName=ActionRoot}" ToolTip.Tip="{Binding Tooltip, ElementName=ActionRoot}"

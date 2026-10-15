@@ -11,7 +11,7 @@
             <TextBlock Text="Accessibility" Classes="settings-section-title" />
             <TextBlock Text="Keyboard commands provide fast access to the most common invoice actions."
                        Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" />
-            <Button Content="Save Settings" Classes="action primary" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+            <Button Content="Save Settings" Classes="settings-save-source action primary" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
           </StackPanel>
         </Border>
         <Border Grid.Column="2" Classes="settings-column">

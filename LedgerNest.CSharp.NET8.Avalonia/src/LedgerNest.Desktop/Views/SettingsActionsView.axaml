@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.SettingsActionsView" x:Name="Root">
  <WrapPanel>
-  <Button Tag="{Binding SaveLabel, ElementName=Root}" Command="{Binding SaveCommand, ElementName=Root}" AutomationProperties.Name="{Binding SaveLabel, ElementName=Root}" Classes="action primary" Margin="0,0,8,8"><TextBlock vm:UiLocalization.Text="{Binding SaveLabel, ElementName=Root}" /></Button>
+  <Button Tag="{Binding SaveLabel, ElementName=Root}" Command="{Binding SaveCommand, ElementName=Root}" AutomationProperties.Name="{Binding SaveLabel, ElementName=Root}" Classes="settings-save-source action primary" Margin="0,0,8,8"><TextBlock vm:UiLocalization.Text="{Binding SaveLabel, ElementName=Root}" /></Button>
   <Button Command="{Binding CancelCommand, ElementName=Root}" IsVisible="{Binding HasCancel, ElementName=Root}" Classes="action outline" Margin="0,0,8,8" AutomationProperties.Name="Cancel"><TextBlock vm:UiLocalization.Text="Cancel" /></Button>
  </WrapPanel>
 </UserControl>

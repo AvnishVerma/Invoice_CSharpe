@@ -22,6 +22,8 @@ public sealed partial class ActionButtonView : Button
     public string DropdownIcon => "arrow_drop_down";
     public bool HasDropdown => ActionLabel.EndsWith("▾", StringComparison.Ordinal);
     public bool HasCaption => Caption.Length > 0;
+    public bool IsSettingsSaveSource => Caption is "Save" or "Save Settings" or "Save Permissions" or "Save update channel";
+    public static readonly DirectProperty<ActionButtonView, bool> IsSettingsSaveSourceProperty = AvaloniaProperty.RegisterDirect<ActionButtonView, bool>(nameof(IsSettingsSaveSource), view => view.IsSettingsSaveSource);
     protected override Type StyleKeyOverride => typeof(Button);
     public ActionButtonView() => InitializeComponent();
     internal ActionButtonView(string label, Action? action, bool primary) : this()
@@ -48,7 +50,11 @@ public sealed partial class ActionButtonView : Button
         base.OnPropertyChanged(change);
         if (change.Property == ActionLabelProperty) RaisePropertyChanged(HasDropdownProperty, ((string?)change.OldValue)?.EndsWith("▾", StringComparison.Ordinal) == true, HasDropdown);
         if (change.Property == IconProperty) RaisePropertyChanged(HasIconProperty, ((string?)change.OldValue)?.Length > 0, HasIcon);
-        if (change.Property == CaptionProperty) RaisePropertyChanged(HasCaptionProperty, ((string?)change.OldValue)?.Length > 0, HasCaption);
+        if (change.Property == CaptionProperty)
+        {
+            RaisePropertyChanged(HasCaptionProperty, ((string?)change.OldValue)?.Length > 0, HasCaption);
+            RaisePropertyChanged(IsSettingsSaveSourceProperty, false, IsSettingsSaveSource);
+        }
     }
     public static readonly DirectProperty<ActionButtonView, bool> HasDropdownProperty = AvaloniaProperty.RegisterDirect<ActionButtonView, bool>(nameof(HasDropdown), view => view.HasDropdown);
     public static readonly DirectProperty<ActionButtonView, bool> HasIconProperty = AvaloniaProperty.RegisterDirect<ActionButtonView, bool>(nameof(HasIcon), view => view.HasIcon);

@@ -26,7 +26,7 @@
                 <TextBlock Text="Configure the publisher HTTPS manifest used to announce new versions." Foreground="{DynamicResource AppMutedBrush}" />
                 <TextBox Text="{Binding ManifestUrl, Mode=TwoWay}" PlaceholderText="HTTPS update manifest URL" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <Button Content="Save update channel" Command="{Binding SaveChannelCommand}" />
+                  <Button Classes="settings-save-source" Content="Save update channel" Command="{Binding SaveChannelCommand}" />
                   <Button Content="Check for updates" Command="{Binding CheckForUpdatesCommand}" />
                 </StackPanel>
                 <TextBlock Text="Update status" FontWeight="Bold" FontSize="12" />
