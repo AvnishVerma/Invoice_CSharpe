@@ -801,7 +801,7 @@ internal sealed partial class ManagementView : UserControl
         Add("Phone", "phone", "Phone", 12);
         Add("GST / VAT Number", "business", "GST / VAT Number", 50);
         Add("Address", "location_on", "Address", 100);
-        window.ShowOverlay("", new CustomerViewDialog(view), Ui.Button("Close", window.CloseOverlay, true), width: 600);
+        window.ShowOverlay("View Customer", new CustomerViewDialog(view), Ui.Button("Close", window.CloseOverlay, true), width: 600);
     }
     // Performs the more menu action for this screen or workflow.
     private Button MoreMenu()

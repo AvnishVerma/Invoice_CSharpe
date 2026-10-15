@@ -2,7 +2,7 @@
              xmlns:vm="using:LedgerNest.Desktop" x:Class="LedgerNest.Desktop.Views.InvoiceRefundView"
              x:DataType="vm:InvoiceRefundViewModel">
   <Grid RowDefinitions="Auto,12,*,12,Auto" MinHeight="420">
-    <Border Padding="12" CornerRadius="10" Background="{DynamicResource AppBackgroundBrush}">
+    <Border Padding="12" CornerRadius="10" Background="{DynamicResource AppCardBrush}">
       <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,6,Auto">
         <TextBlock Text="Invoice" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Column="1" Text="{Binding InvoiceNumber}" FontWeight="SemiBold"/>
         <TextBlock Grid.Row="2" Text="Customer" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Customer}"/>
@@ -11,13 +11,18 @@
     <ScrollViewer Grid.Row="2">
       <ItemsControl ItemsSource="{Binding Lines}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:RefundLineViewModel">
         <Border Padding="10" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1">
-          <Grid ColumnDefinitions="*,85,95,110" RowDefinitions="Auto,5,Auto">
-            <TextBlock Text="{Binding Description}" FontWeight="SemiBold"/>
-            <TextBlock Grid.Column="1" Text="{Binding UnitPrice, StringFormat='{}{0:0.00}'}" HorizontalAlignment="Right"/>
-            <TextBlock Grid.Column="2" Text="{Binding RemainingQuantity, StringFormat='Remaining {0:0.###}'}" HorizontalAlignment="Right" Foreground="{DynamicResource AppMutedBrush}"/>
-            <NumericUpDown Grid.Column="3" Value="{Binding RefundQuantity}" Minimum="0" Maximum="{Binding RemainingQuantity}" Increment="1" FormatString="0.###"/>
-            <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Text="{Binding SoldQuantity, StringFormat='Sold quantity: {0:0.###}'}" FontSize="11" Foreground="{DynamicResource AppMutedBrush}"/>
-            <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding RefundTotal, StringFormat='Refund {0:0.00}'}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+          <Grid ColumnDefinitions="*,16,140">
+            <StackPanel Spacing="8" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Description}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding UnitPrice, StringFormat='Unit price: {0:0.00}'}"/>
+              <TextBlock Text="{Binding SoldQuantity, StringFormat='Sold quantity: {0:0.###}'}" Foreground="{DynamicResource AppMutedBrush}"/>
+              <TextBlock Text="{Binding RemainingQuantity, StringFormat='Remaining: {0:0.###}'}" Foreground="{DynamicResource AppMutedBrush}"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="8">
+              <TextBlock Text="Refund quantity" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+              <NumericUpDown VerticalContentAlignment="Center" Value="{Binding RefundQuantity}" Minimum="0" Maximum="{Binding RemainingQuantity}" Increment="1" FormatString="0.###" HorizontalAlignment="Stretch" AutomationProperties.Name="Refund quantity"/>
+              <TextBlock Text="{Binding RefundTotal, StringFormat='Refund {0:0.00}'}" HorizontalAlignment="Right" FontWeight="SemiBold"/>
+            </StackPanel>
           </Grid>
         </Border>
       </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
@@ -26,7 +31,7 @@
       <TextBox Text="{Binding Reason}" PlaceholderText="Refund reason" MaxLength="500"/>
       <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Refund total" FontSize="16" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="{Binding RefundTotal, StringFormat='{}{0:0.00}'}" FontSize="18" FontWeight="Bold"/></Grid>
       <TextBlock Text="{Binding Error}" Foreground="#C62828" TextWrapping="Wrap"/>
-      <Grid ColumnDefinitions="*,10,*"><Button Content="Close" Command="{Binding CloseCommand}"/><Button Grid.Column="2" Content="Create Refund" Command="{Binding SubmitCommand}" Classes="action primary" IsEnabled="{Binding !IsBusy}"/></Grid>
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right"><Button Content="Close" Command="{Binding CloseCommand}" Classes="action outline"/><Button Content="Create Refund" Command="{Binding SubmitCommand}" Classes="action primary" IsEnabled="{Binding !IsBusy}"/></StackPanel>
       <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}"/>
     </StackPanel>
   </Grid>

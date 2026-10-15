@@ -59,15 +59,14 @@
   </UserControl.DataTemplates>
   <UserControl.Styles>
     <Style Selector="Border#Panel"><Setter Property="CornerRadius" Value="12" /><Setter Property="Background" Value="{DynamicResource OverlayCardSurface}" /><Setter Property="HorizontalAlignment" Value="Center" /><Setter Property="VerticalAlignment" Value="Center" /></Style>
-    <Style Selector="TextBlock#TitleText"><Setter Property="FontSize" Value="16" /><Setter Property="FontWeight" Value="Bold" /></Style>
+    <Style Selector="TextBlock#TitleText"><Setter Property="FontSize" Value="20" /><Setter Property="FontWeight" Value="SemiBold" /></Style>
     <Style Selector="ContentControl#FooterHost"><Setter Property="HorizontalAlignment" Value="Right" /></Style>
-    <Style Selector="Button#CloseButton"><Setter Property="MinWidth" Value="38" /></Style>
+    <Style Selector="Button#CloseButton"><Setter Property="Width" Value="36" /><Setter Property="Height" Value="36" /><Setter Property="MinWidth" Value="36" /><Setter Property="MinHeight" Value="36" /></Style>
     <Style Selector="Border#Panel.side"><Setter Property="HorizontalAlignment" Value="Right" /><Setter Property="VerticalAlignment" Value="Stretch" /></Style>
     <Style Selector="Border#Panel.prominent"><Setter Property="CornerRadius" Value="28" /><Setter Property="Background" Value="{DynamicResource ProminentSurface}" /></Style>
     <Style Selector="TextBlock#TitleText.prominent"><Setter Property="FontSize" Value="24" /><Setter Property="FontWeight" Value="Normal" /></Style>
     <Style Selector="Border#Panel.product"><Setter Property="Background" Value="{DynamicResource ProductSurface}" /></Style>
     <Style Selector="ContentControl#FooterHost.product"><Setter Property="HorizontalAlignment" Value="Stretch" /></Style>
-    <Style Selector="Button#CloseButton.product"><Setter Property="Background" Value="Transparent" /><Setter Property="BorderThickness" Value="0" /><Setter Property="Padding" Value="8" /><Setter Property="MinWidth" Value="32" /><Setter Property="MinHeight" Value="32" /><Setter Property="FontSize" Value="22" /></Style>
   </UserControl.Styles>
   <Grid>
     <Border Background="#4D000000" PointerPressed="OnScrimPressed" />
@@ -77,7 +76,7 @@
 
             Classes.side="{Binding IsSide}" Classes.prominent="{Binding IsProminent}" Classes.product="{Binding IsProductEditor}">
       <Grid RowDefinitions="Auto,*,Auto">
-        <Border Padding="14.4,12.8">
+        <Border Padding="20,16">
           <Grid ColumnDefinitions="Auto,*,Auto,Auto">
             <ContentControl x:Name="LeadingIconHost" Content="{Binding LeadingIcon}" IsVisible="{Binding !IsProductEditor}" Margin="0,0,12,0" VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3.2">
@@ -85,15 +84,15 @@
                          Foreground="{DynamicResource OverlayText}" TextWrapping="Wrap" />
               <TextBlock IsVisible="{Binding IsProductEditor}" vm:UiLocalization.Text="Enter product details" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" />
             </StackPanel>
-            <ContentControl Grid.Column="2" Content="{Binding HeaderAccessory}" VerticalAlignment="Center" />
+            <ContentControl Grid.Column="2" Content="{Binding HeaderAccessory}" Margin="12,0" VerticalAlignment="Center" />
             <Button Tag="×" FontFamily="{DynamicResource IconFontFamily}" x:Name="CloseButton" Grid.Column="3" Content="{icons:FontAwesomeGlyph close}" Classes="action outline" Classes.product="{Binding IsProductEditor}"
                     Command="{Binding CloseCommand}" IsVisible="{Binding ShowClose}" ToolTip.Tip="Close" AutomationProperties.Name="Close" />
           </Grid>
         </Border>
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-          <Border Padding="14.4"><ContentControl x:Name="BodyHost" Content="{Binding Body}" /></Border>
+          <Border Padding="20,12"><ContentControl x:Name="BodyHost" Content="{Binding Body}" /></Border>
         </ScrollViewer>
-        <Border Grid.Row="2" Padding="14.4" BorderBrush="{DynamicResource OverlayOutline}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" IsVisible="{Binding HasFooter}" Padding="20,16" BorderBrush="{DynamicResource OverlayOutline}" BorderThickness="0,1,0,0">
           <ContentControl x:Name="FooterHost" Content="{Binding Footer}" Classes.product="{Binding IsProductEditor}" />
         </Border>
       </Grid>

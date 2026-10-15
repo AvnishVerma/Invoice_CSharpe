@@ -17,7 +17,8 @@ public sealed class OverlayDialogViewModel
 {
     public string Title { get; }
     public object Body { get; }
-    public object Footer { get; }
+    public object? Footer { get; }
+    public bool HasFooter => Footer != null;
     public object? HeaderAccessory { get; }
     public object? LeadingIcon { get; }
     public IRelayCommand CloseCommand { get; }
@@ -36,7 +37,7 @@ public sealed class OverlayDialogViewModel
         Title = title;
         Body = body;
         CloseCommand = new RelayCommand(close);
-        Footer = footer ?? new DialogActions([new DialogAction("Close", CloseCommand)]);
+        Footer = footer ?? (body is Views.InvoiceRefundView or Views.QuotationCancellationView ? null : new DialogActions([new DialogAction("Close", CloseCommand)]));
         HeaderAccessory = accessory;
         LeadingIcon = leadingIcon;
         IsSide = side;

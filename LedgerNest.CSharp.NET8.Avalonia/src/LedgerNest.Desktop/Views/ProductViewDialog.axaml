@@ -3,84 +3,84 @@
              x:Class="LedgerNest.Desktop.Views.ProductViewDialog"
              x:CompileBindings="False">
   <StackPanel Spacing="11.2">
-    <TextBlock loc:UiLocalization.Text="Product details" FontSize="13" Foreground="#6E6E78" />
+    <TextBlock loc:UiLocalization.Text="Product details" FontSize="13" Foreground="{DynamicResource AppMutedBrush}" />
 
-    <TextBlock loc:UiLocalization.Text="GENERAL" FontSize="12" FontWeight="Bold" Foreground="#6E6E78" />
+    <TextBlock loc:UiLocalization.Text="GENERAL" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
 
     <Grid ColumnDefinitions="*,12,*">
       <StackPanel>
-        <TextBlock loc:UiLocalization.Text="Product Name" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
+        <TextBlock loc:UiLocalization.Text="Product Name" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,6" />
+        <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="{DynamicResource TextInputHeight}" Padding="{DynamicResource TextInputPadding}">
           <Grid ColumnDefinitions="28,*">
-            <TextBlock Text="{icons:FontAwesomeGlyph payments}" FontFamily="{DynamicResource IconFontFamily}" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{Binding ProductName}" FontSize="15" Foreground="#1F1F29" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            <TextBlock Text="{icons:FontAwesomeGlyph payments}" FontFamily="{DynamicResource IconFontFamily}" FontSize="18" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding ProductName}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
           </Grid>
         </Border>
       </StackPanel>
 
       <StackPanel Grid.Column="2">
-        <TextBlock loc:UiLocalization.Text="Alias Name (for invoice PDF)" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
+        <TextBlock loc:UiLocalization.Text="Alias Name (for invoice PDF)" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,6" />
+        <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="{DynamicResource TextInputHeight}" Padding="{DynamicResource TextInputPadding}">
           <Grid ColumnDefinitions="28,*">
-            <TextBlock Text="{icons:FontAwesomeGlyph translate}" FontFamily="{DynamicResource IconFontFamily}" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{Binding AliasName}" FontSize="15" Foreground="#1F1F29" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            <TextBlock Text="{icons:FontAwesomeGlyph translate}" FontFamily="{DynamicResource IconFontFamily}" FontSize="18" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding AliasName}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
           </Grid>
         </Border>
       </StackPanel>
     </Grid>
 
     <StackPanel>
-      <TextBlock loc:UiLocalization.Text="Description" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="73.6" Padding="8,9.6">
+      <TextBlock loc:UiLocalization.Text="Description" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,6" />
+      <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="73.6" Padding="8,9.6">
         <Grid ColumnDefinitions="28,*">
-          <TextBlock FontFamily="{DynamicResource IconFontFamily}" Text="{icons:FontAwesomeGlyph description}" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Top" />
-          <TextBlock Grid.Column="1" Text="{Binding Description}" FontSize="15" Foreground="#1F1F29" TextWrapping="Wrap" />
+          <TextBlock FontFamily="{DynamicResource IconFontFamily}" Text="{icons:FontAwesomeGlyph description}" FontSize="18" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Top" />
+          <TextBlock Grid.Column="1" Text="{Binding Description}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" TextWrapping="Wrap" />
         </Grid>
       </Border>
     </StackPanel>
 
     <StackPanel>
-      <TextBlock loc:UiLocalization.Text="HSN / SAC" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
+      <TextBlock loc:UiLocalization.Text="HSN / SAC" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,6" />
+      <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="{DynamicResource TextInputHeight}" Padding="{DynamicResource TextInputPadding}">
         <Grid ColumnDefinitions="28,*">
-          <TextBlock Text="{icons:FontAwesomeGlyph qr_code_2}" FontFamily="{DynamicResource IconFontFamily}" FontSize="18" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
-          <TextBlock Grid.Column="1" Text="{Binding HsnSac}" FontSize="15" Foreground="#1F1F29" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+          <TextBlock Text="{icons:FontAwesomeGlyph qr_code_2}" FontFamily="{DynamicResource IconFontFamily}" FontSize="18" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Text="{Binding HsnSac}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
         </Grid>
       </Border>
     </StackPanel>
 
-    <TextBlock loc:UiLocalization.Text="PRICING" FontSize="12" FontWeight="Bold" Foreground="#6E6E78" Margin="0,4,0,0" />
+    <TextBlock loc:UiLocalization.Text="PRICING" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" Margin="0,4,0,0" />
 
     <Grid ColumnDefinitions="*,12,*">
       <StackPanel>
-        <TextBlock loc:UiLocalization.Text="Price" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
-          <TextBlock Text="{Binding Price}" FontSize="15" Foreground="#1F1F29" VerticalAlignment="Center" />
+        <TextBlock loc:UiLocalization.Text="Price" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,6" />
+        <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="{DynamicResource TextInputHeight}" Padding="{DynamicResource TextInputPadding}">
+          <TextBlock Text="{Binding Price}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" VerticalAlignment="Center" />
         </Border>
       </StackPanel>
 
       <StackPanel Grid.Column="2">
-        <TextBlock loc:UiLocalization.Text="Purchase Price" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
-          <TextBlock Text="{Binding PurchasePrice}" FontSize="15" Foreground="#1F1F29" VerticalAlignment="Center" />
+        <TextBlock loc:UiLocalization.Text="Purchase Price" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,6" />
+        <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="{DynamicResource TextInputHeight}" Padding="{DynamicResource TextInputPadding}">
+          <TextBlock Text="{Binding PurchasePrice}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" VerticalAlignment="Center" />
         </Border>
       </StackPanel>
     </Grid>
 
     <StackPanel>
-      <TextBlock loc:UiLocalization.Text="Default Discount" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-      <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
-        <TextBlock Text="{Binding DefaultDiscount}" FontSize="15" Foreground="#1F1F29" VerticalAlignment="Center" />
+      <TextBlock loc:UiLocalization.Text="Default Discount" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,6" />
+      <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="{DynamicResource TextInputHeight}" Padding="{DynamicResource TextInputPadding}">
+        <TextBlock Text="{Binding DefaultDiscount}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" VerticalAlignment="Center" />
       </Border>
     </StackPanel>
 
     <Grid ColumnDefinitions="*,12,*">
       <StackPanel>
-        <TextBlock loc:UiLocalization.Text="Tax Rate (%)" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="16,0,0,-2" />
-        <Border CornerRadius="8" BorderBrush="#777777" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="38.4" Padding="8,6.4">
+        <TextBlock loc:UiLocalization.Text="Tax Rate (%)" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" Margin="12,0,0,6" />
+        <Border CornerRadius="8" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" Background="{DynamicResource AppCanvasBrush}" MinHeight="{DynamicResource TextInputHeight}" Padding="{DynamicResource TextInputPadding}">
           <Grid ColumnDefinitions="28,*">
-            <TextBlock Text="%" FontSize="22" Foreground="#6E6E6E" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{Binding TaxRate}" FontSize="15" Foreground="#1F1F29" VerticalAlignment="Center" />
+            <TextBlock Text="%" FontSize="22" Foreground="{DynamicResource AppMutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding TaxRate}" FontSize="15" Foreground="{DynamicResource AppTextBrush}" VerticalAlignment="Center" />
           </Grid>
         </Border>
       </StackPanel>
