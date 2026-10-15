@@ -16,7 +16,7 @@ namespace LedgerNest.Desktop;
 public partial class MainWindowViewModel
 {
     // Performs the save record action for this screen or workflow.
-    public bool SaveRecord(string kind, FormField[] fields, UiRecord? original = null)
+    public bool SaveRecord(string kind, FormField[] fields, UiRecord? original = null, bool generateMissingCodeOnUpdate = false)
     {
         var resource = kind switch { "Customer" => "Customer", "Product" => "Product", "User" => "User", _ => kind };
         var action = original == null ? "Add" : "Update";
@@ -50,7 +50,7 @@ public partial class MainWindowViewModel
             if (dbFactory == null && original?["Role"] == "Admin" && values["Role"] != "Admin" && Users.Count(u => u["Role"] == "Admin") <= 1)
             { Status = "The last administrator cannot be demoted."; return false; }
         }
-        var sourceId = SaveRecordToDatabase(kind, databaseValues, original?.SourceId ?? 0);
+        var sourceId = SaveRecordToDatabase(kind, databaseValues, original?.SourceId ?? 0, generateMissingCodeOnUpdate);
         if (sourceId < 0) return false;
         if (kind is "Customer" or "Product")
         {

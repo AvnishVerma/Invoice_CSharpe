@@ -74,7 +74,7 @@ public sealed class AutoCodeGenerator(IDbContextFactory<LedgerNestDbContext> fac
     }
 
     /// <summary>The supplied master persistence operation and sequence advancement share one transaction.</summary>
-    public int SaveRecord(string entity, string manualCode, int sourceId, string username, Func<LedgerNestDbContext, string, int> persist)
+    public int SaveRecord(string entity, string manualCode, int sourceId, string username, Func<LedgerNestDbContext, string, int> persist, bool generateMissingCodeOnUpdate = false)
     {
         Key(entity);
         ArgumentNullException.ThrowIfNull(manualCode);
@@ -97,7 +97,7 @@ public sealed class AutoCodeGenerator(IDbContextFactory<LedgerNestDbContext> fac
                     if (sourceId != 0 && code.Length == 0)
                         code = entity == "Customer" ? db.Customers.Where(item => item.Id == sourceId).Select(item => item.CustomerCode).SingleOrDefault() ?? ""
                             : db.Products.Where(item => item.Id == sourceId).Select(item => item.ProductCode).SingleOrDefault() ?? "";
-                    var generated = sourceId == 0 && code.Length == 0;
+                    var generated = code.Length == 0 && (sourceId == 0 || generateMissingCodeOnUpdate && configuration.AutoGenerate);
                     if (generated)
                     {
                         if (!configuration.AutoGenerate) throw new InvalidOperationException("Enter a code or enable automatic code generation in " + (entity == "Customer" ? "Invoice Settings → Customer Details." : "Product Details settings."));

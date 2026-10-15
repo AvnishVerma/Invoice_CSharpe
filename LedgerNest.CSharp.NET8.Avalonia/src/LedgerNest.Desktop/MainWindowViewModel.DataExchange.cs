@@ -143,7 +143,12 @@ public partial class MainWindowViewModel
                 SetImportField(byLabel, "Notes", JoinNotes(Get("notes"), Get("manufacture_name")));
             }
 
-            if (SaveRecord(kind, fields, duplicate))
+            // Existing identities are stable; only missing IDs participate in allocation.
+            var codeKey = kind + " ID";
+            var suppliedCode = kind == "Customer" ? FirstNonEmpty(Get("customer_id"), Get("customer_code"))
+                : FirstNonEmpty(Get("product_id"), Get("product_code"));
+            SetImportField(byLabel, codeKey, FirstNonEmpty(duplicate?[codeKey] ?? "", suppliedCode));
+            if (SaveRecord(kind, fields, duplicate, generateMissingCodeOnUpdate: true))
             {
                 if (duplicate == null) imported++; else updated++;
             }
@@ -159,8 +164,8 @@ public partial class MainWindowViewModel
         return imported + updated;
     }
 
-    private static readonly string[] CustomerCsvHeaders = ["name", "email", "phone", "address", "business_name", "tax_number", "gstin", "gst", "gst_vat_number"];
-    private static readonly string[] ProductCsvHeaders = ["name", "hsn_code", "hsncode", "hsn", "hsn_sac", "description", "price", "tax_rate", "stock", "type", "default_discount", "purchase_price", "alias_name", "unit", "unlimited_stock", "price_includes_tax", "storage_location", "container_number", "batch_number", "expiry_date", "manufacture_date", "manufacture_name", "supplier_name", "sku_code", "notes"];
+    private static readonly string[] CustomerCsvHeaders = ["name", "email", "phone", "address", "business_name", "tax_number", "gstin", "gst", "gst_vat_number", "customer_id", "customer_code"];
+    private static readonly string[] ProductCsvHeaders = ["name", "hsn_code", "hsncode", "hsn", "hsn_sac", "description", "price", "tax_rate", "stock", "type", "default_discount", "purchase_price", "alias_name", "unit", "unlimited_stock", "price_includes_tax", "storage_location", "container_number", "batch_number", "expiry_date", "manufacture_date", "manufacture_name", "supplier_name", "sku_code", "notes", "product_id", "product_code"];
 
     // Performs the find customer duplicate action for this screen or workflow.
     private UiRecord? FindCustomerDuplicate(string email, string phone, string name)

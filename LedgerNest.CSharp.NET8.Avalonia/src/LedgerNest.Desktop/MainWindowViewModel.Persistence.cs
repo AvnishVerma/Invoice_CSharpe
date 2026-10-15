@@ -212,7 +212,7 @@ public partial class MainWindowViewModel
     }
 
     // Performs the save record to database action for this screen or workflow.
-    private int SaveRecordToDatabase(string kind, Dictionary<string, string> values, int sourceId)
+    private int SaveRecordToDatabase(string kind, Dictionary<string, string> values, int sourceId, bool generateMissingCodeOnUpdate = false)
     {
         if (dbFactory == null) return sourceId;
         if (kind is "Customer" or "Product")
@@ -224,7 +224,7 @@ public partial class MainWindowViewModel
                 {
                     values[codeKey] = code;
                     return SaveRecordInContext(context, kind, values, sourceId);
-                });
+                }, generateMissingCodeOnUpdate);
             }
             catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or DbUpdateException or SqliteException or UnauthorizedAccessException)
             { Status = ex.Message; return -1; }
