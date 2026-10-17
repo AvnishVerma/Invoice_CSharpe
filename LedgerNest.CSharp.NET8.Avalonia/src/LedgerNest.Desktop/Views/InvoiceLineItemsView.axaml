@@ -1,33 +1,41 @@
 <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:icons="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.Views.InvoiceLineItemsView" x:CompileBindings="False" Container.Name="invoice-lines" Container.Sizing="Width">
   <UserControl.Styles>
-    <Style Selector="UniformGrid.line-values"><Setter Property="Columns" Value="4"/></Style>
-    <ContainerQuery Name="invoice-lines" Query="max-width:560"><Style Selector="UniformGrid.line-values"><Setter Property="Columns" Value="2"/></Style></ContainerQuery>
+    <Style Selector="NumericUpDown.compact-line-input"><Setter Property="Height" Value="36"/><Setter Property="MinHeight" Value="36"/><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,0,4,0"/></Style>
+    <Style Selector="NumericUpDown.compact-line-input /template/ TextBox"><Setter Property="Padding" Value="6,4"/><Setter Property="FontSize" Value="13"/></Style>
+    <Style Selector="Button.compact-line-delete"><Setter Property="Width" Value="36"/><Setter Property="Height" Value="36"/><Setter Property="MinHeight" Value="36"/></Style>
   </UserControl.Styles>
   <Grid>
-    <ScrollViewer IsVisible="{Binding HasLines}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-      <ItemsControl ItemsSource="{Binding Lines}">
-        <ItemsControl.ItemTemplate><DataTemplate>
-          <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,12" Background="{DynamicResource AppSurfaceBrush}">
-            <StackPanel Spacing="12">
-              <Grid ColumnDefinitions="*,Auto,Auto">
-                <StackPanel Spacing="4" VerticalAlignment="Center">
-                  <TextBlock Text="{Binding Line.Name}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                  <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{Binding UnitText}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/><TextBlock Text="{Binding ProductTypeText}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" IsVisible="{Binding ShowProductType}"/></StackPanel>
-                </StackPanel>
-                <TextBlock Grid.Column="1" Text="{Binding Line.Total, StringFormat={}{0:0.00}}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0"/>
-                <Button Grid.Column="2" Command="{Binding RemoveCommand}" Classes="action-icon outline" ToolTip.Tip="Delete" AutomationProperties.Name="Delete"><TextBlock Text="{icons:FontAwesomeGlyph delete}" Classes="action-icon-glyph"/></Button>
+    <ScrollViewer IsVisible="{Binding HasLines}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+      <Grid RowDefinitions="Auto,*" MinWidth="600">
+        <Grid ColumnDefinitions="*,58,78,54,68,82,40" Margin="8,0,8,8">
+          <TextBlock icons:UiLocalization.Text="Item" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+          <TextBlock Grid.Column="1" icons:UiLocalization.Text="Qty" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+          <TextBlock Grid.Column="2" icons:UiLocalization.Text="Price" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+          <TextBlock Grid.Column="3" icons:UiLocalization.Text="Tax (%)" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+          <TextBlock Grid.Column="4" icons:UiLocalization.Text="Discount" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/>
+          <TextBlock Grid.Column="5" icons:UiLocalization.Text="Total" FontSize="12" HorizontalAlignment="Right" Margin="0,0,8,0" Foreground="{DynamicResource AppMutedBrush}"/>
+        </Grid>
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Lines}">
+          <ItemsControl.ItemTemplate><DataTemplate>
+            <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="8" Background="{DynamicResource AppSurfaceBrush}">
+              <Grid Classes="invoice-item-row" ColumnDefinitions="*,58,78,54,68,82,40">
+                <Grid ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center" Margin="0,0,8,0">
+                  <TextBlock Text="{Binding Line.Name}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip.Tip="{Binding Line.Name}"/>
+                  <TextBlock Grid.Column="1" Text="{Binding UnitText}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center"/>
+                  <TextBlock Grid.Column="2" Text="{Binding ProductTypeText}" FontSize="11" Margin="6,0,0,0" Foreground="{DynamicResource AppMutedBrush}" IsVisible="{Binding ShowProductType}" VerticalAlignment="Center"/>
+                </Grid>
+                <NumericUpDown Grid.Column="1" Classes="compact-line-input" Value="{Binding Line.Quantity, Mode=TwoWay}" Minimum="0.001" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" VerticalContentAlignment="Center" AutomationProperties.Name="Item quantity"/>
+                <NumericUpDown Grid.Column="2" Classes="compact-line-input" Value="{Binding Line.Price, Mode=TwoWay}" Minimum="0" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" VerticalContentAlignment="Center" AutomationProperties.Name="Item unit price"/>
+                <NumericUpDown Grid.Column="3" Classes="compact-line-input" Value="{Binding Line.TaxRate, Mode=TwoWay}" Minimum="0" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" VerticalContentAlignment="Center" AutomationProperties.Name="Item tax rate"/>
+                <NumericUpDown Grid.Column="4" Classes="compact-line-input" Value="{Binding Line.Discount, Mode=TwoWay}" Minimum="0" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" VerticalContentAlignment="Center" AutomationProperties.Name="Item discount"/>
+                <TextBlock Grid.Column="5" Text="{Binding Line.Total, StringFormat={}{0:0.00}}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Stretch" TextAlignment="Right" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" ToolTip.Tip="{Binding Line.Total}"/>
+                <Button Grid.Column="6" Command="{Binding RemoveCommand}" Classes="action-icon outline compact-line-delete" Width="36" Height="36" MinHeight="36" ToolTip.Tip="Delete" AutomationProperties.Name="Delete"><TextBlock Text="{icons:FontAwesomeGlyph delete}" Classes="action-icon-glyph"/></Button>
               </Grid>
-              <UniformGrid Classes="line-values">
-                <StackPanel Spacing="6" Margin="0,0,8,8"><TextBlock icons:UiLocalization.Text="Quantity" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/><NumericUpDown Value="{Binding Line.Quantity, Mode=TwoWay}" Minimum="0.001" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" MinHeight="50" VerticalContentAlignment="Center" AutomationProperties.Name="Item quantity"/></StackPanel>
-                <StackPanel Spacing="6" Margin="0,0,8,8"><TextBlock icons:UiLocalization.Text="Unit price" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/><NumericUpDown Value="{Binding Line.Price, Mode=TwoWay}" Minimum="0" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" MinHeight="50" VerticalContentAlignment="Center" AutomationProperties.Name="Item unit price"/></StackPanel>
-                <StackPanel Spacing="6" Margin="0,0,8,8"><TextBlock icons:UiLocalization.Text="Tax (%)" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/><NumericUpDown Value="{Binding Line.TaxRate, Mode=TwoWay}" Minimum="0" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" MinHeight="50" VerticalContentAlignment="Center" AutomationProperties.Name="Item tax rate"/></StackPanel>
-                <StackPanel Spacing="6" Margin="0,0,0,8"><TextBlock icons:UiLocalization.Text="Discount" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/><NumericUpDown Value="{Binding Line.Discount, Mode=TwoWay}" Minimum="0" Maximum="1000000000" Increment="1" FormatString="0.##" ShowButtonSpinner="False" MinHeight="50" VerticalContentAlignment="Center" AutomationProperties.Name="Item discount"/></StackPanel>
-              </UniformGrid>
-            </StackPanel>
-          </Border>
-        </DataTemplate></ItemsControl.ItemTemplate>
-      </ItemsControl>
+            </Border>
+          </DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
     </ScrollViewer>
     <StackPanel IsVisible="{Binding HasNoLines}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8" Margin="8">
       <TextBlock Text="{icons:FontAwesomeGlyph shopping_cart}" FontFamily="{DynamicResource IconFontFamily}" FontSize="40" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center"/>

@@ -37,9 +37,14 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
             model.Lines.Add(new InvoiceLineViewModel { Name="Touch-friendly product", Price=125, Quantity=2, TaxRate=0 }); Settle(window);
             var lines=shell.GetVisualDescendants().OfType<InvoiceLineItemsView>().Single();
             Assert.Equal(4,lines.GetVisualDescendants().OfType<NumericUpDown>().Count());
-            Assert.All(lines.GetVisualDescendants().OfType<NumericUpDown>(), input=>Assert.True(input.Bounds.Height>=50));
-            var grid=lines.GetVisualDescendants().OfType<UniformGrid>().Single(panel=>panel.Classes.Contains("line-values"));
-            Assert.Equal(lines.Bounds.Width<=560?2:4,grid.Columns);
+            var inputs=lines.GetVisualDescendants().OfType<NumericUpDown>().ToArray();
+            Assert.All(inputs, input=>Assert.Equal(36,input.Bounds.Height));
+            var row=lines.GetVisualDescendants().OfType<Grid>().Single(panel=>panel.Classes.Contains("invoice-item-row"));
+            Assert.Equal(7,row.ColumnDefinitions.Count);
+            Assert.All(inputs, input=>Assert.Equal(inputs[0].TranslatePoint(default,row)!.Value.Y,input.TranslatePoint(default,row)!.Value.Y));
+            Assert.All(inputs, input=>Assert.InRange(input.Bounds.Width,40,78));
+            Assert.True(row.Bounds.Height<=48);
+            Assert.Equal(ScrollBarVisibility.Auto,lines.GetVisualDescendants().OfType<ScrollViewer>().First().HorizontalScrollBarVisibility);
             Assert.Equal(250,model.Totals.Total);
             var output=Path.Combine(Directory.GetCurrentDirectory(),"artifacts","invoice-touch"); Directory.CreateDirectory(output);
             AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Settle(window);
