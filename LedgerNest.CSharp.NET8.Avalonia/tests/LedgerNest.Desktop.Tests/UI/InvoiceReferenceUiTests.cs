@@ -55,7 +55,8 @@ public sealed class InvoiceReferenceUiTests(HeadlessFixture headless)
             Assert.True(search.IsEffectivelyVisible);
             var divider = shell.GetVisualDescendants().OfType<GridSplitter>().ToArray();
             Assert.Equal(page.IsNarrow ? 0 : 1, divider.Length);
-            Capture(window, "invoice-expanded-" + width);
+            shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>().Single().GetVisualDescendants().OfType<Expander>().First().IsExpanded = true;
+            Settle(window); Capture(window, "invoice-expanded-" + width);
             var details = shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>().Single();
             details.GetVisualDescendants().OfType<Expander>().First().IsExpanded = false;
             Settle(window); Capture(window, "invoice-collapsed-" + width);

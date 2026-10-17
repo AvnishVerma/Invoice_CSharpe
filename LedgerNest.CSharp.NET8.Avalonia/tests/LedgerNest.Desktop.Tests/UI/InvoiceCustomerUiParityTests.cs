@@ -37,7 +37,7 @@ public sealed class InvoiceCustomerUiParityTests(HeadlessFixture headless)
             Assert.False(address.IsReadOnly); address.Text = "Invoice address"; Settle(window); Assert.Equal("Invoice address", model.InvoiceCustomer[5].Value);
             var refresh = view.GetVisualDescendants().OfType<Button>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Refresh customer");
             Assert.Equal("Refresh", ToolTip.GetTip(refresh)); refresh.Command!.Execute(null); Settle(window);
-            Assert.True(name.IsReadOnly); Assert.False(state.DetailsExpanded); Assert.Equal("Master address", model.InvoiceCustomer[5].Value);
+            Assert.True(name.IsReadOnly); Assert.True(state.DetailsExpanded); Assert.Equal("Master address", model.InvoiceCustomer[5].Value);
             var clear = view.GetVisualDescendants().OfType<Button>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Clear customer");
             clear.Command!.Execute(null); Settle(window); Assert.False(name.IsReadOnly); Assert.Null(model.SelectedInvoiceCustomerId); Assert.Empty(name.Text!);
         }

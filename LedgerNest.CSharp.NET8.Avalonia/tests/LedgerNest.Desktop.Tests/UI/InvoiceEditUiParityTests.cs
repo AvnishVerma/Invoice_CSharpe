@@ -22,13 +22,15 @@ public sealed class InvoiceEditUiParityTests(HeadlessFixture headless)
         try
         {
             window.Show(); Settle(window);
+            view.GetVisualDescendants().OfType<Expander>().Single(control => control.Name == "InvoiceDetailsExpander").IsExpanded = true; Settle(window);
             var time = view.GetVisualDescendants().OfType<TextBox>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Order Time");
             time.Text = "10:45"; Settle(window);
             Assert.Equal("10:45", model.OrderTime.Value);
+            view.GetVisualDescendants().OfType<Expander>().Single(control => control.Header?.ToString() == "Bank account & custom number").IsExpanded = true; Settle(window);
             var bank = view.GetVisualDescendants().OfType<ComboBox>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Invoice bank account");
             bank.SelectedIndex = 1; Settle(window);
             Assert.Equal("123456789", model.SelectedInvoiceBank!.Account!.AccountNumber);
-            Assert.Contains(view.GetVisualDescendants().OfType<Expander>(), control => control.Header?.ToString() == "Document title & numbering");
+            Assert.Contains(view.GetVisualDescendants().OfType<Expander>(), control => control.Header?.ToString() == "Bank account & custom number");
         }
         finally { window.Close(); }
     });

@@ -4,18 +4,18 @@
     <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="AdjustmentSurface">#F4F3FA</SolidColorBrush><SolidColorBrush x:Key="InvoiceDiscountSurface">#FFF4F4</SolidColorBrush></ResourceDictionary>
     <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="AdjustmentSurface">#223438</SolidColorBrush><SolidColorBrush x:Key="InvoiceDiscountSurface">#392A30</SolidColorBrush></ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries></ResourceDictionary></UserControl.Resources>
-  <Border CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="12">
+  <Border CornerRadius="16" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="16">
       <StackPanel Spacing="12">
         <Border Padding="12" CornerRadius="10" Background="{DynamicResource AdjustmentSurface}" BorderBrush="#A8DADD" BorderThickness="1">
-          <Expander IsExpanded="True" HorizontalAlignment="Stretch">
+          <Expander x:Name="ChargesAndAdjustments" AutomationProperties.Name="Charges and adjustments" IsExpanded="True" HorizontalAlignment="Stretch">
             <Expander.Header><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{icons:FontAwesomeGlyph add_box}" Classes="action-icon-glyph" Foreground="#00897B" /><TextBlock vm:UiLocalization.Text="Charges &amp; Adjustments" Foreground="#00897B" FontSize="13" /><Border Background="#009688" CornerRadius="10" Width="20" Height="20" IsVisible="{Binding HasCosts}"><TextBlock Text="{Binding CostCount}" Foreground="White" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border></StackPanel></Expander.Header>
             <StackPanel Spacing="8">
               <TextBlock vm:UiLocalization.Text="Use a minus sign for deductions (e.g. freight paid by buyer)." FontSize="11" Foreground="#00897B" TextWrapping="Wrap" />
               <ItemsControl ItemsSource="{Binding Costs}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:InvoiceCostRowViewModel">
                 <Grid ColumnDefinitions="3*,8,2*,Auto" Margin="0,4">
                   <local:FormFieldView DataContext="{Binding LabelField}" /><local:FormFieldView Grid.Column="2" DataContext="{Binding AmountField}" />
-                  <Button Grid.Column="3" Classes="action-icon text" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove adjustment" Foreground="#F44336" Margin="4,0,0,0"><TextBlock Text="{icons:FontAwesomeGlyph remove_circle_outline}" Classes="action-icon-glyph" /></Button>
+                  <Button Grid.Column="3" Classes="action-icon text" Command="{Binding RemoveCommand}" ToolTip.Tip="Remove adjustment" AutomationProperties.Name="Remove adjustment" Foreground="#F44336" Margin="4,0,0,0"><TextBlock Text="{icons:FontAwesomeGlyph remove_circle_outline}" Classes="action-icon-glyph" /></Button>
                 </Grid>
               </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
               <local:ActionButtonView ActionLabel="Add" Caption="Add Row" Icon="add_circle_outline" Tooltip="Add a charge or adjustment" Command="{Binding AddCostCommand}" HorizontalAlignment="Left" />

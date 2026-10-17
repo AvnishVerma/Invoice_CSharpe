@@ -22,11 +22,9 @@ public sealed class InvoiceOptionsUiParityTests(HeadlessFixture headless)
         try
         {
             window.Show(); Settle(window);
-            var outer = view.GetVisualDescendants().OfType<Expander>().Single(control => control.Header?.ToString() == "Discount & additional charges");
-            outer.IsExpanded = true; Settle(window);
-            var adjustments = view.GetVisualDescendants().OfType<Expander>().Single(control => control.Header?.ToString() == "Charges and Adjustments");
+            var adjustments = view.GetVisualDescendants().OfType<Expander>().Single(control => control.Name == "ChargesAndAdjustments");
             adjustments.IsExpanded = true; Settle(window);
-            var add = view.GetVisualDescendants().OfType<ActionButtonView>().Single(control => control.ActionLabel == "Add Cost");
+            var add = view.GetVisualDescendants().OfType<ActionButtonView>().Single(control => control.ActionLabel == "Add" && control.Caption == "Add Row");
             add.Command!.Execute(null); Settle(window); Assert.Single(model.AdditionalCosts);
             var amount = view.GetVisualDescendants().OfType<TextBox>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Amount");
             amount.Text = "-15"; Settle(window); Assert.Equal(-15m, model.AdditionalCosts[0][1].Number); Assert.True(model.AdditionalCosts[0][1].Validate());

@@ -8,27 +8,35 @@
 
 
 
-    <Style Selector="Expander /template/ ToggleButton"><Setter Property="MinHeight" Value="38" /><Setter Property="Padding" Value="10,6" /></Style>
-    <Style Selector="NumericUpDown /template/ TextBox"><Setter Property="MinHeight" Value="29" /><Setter Property="Padding" Value="6,3" /></Style>
+    <Style Selector=".invoice-editor-body Button.action, .invoice-editor-actions Button.action"><Setter Property="Height" Value="48"/><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="16,10"/></Style>
+    <Style Selector=".invoice-editor-body Button.action-icon, .invoice-editor-body ToggleButton.action-icon"><Setter Property="Width" Value="48"/><Setter Property="Height" Value="48"/><Setter Property="MinHeight" Value="48"/></Style>
+    <Style Selector=".invoice-editor-body Expander /template/ ToggleButton"><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="12,10"/></Style>
+    <Style Selector=".invoice-editor-body ComboBox"><Setter Property="MinHeight" Value="50"/></Style>
+    <Style Selector=".invoice-editor-body TextBox.expandable"><Setter Property="Padding" Value="12,8,56,8"/></Style>
+    <Style Selector=".invoice-editor-body TextBox.expandable.with-icon"><Setter Property="Padding" Value="38,8,56,8"/></Style>
+    <Style Selector=".invoice-editor-actions Button:disabled /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/><Setter Property="Foreground" Value="{DynamicResource AppMutedBrush}"/></Style>
+    <Style Selector="Button#CreateInvoiceButton"><Setter Property="Grid.Column" Value="1"/><Setter Property="MinWidth" Value="210"/></Style>
+    <Style Selector="Button#CreateInvoiceButton.narrow"><Setter Property="Grid.Column" Value="0"/><Setter Property="Grid.Row" Value="1"/><Setter Property="Grid.ColumnSpan" Value="2"/><Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,8,0,0"/></Style>
+    <Style Selector="WrapPanel#SecondaryInvoiceActions.narrow"><Setter Property="Grid.ColumnSpan" Value="2"/></Style>
   </UserControl.Styles>
-  <Grid RowDefinitions="Auto,*,Auto">
+  <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource AppSurfaceBrush}">
     <local:PageHeaderView Title="{Binding Title}">
-      <local:PageHeaderView.CenterContent><TextBlock x:Name="HeaderDate" Text="{Binding DateText}" Classes.narrow="{Binding IsNarrow}" Foreground="White" VerticalAlignment="Center" /></local:PageHeaderView.CenterContent>
+      <local:PageHeaderView.CenterContent><TextBlock x:Name="HeaderDate" IsVisible="{Binding !IsNarrow}" Text="{Binding DateText}" Classes.narrow="{Binding IsNarrow}" Foreground="White" VerticalAlignment="Center" /></local:PageHeaderView.CenterContent>
       <local:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock Text="{Binding NumberText}" Foreground="White" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsNarrow}" />
         <Button Classes="action-icon header-icon-action" Command="{Binding VoidCommand}" IsVisible="{Binding ShowVoid}" ToolTip.Tip="Void Invoice"><TextBlock Text="{icons:FontAwesomeGlyph block}" Classes="action-icon-glyph" /></Button>
       </StackPanel></local:PageHeaderView.HeaderActions>
     </local:PageHeaderView>
-    <local:InvoiceWorkspace Grid.Row="1" DataContext="{Binding}" Margin="10" />
-    <Border Grid.Row="2" Padding="12,8" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource AppOutlineBrush}">
-      <Grid ColumnDefinitions="*,Auto">
-        <WrapPanel IsVisible="{Binding !IsNarrow}">
-          <local:ActionButtonView ActionLabel="View" Caption="View" Tooltip="View last saved document" Command="{Binding ViewCommand}" />
-          <local:ActionButtonView ActionLabel="Preview" Caption="Preview" Tooltip="Preview last saved PDF" Command="{Binding PreviewCommand}" />
-          <local:ActionButtonView ActionLabel="Download" Caption="Download" Tooltip="Download last saved PDF" Command="{Binding DownloadCommand}" />
-          <local:ActionButtonView ActionLabel="Print" Caption="Print" Tooltip="Print last saved document" Command="{Binding PrintCommand}" />
+    <local:InvoiceWorkspace Grid.Row="1" DataContext="{Binding}" Margin="16" Classes="invoice-editor-body" />
+    <Border Grid.Row="2" Classes="invoice-editor-actions" Background="{DynamicResource AppCanvasBrush}" Padding="16,12" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource AppOutlineBrush}">
+      <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+        <WrapPanel x:Name="SecondaryInvoiceActions" Classes.narrow="{Binding IsNarrow}">
+          <local:ActionButtonView ActionLabel="View" Caption="View" Icon="visibility" Margin="0,0,8,0" Tooltip="View last saved document" Command="{Binding ViewCommand}" />
+          <local:ActionButtonView ActionLabel="Preview" Caption="Preview" Icon="picture_as_pdf" Margin="0,0,8,0" Tooltip="Preview last saved PDF" Command="{Binding PreviewCommand}" />
+          <local:ActionButtonView ActionLabel="Download" Caption="Download" Icon="download" Margin="0,0,8,0" Tooltip="Download last saved PDF" Command="{Binding DownloadCommand}" />
+          <local:ActionButtonView ActionLabel="Print" Caption="Print" Icon="print" Margin="0,0,8,0" Tooltip="Print last saved document" Command="{Binding PrintCommand}" />
         </WrapPanel>
-        <Button Grid.Column="1" Classes="action primary" Content="{Binding SaveCaption}" Tag="{Binding SaveCaption}" Command="{Binding CreateCommand}" ToolTip.Tip="Save invoice (Ctrl+S)" />
+        <Button x:Name="CreateInvoiceButton" Classes="action primary" Classes.narrow="{Binding IsNarrow}" Tag="{Binding SaveCaption}" Command="{Binding CreateCommand}" ToolTip.Tip="Save invoice (Ctrl+S)" AutomationProperties.Name="{Binding SaveCaption}"><StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="{icons:FontAwesomeGlyph save}" Classes="action-icon-glyph"/><TextBlock Text="{Binding SaveCaption}" FontWeight="SemiBold"/></StackPanel></Button>
       </Grid>
     </Border>
   </Grid>

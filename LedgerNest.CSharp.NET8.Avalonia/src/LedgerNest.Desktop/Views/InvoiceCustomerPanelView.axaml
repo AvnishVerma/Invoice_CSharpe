@@ -1,22 +1,26 @@
 <UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.InvoiceCustomerPanelView" x:DataType="vm:InvoiceCustomerPanelViewModel">
-  <Border Padding="12" CornerRadius="12" Background="{DynamicResource AppCardBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+  <Border Padding="16" CornerRadius="16" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
     <StackPanel Spacing="8">
-      <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-        <TextBlock Text="{icons:FontAwesomeGlyph person_outline}" Classes="action-icon-glyph" FontSize="16" Foreground="{DynamicResource AppMutedBrush}" VerticalAlignment="Center" />
-        <TextBlock Grid.Column="1" vm:UiLocalization.Text="CUSTOMER DETAILS" Margin="8,0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
-        <local:ActionButtonView Grid.Column="2" ActionLabel="Select customer" Caption="Select from existing" Tooltip="Select customer" Command="{Binding SelectCommand}" />
-        <ToggleButton Grid.Column="3" Classes="action-icon text" IsChecked="{Binding DetailsExpanded, Mode=TwoWay}" ToolTip.Tip="Customer details"><TextBlock Text="{Binding DetailsIcon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" /></ToggleButton>
-      </Grid>
-      <TextBlock vm:UiLocalization.Text="New or walk-in customer — enter their details below." FontSize="11" FontStyle="Italic" Foreground="{DynamicResource AppMutedBrush}" IsVisible="{Binding !Workspace.HasSelectedInvoiceCustomer}" TextWrapping="Wrap" />
+      <WrapPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,16,8" VerticalAlignment="Center">
+          <Border Background="{DynamicResource AppSelectedBrush}" CornerRadius="10" Width="36" Height="36"><TextBlock Text="{icons:FontAwesomeGlyph person}" Classes="action-icon-glyph" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+          <TextBlock vm:UiLocalization.Text="Customer details" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+          <local:ActionButtonView ActionLabel="Select customer" Caption="Select from existing" Icon="people" Tooltip="Select customer" Command="{Binding SelectCommand}" />
+          <ToggleButton Classes="action-icon outline" IsChecked="{Binding DetailsExpanded, Mode=TwoWay}" ToolTip.Tip="Customer details" AutomationProperties.Name="Expand customer details"><TextBlock Text="{Binding DetailsIcon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" /></ToggleButton>
+        </StackPanel>
+      </WrapPanel>
+      <TextBlock vm:UiLocalization.Text="New or walk-in customer — enter their details below." FontSize="12" Foreground="{DynamicResource AppMutedBrush}" IsVisible="{Binding !Workspace.HasSelectedInvoiceCustomer}" TextWrapping="Wrap" />
       <StackPanel Spacing="8" IsVisible="{Binding DetailsExpanded}">
         <local:FormFieldsView DataContext="{Binding CustomerFields}" />
-        <WrapPanel>
-          <Button Classes="action-icon" IsVisible="{Binding Workspace.HasSelectedInvoiceCustomer}" Command="{Binding ToggleLockCommand}" ToolTip.Tip="{Binding Workspace.CustomerLockTooltip}" AutomationProperties.Name="{Binding Workspace.CustomerLockTooltip}"><TextBlock Text="{Binding Workspace.CustomerLockIcon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" /></Button>
-          <Button Classes="action-icon" IsVisible="{Binding Workspace.HasSelectedInvoiceCustomer}" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh customer"><TextBlock Text="{icons:FontAwesomeGlyph refresh}" Classes="action-icon-glyph" /></Button>
-          <Button Classes="action-icon" Command="{Binding ClearCommand}" ToolTip.Tip="Clear customer"><TextBlock Text="{icons:FontAwesomeGlyph close}" Classes="action-icon-glyph" /></Button>
-          <local:ActionButtonView ActionLabel="Save customer" Caption="Save customer" Tooltip="Save customer details to the customer master" Command="{Binding SaveCustomerCommand}" Available="{Binding Workspace.CanSaveInvoiceCustomer}" />
+        <WrapPanel Margin="0,4,0,0">
+          <Button Classes="action-icon outline" Margin="0,0,8,0" IsVisible="{Binding Workspace.HasSelectedInvoiceCustomer}" Command="{Binding ToggleLockCommand}" ToolTip.Tip="{Binding Workspace.CustomerLockTooltip}" AutomationProperties.Name="{Binding Workspace.CustomerLockTooltip}"><TextBlock Text="{Binding Workspace.CustomerLockIcon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" /></Button>
+          <Button Classes="action-icon outline" Margin="0,0,8,0" IsVisible="{Binding Workspace.HasSelectedInvoiceCustomer}" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh customer"><TextBlock Text="{icons:FontAwesomeGlyph refresh}" Classes="action-icon-glyph" /></Button>
+          <Button Classes="action-icon outline" Margin="0,0,8,0" Command="{Binding ClearCommand}" ToolTip.Tip="Clear customer" AutomationProperties.Name="Clear customer"><TextBlock Text="{icons:FontAwesomeGlyph close}" Classes="action-icon-glyph" /></Button>
+          <local:ActionButtonView ActionLabel="Save customer" Caption="Save customer" Icon="save" Tooltip="Save customer details to the customer master" Command="{Binding SaveCustomerCommand}" Available="{Binding Workspace.CanSaveInvoiceCustomer}" />
         </WrapPanel>
       </StackPanel>
     </StackPanel>
