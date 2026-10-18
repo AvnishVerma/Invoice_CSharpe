@@ -3,9 +3,8 @@
              x:Class="LedgerNest.Desktop.Views.InvoiceWorkspace" x:CompileBindings="False">
   <UserControl.Resources>
     <DataTemplate x:Key="LeftPane">
-      <Grid RowDefinitions="Auto,12,*" MinHeight="560">
-        <local:InvoiceCustomerPanelView DataContext="{Binding Customer}" />
-        <Border Grid.Row="2" Padding="16" CornerRadius="16" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
+      <Grid MinHeight="320">
+        <Border Padding="16" CornerRadius="16" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
           <Grid RowDefinitions="Auto,Auto,*">
             <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock vm:UiLocalization.Text="Items" FontSize="16" FontWeight="SemiBold" /><Border CornerRadius="8" Background="{DynamicResource AppSurfaceBrush}" Padding="8,1"><TextBlock Text="{Binding ItemCount}" FontSize="11" /></Border></StackPanel>
             <local:InvoiceLineItemsView Grid.Row="2" DataContext="{Binding LineItems}" Margin="0,16" />
@@ -27,12 +26,29 @@
     </DataTemplate>
     <DataTemplate x:Key="RightPane">
       <Grid RowDefinitions="*,12,Auto">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
-          <StackPanel Spacing="16">
-            <local:InvoiceDocumentDetailsPanelView DataContext="{Binding Details}" />
-            <local:InvoiceOptionsPanelView DataContext="{Binding Options}" />
-          </StackPanel>
-        </ScrollViewer>
+        <TabControl x:Name="InvoiceDetailTabs" AutomationProperties.Name="Invoice information" SelectedIndex="0">
+          <TabControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></TabControl.ItemsPanel>
+          <TabItem AutomationProperties.Name="Customer">
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Customer" FontSize="14"/></TabItem.Header>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><local:InvoiceCustomerPanelView DataContext="{Binding Customer}"/></ScrollViewer>
+          </TabItem>
+          <TabItem AutomationProperties.Name="Invoice Details">
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Invoice Details" FontSize="14"/></TabItem.Header>
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><local:InvoiceDocumentDetailsPanelView DataContext="{Binding Details}"/></ScrollViewer>
+          </TabItem>
+          <TabItem AutomationProperties.Name="Charges">
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Charges" FontSize="14"/></TabItem.Header>
+            <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="charges-only"/>
+          </TabItem>
+          <TabItem AutomationProperties.Name="Adjustments">
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Adjustments" FontSize="14"/></TabItem.Header>
+            <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="adjustments-only"/>
+          </TabItem>
+          <TabItem AutomationProperties.Name="Tax Details">
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Tax Details" FontSize="14"/></TabItem.Header>
+            <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="tax-only"/>
+          </TabItem>
+        </TabControl>
         <Border x:Name="FooterFrame" Grid.Row="2" Padding="20" CornerRadius="16" BorderThickness="1" BorderBrush="{DynamicResource AppOutlineBrush}" Background="{DynamicResource AppCanvasBrush}">
           <ContentControl x:Name="InvoiceFooterTotals"><local:InvoiceTotalsView DataContext="{Binding TotalsModel}" /></ContentControl>
         </Border>
@@ -47,17 +63,18 @@
       </Grid>
     </DataTemplate>
     <DataTemplate x:Key="NarrowWorkspace">
-      <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+      <ScrollViewer x:Name="NarrowWorkspaceScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
         <StackPanel Spacing="16">
           <Border Padding="12" CornerRadius="12" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1"><Grid ColumnDefinitions="*,Auto"><TextBlock Text="{Binding DateText}" FontSize="13"/><TextBlock Grid.Column="1" Text="{Binding NumberText}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}"/></Grid></Border>
-          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LeftPane}" MinHeight="520" />
-          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RightPane}" />
+          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource LeftPane}" MinHeight="320" />
+          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource RightPane}" MinHeight="640" />
         </StackPanel>
       </ScrollViewer>
     </DataTemplate>
   </UserControl.Resources>  <UserControl.Styles>
     <Style Selector="ContentControl#WorkspaceHost"><Setter Property="ContentTemplate" Value="{StaticResource WideWorkspace}" /></Style>
     <Style Selector="ContentControl#WorkspaceHost.narrow"><Setter Property="ContentTemplate" Value="{StaticResource NarrowWorkspace}" /></Style>
+    <Style Selector="TabControl#InvoiceDetailTabs TabItem"><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="10,8"/></Style>
     <Style Selector="TextBlock.out-of-stock"><Setter Property="Foreground" Value="#D32F2F" /></Style>
   </UserControl.Styles>
   <ContentControl x:Name="WorkspaceHost" Content="{Binding}" Classes.narrow="{Binding IsNarrow}" />

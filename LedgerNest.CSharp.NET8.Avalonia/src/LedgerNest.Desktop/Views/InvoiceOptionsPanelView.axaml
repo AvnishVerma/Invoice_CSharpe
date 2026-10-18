@@ -4,10 +4,15 @@
     <ResourceDictionary x:Key="Light"><SolidColorBrush x:Key="AdjustmentSurface">#F4F3FA</SolidColorBrush><SolidColorBrush x:Key="InvoiceDiscountSurface">#FFF4F4</SolidColorBrush></ResourceDictionary>
     <ResourceDictionary x:Key="Dark"><SolidColorBrush x:Key="AdjustmentSurface">#223438</SolidColorBrush><SolidColorBrush x:Key="InvoiceDiscountSurface">#392A30</SolidColorBrush></ResourceDictionary>
   </ResourceDictionary.ThemeDictionaries></ResourceDictionary></UserControl.Resources>
+  <UserControl.Styles>
+    <Style Selector="local|InvoiceOptionsPanelView.charges-only :is(Control).adjustments-section, local|InvoiceOptionsPanelView.charges-only :is(Control).tax-section"><Setter Property="IsVisible" Value="False"/></Style>
+    <Style Selector="local|InvoiceOptionsPanelView.adjustments-only :is(Control).charges-section, local|InvoiceOptionsPanelView.adjustments-only :is(Control).tax-section"><Setter Property="IsVisible" Value="False"/></Style>
+    <Style Selector="local|InvoiceOptionsPanelView.tax-only :is(Control).charges-section, local|InvoiceOptionsPanelView.tax-only :is(Control).adjustments-section"><Setter Property="IsVisible" Value="False"/></Style>
+  </UserControl.Styles>
   <Border CornerRadius="16" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="16">
       <StackPanel Spacing="12">
-        <Border Padding="12" CornerRadius="10" Background="{DynamicResource AdjustmentSurface}" BorderBrush="#A8DADD" BorderThickness="1">
+        <Border Classes="charges-section" Padding="12" CornerRadius="10" Background="{DynamicResource AdjustmentSurface}" BorderBrush="#A8DADD" BorderThickness="1">
           <Expander x:Name="ChargesAndAdjustments" AutomationProperties.Name="Charges and adjustments" IsExpanded="True" HorizontalAlignment="Stretch">
             <Expander.Header><StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{icons:FontAwesomeGlyph add_box}" Classes="action-icon-glyph" Foreground="#00897B" /><TextBlock vm:UiLocalization.Text="Charges &amp; Adjustments" Foreground="#00897B" FontSize="13" /><Border Background="#009688" CornerRadius="10" Width="20" Height="20" IsVisible="{Binding HasCosts}"><TextBlock Text="{Binding CostCount}" Foreground="White" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border></StackPanel></Expander.Header>
             <StackPanel Spacing="8">
@@ -22,13 +27,13 @@
             </StackPanel>
           </Expander>
         </Border>
-        <Border Padding="10" CornerRadius="10" Background="{DynamicResource InvoiceDiscountSurface}" BorderBrush="#FFD6A5" BorderThickness="1">
+        <Border Classes="adjustments-section" Padding="10" CornerRadius="10" Background="{DynamicResource InvoiceDiscountSurface}" BorderBrush="#FFD6A5" BorderThickness="1">
           <Grid ColumnDefinitions="*,8,Auto"><local:FormFieldView DataContext="{Binding DiscountAmount}" /><ComboBox Grid.Column="2" ItemsSource="{Binding DiscountModes}" SelectedItem="{Binding DiscountMode, Mode=TwoWay}" MinWidth="76" VerticalAlignment="Center" AutomationProperties.Name="Invoice discount type" /></Grid>
         </Border>
-        <TextBlock vm:UiLocalization.Text="NOTES" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}" />
-        <local:FormFieldView DataContext="{Binding NotesField}" />
-        <Expander Header="Custom fields" HorizontalAlignment="Stretch" IsVisible="{Binding HasCustomFields}"><local:FormFieldsView DataContext="{Binding CustomFields}" /></Expander>
-        <Expander Header="Tax settings" HorizontalAlignment="Stretch"><StackPanel Spacing="10"><local:FormFieldsView DataContext="{Binding TaxFields}" /><local:FormFieldView DataContext="{Binding InterStateField}" /></StackPanel></Expander>
+        <TextBlock Classes="adjustments-section" vm:UiLocalization.Text="NOTES" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AppMutedBrush}" />
+        <local:FormFieldView Classes="adjustments-section" DataContext="{Binding NotesField}" />
+        <Border Classes="adjustments-section"><Expander Header="Custom fields" HorizontalAlignment="Stretch" IsVisible="{Binding HasCustomFields}"><local:FormFieldsView DataContext="{Binding CustomFields}" /></Expander></Border>
+        <Expander Classes="tax-section" IsExpanded="True" Header="Tax settings" HorizontalAlignment="Stretch"><StackPanel Spacing="10"><local:FormFieldsView DataContext="{Binding TaxFields}" /><local:FormFieldView DataContext="{Binding InterStateField}" /></StackPanel></Expander>
       </StackPanel>
     </ScrollViewer>
   </Border>

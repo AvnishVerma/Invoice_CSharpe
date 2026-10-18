@@ -33,6 +33,33 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
             Assert.Equal(4,shell.GetVisualDescendants().OfType<ActionButtonView>().Count(button=>button.ActionLabel is "View" or "Preview" or "Download" or "Print" && button.IsEffectivelyVisible));
             var select=shell.GetVisualDescendants().OfType<ActionButtonView>().Single(button=>button.ActionLabel=="Select customer");
             Assert.Equal(48,select.Bounds.Height);
+            var tabs=shell.GetVisualDescendants().OfType<TabControl>().Single(control=>control.Name=="InvoiceDetailTabs");
+            Assert.Equal(5,tabs.ItemCount);
+            Assert.All(tabs.Items.Cast<TabItem>(),tab=>Assert.True(tab.Bounds.Height>=48));
+            var customer=shell.GetVisualDescendants().OfType<InvoiceCustomerPanelView>().Single();
+            Assert.Contains(tabs,customer.GetVisualAncestors());
+            tabs.SelectedIndex=1; Settle(window);
+            Assert.Single(shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>());
+            for(var index=2;index<5;index++)
+            {
+                tabs.SelectedIndex=index; Settle(window);
+                var options=shell.GetVisualDescendants().OfType<InvoiceOptionsPanelView>().Single();
+                if(index==2)
+                {
+                    var state=Assert.IsType<InvoiceOptionsViewModel>(options.DataContext);
+                    state.AddCostCommand.Execute(null); Settle(window);
+                    Assert.Single(state.Costs);
+                }
+                var activeClass=index==2?"charges-section":index==3?"adjustments-section":"tax-section";
+                Assert.Contains(options.GetVisualDescendants().OfType<Control>(),control=>control.Classes.Contains(activeClass)&&control.IsEffectivelyVisible);
+                Assert.DoesNotContain(options.GetVisualDescendants().OfType<Control>(),control=>control.Classes.Any(name=>name is "charges-section" or "adjustments-section" or "tax-section")&&!control.Classes.Contains(activeClass)&&control.IsEffectivelyVisible);
+            }
+            tabs.SelectedIndex=2; Settle(window);
+            var restored=Assert.IsType<InvoiceOptionsViewModel>(shell.GetVisualDescendants().OfType<InvoiceOptionsPanelView>().Single().DataContext);
+            Assert.Single(restored.Costs);
+            restored.Costs[0].RemoveCommand.Execute(null); Settle(window);
+            Assert.Empty(restored.Costs);
+            tabs.SelectedIndex=0; Settle(window);
             model.InvoiceOptions[3].Value="No Tax";
             model.Lines.Add(new InvoiceLineViewModel { Name="Touch-friendly product", Price=125, Quantity=2, TaxRate=0 }); Settle(window);
             var lines=shell.GetVisualDescendants().OfType<InvoiceLineItemsView>().Single();
@@ -46,6 +73,8 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
             Assert.True(row.Bounds.Height<=48);
             Assert.Equal(ScrollBarVisibility.Auto,lines.GetVisualDescendants().OfType<ScrollViewer>().First().HorizontalScrollBarVisibility);
             Assert.Equal(250,model.Totals.Total);
+            var narrowScroll=shell.GetVisualDescendants().OfType<ScrollViewer>().SingleOrDefault(control=>control.Name=="NarrowWorkspaceScroll");
+            if(narrowScroll!=null) { narrowScroll.Offset=default; Settle(window); }
             var output=Path.Combine(Directory.GetCurrentDirectory(),"artifacts","invoice-touch"); Directory.CreateDirectory(output);
             AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Settle(window);
             using var frame=window.CaptureRenderedFrame(); Assert.NotNull(frame);

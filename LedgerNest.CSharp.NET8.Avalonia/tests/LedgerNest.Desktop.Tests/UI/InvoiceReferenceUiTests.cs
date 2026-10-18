@@ -48,8 +48,12 @@ public sealed class InvoiceReferenceUiTests(HeadlessFixture headless)
             var page = Assert.IsType<InvoiceEditorPageModel>(shell.DataContext);
             Assert.Equal(width < 1100, page.IsNarrow);
             Assert.Single(shell.GetVisualDescendants().OfType<InvoiceCustomerPanelView>());
-            Assert.Single(shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>());
+            var tabs = shell.GetVisualDescendants().OfType<TabControl>().Single(control => control.Name == "InvoiceDetailTabs");
+            Assert.Equal(5, tabs.ItemCount);
+            tabs.SelectedIndex = 2; Settle(window);
             Assert.Single(shell.GetVisualDescendants().OfType<InvoiceOptionsPanelView>());
+            tabs.SelectedIndex = 1; Settle(window);
+            Assert.Single(shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>());
             Assert.Contains(shell.GetVisualDescendants().OfType<TextBlock>(), text => text.Text == "No items added yet");
             var search = shell.GetVisualDescendants().OfType<TextBox>().Single(box => box.PlaceholderText == "Search & add a product or service (Ctrl+F)");
             Assert.True(search.IsEffectivelyVisible);

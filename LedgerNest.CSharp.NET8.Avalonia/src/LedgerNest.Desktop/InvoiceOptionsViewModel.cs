@@ -22,6 +22,7 @@ public sealed class InvoiceCostRowViewModel
 public sealed class InvoiceOptionsViewModel : ObservableObject
 {
     private readonly MainWindowViewModel workspace;
+    private int attachmentCount;
     public ObservableCollection<InvoiceCostRowViewModel> Costs { get; } = [];
     public FormFieldsViewModel DiscountFields { get; }
     public FormFieldViewModel DiscountAmount => DiscountFields.Fields[1];
@@ -55,11 +56,15 @@ public sealed class InvoiceOptionsViewModel : ObservableObject
     private static FormFieldsViewModel Fields(IEnumerable<FormField> fields, int columns = 1) => new(fields.Select(field => new FormFieldViewModel(field)).ToArray(), columns);
     public void Attach()
     {
-        workspace.AdditionalCosts.CollectionChanged -= CostsChanged;
+        if (attachmentCount++ != 0) return;
         workspace.AdditionalCosts.CollectionChanged += CostsChanged;
         RefreshCosts();
     }
-    public void Detach() => workspace.AdditionalCosts.CollectionChanged -= CostsChanged;
+    public void Detach()
+    {
+        if (attachmentCount == 0) return;
+        if (--attachmentCount == 0) workspace.AdditionalCosts.CollectionChanged -= CostsChanged;
+    }
     private void CostsChanged(object? sender, NotifyCollectionChangedEventArgs args) => RefreshCosts();
     private void RefreshCosts()
     {

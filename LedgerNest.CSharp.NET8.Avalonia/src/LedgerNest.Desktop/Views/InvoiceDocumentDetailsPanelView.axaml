@@ -5,7 +5,7 @@
     <ContainerQuery Name="invoice-details" Query="max-width:420"><Style Selector="UniformGrid.date-time-fields"><Setter Property="Columns" Value="1"/></Style></ContainerQuery>
   </UserControl.Styles>
   <Border Padding="16" CornerRadius="16" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-    <Expander x:Name="InvoiceDetailsExpander" AutomationProperties.Name="Invoice details" HorizontalAlignment="Stretch" IsExpanded="False">
+    <Expander x:Name="InvoiceDetailsExpander" AutomationProperties.Name="Invoice details" HorizontalAlignment="Stretch" IsExpanded="True">
       <Expander.Header><TextBlock vm:UiLocalization.Text="Invoice details" FontSize="16" FontWeight="SemiBold" /></Expander.Header>
       <StackPanel Spacing="10">
         <local:FormFieldView DataContext="{Binding TypeField}" />

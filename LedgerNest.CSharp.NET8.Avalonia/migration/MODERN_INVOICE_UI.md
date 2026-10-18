@@ -7,8 +7,8 @@ The existing editor is redesigned directly in AXAML, using the same ViewModels, 
 - Editor-only 48-DIP action buttons and icon targets, 50-DIP choice fields, and larger expander headers. Global application sizing is unchanged.
 - Search is placed above items. Suggestions have larger touch rows. Existing shortcuts, barcode handling, custom-item and customer workflows remain bound to their original commands.
 - Compact single-line item rows show name, unit/type, quantity, price, tax, discount, total and delete together. Numeric inputs are 36 DIP high, scoped to invoice items; existing two-way bindings and limits are preserved. Shared column headings avoid repeated labels. A horizontal scrollbar retains the single-line layout on narrow windows; full names remain available in tooltips.
-- Wide view preserves the draggable divider and pins totals/action footer. Details and adjustments scroll together rather than competing for a fixed region.
-- Invoice details start collapsed for quick item entry; their existing fields are available through the touch-sized header. Narrow screens move date/number into a summary strip to avoid title overlap.
+- Wide view preserves the draggable divider and pins totals/action footer. The selected information tab scrolls independently from the item list.
+- Invoice details open expanded in their dedicated information tab. Narrow screens move date/number into a summary strip to avoid title overlap.
 - Narrow view stacks panels and keeps every document action accessible, with a full-width primary action. Existing customer-field responsive layout is reused; date/time fields stack when the details card is narrow.
 - Existing localization helper and Font Awesome icon assets are reused. Keyboard shortcuts and accessibility names are retained or added.
 
@@ -18,3 +18,11 @@ Validation: solution build succeeded with zero warnings/errors (isolated artifac
 
 Compact-row follow-up: replaced the multi-row item cards with a single aligned row and 36-DIP numeric fields. Build passed with zero warnings/errors; all eight focused invoice layout/reference tests passed. The updated checks verify a seven-column row, identical input baselines, reduced field sizes and the narrow-window horizontal-scroll fallback. Desktop capture reviewed.
 Full compact-row validation also passed all 1,096 headless application checks.
+
+
+Tabbed invoice information: the left panel now contains only items/search. The right panel uses five AXAML tabs: Customer, Invoice Details, Charges, Adjustments, and Tax Details, with totals below. Tab headers wrap at narrow widths and retain 48-DIP targets. Customer and invoice components are reused unchanged; options use scoped AXAML section classes to share their existing fields and commands without duplicate business state. Adjustments includes discount, notes and custom fields; Charges retains the existing signed charge/deduction rows. Invoice details open expanded when their tab is selected.
+
+
+Tab lifecycle: options views track both visual attachment and DataContext replacement. The shared options model counts active view attachments so removing one tab view cannot disconnect charge-row updates required by another. This is presentation subscription handling only; monetary calculations and persistence are unchanged.
+
+Tabbed-layout validation: final solution build passed with zero warnings/errors; all 50 focused invoice tests passed, including tab selection, section visibility and charge-row refresh after switching tabs at four widths. Full UiChecks passed all 1,096 checks. Final desktop/light and narrow/dark headless captures were reviewed.
