@@ -4,7 +4,7 @@
   <UserControl.Styles><StyleInclude Source="/Views/InvoiceTabStyles.axaml"/></UserControl.Styles>
   <Border Classes="invoice-tab-card">
     <Grid RowDefinitions="*,Auto">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <ScrollViewer Classes="invoice-tab-scroll">
     <StackPanel Classes="invoice-tab-content">
       <StackPanel Classes="invoice-tab-heading">
         <Border Classes="invoice-tab-icon"><TextBlock Text="{icons:FontAwesomeGlyph person}" Classes="action-icon-glyph"/></Border>

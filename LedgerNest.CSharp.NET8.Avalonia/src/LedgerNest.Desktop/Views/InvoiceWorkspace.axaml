@@ -2,10 +2,20 @@
              xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.Views.InvoiceWorkspace" x:CompileBindings="False">
   <UserControl.Resources>
+    <ControlTheme x:Key="InvoiceInformationTabs" TargetType="TabControl" BasedOn="{StaticResource {x:Type TabControl}}">
+      <Setter Property="Template"><ControlTemplate>
+        <Grid RowDefinitions="Auto,*">
+          <ScrollViewer x:Name="InvoiceTabHeaderScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,8">
+            <ItemsPresenter x:Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}"/>
+          </ScrollViewer>
+          <ContentPresenter x:Name="PART_SelectedContentHost" Grid.Row="1" Content="{TemplateBinding SelectedContent}" ContentTemplate="{TemplateBinding SelectedContentTemplate}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+        </Grid>
+      </ControlTemplate></Setter>
+    </ControlTheme>
     <ControlTheme x:Key="InvoiceInformationTab" TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
       <Setter Property="Background" Value="{DynamicResource AppCanvasBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/>
-      <Setter Property="BorderThickness" Value="1"/><Setter Property="Margin" Value="0,0,6,6"/>
+      <Setter Property="BorderThickness" Value="1"/><Setter Property="Margin" Value="0,0,4,0"/>
       <Setter Property="Template"><ControlTemplate><Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" Padding="{TemplateBinding Padding}">
         <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
       </Border></ControlTemplate></Setter>
@@ -38,26 +48,26 @@
     </DataTemplate>
     <DataTemplate x:Key="RightPane">
       <Grid RowDefinitions="*,12,Auto">
-        <TabControl x:Name="InvoiceDetailTabs" AutomationProperties.Name="Invoice information" SelectedIndex="0">
-          <TabControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" MinHeight="108"/></ItemsPanelTemplate></TabControl.ItemsPanel>
+        <TabControl x:Name="InvoiceDetailTabs" AutomationProperties.Name="Invoice information" SelectedIndex="0" Theme="{StaticResource InvoiceInformationTabs}">
+          <TabControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></TabControl.ItemsPanel>
           <TabItem AutomationProperties.Name="Customer">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Customer" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Customer" FontSize="13" TextWrapping="NoWrap" TextAlignment="Center"/></TabItem.Header>
             <local:InvoiceCustomerPanelView DataContext="{Binding Customer}"/>
           </TabItem>
           <TabItem AutomationProperties.Name="Invoice Details">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Invoice Details" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><local:InvoiceDocumentDetailsPanelView DataContext="{Binding Details}"/></ScrollViewer>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Invoice Details" FontSize="13" TextWrapping="NoWrap" TextAlignment="Center"/></TabItem.Header>
+            <local:InvoiceDocumentDetailsPanelView DataContext="{Binding Details}"/>
           </TabItem>
           <TabItem AutomationProperties.Name="Charges">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Charges" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Charges" FontSize="13" TextWrapping="NoWrap" TextAlignment="Center"/></TabItem.Header>
             <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="charges-only"/>
           </TabItem>
           <TabItem AutomationProperties.Name="Adjustments">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Adjustments" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Adjustments" FontSize="13" TextWrapping="NoWrap" TextAlignment="Center"/></TabItem.Header>
             <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="adjustments-only"/>
           </TabItem>
           <TabItem AutomationProperties.Name="Tax Details">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Tax Details" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Tax Details" FontSize="13" TextWrapping="NoWrap" TextAlignment="Center"/></TabItem.Header>
             <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="tax-only"/>
           </TabItem>
         </TabControl>
@@ -86,7 +96,7 @@
   </UserControl.Resources>  <UserControl.Styles>
     <Style Selector="ContentControl#WorkspaceHost"><Setter Property="ContentTemplate" Value="{StaticResource WideWorkspace}" /></Style>
     <Style Selector="ContentControl#WorkspaceHost.narrow"><Setter Property="ContentTemplate" Value="{StaticResource NarrowWorkspace}" /></Style>
-    <Style Selector="TabControl#InvoiceDetailTabs TabItem"><Setter Property="Theme" Value="{StaticResource InvoiceInformationTab}"/><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="10,8"/></Style>
+    <Style Selector="TabControl#InvoiceDetailTabs TabItem"><Setter Property="Theme" Value="{StaticResource InvoiceInformationTab}"/><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="6,8"/></Style>
     <Style Selector="TextBlock.out-of-stock"><Setter Property="Foreground" Value="#D32F2F" /></Style>
   </UserControl.Styles>
   <ContentControl x:Name="WorkspaceHost" Content="{Binding}" Classes.narrow="{Binding IsNarrow}" />

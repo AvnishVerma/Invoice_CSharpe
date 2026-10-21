@@ -7,7 +7,7 @@
     <Style Selector="local|InvoiceOptionsPanelView.tax-only :is(Control).charges-section, local|InvoiceOptionsPanelView.tax-only :is(Control).adjustments-section"><Setter Property="IsVisible" Value="False"/></Style>
   </UserControl.Styles>
   <Border Classes="invoice-tab-card">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <ScrollViewer Classes="invoice-tab-scroll">
       <StackPanel Classes="invoice-tab-content">
         <Border Classes="charges-section">
           <StackPanel Classes="invoice-tab-content" x:Name="ChargesAndAdjustments" AutomationProperties.Name="Charges and adjustments">

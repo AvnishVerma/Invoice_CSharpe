@@ -36,6 +36,11 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
             var tabs=shell.GetVisualDescendants().OfType<TabControl>().Single(control=>control.Name=="InvoiceDetailTabs");
             Assert.Equal(5,tabs.ItemCount);
             Assert.All(tabs.Items.Cast<TabItem>(),tab=>Assert.True(tab.Bounds.Height>=48));
+            var firstTab=tabs.Items.Cast<TabItem>().First();
+            Assert.All(tabs.Items.Cast<TabItem>(),tab=>Assert.Equal(firstTab.TranslatePoint(default,tabs)!.Value.Y,tab.TranslatePoint(default,tabs)!.Value.Y));
+            var headerScroll=tabs.GetVisualDescendants().OfType<ScrollViewer>().Single(control=>control.Name=="InvoiceTabHeaderScroll");
+            Assert.Equal(ScrollBarVisibility.Auto,headerScroll.HorizontalScrollBarVisibility);
+            Assert.Equal(ScrollBarVisibility.Disabled,headerScroll.VerticalScrollBarVisibility);
             var customer=shell.GetVisualDescendants().OfType<InvoiceCustomerPanelView>().Single();
             Assert.Contains(tabs,customer.GetVisualAncestors());
             AssertTabFormat(customer);
@@ -98,6 +103,11 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
     private static void AssertTabFormat(Control view)
     {
         var card=Assert.Single(view.GetVisualDescendants().OfType<Border>(),control=>control.Classes.Contains("invoice-tab-card"));
+        var scroll=Assert.Single(view.GetVisualDescendants().OfType<ScrollViewer>(),control=>control.Classes.Contains("invoice-tab-scroll"));
+        Assert.Contains(card,scroll.GetVisualAncestors());
+        Assert.Equal(ScrollBarVisibility.Auto,scroll.VerticalScrollBarVisibility);
+        Assert.Equal(ScrollBarVisibility.Disabled,scroll.HorizontalScrollBarVisibility);
+        Assert.Equal(default,scroll.Padding);
         Assert.Equal(new Thickness(16),card.Padding);
         Assert.Equal(new CornerRadius(16),card.CornerRadius);
         Assert.Equal(new Thickness(1),card.BorderThickness);

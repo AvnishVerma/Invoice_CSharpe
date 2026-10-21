@@ -6,6 +6,7 @@
     <ContainerQuery Name="invoice-details" Query="max-width:420"><Style Selector="UniformGrid.date-time-fields"><Setter Property="Columns" Value="1"/></Style></ContainerQuery>
   </UserControl.Styles>
   <Border Classes="invoice-tab-card">
+    <ScrollViewer Classes="invoice-tab-scroll">
     <StackPanel Classes="invoice-tab-content">
       <StackPanel Classes="invoice-tab-heading"><Border Classes="invoice-tab-icon"><TextBlock Text="{icons:FontAwesomeGlyph description}" Classes="action-icon-glyph"/></Border><TextBlock vm:UiLocalization.Text="Invoice details" Classes="invoice-tab-title"/></StackPanel>
       <StackPanel Classes="invoice-tab-content">
@@ -24,5 +25,6 @@
         </Expander>
       </StackPanel>
     </StackPanel>
+    </ScrollViewer>
   </Border>
 </UserControl>
