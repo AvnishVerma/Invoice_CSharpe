@@ -22,8 +22,8 @@ public sealed class InvoiceOptionsUiParityTests(HeadlessFixture headless)
         try
         {
             window.Show(); Settle(window);
-            var adjustments = view.GetVisualDescendants().OfType<Expander>().Single(control => control.Name == "ChargesAndAdjustments");
-            adjustments.IsExpanded = true; Settle(window);
+            var adjustments = view.GetVisualDescendants().OfType<StackPanel>().Single(control => control.Name == "ChargesAndAdjustments");
+            Assert.True(adjustments.IsEffectivelyVisible);
             var add = view.GetVisualDescendants().OfType<ActionButtonView>().Single(control => control.ActionLabel == "Add" && control.Caption == "Add Row");
             add.Command!.Execute(null); Settle(window); Assert.Single(model.AdditionalCosts);
             var amount = view.GetVisualDescendants().OfType<TextBox>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Amount");

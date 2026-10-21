@@ -12,5 +12,4 @@
   </Style>
   <Style Selector="Border.invoice-tab-icon TextBlock"><Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/><Setter Property="HorizontalAlignment" Value="Center"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
   <Style Selector="TextBlock.invoice-tab-title"><Setter Property="FontSize" Value="16"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
-  <Style Selector="Expander.invoice-tab-expander /template/ ToggleButton"><Setter Property="Padding" Value="0"/><Setter Property="MinHeight" Value="48"/></Style>
 </Styles>

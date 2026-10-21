@@ -3,27 +3,45 @@
              x:Class="LedgerNest.Desktop.Views.InvoiceCustomerPanelView" x:DataType="vm:InvoiceCustomerPanelViewModel">
   <UserControl.Styles><StyleInclude Source="/Views/InvoiceTabStyles.axaml"/></UserControl.Styles>
   <Border Classes="invoice-tab-card">
+    <Grid RowDefinitions="*,Auto">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Classes="invoice-tab-content">
+      <StackPanel Classes="invoice-tab-heading">
+        <Border Classes="invoice-tab-icon"><TextBlock Text="{icons:FontAwesomeGlyph person}" Classes="action-icon-glyph"/></Border>
+        <TextBlock vm:UiLocalization.Text="Customer details" Classes="invoice-tab-title"/>
+      </StackPanel>
+      <ItemsControl ItemsSource="{Binding CustomerFields.Fields}" IsVisible="{Binding !IsEditingCustomer}">
+        <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:FormFieldViewModel">
+          <Border BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="0,8,0,12" Margin="0,0,0,4">
+            <Grid ColumnDefinitions="120,*">
+              <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap" Margin="0,0,12,0"/>
+              <TextBlock Grid.Column="1" Classes="customer-summary-value" Text="{Binding Field.Value}" FontSize="14" TextWrapping="Wrap" MinHeight="20"/>
+            </Grid>
+          </Border>
+        </DataTemplate></ItemsControl.ItemTemplate>
+      </ItemsControl>
       <WrapPanel>
-        <StackPanel Classes="invoice-tab-heading" Margin="0,0,16,8" VerticalAlignment="Center">
-          <Border Classes="invoice-tab-icon"><TextBlock Text="{icons:FontAwesomeGlyph person}" Classes="action-icon-glyph" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-          <TextBlock vm:UiLocalization.Text="Customer details" Classes="invoice-tab-title"/>
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-          <local:ActionButtonView ActionLabel="Select customer" Caption="Select from existing" Icon="people" Tooltip="Select customer" Command="{Binding SelectCommand}" />
-          <ToggleButton Classes="action-icon outline" IsChecked="{Binding DetailsExpanded, Mode=TwoWay}" ToolTip.Tip="Customer details" AutomationProperties.Name="Expand customer details"><TextBlock Text="{Binding DetailsIcon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" /></ToggleButton>
-        </StackPanel>
+        <local:ActionButtonView ActionLabel="Edit customer details" Caption="Edit details" Icon="edit" Command="{Binding EditDetailsCommand}" Margin="0,0,8,8"/>
+        <Button Classes="action-icon outline" Margin="0,0,8,8" IsVisible="{Binding Workspace.HasSelectedInvoiceCustomer}" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh customer"><TextBlock Text="{icons:FontAwesomeGlyph refresh}" Classes="action-icon-glyph"/></Button>
+        <Button Classes="action-icon outline" Margin="0,0,0,8" Command="{Binding ClearCommand}" ToolTip.Tip="Clear customer" AutomationProperties.Name="Clear customer"><TextBlock Text="{icons:FontAwesomeGlyph close}" Classes="action-icon-glyph"/></Button>
       </WrapPanel>
-      <TextBlock vm:UiLocalization.Text="New or walk-in customer — enter their details below." FontSize="12" Foreground="{DynamicResource AppMutedBrush}" IsVisible="{Binding !Workspace.HasSelectedInvoiceCustomer}" TextWrapping="Wrap" />
-      <StackPanel Classes="invoice-tab-content" IsVisible="{Binding DetailsExpanded}">
+      <TextBlock vm:UiLocalization.Text="New or walk-in customer — enter their details below." FontSize="12" Foreground="{DynamicResource AppMutedBrush}" IsVisible="{Binding IsEditingCustomer}" TextWrapping="Wrap" />
+      <StackPanel Classes="invoice-tab-content" IsVisible="{Binding IsEditingCustomer}">
         <local:FormFieldsView DataContext="{Binding CustomerFields}" />
         <WrapPanel Margin="0,4,0,0">
           <Button Classes="action-icon outline" Margin="0,0,8,0" IsVisible="{Binding Workspace.HasSelectedInvoiceCustomer}" Command="{Binding ToggleLockCommand}" ToolTip.Tip="{Binding Workspace.CustomerLockTooltip}" AutomationProperties.Name="{Binding Workspace.CustomerLockTooltip}"><TextBlock Text="{Binding Workspace.CustomerLockIcon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" /></Button>
-          <Button Classes="action-icon outline" Margin="0,0,8,0" IsVisible="{Binding Workspace.HasSelectedInvoiceCustomer}" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh customer"><TextBlock Text="{icons:FontAwesomeGlyph refresh}" Classes="action-icon-glyph" /></Button>
-          <Button Classes="action-icon outline" Margin="0,0,8,0" Command="{Binding ClearCommand}" ToolTip.Tip="Clear customer" AutomationProperties.Name="Clear customer"><TextBlock Text="{icons:FontAwesomeGlyph close}" Classes="action-icon-glyph" /></Button>
+          <local:ActionButtonView ActionLabel="Done" Caption="Done" Icon="check" Command="{Binding FinishEditingCommand}" Margin="0,0,8,0"/>
           <local:ActionButtonView ActionLabel="Save customer" Caption="Save customer" Icon="save" Tooltip="Save customer details to the customer master" Command="{Binding SaveCustomerCommand}" Available="{Binding Workspace.CanSaveInvoiceCustomer}" />
         </WrapPanel>
       </StackPanel>
     </StackPanel>
+    </ScrollViewer>
+      <Border Grid.Row="1" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,1,0,0" Padding="0,16,0,0">
+        <WrapPanel>
+          <local:ActionButtonView ActionLabel="Create customer" Caption="Create Customer" Icon="add" Command="{Binding CreateCommand}" Available="{Binding CanCreateCustomer}" Margin="0,0,8,8"/>
+          <local:ActionButtonView ActionLabel="Select customer" Caption="Search Customer" Icon="search" Command="{Binding SelectCommand}" Margin="0,0,0,8"/>
+        </WrapPanel>
+      </Border>
+    </Grid>
   </Border>
 </UserControl>

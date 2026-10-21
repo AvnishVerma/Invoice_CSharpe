@@ -2,6 +2,18 @@
              xmlns:local="using:LedgerNest.Desktop.Views" xmlns:vm="using:LedgerNest.Desktop"
              x:Class="LedgerNest.Desktop.Views.InvoiceWorkspace" x:CompileBindings="False">
   <UserControl.Resources>
+    <ControlTheme x:Key="InvoiceInformationTab" TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
+      <Setter Property="Background" Value="{DynamicResource AppCanvasBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/><Setter Property="Margin" Value="0,0,6,6"/>
+      <Setter Property="Template"><ControlTemplate><Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+        <ContentPresenter Content="{TemplateBinding Header}" ContentTemplate="{TemplateBinding HeaderTemplate}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Border></ControlTemplate></Setter>
+      <Style Selector="^:pointerover"><Setter Property="Background" Value="{DynamicResource AppSelectedBrush}"/></Style>
+      <Style Selector="^:selected"><Setter Property="Background" Value="{DynamicResource AppSelectedBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/><Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+      <Style Selector="^:focus-visible"><Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/><Setter Property="BorderThickness" Value="2"/></Style>
+    </ControlTheme>
+
     <DataTemplate x:Key="LeftPane">
       <Grid MinHeight="320">
         <Border Padding="16" CornerRadius="16" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
@@ -27,25 +39,25 @@
     <DataTemplate x:Key="RightPane">
       <Grid RowDefinitions="*,12,Auto">
         <TabControl x:Name="InvoiceDetailTabs" AutomationProperties.Name="Invoice information" SelectedIndex="0">
-          <TabControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></TabControl.ItemsPanel>
+          <TabControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3" MinHeight="108"/></ItemsPanelTemplate></TabControl.ItemsPanel>
           <TabItem AutomationProperties.Name="Customer">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Customer" FontSize="14"/></TabItem.Header>
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><local:InvoiceCustomerPanelView DataContext="{Binding Customer}"/></ScrollViewer>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Customer" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
+            <local:InvoiceCustomerPanelView DataContext="{Binding Customer}"/>
           </TabItem>
           <TabItem AutomationProperties.Name="Invoice Details">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Invoice Details" FontSize="14"/></TabItem.Header>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Invoice Details" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><local:InvoiceDocumentDetailsPanelView DataContext="{Binding Details}"/></ScrollViewer>
           </TabItem>
           <TabItem AutomationProperties.Name="Charges">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Charges" FontSize="14"/></TabItem.Header>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Charges" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
             <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="charges-only"/>
           </TabItem>
           <TabItem AutomationProperties.Name="Adjustments">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Adjustments" FontSize="14"/></TabItem.Header>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Adjustments" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
             <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="adjustments-only"/>
           </TabItem>
           <TabItem AutomationProperties.Name="Tax Details">
-            <TabItem.Header><TextBlock vm:UiLocalization.Text="Tax Details" FontSize="14"/></TabItem.Header>
+            <TabItem.Header><TextBlock vm:UiLocalization.Text="Tax Details" FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/></TabItem.Header>
             <local:InvoiceOptionsPanelView DataContext="{Binding Options}" Classes="tax-only"/>
           </TabItem>
         </TabControl>
@@ -74,7 +86,7 @@
   </UserControl.Resources>  <UserControl.Styles>
     <Style Selector="ContentControl#WorkspaceHost"><Setter Property="ContentTemplate" Value="{StaticResource WideWorkspace}" /></Style>
     <Style Selector="ContentControl#WorkspaceHost.narrow"><Setter Property="ContentTemplate" Value="{StaticResource NarrowWorkspace}" /></Style>
-    <Style Selector="TabControl#InvoiceDetailTabs TabItem"><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="10,8"/></Style>
+    <Style Selector="TabControl#InvoiceDetailTabs TabItem"><Setter Property="Theme" Value="{StaticResource InvoiceInformationTab}"/><Setter Property="MinHeight" Value="48"/><Setter Property="Padding" Value="10,8"/></Style>
     <Style Selector="TextBlock.out-of-stock"><Setter Property="Foreground" Value="#D32F2F" /></Style>
   </UserControl.Styles>
   <ContentControl x:Name="WorkspaceHost" Content="{Binding}" Classes.narrow="{Binding IsNarrow}" />

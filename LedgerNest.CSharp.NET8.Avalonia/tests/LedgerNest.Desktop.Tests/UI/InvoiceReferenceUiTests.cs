@@ -59,11 +59,9 @@ public sealed class InvoiceReferenceUiTests(HeadlessFixture headless)
             Assert.True(search.IsEffectivelyVisible);
             var divider = shell.GetVisualDescendants().OfType<GridSplitter>().ToArray();
             Assert.Equal(page.IsNarrow ? 0 : 1, divider.Length);
-            shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>().Single().GetVisualDescendants().OfType<Expander>().First().IsExpanded = true;
-            Settle(window); Capture(window, "invoice-expanded-" + width);
+            Settle(window); Capture(window, "invoice-details-" + width);
             var details = shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>().Single();
-            details.GetVisualDescendants().OfType<Expander>().First().IsExpanded = false;
-            Settle(window); Capture(window, "invoice-collapsed-" + width);
+            tabs.SelectedIndex = 0; Settle(window); Capture(window, "invoice-customer-" + width);
             Assert.False(workspace.HasUnsavedInvoiceChanges);
             Assert.NotNull(page.Options.NotesField.ExpandCommand);
             page.Options.NotesField.ExpandCommand!.Execute(null); Settle(window);

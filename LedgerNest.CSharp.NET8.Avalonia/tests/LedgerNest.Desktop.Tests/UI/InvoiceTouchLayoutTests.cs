@@ -39,6 +39,17 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
             var customer=shell.GetVisualDescendants().OfType<InvoiceCustomerPanelView>().Single();
             Assert.Contains(tabs,customer.GetVisualAncestors());
             AssertTabFormat(customer);
+            foreach(var tab in tabs.Items.Cast<TabItem>())
+                Assert.True(tab.TranslatePoint(default,tabs)!.Value.Y+tab.Bounds.Height <= customer.TranslatePoint(default,tabs)!.Value.Y+1);
+
+            foreach(var action in customer.GetVisualDescendants().OfType<ActionButtonView>().Where(control=>control.ActionLabel is "Select customer" or "Create customer"))
+            {
+                var location=action.TranslatePoint(default,customer)!.Value;
+                Assert.True(action.IsEffectivelyVisible);
+                Assert.InRange(location.Y,0,customer.Bounds.Height);
+                Assert.InRange(location.Y+action.Bounds.Height,0,customer.Bounds.Height+1);
+                Assert.InRange(action.TranslatePoint(default,tabs)!.Value.Y+action.Bounds.Height,0,tabs.Bounds.Height+1);
+            }
             tabs.SelectedIndex=1; Settle(window);
             AssertTabFormat(Assert.Single(shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>()));
             for(var index=2;index<5;index++)

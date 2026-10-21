@@ -22,7 +22,6 @@ public sealed class InvoiceEditUiParityTests(HeadlessFixture headless)
         try
         {
             window.Show(); Settle(window);
-            view.GetVisualDescendants().OfType<Expander>().Single(control => control.Name == "InvoiceDetailsExpander").IsExpanded = true; Settle(window);
             var time = view.GetVisualDescendants().OfType<TextBox>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Order Time");
             time.Text = "10:45"; Settle(window);
             Assert.Equal("10:45", model.OrderTime.Value);

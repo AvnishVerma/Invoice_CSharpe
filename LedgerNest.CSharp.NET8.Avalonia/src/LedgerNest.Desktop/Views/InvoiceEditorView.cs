@@ -16,7 +16,7 @@ public partial class MainWindow
             () => { if (Model.LastSavedDocument is { } document) ShowDocumentPreview(document); },
             async () => { if (Model.LastSavedDocument is { } document) await ShowPdfPreviewAsync(document); },
             async () => { if (Model.LastSavedDocument is { } document) await DownloadDocumentPdf(document); },
-            async () => { if (Model.LastSavedDocument is { } document) await PrintDocumentAsync(document); }, ExpandInvoiceField);
+            async () => { if (Model.LastSavedDocument is { } document) await PrintDocumentAsync(document); }, ExpandInvoiceField, CreateInvoiceCustomer);
         return new InvoiceEditorShellView(editor);
     }
 
@@ -39,6 +39,24 @@ public partial class MainWindow
             Model.ActiveUnitCodes(product["Unit"]), Model.SellingUnitChoices(product));
         Model.CurrentOverlay = dialog;
     }
+    private void CreateInvoiceCustomer()
+    {
+        if (!Model.CanPerformAction("Customer", "Add")) { Model.Status = "Your role cannot create customers."; return; }
+        var fields = FormCatalog.Customer();
+        var save = new CommunityToolkit.Mvvm.Input.RelayCommand(() =>
+        {
+            if (!Model.SaveRecord("Customer", fields)) return;
+            // SaveRecord appends the exact newly persisted record synchronously.
+            var customer = Model.Customers.Last();
+            if (Model.SelectInvoiceCustomer(customer)) CloseOverlay();
+        });
+        ShowOverlay("Create Customer",
+            new FormFieldsViewModel(fields.Select(field => new FormFieldViewModel(field)).ToArray(), 1),
+            new DialogActions([
+                new(UiLocalization.Translate("Cancel"), new CommunityToolkit.Mvvm.Input.RelayCommand(CloseOverlay)),
+                new(UiLocalization.Translate("Create Customer"), save, true)]), width: 520);
+    }
+
     // Performs the select customer action for this screen or workflow.
     private void SelectCustomer()
     {

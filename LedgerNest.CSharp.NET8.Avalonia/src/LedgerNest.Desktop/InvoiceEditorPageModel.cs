@@ -39,10 +39,10 @@ public sealed partial class InvoiceEditorPageModel : ObservableObject
     public void RequestSearchFocus() => FocusSearchRequested?.Invoke();
 
     public InvoiceEditorPageModel(MainWindowViewModel workspace, Action selectCustomer, Action<UiRecord> selectProduct,
-        Action customItem, Action saved, Action voidInvoice, Action view, Func<Task> preview, Func<Task> download, Func<Task> print, Action<FormField> expand)
+        Action customItem, Action saved, Action voidInvoice, Action view, Func<Task> preview, Func<Task> download, Func<Task> print, Action<FormField> expand, Action? createCustomer = null)
     {
         Workspace = workspace; this.selectProduct = selectProduct;
-        Customer = new(workspace, selectCustomer, expand); Details = new(workspace); Options = new(workspace, expand);
+        Customer = new(workspace, selectCustomer, expand, createCustomer); Details = new(workspace); Options = new(workspace, expand);
         CreateCommand = new RelayCommand(() => { if (!completed && workspace.SaveInvoice()) { completed = true; CreateCommand!.NotifyCanExecuteChanged(); saved(); } }, () => !completed && workspace.Lines.Count > 0);
         CustomItemCommand = new RelayCommand(customItem);
         VoidCommand = new RelayCommand(voidInvoice, () => workspace.CanVoidCurrentInvoice);
