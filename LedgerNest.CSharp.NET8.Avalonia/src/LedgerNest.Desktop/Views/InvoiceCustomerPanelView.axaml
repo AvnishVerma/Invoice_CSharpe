@@ -1,12 +1,13 @@
 <UserControl xmlns:icons="using:LedgerNest.Desktop" xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:LedgerNest.Desktop" xmlns:local="using:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.InvoiceCustomerPanelView" x:DataType="vm:InvoiceCustomerPanelViewModel">
-  <Border Padding="16" CornerRadius="16" Background="{DynamicResource AppCanvasBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="1">
-    <StackPanel Spacing="8">
+  <UserControl.Styles><StyleInclude Source="/Views/InvoiceTabStyles.axaml"/></UserControl.Styles>
+  <Border Classes="invoice-tab-card">
+    <StackPanel Classes="invoice-tab-content">
       <WrapPanel>
-        <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,16,8" VerticalAlignment="Center">
-          <Border Background="{DynamicResource AppSelectedBrush}" CornerRadius="10" Width="36" Height="36"><TextBlock Text="{icons:FontAwesomeGlyph person}" Classes="action-icon-glyph" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-          <TextBlock vm:UiLocalization.Text="Customer details" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        <StackPanel Classes="invoice-tab-heading" Margin="0,0,16,8" VerticalAlignment="Center">
+          <Border Classes="invoice-tab-icon"><TextBlock Text="{icons:FontAwesomeGlyph person}" Classes="action-icon-glyph" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+          <TextBlock vm:UiLocalization.Text="Customer details" Classes="invoice-tab-title"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
           <local:ActionButtonView ActionLabel="Select customer" Caption="Select from existing" Icon="people" Tooltip="Select customer" Command="{Binding SelectCommand}" />
@@ -14,7 +15,7 @@
         </StackPanel>
       </WrapPanel>
       <TextBlock vm:UiLocalization.Text="New or walk-in customer — enter their details below." FontSize="12" Foreground="{DynamicResource AppMutedBrush}" IsVisible="{Binding !Workspace.HasSelectedInvoiceCustomer}" TextWrapping="Wrap" />
-      <StackPanel Spacing="8" IsVisible="{Binding DetailsExpanded}">
+      <StackPanel Classes="invoice-tab-content" IsVisible="{Binding DetailsExpanded}">
         <local:FormFieldsView DataContext="{Binding CustomerFields}" />
         <WrapPanel Margin="0,4,0,0">
           <Button Classes="action-icon outline" Margin="0,0,8,0" IsVisible="{Binding Workspace.HasSelectedInvoiceCustomer}" Command="{Binding ToggleLockCommand}" ToolTip.Tip="{Binding Workspace.CustomerLockTooltip}" AutomationProperties.Name="{Binding Workspace.CustomerLockTooltip}"><TextBlock Text="{Binding Workspace.CustomerLockIcon, Converter={StaticResource FontAwesomeGlyphConverter}}" Classes="action-icon-glyph" /></Button>

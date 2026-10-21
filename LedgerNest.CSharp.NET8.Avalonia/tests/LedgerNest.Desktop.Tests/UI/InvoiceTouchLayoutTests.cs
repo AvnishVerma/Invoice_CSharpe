@@ -38,12 +38,14 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
             Assert.All(tabs.Items.Cast<TabItem>(),tab=>Assert.True(tab.Bounds.Height>=48));
             var customer=shell.GetVisualDescendants().OfType<InvoiceCustomerPanelView>().Single();
             Assert.Contains(tabs,customer.GetVisualAncestors());
+            AssertTabFormat(customer);
             tabs.SelectedIndex=1; Settle(window);
-            Assert.Single(shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>());
+            AssertTabFormat(Assert.Single(shell.GetVisualDescendants().OfType<InvoiceDocumentDetailsPanelView>()));
             for(var index=2;index<5;index++)
             {
                 tabs.SelectedIndex=index; Settle(window);
                 var options=shell.GetVisualDescendants().OfType<InvoiceOptionsPanelView>().Single();
+                AssertTabFormat(options);
                 if(index==2)
                 {
                     var state=Assert.IsType<InvoiceOptionsViewModel>(options.DataContext);
@@ -82,5 +84,14 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
         }
         finally { model.ResolveInvoiceLeave(InvoiceLeaveChoice.KeepEditing); model.MarkInvoiceFormClean(); window.Close(); }
     });
+    private static void AssertTabFormat(Control view)
+    {
+        var card=Assert.Single(view.GetVisualDescendants().OfType<Border>(),control=>control.Classes.Contains("invoice-tab-card"));
+        Assert.Equal(new Thickness(16),card.Padding);
+        Assert.Equal(new CornerRadius(16),card.CornerRadius);
+        Assert.Equal(new Thickness(1),card.BorderThickness);
+        Assert.All(view.GetVisualDescendants().OfType<TextBlock>().Where(control=>control.Classes.Contains("invoice-tab-title")),title=>Assert.Equal(16,title.FontSize));
+        Assert.All(view.GetVisualDescendants().OfType<StackPanel>().Where(control=>control.Classes.Contains("invoice-tab-content")),panel=>Assert.Equal(12,panel.Spacing));
+    }
     private static void Settle(Window window) { Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); }
 }
