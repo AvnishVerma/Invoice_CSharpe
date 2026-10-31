@@ -107,6 +107,18 @@ public sealed class InvoiceTouchLayoutTests(HeadlessFixture headless)
         Assert.Contains(card,scroll.GetVisualAncestors());
         Assert.Equal(ScrollBarVisibility.Auto,scroll.VerticalScrollBarVisibility);
         Assert.Equal(ScrollBarVisibility.Disabled,scroll.HorizontalScrollBarVisibility);
+        Assert.False(scroll.AllowAutoHide);
+        if (scroll.Extent.Height > scroll.Viewport.Height)
+        {
+            var bar = scroll.GetVisualDescendants().OfType<ScrollBar>()
+                .Single(control => control.Name == "PART_VerticalScrollBar" &&
+                    control.GetVisualAncestors().OfType<ScrollViewer>().First() == scroll);
+            var content = Assert.IsAssignableFrom<Control>(scroll.Content);
+            var contentRight = content.TranslatePoint(new Point(content.Bounds.Width, 0), scroll)!.Value.X;
+            var barLeft = bar.TranslatePoint(default, scroll)!.Value.X;
+            Assert.True(contentRight <= barLeft + 1,
+                $"Tab content ends at {contentRight}, overlapping scrollbar at {barLeft}.");
+        }
         Assert.Equal(default,scroll.Padding);
         Assert.Equal(new Thickness(16),card.Padding);
         Assert.Equal(new CornerRadius(16),card.CornerRadius);
