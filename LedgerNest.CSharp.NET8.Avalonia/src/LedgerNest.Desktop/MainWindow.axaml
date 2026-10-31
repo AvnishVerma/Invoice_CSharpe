@@ -7,13 +7,13 @@
         Width="1440" Height="900" MinWidth="640" MinHeight="480"
         Title="LadgerNest" Background="{DynamicResource AppCanvasBrush}">
   <Grid x:Name="Root">
-    <Grid>
+    <Grid IsEnabled="{Binding !SessionWarning.IsVisible}">
       <Grid x:Name="Body" ColumnDefinitions="Auto,*">
         <ContentControl x:Name="sidebar" />
         <ContentControl x:Name="page" Grid.Column="1" />
       </Grid>
     </Grid>
-    <Grid x:Name="overlay" IsVisible="{Binding IsOverlayOpen}" ColumnDefinitions="Auto,*">
+    <Grid IsEnabled="{Binding !SessionWarning.IsVisible}" x:Name="overlay" IsVisible="{Binding IsOverlayOpen}" ColumnDefinitions="Auto,*">
       <Border Width="{Binding #sidebar.Bounds.Width}" IsVisible="{Binding IsSideOverlay}" IsHitTestVisible="False" />
       <ContentControl Grid.Column="1" Content="{Binding CurrentOverlay}">
         <ContentControl.DataTemplates>
@@ -23,6 +23,7 @@
         </ContentControl.DataTemplates>
       </ContentControl>
     </Grid>
+    <views:SessionExpiryDialogView DataContext="{Binding SessionWarning}" ZIndex="200"/>
     <Border x:Name="toastCard"
             IsVisible="False"
             Width="390"

@@ -17,6 +17,8 @@ public partial class MainWindow
         page.Content = null;
         sidebar.Content = null;
         vm.CurrentOverlay = null;
+        if (shellModel != null && shellModel != vm) shellModel.SessionWarning.Stop();
+        sessionTimer.Stop();
         shellModel = vm;
         CurrencyDisplay.SelectedCurrency = () => vm.InvoiceSetting("Currency").Value;
         ApplyAppearance(vm);
@@ -26,7 +28,7 @@ public partial class MainWindow
             if (e.PropertyName == nameof(vm.Title)) { ShowPage(); if (vm.CanAccessWorkspace) BuildSidebar(); }
             if (e.PropertyName is nameof(vm.SidebarExpanded) or nameof(vm.CurrentUsername))
                 if (vm.CanAccessWorkspace) BuildSidebar();
-            if (e.PropertyName == nameof(vm.CanAccessWorkspace)) RefreshWorkspaceAccess();
+            if (e.PropertyName == nameof(vm.CanAccessWorkspace)) { if (vm.SessionWarning.IsActive) sessionTimer.Start(); else sessionTimer.Stop(); RefreshWorkspaceAccess(); }
             if (e.PropertyName == nameof(vm.AuthorizationVersion) && vm.CanAccessWorkspace)
             {
                 BuildSidebar();
@@ -38,6 +40,7 @@ public partial class MainWindow
         };
         vm.PropertyChanged += shellChanged;
         vm.InvoiceLeaveRequested += ShowInvoiceLeaveConfirmation;
+        if (vm.SessionWarning.IsActive) sessionTimer.Start();
         RefreshWorkspaceAccess();
     }
 

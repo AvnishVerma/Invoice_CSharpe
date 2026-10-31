@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="using:LedgerNest.Application" xmlns:local="using:LedgerNest.Desktop"
+             x:Class="LedgerNest.Desktop.Views.SessionExpiryDialogView" x:DataType="app:SessionExpiryMonitor"
+             AutomationProperties.Name="{Binding Title}" AutomationProperties.HelpText="Continue your session or exit. You will be signed out automatically when time expires."
+             IsVisible="False" KeyDown="OnKeyDown">
+  <UserControl.Styles>
+    <Style Selector="Border.session-card"><Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/></Style>
+    <Style Selector="Border.session-card.attention"><Setter Property="BorderBrush" Value="#D69E36"/></Style>
+    <Style Selector="Border.session-card.urgent"><Setter Property="BorderBrush" Value="#DB555F"/></Style>
+    <Style Selector="TextBlock.session-countdown"><Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/></Style>
+    <Style Selector="Border.attention TextBlock.session-countdown"><Setter Property="Foreground" Value="#C08922"/></Style>
+    <Style Selector="Border.urgent TextBlock.session-countdown"><Setter Property="Foreground" Value="#DB555F"/></Style>
+    <Style Selector="ProgressBar.session-progress"><Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/></Style>
+    <Style Selector="Border.attention ProgressBar.session-progress"><Setter Property="Foreground" Value="#C08922"/></Style>
+    <Style Selector="Border.urgent ProgressBar.session-progress"><Setter Property="Foreground" Value="#DB555F"/></Style>
+  </UserControl.Styles>
+  <Grid>
+    <Border x:Name="Backdrop" Background="#99070F20"/>
+    <Border x:Name="Card" Classes="session-card" Classes.attention="{Binding IsAttention}" Classes.urgent="{Binding IsUrgent}"
+            Margin="20" Padding="28" MaxWidth="520" CornerRadius="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+            Background="{DynamicResource AppSurfaceBrush}" BorderThickness="1"
+            BoxShadow="0 12 40 0 #50000000" KeyboardNavigation.TabNavigation="Cycle" AutomationProperties.Name="{Binding Title}"
+            AutomationProperties.HelpText="Continue your session or exit. You will be signed out automatically when time expires.">
+      <Border.RenderTransform><ScaleTransform ScaleX="1" ScaleY="1"/></Border.RenderTransform>
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" >
+        <StackPanel Spacing="18">
+          <Border Width="72" Height="72" CornerRadius="24" HorizontalAlignment="Center">
+            <Border.Background><LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%"><GradientStop Color="#263B82F6" Offset="0"/><GradientStop Color="#207C3AED" Offset="1"/></LinearGradientBrush></Border.Background>
+            <TextBlock Text="{local:FontAwesomeGlyph schedule}" FontFamily="{DynamicResource IconFontFamily}" FontSize="32" Foreground="{DynamicResource AppAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <TextBlock local:UiLocalization.Text="{Binding Title}" FontSize="25" FontWeight="SemiBold" TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource AppTextBrush}"/>
+          <TextBlock local:UiLocalization.Text="{Binding Status}" FontSize="14" Foreground="{DynamicResource AppMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+          <Border Background="{DynamicResource AppCardBrush}" CornerRadius="18" Padding="24,18">
+            <StackPanel Spacing="10">
+              <TextBlock x:Name="CountdownDigits" Classes="session-countdown" Text="{Binding Countdown}" FontSize="52" FontWeight="SemiBold" HorizontalAlignment="Center" AutomationProperties.LiveSetting="Off"/>
+              <TextBlock local:UiLocalization.Text="Time remaining" HorizontalAlignment="Center" Foreground="{DynamicResource AppMutedBrush}"/>
+              <ProgressBar x:Name="ProgressIndicator" Classes="session-progress" Minimum="0" Maximum="100" Value="{Binding Progress}" Height="6" AutomationProperties.Name="Session time remaining"/>
+            </StackPanel>
+          </Border>
+          <ProgressBar x:Name="LoadingIndicator" IsIndeterminate="True" IsVisible="{Binding IsRefreshing}" Height="3" AutomationProperties.Name="Extending your session"/>
+          <TextBlock Text="{local:FontAwesomeGlyph check_circle}" IsVisible="{Binding IsSuccess}" FontFamily="{DynamicResource IconFontFamily}" FontSize="26" Foreground="#36A875" HorizontalAlignment="Center" AutomationProperties.Name="Session extended"/>
+          <Grid ColumnDefinitions="*,12,1.3*">
+            <Button AutomationProperties.Name="Exit Session" Command="{Binding ExitCommand}" IsEnabled="{Binding CanInteract}" Classes="outline" MinHeight="48" HorizontalAlignment="Stretch" ToolTip.Tip="Sign out and return to login"><TextBlock local:UiLocalization.Text="Exit Session"/></Button>
+            <Button x:Name="ContinueButton" Grid.Column="2" AutomationProperties.Name="Continue Session" Command="{Binding ContinueCommand}" IsEnabled="{Binding CanInteract}" Classes="primary" MinHeight="48" HorizontalAlignment="Stretch" ToolTip.Tip="Revalidate your account and extend the session"><TextBlock local:UiLocalization.Text="Continue Session"/></Button>
+          </Grid>
+          <TextBlock local:UiLocalization.Text="Your session is protected. For your security, you will be signed out automatically when time expires." FontSize="12" LineHeight="18" TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

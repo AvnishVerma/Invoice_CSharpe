@@ -16,15 +16,51 @@ namespace LedgerNest.Desktop;
 public partial class MainWindowViewModel
 {
     private AppUser? sessionAccount;
+    private SessionExpiryMonitor? sessionWarning;
+    public SessionExpiryMonitor SessionWarning => sessionWarning ??= new SessionExpiryMonitor(TimeProvider.System, RenewLocalSessionAsync, EndTimedSession);
+
+    private async Task<DateTimeOffset?> RenewLocalSessionAsync(CancellationToken cancellationToken)
+    {
+        var expected = sessionAccount;
+        if (expected == null || dbFactory == null || !IsCurrentCompany()) return null;
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        var current = await db.Users.AsNoTracking().SingleOrDefaultAsync(user => user.Id == expected.Id, cancellationToken);
+        if (current == null || current.Username != expected.Username || current.Role != expected.Role
+            || current.PasswordHash != expected.PasswordHash || current.Salt != expected.Salt
+            || current.PasswordChanged != expected.PasswordChanged) return null;
+        return DateTimeOffset.UtcNow + SessionExpiryMonitor.LocalSessionLifetime;
+    }
+
+    private void EndTimedSession(string message)
+    {
+        // Expiry is a security boundary; an unsaved-document prompt must not keep access alive.
+        pendingInvoiceNavigation = null;
+        CurrentOverlay = null;
+        SetSession(null, "", false);
+        // Cleanup must not require database access: logout also works when storage is unavailable.
+        editingDocument = null; editingSnapshot = null; editingFingerprint = null; editingHasPayments = false;
+        LastSavedDocument = null;
+        historicalLines.Clear(); Lines.Clear(); AdditionalCosts.Clear(); InvoiceCustomFields.Clear();
+        InvoiceOptions[2].Value = "";
+        ClearInvoiceCustomer();
+        MarkInvoiceFormClean();
+        Status = message;
+    }
 
     public long SessionVersion { get; private set; }
 
     // Performs the can continue workspace operation action for this screen or workflow.
     public bool CanContinueWorkspaceOperation(long version) => ValidateSession() && CanAccessWorkspace && SessionVersion == version;
 
-    public bool CanAccessWorkspace => dbFactory == null || (CurrentUsername != null && !RequiresPasswordChange);
+    public bool CanAccessWorkspace => dbFactory == null || (CurrentUsername != null && !RequiresPasswordChange && SessionWarning.IsValid);
     public string? CurrentUsername { get; private set; }
-    public string CurrentRole { get; private set; } = "";
+    private string currentRole = "";
+    // Subview services read this delegate directly, so expiry must deny roles before the next UI tick.
+    public string CurrentRole
+    {
+        get => sessionWarning != null && !sessionWarning.IsValid ? "" : currentRole;
+        private set => currentRole = value;
+    }
     public bool RequiresPasswordChange { get; private set; }
 
     // Performs the set session action for this screen or workflow.
@@ -37,6 +73,8 @@ public partial class MainWindowViewModel
         CurrentUsername = username;
         CurrentRole = role;
         RequiresPasswordChange = requiresPasswordChange;
+        if (username == null) sessionWarning?.Stop();
+        else SessionWarning.Start(DateTimeOffset.UtcNow + SessionExpiryMonitor.LocalSessionLifetime);
         OnPropertyChanged(nameof(CurrentUsername));
         OnPropertyChanged(nameof(CurrentRole));
         OnPropertyChanged(nameof(RequiresPasswordChange));
@@ -69,6 +107,11 @@ public partial class MainWindowViewModel
     // Performs the validate session action for this screen or workflow.
     public bool ValidateSession()
     {
+        if (sessionWarning?.IsActive == true)
+        {
+            sessionWarning.Tick();
+            if (!sessionWarning.IsValid) return false;
+        }
         if (!IsCurrentCompany())
         {
             SetSession(null, "", false);

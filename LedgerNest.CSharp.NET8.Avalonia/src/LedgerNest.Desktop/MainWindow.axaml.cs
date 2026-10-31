@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private readonly IAppUpdateService updateService;
     private MainWindowViewModel Model => (MainWindowViewModel)DataContext!;
     private bool invoiceCompletionVisible;
+    private readonly Avalonia.Threading.DispatcherTimer sessionTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly Avalonia.Threading.DispatcherTimer licenseTimer = new() { Interval = TimeSpan.FromMinutes(1) };
     private readonly Avalonia.Threading.DispatcherTimer updateTimer = new() { Interval = TimeSpan.FromMinutes(30) };
     public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator(), new AvaloniaToastService(), new HttpAppUpdateService())
@@ -47,6 +48,7 @@ public partial class MainWindow : Window
                 Ui.UpdateTheme(ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark);
         };
         Activated += (_, _) => { if (DataContext is MainWindowViewModel vm) { vm.ValidateSession(); vm.RefreshLicense(); } };
+        sessionTimer.Tick += (_, _) => { if (DataContext is MainWindowViewModel vm) { vm.SessionWarning.Tick(); if (!vm.SessionWarning.IsActive) sessionTimer.Stop(); } };
         licenseTimer.Tick += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.RefreshLicense(); };
         updateTimer.Tick += async (_, _) => await CheckForUpdatesAsync(silent: true);
         Opened += async (_, _) =>
@@ -61,6 +63,8 @@ public partial class MainWindow : Window
             toastService.Requested -= OnToastRequested;
             toastTimer?.Stop();
             licenseTimer.Stop();
+            sessionTimer.Stop();
+            shellModel?.SessionWarning.Dispose();
             page.Content = null;
         };
         Title = Branding.Name;
@@ -92,6 +96,7 @@ public partial class MainWindow : Window
     private bool ExecuteShortcut(Key key, KeyModifiers modifiers)
     {
         if (DataContext is not MainWindowViewModel currentModel) return false;
+        if (currentModel.SessionWarning.IsVisible) return true;
         var isControlShortcut = modifiers.HasFlag(KeyModifiers.Control);
         if (((isControlShortcut || key == Key.Escape) && !currentModel.ValidateSession()) || !currentModel.CanAccessWorkspace)
             return isControlShortcut || key == Key.Escape;

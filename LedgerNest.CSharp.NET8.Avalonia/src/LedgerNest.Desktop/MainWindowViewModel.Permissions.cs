@@ -26,7 +26,7 @@ public partial class MainWindowViewModel
     {
         if (!IsCurrentCompany()) return false;
         if (dbFactory == null) return true;
-        if (sessionAccount == null) return false;
+        if (sessionAccount == null || sessionWarning?.IsValid != true) return false;
         action = action switch { "Edit" or "Manage" or "Adjust" or "Cancel" or "Refund" => "Update", "Create" => "Add", _ => action };
         return new AuthorizationService(dbFactory).IsAllowedAsync(sessionAccount.Id, resource, action).GetAwaiter().GetResult();
     }
