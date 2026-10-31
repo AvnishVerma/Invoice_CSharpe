@@ -25,6 +25,8 @@ public sealed class InvoiceOptionsUiParityTests(HeadlessFixture headless)
             var adjustments = view.GetVisualDescendants().OfType<StackPanel>().Single(control => control.Name == "ChargesAndAdjustments");
             Assert.True(adjustments.IsEffectivelyVisible);
             var add = view.GetVisualDescendants().OfType<ActionButtonView>().Single(control => control.ActionLabel == "Add" && control.Caption == "Add Row");
+            Assert.DoesNotContain(add.GetVisualAncestors(), ancestor => ancestor is ScrollViewer);
+            Assert.Equal(1, Grid.GetRow(Assert.IsType<Border>(add.Parent)));
             add.Command!.Execute(null); Settle(window); Assert.Single(model.AdditionalCosts);
             var amount = view.GetVisualDescendants().OfType<TextBox>().Single(control => Avalonia.Automation.AutomationProperties.GetName(control) == "Amount");
             amount.Text = "-15"; Settle(window); Assert.Equal(-15m, model.AdditionalCosts[0][1].Number); Assert.True(model.AdditionalCosts[0][1].Validate());

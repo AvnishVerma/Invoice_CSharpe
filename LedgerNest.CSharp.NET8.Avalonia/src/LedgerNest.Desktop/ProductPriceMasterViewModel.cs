@@ -31,10 +31,19 @@ public sealed partial class ProductPriceMasterViewModel : ObservableObject
     [ObservableProperty] private bool isDefault;
     [ObservableProperty] private bool isActive = true;
     [ObservableProperty] private string priceList = "Default";
-    [ObservableProperty] private DateTimeOffset? effectiveDate = DateTimeOffset.Now;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(EffectiveCalendarDate))] private DateTimeOffset? effectiveDate = DateTimeOffset.Now;
     [ObservableProperty] private bool isBusy;
     [ObservableProperty] private string error = "";
     [ObservableProperty] private string status = "";
+    // CalendarDatePicker uses DateTime; retain the existing effective date's offset and time.
+    public DateTime? EffectiveCalendarDate
+    {
+        get => EffectiveDate?.Date;
+        set => EffectiveDate = value.HasValue
+            ? new DateTimeOffset(DateTime.SpecifyKind(value.Value.Date + (EffectiveDate?.TimeOfDay ?? TimeSpan.Zero), DateTimeKind.Unspecified), EffectiveDate?.Offset ?? DateTimeOffset.Now.Offset)
+            : null;
+    }
+
     public bool CanManage => role().Equals("Admin", StringComparison.OrdinalIgnoreCase) || hasPermission("Add") || hasPermission("Update");
     public bool HasProduct => SelectedProduct != null;
 
