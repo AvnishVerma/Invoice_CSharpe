@@ -1,0 +1,10 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector="Border.page-side-navigation">
+    <Setter Property="Width" Value="200"/><Setter Property="Padding" Value="8"/>
+    <Setter Property="Background" Value="{DynamicResource AppSurfaceBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource AppOutlineBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,1,0"/>
+  </Style>
+  <ContainerQuery Name="settings" Query="max-width:700"><Style Selector="Border.page-side-navigation"><Setter Property="Width" Value="156"/></Style></ContainerQuery>
+  <ContainerQuery Name="reports" Query="max-width:700"><Style Selector="Border.page-side-navigation"><Setter Property="Width" Value="156"/></Style></ContainerQuery>
+</Styles>

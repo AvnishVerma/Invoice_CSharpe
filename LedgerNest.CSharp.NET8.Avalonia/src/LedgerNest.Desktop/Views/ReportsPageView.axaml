@@ -2,28 +2,31 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:LedgerNest.Desktop.Views"
              x:Class="LedgerNest.Desktop.Views.ReportsPageView"
-             x:CompileBindings="False">
+             x:CompileBindings="False" Container.Name="reports" Container.Sizing="Width">
   <UserControl.Resources>
     <local:ReportTabIconConverter x:Key="ReportTabIconConverter" />
   </UserControl.Resources>
-  <Grid RowDefinitions="Auto,Auto,*">
+  <UserControl.Styles><StyleInclude Source="/Views/SideNavigationStyles.axaml"/></UserControl.Styles>
+  <Grid RowDefinitions="Auto,*">
     <shared:PageHeaderView Title="Reports"><shared:PageHeaderView.HeaderActions><StackPanel Orientation="Horizontal" Spacing="12"><Button Tag="Refresh" Command="{Binding RefreshCommand}" ToolTip.Tip="Refresh" AutomationProperties.Name="Refresh" Classes="action-icon header-icon-action">
           <TextBlock Text="{icons:FontAwesomeGlyph refresh}" Classes="action-icon-glyph" Foreground="White" />
         </Button></StackPanel></shared:PageHeaderView.HeaderActions></shared:PageHeaderView>
 
-    <Border Grid.Row="1" Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,0,1" Padding="6.4,4.8">
-      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-        <ListBox ItemsSource="{Binding ReportTabs}"
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*">
+      <Border Classes="page-side-navigation" x:Name="ReportsNavigationRail">
+        <ScrollViewer x:Name="ReportsNavigationScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="8">
+        <ListBox x:Name="ReportNavigation" ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ItemsSource="{Binding ReportTabs}"
                  SelectedItem="{Binding SelectedReport, Mode=TwoWay}"
                  Background="Transparent"
                  BorderThickness="0">
           <ListBox.ItemsPanel>
-            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="3.2" /></ItemsPanelTemplate>
+            <ItemsPanelTemplate><StackPanel Orientation="Vertical" Spacing="4" /></ItemsPanelTemplate>
           </ListBox.ItemsPanel>
           <ListBox.Styles>
             <Style Selector="ListBoxItem">
-              <Setter Property="Padding" Value="14,8" />
-              <Setter Property="Margin" Value="2,0" />
+              <Setter Property="Padding" Value="8,6" /><Setter Property="MinHeight" Value="48"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+              <Setter Property="Margin" Value="0,2" />
               <Setter Property="CornerRadius" Value="8" />
               <Setter Property="VerticalContentAlignment" Value="Center" />
             </Style>
@@ -46,7 +49,7 @@
           </ListBox.Styles>
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <Button Classes="report-tab"
+              <Button Classes="report-tab" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
                       Command="{Binding DataContext.SelectReportCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                       CommandParameter="{Binding}"
                       Tag="{Binding}"
@@ -54,24 +57,18 @@
                       BorderThickness="0"
                       Padding="0"
                       FontSize="13">
-                <StackPanel Orientation="Horizontal" Spacing="6.4">
+                <Grid ColumnDefinitions="24,*">
                   <TextBlock Text="{Binding Converter={StaticResource ReportTabIconConverter}}"
                              FontFamily="{DynamicResource IconFontFamily}"
                              FontSize="17"
                              VerticalAlignment="Center" />
-                  <TextBlock loc:UiLocalization.Text="{Binding}" VerticalAlignment="Center" />
-                </StackPanel>
+                  <TextBlock Grid.Column="1" loc:UiLocalization.Text="{Binding}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                </Grid>
               </Button>
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
-      </ScrollViewer>
-    </Border>
-
-    <Grid Grid.Row="2" ColumnDefinitions="200,*">
-      <Border Background="{DynamicResource AppSurfaceBrush}" BorderBrush="{DynamicResource AppOutlineBrush}" BorderThickness="0,0,1,0">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Margin="16" Spacing="6.4">
+            <Separator Margin="0,8"/>
             <TextBlock loc:UiLocalization.Text="CURRENCY" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AppMutedBrush}" />
             <RadioButton GroupName="ReportCurrency" IsChecked="True" Margin="0,2">
               <TextBlock Text="{Binding CurrencyLabel}" TextWrapping="Wrap" FontWeight="SemiBold" />
@@ -92,7 +89,7 @@
         </ScrollViewer>
       </Border>
 
-      <ContentControl Grid.Column="1" Content="{Binding CurrentContent}" />
+      <ContentControl x:Name="ReportContent" Grid.Column="1" Content="{Binding CurrentContent}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
     </Grid>
   </Grid>
 </UserControl>

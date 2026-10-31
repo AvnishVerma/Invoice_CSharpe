@@ -23,14 +23,16 @@ public sealed class AxamlArchitectureTests
     }
 
     [Fact]
-    public void SettingsShell_DeclarativeRows_HeaderBeforeNavigationAndContent()
+    public void SettingsShell_DeclarativeColumns_NavigationBesideContent()
     {
         var document = XDocument.Load(Path.Combine(Root(), "src/LedgerNest.Desktop/Views/SettingsPageView.axaml"));
         var grid = document.Descendants().First(element => element.Name.LocalName == "Grid");
-        Assert.Equal("Auto,Auto,*", grid.Attribute("RowDefinitions")!.Value);
+        Assert.Equal("Auto,*,Auto", grid.Attribute("RowDefinitions")!.Value);
+        Assert.Equal("Auto,*", grid.Attribute("ColumnDefinitions")!.Value);
         Assert.Contains("CurrentHeader", grid.Elements().First().Attribute("Content")!.Value);
         Assert.Equal("1", grid.Elements().ElementAt(1).Attribute("Grid.Row")!.Value);
-        Assert.Equal("2", grid.Elements().ElementAt(2).Attribute("Grid.Row")!.Value);
+        Assert.Equal("1", grid.Elements().ElementAt(2).Attribute("Grid.Row")!.Value);
+        Assert.Equal("1", grid.Elements().ElementAt(2).Attribute("Grid.Column")!.Value);
     }
 
     [Fact]
