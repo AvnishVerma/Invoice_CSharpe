@@ -57,7 +57,7 @@
                         Spacing="14.4"
                         HorizontalAlignment="Center">
               <StackPanel Spacing="6.4">
-                <Button x:Name="ViewButton"
+                <Button x:Name="ViewButton" ToolTip.Tip="View invoice" AutomationProperties.Name="View invoice"
                         Width="72"
                         Height="57.6"
                         Background="#1A4CAF50"
@@ -96,7 +96,7 @@
                 </StackPanel>
 
                 <StackPanel Spacing="6.4">
-                <Button x:Name="PreviewButton"
+                <Button x:Name="PreviewButton" ToolTip.Tip="Preview invoice PDF" AutomationProperties.Name="Preview invoice PDF"
                         Width="72"
                         Height="57.6"
                         Background="#1A9C27B0"
@@ -115,7 +115,7 @@
               </StackPanel>
 
               <StackPanel Spacing="6.4">
-                <Button x:Name="PrintButton"
+                <Button x:Name="PrintButton" ToolTip.Tip="Print invoice" AutomationProperties.Name="Print invoice"
                         Width="72"
                         Height="57.6"
                         Background="#1A2196F3"

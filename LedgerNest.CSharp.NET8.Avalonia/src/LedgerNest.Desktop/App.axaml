@@ -63,6 +63,10 @@
     </ResourceDictionary>
   </Application.Resources>
   <Application.Styles>
+    <Style Selector=":is(Button), TextBox, ComboBox, NumericUpDown, CalendarDatePicker, DatePicker, ToggleSwitch, CheckBox, RadioButton, Slider, TabItem, MenuItem">
+      <Setter Property="local:UiTooltips.Enabled" Value="True"/>
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True"/>
+    </Style>
     <FluentTheme DensityStyle="Compact" />
     <Style Selector="ToggleButton.form-toggle /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
