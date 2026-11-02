@@ -1023,21 +1023,44 @@ internal static class Program
         Capture("issue-05-simple-feed");
         foreach (var route in MainWindowViewModel.Routes) { NavigateForCapture(route); Capture(route.Replace(" ", "-").ToLowerInvariant()); }
         foreach (var settings in new[] { "Company Info", "Backup", "Users", "PDF Settings", "Invoice Settings", "Product Details", "Accessibility", "Software Info" }) { Click(settings); Capture("settings-" + settings.Replace(" ", "-").ToLowerInvariant()); }
-        void CheckSettingsColumns(string tab, string leftText, string rightText)
+        void CheckSettingsPanelLayout(string tab, string leftText, string rightText)
         {
             Click(tab); Settle();
             var left = window.GetVisualDescendants().OfType<TextBlock>().First(text => text.IsEffectivelyVisible && text.Text == leftText);
             var right = window.GetVisualDescendants().OfType<TextBlock>().First(text => text.IsEffectivelyVisible && text.Text == rightText);
-            Check(left.TranslatePoint(default, window) is { } leftPoint && right.TranslatePoint(default, window) is { } rightPoint && rightPoint.X > leftPoint.X + 120,
-                $"{tab} must use the common two-column settings layout");
+            if (tab is "License" or "Software Info")
+            {
+                Check(left.TranslatePoint(default, window) is { } top && right.TranslatePoint(default, window) is { } bottom &&
+                    Math.Abs(top.X - bottom.X) <= 1 && bottom.Y > top.Y,
+                    $"{tab} panels must stack in one aligned column");
+                var scroll = right.GetVisualAncestors().OfType<ScrollViewer>().First();
+                Check(scroll.HorizontalScrollBarVisibility == Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled && scroll.Extent.Width <= scroll.Viewport.Width + 1,
+                    $"{tab} must not require horizontal scrolling");
+            }
+            else
+                Check(left.TranslatePoint(default, window) is { } leftPoint && right.TranslatePoint(default, window) is { } rightPoint && rightPoint.X > leftPoint.X + 120,
+                    $"{tab} must use the common two-column settings layout");
         }
-        CheckSettingsColumns("Backup", "Backup actions", "Backup history");
-        CheckSettingsColumns("Users", "User summary", "USER");
-        CheckSettingsColumns("Permissions", "PERMISSIONS FOR ROLE", "RESOURCE");
+        CheckSettingsPanelLayout("Backup", "Backup actions", "Backup history");
+        CheckSettingsPanelLayout("Users", "User summary", "USER");
+        CheckSettingsPanelLayout("Permissions", "PERMISSIONS FOR ROLE", "RESOURCE");
         Capture("settings-permissions-two-column");
-        CheckSettingsColumns("License", "License status", "Activate this device");
-        Capture("settings-license-two-column");
-        CheckSettingsColumns("Software Info", "App Details", "Application Updates");
+        CheckSettingsPanelLayout("License", "License status", "Activate this device");
+        Capture("settings-license-one-column");
+        CheckSettingsPanelLayout("Software Info", "App Details", "Application Updates");
+        if (model.CurrentRole == "Admin" && model.HasPermission("Settings", "Update"))
+        {
+            Click("Communication"); Settle();
+            var communicationView = window.GetVisualDescendants().OfType<CommunicationSettingsView>().SingleOrDefault();
+            Check(communicationView != null, "Communication must use the existing settings navigation and AXAML content host");
+            var credentialFields = communicationView!.GetVisualDescendants().OfType<TextBox>().Where(field => field.PasswordChar != '\0').ToArray();
+            Check(credentialFields.Length == 3 && credentialFields.All(field => string.IsNullOrEmpty(field.Text)),
+                "Communication must mask all three credentials without revealing saved secrets");
+            Capture("settings-communication");
+        }
+        else
+            Check(!window.GetVisualDescendants().OfType<Button>().Any(button => button.Tag?.ToString() == "Communication"),
+                "Communication settings must remain hidden without administrator settings-update authorization");
         Click("Accessibility"); Settle();
         Check(!window.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsEffectivelyVisible && text.Text == "Create Invoice Layout"),
             "Accessibility must not expose invoice-layout configuration");
@@ -1053,7 +1076,7 @@ internal static class Program
                          (Tab: "Software Info", Left: "App Details", Right: "Application Updates")
                      })
             {
-                CheckSettingsColumns(layout.Tab, layout.Left, layout.Right);
+                CheckSettingsPanelLayout(layout.Tab, layout.Left, layout.Right);
                 Check(window.GetVisualDescendants().OfType<ScrollViewer>().Any(viewer => viewer.IsEffectivelyVisible),
                     $"{layout.Tab} must remain scrollable at compact width");
             }

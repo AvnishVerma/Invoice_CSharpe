@@ -106,7 +106,8 @@ public partial class App : Avalonia.Application
             var databasePath = profile.Provider == DatabaseProvider.Sqlite
                 ? new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(profile.ConnectionString).DataSource : null;
             var nextModel = new MainWindowViewModel(nextProvider.GetRequiredService<Microsoft.EntityFrameworkCore.IDbContextFactory<LedgerNestDbContext>>(),
-                databasePath, nextProvider.GetRequiredService<ILicenseService>(), companyContext);
+                databasePath, nextProvider.GetRequiredService<ILicenseService>(), companyContext,
+                nextProvider.GetRequiredService<CommunicationStore>(), nextProvider.GetServices<INotificationProvider>().ToArray());
             var printService = nextProvider.GetRequiredService<IPrintServiceFactory>().Create();
             var nextWindow = new MainWindow(printService, nextProvider.GetRequiredService<IPdfGenerator>(), nextProvider.GetRequiredService<IToastService>())
             { DataContext = nextModel };

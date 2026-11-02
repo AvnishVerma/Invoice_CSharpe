@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using LedgerNest.Domain;
 
 namespace LedgerNest.Infrastructure;
 
@@ -35,6 +36,13 @@ public static class DependencyInjection
         services.AddSingleton<AuthorizationService>();
         services.AddSingleton<QuotationService>();
         services.AddSingleton<InvoiceLifecycleService>();
+        services.AddSingleton<ICommunicationProtection, WindowsCommunicationProtection>();
+        services.AddSingleton<CommunicationStore>();
+        services.AddSingleton<INotificationProvider, EmailNotificationProvider>();
+        services.AddSingleton<INotificationProvider>(_ => new CloudNotificationProvider(DeliveryChannel.WhatsApp,
+            new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })));
+        services.AddSingleton<INotificationProvider>(_ => new CloudNotificationProvider(DeliveryChannel.Telegram,
+            new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })));
         return services;
     }
 }

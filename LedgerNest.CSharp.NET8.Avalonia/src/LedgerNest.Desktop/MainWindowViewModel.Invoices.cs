@@ -263,6 +263,7 @@ public partial class MainWindowViewModel
         InvoiceChanged?.Invoke();
         OnPropertyChanged(nameof(CanVoidCurrentInvoice));
         Status = $"Invoice {invoice.InvoiceNumber} voided.";
+        RecordCommunicationEvent("Invoice voided", invoice.Id, $"void:{invoice.Id}");
         return true;
     }
 
@@ -291,6 +292,7 @@ public partial class MainWindowViewModel
             ["Items"] = Lines.Count.ToString(), ["Total"] = Totals.Total.ToString("0.00"), ["Status"] = documentStatus
         };
         int sourceId;
+        var wasNewInvoice = editingDocument == null;
         try
         {
             _ = InvoiceEditRules.ResolveDate(InvoiceDetails[1].Value, OrderTime.Value);
@@ -311,6 +313,12 @@ public partial class MainWindowViewModel
         MarkInvoiceFormClean();
         InvoiceChanged?.Invoke();
         Status = $"{InvoiceDetails[0].Value} saved.";
+        if (wasNewInvoice && sourceId > 0 && InvoiceDetails[0].Value == "Invoice")
+        {
+            RecordCommunicationEvent("New invoice", sourceId, $"created:{sourceId}");
+            RecordCommunicationEvent("Invoice finalized", sourceId, $"finalized:{sourceId}");
+            QueueAutomaticDelivery(saved);
+        }
         return true;
     }
 

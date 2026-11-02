@@ -75,6 +75,7 @@ public partial class MainWindowViewModel
         RequiresPasswordChange = requiresPasswordChange;
         if (username == null) sessionWarning?.Stop();
         else SessionWarning.Start(DateTimeOffset.UtcNow + SessionExpiryMonitor.LocalSessionLifetime);
+        ResetCommunicationSession();
         OnPropertyChanged(nameof(CurrentUsername));
         OnPropertyChanged(nameof(CurrentRole));
         OnPropertyChanged(nameof(RequiresPasswordChange));

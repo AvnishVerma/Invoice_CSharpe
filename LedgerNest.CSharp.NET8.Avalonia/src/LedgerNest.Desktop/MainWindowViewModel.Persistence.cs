@@ -539,6 +539,7 @@ public partial class MainWindowViewModel
         invoice.Status = invoice.BalanceAmount == 0 ? "Paid" : invoice.PaidAmount > 0.005m ? "Partial" : "Unpaid";
         db.SaveChanges();
         paymentTransaction.Commit();
+        RecordCommunicationEvent("Payment received", invoice.Id, $"payment:{payment.Id}", payment.Amount);
 
         var receiptNumber = NextReceiptNumber(invoice.InvoiceNumber, Payments.Where(p => p["InvoiceId"] == invoice.Id.ToString()).Select(p => p.Name).ToArray());
         Payments.Add(new UiRecord

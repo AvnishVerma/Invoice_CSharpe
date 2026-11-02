@@ -22,12 +22,13 @@ public partial class MainWindow
         [
             new("Company Info", "business"), new("Backup", "backup"), new("Users", "people"), new("Permissions", "admin_panel_settings"),
             new("PDF Settings", "settings"), new("Invoice Settings", "receipt_long"), new("Product Details", "view_column"),
-            new("Accessibility", "accessibility_new"), new("License", "lock"), new("Software Info", "info_outline")
+            new("Accessibility", "accessibility_new"), new("Communication", "email"), new("License", "lock"), new("Software Info", "info_outline")
         ];
         tabs = tabs.Where(tab => tab.Label switch
         {
             "Users" => Model.HasPermission("User", "View"),
             "Permissions" => Model.HasPermission("Permission", "View"),
+            "Communication" => Model.CanConfigureCommunication,
             _ => true
         }).ToArray();
         if (!tabs.Any(tab => tab.Label == settingsTab)) settingsTab = tabs.First().Label;
@@ -42,6 +43,9 @@ public partial class MainWindow
         return name switch
     {
         "Company Info" => CompanySettingsView(),
+        "Communication" => Model.CanConfigureCommunication
+            ? new CommunicationSettingsView { DataContext = new CommunicationSettingsViewModel(Model) }
+            : Ui.Empty("Access denied", "Administrator settings access is required."),
         "Customize" => CustomizationView(),
         "PDF Settings" => PdfSettingsView(),
         "Product Details" => ProductDetailsSettingsView(),

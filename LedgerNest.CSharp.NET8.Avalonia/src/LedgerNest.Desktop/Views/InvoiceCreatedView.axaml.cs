@@ -17,7 +17,8 @@ public sealed partial class InvoiceCreatedView : UserControl
         Func<Task> preview,
         Func<Task> print,
         Action createNew,
-        Action applyPayment)
+        Action applyPayment,
+        Action<string>? delivery = null)
     {
         InitializeComponent();
         DateText.Text = DateTime.Today.ToString("dd/MM/yyyy");
@@ -34,5 +35,10 @@ public sealed partial class InvoiceCreatedView : UserControl
         CreateNewButton.Click += (_, _) => createNew();
         PaymentActionPanel.IsVisible = canApplyPayment;
         ApplyPaymentButton.Click += (_, _) => applyPayment();
+        DeliveryActions.IsVisible = delivery != null;
+        SendEmailButton.Click += (_, _) => delivery?.Invoke("Email");
+        SendWhatsAppButton.Click += (_, _) => delivery?.Invoke("WhatsApp");
+        SendBothButton.Click += (_, _) => delivery?.Invoke("Both");
+        ResendInvoiceButton.Click += (_, _) => delivery?.Invoke("Resend");
     }
 }

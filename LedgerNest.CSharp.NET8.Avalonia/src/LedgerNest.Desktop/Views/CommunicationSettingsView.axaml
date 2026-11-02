@@ -1,0 +1,113 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:LedgerNest.Desktop" xmlns:domain="using:LedgerNest.Domain" xmlns:views="using:LedgerNest.Desktop.Views"
+ x:Class="LedgerNest.Desktop.Views.CommunicationSettingsView" x:DataType="vm:CommunicationSettingsViewModel" x:Name="Root">
+ <views:ScreenScaffoldView>
+  <views:ScreenScaffoldView.PageHeader><views:PageHeaderView Title="Communication Integrations" DataContext="{Binding DataContext, ElementName=Root}"/></views:ScreenScaffoldView.PageHeader>
+  <views:ScreenScaffoldView.PageBody>
+   <Grid RowDefinitions="Auto,*">
+    <StackPanel Margin="16" Spacing="8">
+     <TextBlock Text="{Binding Status}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+     <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Height="4"/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled" AllowAutoHide="False">
+     <StackPanel Margin="{DynamicResource PageContentPadding}" Spacing="16" IsEnabled="{Binding !IsBusy}">
+      <TextBlock Text="Integrations are optional. Enable only configured channels. WhatsApp uses approved Meta templates; Telegram supports plain text or safe HTML headings. Test actions send only to the test destination you enter." TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
+      <ItemsControl ItemsSource="{Binding Channels}">
+       <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:CommunicationChannelEditor">
+         <views:SettingsSectionView Title="{Binding Title}" Margin="0,0,0,16">
+          <views:SettingsSectionView.Body>
+           <StackPanel Spacing="12">
+            <views:FormFieldsView DataContext="{Binding Fields}"/>
+            <TextBlock Text="Administrator notifications" FontWeight="SemiBold"/>
+            <TextBlock Text="Daily reports cover the previous day. Weekly reports cover the previous Monday–Sunday. Reports queue when the application is open and signed in." TextWrapping="Wrap"/>
+            <views:FormFieldsView DataContext="{Binding Events}"/>
+            <WrapPanel>
+             <Button Content="Test Connection / Validate Token" Classes="action" Margin="0,0,8,8" Command="{ReflectionBinding DataContext.TestCommand, ElementName=Root}" CommandParameter="{Binding}" ToolTip.Tip="Validate the provider connection. SMTP authentication is checked by Send Test."/>
+             <Button Content="Send Test Message" Classes="action" Margin="0,0,8,8" Command="{ReflectionBinding DataContext.SendTestCommand, ElementName=Root}" CommandParameter="{Binding}" ToolTip.Tip="Sends a real test only to the configured test recipient."/>
+             <Button Content="Reset Configuration" Classes="action destructive" Margin="0,0,0,8" Command="{Binding ResetCommand}" ToolTip.Tip="Resets this channel. Save Configuration to persist the reset."/>
+            </WrapPanel>
+           </StackPanel>
+          </views:SettingsSectionView.Body>
+         </views:SettingsSectionView>
+        </DataTemplate>
+       </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <views:SettingsSectionView Title="Notification templates and automatic delivery">
+       <views:SettingsSectionView.Body>
+        <StackPanel Spacing="12">
+         <TextBlock Text="Placeholders: {InvoiceNumber}, {CompanyName}, {CustomerName}, {InvoiceDate}, {Currency}, {TotalAmount}, {PaymentStatus}, {Footer}. WhatsApp content must match the approved template, not this free-form body." TextWrapping="Wrap"/>
+         <views:FormFieldsView DataContext="{Binding TemplateFields}"/>
+         <Button Content="Preview Message" Command="{Binding PreviewCommand}" Classes="action"/>
+         <TextBlock Text="{Binding Preview}" TextWrapping="Wrap"/>
+         <CheckBox IsChecked="{Binding ConfirmPendingDisable}"><TextBlock Text="Confirm pausing pending notifications when disabling an integration" TextWrapping="Wrap"/></CheckBox>
+         <views:SettingsActionsView SaveCommand="{Binding SaveCommand}" SaveLabel="Save Configuration"/>
+        </StackPanel>
+       </views:SettingsSectionView.Body>
+      </views:SettingsSectionView>
+      <views:SettingsSectionView Title="Customer communication consent">
+       <views:SettingsSectionView.Body>
+        <StackPanel Spacing="10">
+         <TextBlock Text="Record explicit customer consent before enabling delivery. Telegram also requires a verified destination. Customer contact details remain in Customer management." TextWrapping="Wrap"/>
+         <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" HorizontalAlignment="Stretch" AutomationProperties.Name="Customer for communication consent">
+          <ComboBox.ItemTemplate><DataTemplate x:DataType="vm:UiRecord"><TextBlock Text="{Binding Name}" TextWrapping="Wrap"/></DataTemplate></ComboBox.ItemTemplate>
+         </ComboBox>
+         <CheckBox Content="Customer opted in to invoice email" IsChecked="{Binding EmailConsent}"/>
+         <CheckBox Content="Customer opted in to invoice WhatsApp" IsChecked="{Binding WhatsAppConsent}"/>
+         <CheckBox Content="Customer opted in to invoice Telegram" IsChecked="{Binding TelegramConsent}"/>
+         <TextBox Text="{Binding TelegramChatId}" PlaceholderText="Telegram Chat ID" AutomationProperties.Name="Customer Telegram Chat ID"/>
+         <WrapPanel>
+          <Button Content="Verify Telegram Destination" Command="{Binding VerifyTelegramCommand}" Classes="action" Margin="0,0,8,8"/>
+          <Button Content="Save Customer Consent" Command="{Binding SaveConsentCommand}" Classes="action" Margin="0,0,0,8"/>
+         </WrapPanel>
+        </StackPanel>
+       </views:SettingsSectionView.Body>
+      </views:SettingsSectionView>
+      <views:SettingsSectionView Title="Notification history">
+       <views:SettingsSectionView.Body>
+        <StackPanel Spacing="12">
+         <TextBox Text="{Binding Filter}" PlaceholderText="Filter by invoice, customer ID, recipient or status" AutomationProperties.Name="Notification history search"/>
+         <ComboBox ItemsSource="{Binding ChannelFilters}" SelectedItem="{Binding ChannelFilter}" AutomationProperties.Name="Notification channel"/>
+         <WrapPanel>
+          <CalendarDatePicker SelectedDate="{Binding FromDate}" PlaceholderText="From date" AutomationProperties.Name="History from date" Margin="0,0,8,8"/>
+          <CalendarDatePicker SelectedDate="{Binding ToDate}" PlaceholderText="To date" AutomationProperties.Name="History to date" Margin="0,0,0,8"/>
+         </WrapPanel>
+         <Button Content="Refresh History" Command="{Binding RefreshCommand}" Classes="action"/>
+         <TextBlock Text="Sent means accepted by the provider, not confirmed delivered. Interrupted sends require checking provider history before manual retry. Latest 500 records are shown." TextWrapping="Wrap"/>
+         <CheckBox IsChecked="{Binding ConfirmResend}"><TextBlock Text="I checked provider history and authorize retry / resend" TextWrapping="Wrap"/></CheckBox>
+         <ItemsControl ItemsSource="{Binding FilteredHistory}">
+          <ItemsControl.ItemTemplate>
+           <DataTemplate x:DataType="domain:DeliveryJob">
+            <Border Classes="card" Padding="12" Margin="0,0,0,10">
+             <StackPanel Spacing="6">
+              <TextBlock Text="{Binding NotificationType}" FontWeight="Bold"/>
+              <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding InvoiceNumber, StringFormat='Invoice: {0}'}"/>
+              <TextBlock Text="{Binding CustomerId, StringFormat='Customer ID: {0}'}"/>
+              <TextBlock Text="{Binding Channel}"/><TextBlock Text="{Binding Recipient}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding State}" FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding CreatedAt, StringFormat='Created: {0}'}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding SentAt, StringFormat='Submitted: {0}'}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding LastAttemptAt, StringFormat='Last attempt: {0}'}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding NextAttemptAt, StringFormat='Next allowed attempt: {0}'}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding RetryCount, StringFormat='Attempts: {0}'}"/>
+              <TextBlock Text="{Binding ProviderMessageId, StringFormat='Provider ID: {0}'}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding Error}" TextWrapping="Wrap"/>
+              <WrapPanel>
+               <Button Content="Retry Failed" Command="{ReflectionBinding DataContext.RetryCommand, ElementName=Root}" CommandParameter="{Binding}" Classes="action" Margin="0,0,8,8"/>
+               <Button Content="Resend Submitted" Command="{ReflectionBinding DataContext.ResendCommand, ElementName=Root}" CommandParameter="{Binding}" Classes="action" Margin="0,0,0,8"/>
+              </WrapPanel>
+             </StackPanel>
+            </Border>
+           </DataTemplate>
+          </ItemsControl.ItemTemplate>
+         </ItemsControl>
+        </StackPanel>
+       </views:SettingsSectionView.Body>
+      </views:SettingsSectionView>
+     </StackPanel>
+    </ScrollViewer>
+   </Grid>
+  </views:ScreenScaffoldView.PageBody>
+ </views:ScreenScaffoldView>
+</UserControl>

@@ -67,8 +67,11 @@ public partial class MainWindowViewModel : ObservableObject
         InvoiceOptions[4].Number, AdditionalCosts.Sum(c => c[1].Number),
         InvoiceOptions[0].Value switch { "Amount" => InvoiceDiscountKind.Amount, "Percentage" => InvoiceDiscountKind.Percent, _ => InvoiceDiscountKind.None }, InvoiceOptions[1].Number);
     public event Action? InvoiceChanged;
-    public MainWindowViewModel(IDbContextFactory<LedgerNestDbContext>? dbFactory = null, string? databasePath = null, ILicenseService? licenseService = null, CompanyWorkspaceContext? companyContext = null)
+    public MainWindowViewModel(IDbContextFactory<LedgerNestDbContext>? dbFactory = null, string? databasePath = null, ILicenseService? licenseService = null, CompanyWorkspaceContext? companyContext = null,
+        CommunicationStore? communicationStore = null, IReadOnlyList<INotificationProvider>? communicationProviders = null)
     {
+        this.communicationStore = communicationStore;
+        this.communicationProviders = communicationProviders;
         this.dbFactory = dbFactory;
         this.databasePath = databasePath;
         CompanyContext = companyContext;

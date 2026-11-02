@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly Avalonia.Threading.DispatcherTimer sessionTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly Avalonia.Threading.DispatcherTimer licenseTimer = new() { Interval = TimeSpan.FromMinutes(1) };
     private readonly Avalonia.Threading.DispatcherTimer updateTimer = new() { Interval = TimeSpan.FromMinutes(30) };
+    private readonly Avalonia.Threading.DispatcherTimer communicationTimer = new() { Interval = TimeSpan.FromSeconds(30) };
     public MainWindow() : this(new PrintServiceFactory().Create(), new TemporaryPdfGenerator(), new AvaloniaToastService(), new HttpAppUpdateService())
     {
     }
@@ -51,9 +52,11 @@ public partial class MainWindow : Window
         sessionTimer.Tick += (_, _) => { if (DataContext is MainWindowViewModel vm) { vm.SessionWarning.Tick(); if (!vm.SessionWarning.IsActive) sessionTimer.Stop(); } };
         licenseTimer.Tick += (_, _) => { if (DataContext is MainWindowViewModel vm) vm.RefreshLicense(); };
         updateTimer.Tick += async (_, _) => await CheckForUpdatesAsync(silent: true);
+        communicationTimer.Tick += async (_, _) => { if (DataContext is MainWindowViewModel vm) await vm.RunCommunicationAsync(); };
         Opened += async (_, _) =>
         {
             licenseTimer.Start();
+            communicationTimer.Start();
             await CheckForUpdatesAsync(silent: true);
         };
         Closed += (_, _) =>
@@ -64,6 +67,8 @@ public partial class MainWindow : Window
             toastTimer?.Stop();
             licenseTimer.Stop();
             sessionTimer.Stop();
+            communicationTimer.Stop();
+            shellModel?.StopCommunication();
             shellModel?.SessionWarning.Dispose();
             page.Content = null;
         };

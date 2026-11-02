@@ -135,6 +135,12 @@
 
             </StackPanel>
 
+            <WrapPanel x:Name="DeliveryActions" IsVisible="False">
+              <Button x:Name="SendEmailButton" Content="Send Email" Classes="action" Margin="0,0,8,8" ToolTip.Tip="Queue this saved invoice for an enabled email integration and consented customer."/>
+              <Button x:Name="SendWhatsAppButton" Content="Send WhatsApp" Classes="action" Margin="0,0,8,8" ToolTip.Tip="Queue this saved invoice using an approved WhatsApp template."/>
+              <Button x:Name="SendBothButton" Content="Send Both" Classes="action" Margin="0,0,0,8" ToolTip.Tip="Queue email and WhatsApp; existing initial deliveries are not duplicated."/>
+              <Button x:Name="ResendInvoiceButton" Content="Resend Invoice" Classes="action" Margin="8,0,0,8" ToolTip.Tip="Create a new email and WhatsApp delivery request for this saved invoice, including channels already sent."/>
+            </WrapPanel>
             <Button x:Name="CreateNewButton"
                     Tag="Create New Invoice"
                     HorizontalAlignment="Stretch"

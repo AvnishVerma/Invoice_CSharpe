@@ -87,6 +87,20 @@ public partial class MainWindow
             () => ShowPdfPreviewAsync(document),
             () => PrintDocumentAsync(document),
             () => { Model.StartDocument("Invoice"); if (!Model.HasPendingInvoiceNavigation) page.Content = InvoiceEditor(); },
-            () => ShowPayment(document));
+            () => ShowPayment(document),
+            channel =>
+            {
+                try
+                {
+                    LedgerNest.Domain.DeliveryChannel[] channels = channel is "Both" or "Resend"
+                        ? [LedgerNest.Domain.DeliveryChannel.Email, LedgerNest.Domain.DeliveryChannel.WhatsApp]
+                        : [Enum.Parse<LedgerNest.Domain.DeliveryChannel>(channel)];
+                    var count = Model.QueueCustomerDelivery(document, channels, resend: channel == "Resend");
+                    Model.Status = count > 0 ? $"Queued {count} invoice delivery requests." : "Nothing queued. Check enabled integrations, customer consent and existing delivery history.";
+                }
+                catch (InvalidOperationException e) { Model.Status = e.Message; }
+                catch (UnauthorizedAccessException e) { Model.Status = e.Message; }
+                catch { Model.Status = "Could not queue invoice delivery. Review Communication settings."; }
+            });
     }
 }
