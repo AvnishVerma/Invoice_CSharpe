@@ -11,6 +11,8 @@ namespace LedgerNest.Desktop;
 
 public sealed class CommunicationChannelEditor : ObservableObject
 {
+    private bool isSelected;
+    public bool IsSelected { get => isSelected; set => SetProperty(ref isSelected, value); }
     public ChannelConfiguration Configuration { get; }
     public string Title => Configuration.Channel.ToString();
     public FormFieldsViewModel Fields { get; }
@@ -102,6 +104,24 @@ public sealed partial class CommunicationSettingsViewModel : ObservableObject, I
     private readonly MainWindowViewModel workspace;
     private CommunicationConfiguration configuration;
     public ObservableCollection<CommunicationChannelEditor> Channels { get; } = [];
+    public IReadOnlyList<Views.SettingsTabModel> Sections { get; } =
+    [new("Email", "email"), new("WhatsApp", "phone"), new("Telegram", "send"),
+        new("Templates", "description"), new("Customer Consent", "person"), new("History", "history")];
+    public IRelayCommand<string> SelectSectionCommand => new RelayCommand<string>(SelectSection);
+    private string selectedSection = "Email";
+    public bool ShowTemplates => selectedSection == "Templates";
+    public bool ShowConsent => selectedSection == "Customer Consent";
+    public bool ShowHistory => selectedSection == "History";
+    public void SelectSection(string? section)
+    {
+        if (!Sections.Any(s => s.Label == section)) return;
+        selectedSection = section!;
+        foreach (var item in Sections) item.IsSelected = item.Label == section;
+        foreach (var channel in Channels) channel.IsSelected = channel.Title == section;
+        OnPropertyChanged(nameof(ShowTemplates));
+        OnPropertyChanged(nameof(ShowConsent));
+        OnPropertyChanged(nameof(ShowHistory));
+    }
     public ObservableCollection<DeliveryJob> History { get; } = [];
     public IReadOnlyList<UiRecord> Customers { get; }
     [ObservableProperty] private UiRecord? selectedCustomer;
@@ -142,6 +162,7 @@ public sealed partial class CommunicationSettingsViewModel : ObservableObject, I
         if (!workspace.CanConfigureCommunication) throw new UnauthorizedAccessException("Administrator settings access is required.");
         configuration = workspace.CommunicationStore.LoadConfiguration();
         foreach (var channel in configuration.Channels) Channels.Add(new(channel));
+        SelectSection(selectedSection);
         Customers = workspace.Customers.Where(c => c.SourceId > 0).ToArray();
         Automatic = new("Automatically deliver finalized invoices to consented customers", configuration.AutomaticInvoices ? "true" : "false", "toggle");
         subject = new("Email Subject", configuration.Subject);
@@ -210,6 +231,7 @@ public sealed partial class CommunicationSettingsViewModel : ObservableObject, I
         workspace.CommunicationStore.SaveConfiguration(next); configuration = next;
         // Rebuild editors so credentials are blank and subsequent saves retain the newly stored secret.
         Channels.Clear(); foreach (var channel in next.Channels) Channels.Add(new(channel));
+        SelectSection(selectedSection);
         Status = "Communication configuration saved. Tests do not automatically enable integrations.";
     });
     private async Task Test(CommunicationChannelEditor? editor, bool send)

@@ -4,7 +4,24 @@
  <views:ScreenScaffoldView>
   <views:ScreenScaffoldView.PageHeader><views:PageHeaderView Title="Communication Integrations" DataContext="{Binding DataContext, ElementName=Root}"/></views:ScreenScaffoldView.PageHeader>
   <views:ScreenScaffoldView.PageBody>
-   <Grid RowDefinitions="Auto,*">
+   <views:SettingsNavigationShellView>
+    <views:SettingsNavigationShellView.Navigation>
+     <ItemsControl ItemsSource="{Binding Sections}" Margin="8,0">
+      <ItemsControl.ItemTemplate>
+       <DataTemplate x:DataType="views:SettingsTabModel">
+        <Button Classes="nav" Classes.selected="{Binding IsSelected}" MinHeight="48" Margin="0,0,0,4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="12,6"
+         Command="{ReflectionBinding DataContext.SelectSectionCommand, ElementName=Root}" CommandParameter="{Binding Label}" ToolTip.Tip="{Binding Label}" AutomationProperties.Name="{Binding Label}">
+         <Grid ColumnDefinitions="24,8,*">
+          <TextBlock Text="{Binding Icon, Converter={StaticResource FontAwesomeGlyphConverter}}" FontFamily="{DynamicResource IconFontFamily}" FontSize="18" VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="2" vm:UiLocalization.Text="{Binding Label}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+         </Grid>
+        </Button>
+       </DataTemplate>
+      </ItemsControl.ItemTemplate>
+     </ItemsControl>
+    </views:SettingsNavigationShellView.Navigation>
+    <views:SettingsNavigationShellView.Body>
+   <Grid RowDefinitions="Auto,*,Auto">
     <StackPanel Margin="16" Spacing="8">
      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
      <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsBusy}" Height="4"/>
@@ -15,7 +32,7 @@
       <ItemsControl ItemsSource="{Binding Channels}">
        <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:CommunicationChannelEditor">
-         <views:SettingsSectionView Title="{Binding Title}" Margin="0,0,0,16">
+         <views:SettingsSectionView Title="{Binding Title}" IsVisible="{Binding IsSelected}" Margin="0,0,0,16">
           <views:SettingsSectionView.Body>
            <StackPanel Spacing="12">
             <views:FormFieldsView DataContext="{Binding Fields}"/>
@@ -33,7 +50,7 @@
         </DataTemplate>
        </ItemsControl.ItemTemplate>
       </ItemsControl>
-      <views:SettingsSectionView Title="Notification templates and automatic delivery">
+      <views:SettingsSectionView Title="Notification templates and automatic delivery" IsVisible="{Binding ShowTemplates}">
        <views:SettingsSectionView.Body>
         <StackPanel Spacing="12">
          <TextBlock Text="Placeholders: {InvoiceNumber}, {CompanyName}, {CustomerName}, {InvoiceDate}, {Currency}, {TotalAmount}, {PaymentStatus}, {Footer}. WhatsApp content must match the approved template, not this free-form body." TextWrapping="Wrap"/>
@@ -41,11 +58,11 @@
          <Button Content="Preview Message" Command="{Binding PreviewCommand}" Classes="action"/>
          <TextBlock Text="{Binding Preview}" TextWrapping="Wrap"/>
          <CheckBox IsChecked="{Binding ConfirmPendingDisable}"><TextBlock Text="Confirm pausing pending notifications when disabling an integration" TextWrapping="Wrap"/></CheckBox>
-         <views:SettingsActionsView SaveCommand="{Binding SaveCommand}" SaveLabel="Save Configuration"/>
+
         </StackPanel>
        </views:SettingsSectionView.Body>
       </views:SettingsSectionView>
-      <views:SettingsSectionView Title="Customer communication consent">
+      <views:SettingsSectionView Title="Customer communication consent" IsVisible="{Binding ShowConsent}">
        <views:SettingsSectionView.Body>
         <StackPanel Spacing="10">
          <TextBlock Text="Record explicit customer consent before enabling delivery. Telegram also requires a verified destination. Customer contact details remain in Customer management." TextWrapping="Wrap"/>
@@ -63,7 +80,7 @@
         </StackPanel>
        </views:SettingsSectionView.Body>
       </views:SettingsSectionView>
-      <views:SettingsSectionView Title="Notification history">
+      <views:SettingsSectionView Title="Notification history" IsVisible="{Binding ShowHistory}">
        <views:SettingsSectionView.Body>
         <StackPanel Spacing="12">
          <TextBox Text="{Binding Filter}" PlaceholderText="Filter by invoice, customer ID, recipient or status" AutomationProperties.Name="Notification history search"/>
@@ -107,7 +124,10 @@
       </views:SettingsSectionView>
      </StackPanel>
     </ScrollViewer>
+   <views:SettingsActionsView Grid.Row="2" SaveCommand="{Binding SaveCommand}" SaveLabel="Save Configuration"/>
    </Grid>
+    </views:SettingsNavigationShellView.Body>
+   </views:SettingsNavigationShellView>
   </views:ScreenScaffoldView.PageBody>
  </views:ScreenScaffoldView>
 </UserControl>

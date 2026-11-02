@@ -1054,8 +1054,8 @@ internal static class Program
             var communicationView = window.GetVisualDescendants().OfType<CommunicationSettingsView>().SingleOrDefault();
             Check(communicationView != null, "Communication must use the existing settings navigation and AXAML content host");
             var credentialFields = communicationView!.GetVisualDescendants().OfType<TextBox>().Where(field => field.PasswordChar != '\0').ToArray();
-            Check(credentialFields.Length == 3 && credentialFields.All(field => string.IsNullOrEmpty(field.Text)),
-                "Communication must mask all three credentials without revealing saved secrets");
+            Check(credentialFields.Length == 1 && credentialFields.All(field => string.IsNullOrEmpty(field.Text)),
+                "Communication must mask the selected channel credential without revealing saved secrets");
             Capture("settings-communication");
         }
         else

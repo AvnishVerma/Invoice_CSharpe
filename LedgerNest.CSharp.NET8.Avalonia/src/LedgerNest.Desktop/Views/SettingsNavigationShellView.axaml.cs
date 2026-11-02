@@ -6,6 +6,10 @@ namespace LedgerNest.Desktop.Views;
 /// <summary>Provides the responsive XAML navigation rail used by settings forms with section navigation.</summary>
 public sealed partial class SettingsNavigationShellView : UserControl
 {
+    public Control? Navigation { get => NavigationHost.Content as Control; set => NavigationHost.Content = value; }
+    public Control? Promo { get => PromoHost.Content as Control; set => PromoHost.Content = value; }
+    public Control? SaveAction { get => SaveHost.Content as Control; set => SaveHost.Content = value; }
+    public Control? Body { get => ContentHost.Content as Control; set => ContentHost.Content = value; }
     public SettingsNavigationShellView()
     {
         InitializeComponent();
