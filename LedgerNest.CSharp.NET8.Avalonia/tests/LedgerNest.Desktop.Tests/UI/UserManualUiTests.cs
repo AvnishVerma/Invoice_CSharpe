@@ -16,7 +16,7 @@ public sealed class UserManualUiTests(HeadlessFixture headless)
     public Task SearchFindsInstructionsAndHandlesNoResults() => headless.Run(() =>
     {
         var model = new UserManualViewModel();
-        Assert.True(model.Topics.Count >= 14);
+        Assert.True(model.Topics.Count >= 49);
         Assert.Equal(model.Topics.Count, model.Topics.Select(t => t.Title).Distinct().Count());
         Assert.All(model.Topics, t =>
         {
@@ -32,6 +32,41 @@ public sealed class UserManualUiTests(HeadlessFixture headless)
         model.Search = "";
         Assert.False(model.HasNoResults); Assert.Equal(model.Topics.Count, model.FilteredTopics.Count);
         Assert.NotNull(model.SelectedTopic);
+    });
+
+    [Fact]
+    public Task ManualCoversEveryWorkspaceRouteAndAdministrationProcess() => headless.Run(() =>
+    {
+        var model = new UserManualViewModel();
+        var routeTopics = new Dictionary<string, string>
+        {
+            ["Dashboard"] = "Dashboard layouts and quick actions",
+            ["New Invoice"] = "Create an invoice",
+            ["Invoices"] = "Edit, clone and manage documents",
+            ["Quotations"] = "Quotation lifecycle",
+            ["Receipts"] = "Receipt lifecycle",
+            ["Customers"] = "Customer CSV import",
+            ["Products"] = "Product CSV import",
+            ["Units"] = "Unit master",
+            ["Prices"] = "Selling units and effective prices",
+            ["Inventory"] = "Post and verify a stock adjustment",
+            ["Reports"] = "Tax, customer and product reports",
+            ["Settings"] = "Company, invoice and PDF settings"
+        };
+        Assert.All(MainWindowViewModel.Routes, route =>
+        {
+            Assert.True(routeTopics.ContainsKey(route), $"Add manual coverage for route {route}.");
+            Assert.Contains(model.Topics, topic => topic.Title == routeTopics[route] && topic.Sections.Length >= 3);
+        });
+        string[] administration = ["First-time setup wizard", "Sign in, passwords and recovery", "Bank accounts and UPI QR",
+            "Invoice custom fields", "PDF layout and printing", "Users and role administration", "Permissions by resource",
+            "License activation", "Software updates and notifications", "Backup history and recovery checks",
+            "Communication templates and customer consent", "Admin notification configuration", "Daily closing process"];
+        Assert.All(administration, title => Assert.Contains(model.Topics, topic => topic.Title == title && topic.Sections.Length >= 3));
+        model.Search = "permanently";
+        Assert.Contains(model.FilteredTopics, topic => topic.Title == "Edit, clone and manage documents");
+        model.Search = "500";
+        Assert.Contains(model.FilteredTopics, topic => topic.Title == "Product CSV import");
     });
 
     [Theory]

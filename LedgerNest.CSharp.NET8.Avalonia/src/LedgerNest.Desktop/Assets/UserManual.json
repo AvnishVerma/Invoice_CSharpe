@@ -1,5 +1,16 @@
 [
   {
+    "Title": "Process index",
+    "Summary": "Find instructions for each working area. Search by the screen name, action or process mentioned below.",
+    "Sections": [
+      { "Heading": "Start and secure the application", "Text": "Read Getting started; Sign in, passwords and recovery; First-time setup wizard; Users and role administration; Permissions by resource; Users, security and session warnings; License activation; and Software updates and notifications." },
+      { "Heading": "Prepare business data", "Text": "Read Company, invoice and PDF settings; Company logo and visibility; Bank accounts and UPI QR; Customers and imports; Customer CSV import; Product CSV import; Products, units and prices; Unit master; Product fields and numbering; and Selling units and effective prices." },
+      { "Heading": "Complete daily transactions", "Text": "Read Create an invoice; Invoice customer selection; Invoice line items and custom items; Charges, adjustments and tax details; Invoice custom fields; Edit, clone and manage documents; Record and review payments; Refund an invoice; Quotation lifecycle; Receipt lifecycle; PDF layout and printing; and Inventory and barcodes." },
+      { "Heading": "Review, communicate and maintain", "Text": "Read List search, filters and exports; Revenue and receivables review; Tax, customer and product reports; Daily closing process; Email, WhatsApp and Telegram; Communication templates and customer consent; Admin notification configuration; Delivery history and retries; Backups and restore; Backup history and recovery checks; and Keyboard shortcuts and troubleshooting." },
+      { "Heading": "How to use this guide", "Text": "Select a topic from the topic list or type a phrase in Search manual. Clear search to restore every topic. Instructions describe implemented desktop workflows. An unavailable action can depend on permissions, license state or document status. Notes identify incomplete or unsupported processes rather than treating them as working features." }
+    ]
+  },
+  {
     "Title": "Getting started",
     "Summary": "Set up your business before creating your first invoice. This guide works offline and describes the LedgerNest desktop application.",
     "Sections": [
@@ -134,6 +145,329 @@
       { "Heading": "A Save action fails", "Text": "Read the validation or error message, keep the entered values and correct the indicated field. Confirm that required fields are complete, the session is valid and your role/license allows changes. If the outcome is unclear, check the relevant saved-record list before trying again. Record the action, time and safe error text for support; exclude credentials." },
       { "Heading": "An invoice is not delivered", "Text": "Confirm that the invoice saved successfully, the integration is enabled, customer contact information is valid and consent is recorded. Verify that the desktop is open and signed in. Check Communication → History. Test provider configuration using your own destination. Sent indicates acceptance only; investigate delivery at the provider before resending." },
       { "Heading": "A screen looks different", "Text": "Window size, theme, language, permissions and enabled product fields can change the layout. Scroll the content panel or its navigation list on narrow windows. Select the correct Settings or Reports category. This manual describes current desktop workflows; use the labels and validation displayed by your installed build when optional features differ." }
+    ]
+  },
+  {
+    "Title": "Sign in, passwords and recovery",
+    "Summary": "Sign in with a local account and use the supported password-management process.",
+    "Sections": [
+      { "Heading": "1. Sign in", "Text": "Enter your Username and Password on the login screen and submit. Wait for validation. If prompted to change an initial password, enter the current password, a new password of at least eight characters, and the matching confirmation. Complete any first-time setup before working." },
+      { "Heading": "2. Change your password", "Text": "Open Settings → Software Info → Change Password, or use the password action for your own user in User Management. Enter the current password, new password and confirmation, then confirm. Keep the new password private. An authorized administrator can reset another user's password through User Management without knowing the old password." },
+      { "Heading": "3. Recovery limitation", "Text": "The Forgot Password screen currently displays username, response-code and new-password fields, but its Reset Password action is not connected to a working recovery command. Do not expect it to reset an account or send an email. Return with Back to Login and contact an authorized administrator for the supported user-password reset process." },
+      { "Heading": "4. Sign out", "Text": "Save work, then use the sign-out control in the main sidebar. The session warning also offers Exit Session. Signing out cancels active communication processing; durable pending notifications can resume during a later valid signed-in session. Never rely on closing a dialog to sign out." }
+    ]
+  },
+  {
+    "Title": "First-time setup wizard",
+    "Summary": "Complete the Company, Invoice and Appearance stages using the application's guided setup.",
+    "Sections": [
+      { "Heading": "1. Open setup", "Text": "The wizard can appear after initial login. To revisit it, open Settings → Software Info → First-time Setup. Review the displayed fields against the business you are configuring." },
+      { "Heading": "2. Complete each stage", "Text": "Enter Company information and choose Continue. Review Invoice fields and continue to Appearance. Use Back to revisit the prior stage. The first stage's Cancel closes the wizard. Required-field validation prevents moving forward until the current stage is valid." },
+      { "Heading": "3. Finish and verify", "Text": "On You're all set!, choose Get Started to complete setup. If validation returns you to an earlier stage, correct the marked fields. Reopen Company Info and Invoice Settings to check the result, then preview a sample document. Do not issue a customer invoice merely as a test." }
+    ]
+  },
+  {
+    "Title": "List search, filters and exports",
+    "Summary": "Find records, adjust table presentation and export the intended scope.",
+    "Sections": [
+      { "Heading": "1. Find records", "Text": "Open Customers, Products, Invoices, Quotations, Receipts or Users as permitted. Use search, the available filters and sort controls. Document lists include customer filters where provided. Use page controls to move through results. Clear filters before concluding that a record is missing." },
+      { "Heading": "2. Choose visible columns", "Text": "Use Columns, Show Columns or Customize Product Columns as offered. Select the required columns and Apply where shown. Product-field availability is managed in Settings → Product Details. Changing table columns does not change saved record values or automatically change every PDF layout." },
+      { "Heading": "3. Export", "Text": "Use the list's Export action. Review Current Page, All Records or All Products options before saving CSV or PDF. Current-page export follows the currently displayed page; an all-record export can include more records than the visible filtered page. Reopen the file and check its rows and totals before sharing. A CSV export is a data extract, not a full application backup." },
+      { "Heading": "4. Bulk actions", "Text": "Select the intended rows, review the selection count and open Bulk Actions or More. Read Delete Selected or Delete All confirmations carefully. On document lists, check whether you are in the active list or Trash: deletion from Trash is permanent. Export or back up important records before a destructive action." }
+    ]
+  },
+  {
+    "Title": "Customer CSV import",
+    "Summary": "Import up to 200 customer data rows using the supported CSV headers and review updates to matching customers.",
+    "Sections": [
+      { "Heading": "1. Prepare the file", "Text": "Open Customers → Import and Download Sample. Use UTF-8 CSV with a header row. The required column is name. Supported standard columns include email, phone, address, business_name and tax_number. GST aliases accepted by the importer include gstin, gst and gst_vat_number. Code columns are customer_id or customer_code. Keep at most 200 data rows per file." },
+      { "Heading": "2. Review duplicates before importing", "Text": "The implemented importer matches an existing customer by nonblank email, nonblank phone, or name, ignoring case. It updates a matched record rather than opening an overwrite/skip decision for each duplicate. Back up first and check names and contacts carefully. Do not assume that omitting a column preserves every existing value: fields are built from defaults for the import." },
+      { "Heading": "3. Generate or preserve codes", "Text": "Enable customer-code Auto-generate under Invoice Settings → Customer Details if you want blank codes allocated automatically. Existing matched codes remain stable. An explicitly supplied code is used for a record without an existing code. Review the prefix, next number and leading zeros before import." },
+      { "Heading": "4. Import and reconcile", "Text": "Choose File, select one CSV and wait for Import Complete. Read imported, updated and skipped counts and the reported row errors. Missing required headers, unknown headers or too many rows reject the file; missing names are skipped and reported. Inspect a sample of both new and updated customers. Correct failed rows and import only the intended corrections." }
+    ]
+  },
+  {
+    "Title": "Product CSV import",
+    "Summary": "Import up to 500 product data rows and verify prices, types, stock and generated IDs.",
+    "Sections": [
+      { "Heading": "1. Download the schema", "Text": "Open Products → Import → Download Sample. Required columns are name and price. Use the sample's exact headers for description, HSN/SAC, tax_rate, stock, type, default_discount, purchase_price, alias_name, unit, unlimited_stock, price_includes_tax and supported metadata. Use product_id or product_code for an explicit code. Unknown headers are rejected. Split files exceeding 500 data rows." },
+      { "Heading": "2. Format values", "Text": "Use numeric prices without currency symbols and invariant decimal notation, such as 199.50. A negative or invalid required price causes the row to be skipped. Use product or service for type, and true/false or the supported numeric boolean form for switches. The default_discount import field is a flat currency amount. Use the sample's date format, such as 2027-03-31, for product date metadata." },
+      { "Heading": "3. Understand matching and numbering", "Text": "Products match existing records by name ignoring case; matching rows update those records. Back up before importing. Omitted values can use defaults, including numeric defaults, so do not treat this as a merge of only the columns you supplied. Enable product-code Auto-generate in Product Details for blank codes. Existing codes are preserved; explicit incoming codes do not replace an existing code." },
+      { "Heading": "4. Verify the result", "Text": "Choose File and review Import Complete counts and errors. Inspect product/service type, tax, price-includes-tax, units, stock, metadata and IDs before invoicing. Reconcile any changed stock with your inventory records. Correct the source data before retrying; importing the same name can update an existing product again." }
+    ]
+  },
+  {
+    "Title": "Edit, clone and manage documents",
+    "Summary": "Use document actions to edit a saved record, create a new copy, restore from Trash or permanently delete.",
+    "Sections": [
+      { "Heading": "1. Edit a saved document", "Text": "Open the document list and use Edit on the correct row. Verify the loaded number, customer, lines and state. Change only the intended fields and save. Permissions, voided status or other business rules can prevent editing. Check the saved list and PDF after the change; an earlier downloaded or emailed PDF is not changed on the recipient's device." },
+      { "Heading": "2. Clone for another transaction", "Text": "Use Clone in the document row actions when you want a new document based on an existing one. Review customer, dates, lines, prices, taxes and payment details in the editor before creating it. Confirm the new document's number after saving. Cloning is not resending and can create another business transaction." },
+      { "Heading": "3. Move to Trash and restore", "Text": "Use More actions → Move to Trash and confirm the correct record. Open Trash to find deleted documents. Use Restore to return a document to the active list, then verify its status and availability. Customer and product deletion use their own record-delete process; do not assume every record type has document Trash." },
+      { "Heading": "4. Permanent deletion", "Text": "In document Trash, Delete Permanently removes the record through the application's permanent-delete workflow. Bulk deletion also depends on which list is active. Read the confirmation, make a backup first and do not use permanent deletion to avoid normal cancellation or void records. Available actions remain subject to authorization and business validation." }
+    ]
+  },
+  {
+    "Title": "Invoice customer selection",
+    "Summary": "Choose or create the customer before reviewing invoice details.",
+    "Sections": [
+      { "Heading": "1. Search an existing customer", "Text": "Open New Invoice → Customer → Search Customer. Find the customer and select the intended record. Review the label summary for name, business, contact, tax number and address. Use a saved customer when you need communication consent linked to that customer's identity." },
+      { "Heading": "2. Create a customer", "Text": "Use Create Customer from the Customer view and complete the required fields. Review optional Use as Default and Add Another options where offered. Save the customer, then verify the customer selected for the invoice. Saving a customer is separate from creating the invoice." },
+      { "Heading": "3. Review changes and defaults", "Text": "For a walk-in or default customer, check that the displayed identity and contact details are suitable for this transaction. If editing is available, complete the changes through its supported action rather than assuming label text can be edited directly. Update long-term customer details in Customer management and review invoice details again before saving." }
+    ]
+  },
+  {
+    "Title": "Invoice line items and custom items",
+    "Summary": "Add catalog items or an invoice-only custom line and check quantity, rate, discount and tax.",
+    "Sections": [
+      { "Heading": "1. Add a catalog item", "Text": "Use product search or Ctrl+F, select a product/service and review its line. Choose the appropriate selling unit where available. Verify quantity and rate against the configured unit conversion and effective price. Remove an unintended line before creating the invoice." },
+      { "Heading": "2. Add a custom item", "Text": "Use Custom item or Ctrl+M. Enter its name, supported details, quantity, price, tax rate and discount, then choose Add Item. Quantity must be greater than zero. A custom invoice line should not be assumed to create a reusable Product master record; create that separately in Products if needed." },
+      { "Heading": "3. Review item preferences", "Text": "Invoice Settings → Invoice Items controls fractional quantities, duplicate items, product/service tags, alias names and previous balance display. If adding the same product again is rejected, review Allow Duplicate Invoice Items. Do not enable a preference simply to bypass an incorrect item selection. Check both line totals and document totals after edits." }
+    ]
+  },
+  {
+    "Title": "Charges, adjustments and tax details",
+    "Summary": "Complete the invoice's right-side tabs and review the effect of each change on totals.",
+    "Sections": [
+      { "Heading": "1. Invoice Details", "Text": "Choose the correct document type, date and time and set a due date when required. Review invoice title, number visibility and the bank/custom-number area where available. Expand the relevant section rather than leaving important options unchecked. These values belong to the document being created." },
+      { "Heading": "2. Charges", "Text": "Select Charges and use Add Row in the tab's outer action area. Enter a clear label and amount for each charge. Use a minus sign for deductions as the screen explains. Remove unwanted rows with their remove control. Check the totals after each change to avoid adding the same charge twice." },
+      { "Heading": "3. Adjustments and notes", "Text": "Select Adjustments and complete the displayed adjustment, discount, rounding or other supported fields. Add notes where provided. Use the units and amount/percentage meanings shown by each control. A description in Notes does not apply a monetary adjustment on its own." },
+      { "Heading": "4. Tax Details", "Text": "Review the tax fields and inter-state selection where applicable. Confirm registration details, place-related tax selections and item tax rates with your business's requirements. Invoice Settings → Tax & GST controls related presentation and options. Verify the resulting tax breakdown in the PDF; the application does not replace professional tax advice or perform a filing merely by creating an invoice." }
+    ]
+  },
+  {
+    "Title": "Invoice custom fields",
+    "Summary": "Define reusable document labels, order them and fill their values on each invoice.",
+    "Sections": [
+      { "Heading": "1. Enable and define", "Text": "Open Settings → Invoice Settings → Custom Fields. Turn on Enable Custom Fields. Enter a New field label, such as Vehicle No or Delivery Note, then choose Add or press Enter. Labels describe document data and are not customer-master fields." },
+      { "Heading": "2. Arrange and preview", "Text": "Edit a field label in its row. Use Move up or Move down to set order and Delete field for an unwanted definition. Review the preview or full-size example. Save the settings after changing definitions. The preview is illustrative and can differ slightly from the final PDF." },
+      { "Heading": "3. Enter invoice values", "Text": "Return to the create-invoice workflow and fill the enabled document fields in the available custom-field section. Verify the values on the saved PDF. Product metadata columns are separate: configure those under Invoice Columns rather than using custom fields as a replacement for product data." }
+    ]
+  },
+  {
+    "Title": "Record and review payments",
+    "Summary": "Record full or partial receipts against the intended invoice and verify the resulting balance.",
+    "Sections": [
+      { "Heading": "1. Open payment entry", "Text": "In Invoices, choose Payment on the correct row. Check the invoice/customer line, Total, Paid, Outstanding and the existing payment history. Payment entry requires invoice-update permission. Voided or fully paid documents do not offer another payment entry through this dialog." },
+      { "Heading": "2. Enter the received amount", "Text": "The amount initially uses the outstanding balance. Replace it with the amount actually received for a partial payment. Set the payment date, method and the displayed reference/note and tax-related fields as applicable. Read the maximum-amount hint and validation. Do not put the full invoice amount when only a partial amount was received." },
+      { "Heading": "3. Save once and reconcile", "Text": "Choose Save Payment and review the refreshed payment history and outstanding amount. The invoice can become Partial or Paid according to its balance. Reopen Payment to verify a questionable outcome before trying again. Communication administrator events report the received payment separately from the invoice total." },
+      { "Heading": "4. Corrections", "Text": "The current payment dialog lists history but does not provide a general edit/delete payment action. Do not record an invented offsetting payment or alter PDF text to conceal a mistake. Ask an authorized administrator to use an available supported correction process and preserve the audit history." }
+    ]
+  },
+  {
+    "Title": "Refund an invoice",
+    "Summary": "Create a refund from the invoice's supported refundable quantities.",
+    "Sections": [
+      { "Heading": "1. Select the invoice", "Text": "Open Invoices and choose Refund on the correct document. Check invoice number and customer before entering quantities. If refund creation is unavailable, review permissions and the document's state." },
+      { "Heading": "2. Set refund quantities", "Text": "Review each line's sold quantity and remaining refundable quantity. Enter only the quantity actually being refunded. Check the calculated line refunds and Refund total. Do not exceed the displayed remaining quantity or treat a refund as a new sale." },
+      { "Heading": "3. Confirm and review", "Text": "Enter a clear Refund reason, then choose Create Refund. If an error occurs, inspect existing refund information before repeating. A recorded refund is a business record; it does not imply that a bank, UPI or payment provider has transferred money automatically. Complete any external repayment separately and keep its reference." }
+    ]
+  },
+  {
+    "Title": "Quotation lifecycle",
+    "Summary": "Prepare, view, edit, clone or cancel a quotation using its supported document actions.",
+    "Sections": [
+      { "Heading": "1. Prepare and issue", "Text": "Open Quotations and choose New Quotation, or select the quotation document type in the supported editor. Add customer, items, dates and relevant notes, then review and save. Preview the PDF and confirm that it is labeled as a quotation before sharing it." },
+      { "Heading": "2. Follow up", "Text": "Find the quotation in its list and use View, Edit, Clone, Preview PDF or Print as available. Check document type and numbering when making a new document from existing details. Do not assume the application tracks a quote-to-invoice relationship merely because you cloned or changed a document type." },
+      { "Heading": "3. Cancel", "Text": "Choose Cancel Quotation, verify the quotation number and customer, and enter a reason. Keep Quotation backs out; Cancel Quotation confirms the cancellation. Cancellation preserves the quotation and audit history, and the dialog explains that it cannot be edited afterward. Moving a quotation to Trash is a different action." },
+      { "Heading": "4. Report limitation", "Text": "The current Quotations report includes explanatory conversion-ratio text and placeholder quotation/conversion metrics. Do not treat those placeholder values as confirmed conversion tracking. Reconcile actual quotations and invoices from their record lists." }
+    ]
+  },
+  {
+    "Title": "Receipt lifecycle",
+    "Summary": "Create and manage receipt documents without confusing them with invoice payment entries.",
+    "Sections": [
+      { "Heading": "1. Create a receipt", "Text": "Open Receipts and use New Receipt, or choose Receipt in the supported document editor. Complete customer, document and item/amount details offered by the screen. Review the document type and totals before creating it." },
+      { "Heading": "2. Review and output", "Text": "Find the saved receipt and use the available View, Edit, Clone, PDF preview, export or print actions. Review its number, date and customer. Use Trash and Restore only as appropriate for document management; permanent deletion is a separate action." },
+      { "Heading": "3. Distinguish from payment recording", "Text": "A receipt document and an invoice's Record Payment workflow are separate entry points. Do not assume that creating a standalone receipt automatically settles an existing invoice. To record money against an invoice, open that invoice's Payment action and verify its updated outstanding balance." }
+    ]
+  },
+  {
+    "Title": "Unit master",
+    "Summary": "Create, edit, deactivate or delete unit definitions used by selling-unit configuration.",
+    "Sections": [
+      { "Heading": "1. Add a unit", "Text": "Open Units → New Unit. Fill the displayed unit-definition fields, choose Active as appropriate and select Save Unit. Resolve duplicate or required-field validation before continuing. Choose names and symbols that staff can distinguish, such as piece and box." },
+      { "Heading": "2. Maintain a unit", "Text": "Select a unit in the list and choose Edit. Update the permitted fields or its Active state and Save Unit, or use Cancel to leave the edit. Refresh reloads the list. Review uses of the unit before changing its meaning." },
+      { "Heading": "3. Remove or use it", "Text": "Select Delete only for a unit that can safely be removed; read any usage restriction or confirmation. In Prices, select the product and configure the unit's base-quantity conversion. A Unit Master definition by itself does not specify how many pieces a particular product's box contains." }
+    ]
+  },
+  {
+    "Title": "Selling units and effective prices",
+    "Summary": "Configure product-specific conversions and maintain dated prices without rewriting earlier invoices.",
+    "Sections": [
+      { "Heading": "1. Choose the product", "Text": "Open Prices and select the intended product. Confirm its identity because both selling-unit configuration and price history apply to that selection. Create the required Unit Master definition first if it is missing." },
+      { "Heading": "2. Configure a selling unit", "Text": "In Configure a selling unit, select Unit from Unit Master, set Base units contained and Default selling price. Set Default unit and Available for sale as appropriate, then Save Selling Unit. For example, a box containing 20 pieces needs a conversion of 20, not a conversion equal to its currency price." },
+      { "Heading": "3. Schedule the price", "Text": "In Schedule a price, select the configured Selling unit and Price list. Enter New selling price, choose Effective from, review Active price and Save Effective Price. Use the calendar control to verify day, month and year. Check price history and the rate offered on a new invoice." }
+    ]
+  },
+  {
+    "Title": "Product fields and numbering",
+    "Summary": "Choose optional product fields and control generated product codes.",
+    "Sections": [
+      { "Heading": "1. Select visible fields", "Text": "Open Settings → Product Details. Review the product-field switches and enable the optional details your business uses. Required fields remain enabled. Metadata can include storage, container, batch, dates, manufacturer, supplier, SKU and notes where supported. Save the settings and reopen a product form to verify it." },
+      { "Heading": "2. Configure Product Code", "Text": "Set Prefix, Next Number and Leading Zeros, then review Preview and Auto-generate. Save before adding or importing records. Existing codes stay unchanged. Blank codes generate when enabled; explicit codes are preserved. Check uniqueness errors instead of repeatedly changing the counter." },
+      { "Heading": "3. Choose invoice columns separately", "Text": "Product form/list fields and invoice PDF columns are related but distinct presentation choices. Use Invoice Settings → Invoice Columns for printed metadata columns. Enter actual metadata on the product, then preview a new invoice to check the expected output." }
+    ]
+  },
+  {
+    "Title": "Company logo and visibility",
+    "Summary": "Maintain company identity and choose which details appear on generated documents.",
+    "Sections": [
+      { "Heading": "1. Update details and country", "Text": "Open Settings → Company Info. Enter the company name, registration numbers, country, phone, email, website and address. Expand the address editor where needed. Check the entire entered value rather than judging a long value only by the visible width of its field." },
+      { "Heading": "2. Upload, replace or remove a logo", "Text": "Use Upload Logo/Click to browse and choose a supported PNG or JPG within the displayed limits: up to 1080 × 1080 pixels and 2 MB. Check the preview. Use the available replacement or removal action when changing the image. Set Show on PDF as intended and Save. Reopen the screen and preview a PDF to confirm." },
+      { "Heading": "3. Set visibility and business type", "Text": "Review company-name, PAN, FSSAI, phone, email, website and address visibility switches. Hiding a field on a PDF does not remove its stored value. Choose Product, Service or Both to control available item types. Save once and wait for feedback; keep entered values and correct validation errors if saving fails." }
+    ]
+  },
+  {
+    "Title": "Bank accounts and UPI QR",
+    "Summary": "Maintain payment instructions and review their appearance on invoice PDFs.",
+    "Sections": [
+      { "Heading": "1. Add bank details", "Text": "Open Settings → Company Info and scroll to Payment Settings. Choose Add Bank Account. Complete the displayed account fields carefully and review Show Bank Details. Remove an obsolete row using its remove control only after checking that the remaining accounts are correct. Save company settings." },
+      { "Heading": "2. Add UPI accounts", "Text": "In UPI Accounts, use the add action and enter the displayed UPI details. Review Show QR Code on Invoices. Save, then preview a PDF and verify the intended payee information. A displayed UPI QR is a payment instruction; it is not an automatic confirmation that payment was received." },
+      { "Heading": "3. Use on an invoice", "Text": "In New Invoice → Invoice Details, review the bank-account/custom-number area and choose the intended bank where offered. Preview the document before sending. Confirm account and UPI changes directly with the business owner, especially before distributing new payment instructions to customers." }
+    ]
+  },
+  {
+    "Title": "Invoice branding, columns and numbering",
+    "Summary": "Configure document defaults and printed fields using Invoice Settings sections.",
+    "Sections": [
+      { "Heading": "1. General and numbering", "Text": "Open Settings → Invoice Settings → General. Review the displayed numbering, document defaults and related fields. Starting Number is restricted while invoices exist; follow the screen's explanation. Customer-code numbering is under Customer Details, and product-code numbering is under Product Details. These are separate counters." },
+      { "Heading": "2. Branding and tax options", "Text": "Use Branding for the presented brand/document options and Tax & GST for tax-related settings. Review the help text on each switch. Company identity and bank details remain under Company Info, while page/template design is under PDF Settings. Save changes and compare a PDF with your intended business format." },
+      { "Heading": "3. Printed columns", "Text": "Use Invoice Columns to choose serial number, description, HSN/SAC, quantity, tax, discount and metadata columns as offered. Item Name, Price/Rate and Total are required. Description on New Line depends on enabling description. Some presentation options apply to page PDFs and not thermal receipts, as indicated by the screen." },
+      { "Heading": "4. Customer details and save", "Text": "Review Customer Details for customer information options and code generation. Use the shared Save action after changes, then reopen representative forms and preview a saved document. A settings save does not itself create or send an invoice." }
+    ]
+  },
+  {
+    "Title": "PDF layout and printing",
+    "Summary": "Choose page and template options, preview documents, download PDFs and use an installed physical printer.",
+    "Sections": [
+      { "Heading": "1. Configure the layout", "Text": "Open Settings → PDF Settings. Select Page Size, an available compatible template, Portrait or Landscape, display options, theme color and supported font sizes. Inherit uses the default font size. Thermal layouts have separate sizing limitations. Review the live display and Save. Reset to Default changes settings; save and verify the result if you intend to keep it." },
+      { "Heading": "2. Choose a printer", "Text": "Review the Printer selection and refresh available printers where offered. Install the correct printer and driver in the operating system if it is absent. This Windows build's direct-print path requires a physical printer; file printers such as Microsoft Print to PDF are not direct-print destinations. The native Windows print dialog is not supported by that path; select a printer in PDF Settings." },
+      { "Heading": "3. Preview and download", "Text": "From a saved document, choose Preview PDF. Wait for all pages to render and inspect line wrapping, totals, payment details and custom fields. Use Download PDF to save a file through the file picker. Downloading a PDF is the supported way to obtain a document file; selecting a PDF file printer is not required." },
+      { "Heading": "4. Print and diagnose", "Text": "Use Print after selecting the intended printer and matching paper/receipt setup. Print one sample before a batch. Check physical printer status, paper, driver, spooler and page size if output is missing or clipped. A successful download does not prove that a physical print job completed. Keep the PDF for comparison when asking support about layout issues." }
+    ]
+  },
+  {
+    "Title": "Users and role administration",
+    "Summary": "Create user accounts, assign roles and reset passwords through authorized management actions.",
+    "Sections": [
+      { "Heading": "1. Create a user", "Text": "As an authorized administrator, open Settings → Users → New User. Enter the displayed username, password and role fields. Save, verify the new row and give credentials only to the intended user. Review the role's actual permissions before allowing business entry." },
+      { "Heading": "2. View or edit", "Text": "Use View for a read-only account summary or Edit for permitted username/role changes. The editor prevents changing the signed-in user's own role. Custom roles are managed under Permissions; assign only roles available in the relevant user form. Do not assume every form exposes the same role choices." },
+      { "Heading": "3. Change or reset a password", "Text": "Use the account's password action. Changing your own password requires Current Password, New Password and confirmation. An administrator resetting another user's password enters a new password and confirmation. Confirm success and communicate the replacement securely. The Forgot Password screen is not a completed self-service reset mechanism." },
+      { "Heading": "4. Remove access", "Text": "Use the permitted account-delete action only after checking the username and confirmation. Do not remove the last available administrator or assume deleting an account removes historical business records. Verify that the intended permissions and session behavior prevent further access." }
+    ]
+  },
+  {
+    "Title": "Permissions by resource",
+    "Summary": "Manage shared role permissions for View, Add, Update and Delete.",
+    "Sections": [
+      { "Heading": "1. Select or create a role", "Text": "Open Settings → Permissions. Select the role under Permissions for Role. To create a custom role, enter New role name and choose Create Role. Use a role name that describes its purpose, such as Cashier. Administrators remain unrestricted by the role matrix." },
+      { "Heading": "2. Set permissions", "Text": "For each resource, review View, Add, Update and Delete. Grant only the actions the role requires. Changes affect every user assigned to the role, not just the person currently selected elsewhere. Save Permissions using the settings Save action and read the status or validation error." },
+      { "Heading": "3. Assign and verify", "Text": "Assign the role through User Management where supported. Verify access using the intended user account and check both screen visibility and business actions. Communication configuration also requires the administrator role and Settings Update; a general ability to view Settings is insufficient." },
+      { "Heading": "4. Delete a role", "Text": "Select Delete Selected Role only when the role can safely be removed. Follow usage restrictions and displayed errors; do not expect role deletion to silently reassign users. Ensure that users retain an intentional supported role before removing an unused one." }
+    ]
+  },
+  {
+    "Title": "Revenue and receivables review",
+    "Summary": "Review sales and unpaid balances before following up with customers.",
+    "Sections": [
+      { "Heading": "1. Revenue", "Text": "Open Reports → Revenue. Review available totals, charts, breakdowns and filters. Confirm the included dates and document states before comparing periods. Use CSV or PDF export where offered, then check the exported values. A revenue amount is not automatically the same as cash received." },
+      { "Heading": "2. Receivables", "Text": "Open Reports → Receivables to review outstanding and overdue information. Find the customer/invoice behind a balance and inspect the actual invoice and payment history. A due-date condition and an outstanding amount should be checked together before telling a customer that payment is overdue." },
+      { "Heading": "3. Reconcile and follow up", "Text": "Record genuine payments through the invoice's Payment action, refresh the report and compare the changed balance. Use approved customer contact and consent processes for delivery. Do not include voided transactions or add different currencies together when reconciling a business total." }
+    ]
+  },
+  {
+    "Title": "Tax, customer and product reports",
+    "Summary": "Use each report for its intended analysis and confirm details against source records.",
+    "Sections": [
+      { "Heading": "1. Tax", "Text": "Open Reports → Tax. Review Tax Collected by Rate and the displayed tax metrics, then export if needed. Compare with saved invoice tax breakdowns and your accounting requirements. A tax report is not an electronic GST/VAT filing or a confirmation of tax payment." },
+      { "Heading": "2. Customers and products", "Text": "Open Reports → Customers to review customer totals and the available customer filter/detail context. Open Products to review product activity and the available metrics. Compare unusual results with actual invoices and master records. Export the selected report using its own action where supported." },
+      { "Heading": "3. Status and inventory", "Text": "Use Invoice Status to review status summaries, Daily Report for day-based analysis and Inventory for stock reporting. Use Quotations with the placeholder-metric limitation described in Quotation lifecycle. Barcodes is a label-printing workflow rather than a sales measure." }
+    ]
+  },
+  {
+    "Title": "Daily closing process",
+    "Summary": "A practical sequence for reviewing the day's work without inventing an unsupported accounting close command.",
+    "Sections": [
+      { "Heading": "1. Finish transactions", "Text": "Save completed invoices and review unfinished work before leaving the editor. Check customer identity, dates, lines, totals, refunds and voids. Resolve any uncertain save outcome by reviewing the record list rather than creating another invoice immediately." },
+      { "Heading": "2. Reconcile payments and stock", "Text": "Compare received money with recorded invoice payments and their methods/references. Review remaining balances under Receivables. Check Inventory movement history for receipts, stock-out, damage or corrections. Investigate discrepancies using source records rather than adding unsupported adjustments to force a match." },
+      { "Heading": "3. Review reports and delivery", "Text": "Review Daily Report, Revenue, Invoice Status and relevant Tax/Inventory reports. Check Communication → History for pending or failed messages and uncertain sends. Keep currencies separate. Administrator daily/weekly communication summaries queue only while the application is open and signed in; they are not a background server service." },
+      { "Heading": "4. Back up and sign out", "Text": "Create a backup, verify its file and store a protected copy outside the working device. Save any required report exports, then sign out. This checklist does not perform a ledger lock, tax filing, bank reconciliation submission or accounting-period close automatically." }
+    ]
+  },
+  {
+    "Title": "Communication templates and customer consent",
+    "Summary": "Prepare reusable messages and record the customer's permitted destinations before delivery.",
+    "Sections": [
+      { "Heading": "1. Templates", "Text": "Open Settings → Communication → Templates. Set Email Subject, Message Body (SMTP), Telegram Message and Footer. Use only the listed brace-delimited placeholders: {InvoiceNumber}, {CompanyName}, {CustomerName}, {InvoiceDate}, {Currency}, {TotalAmount}, {PaymentStatus} and {Footer}. Select Preview Channel and Preview Message. Unsupported or malformed placeholders fail validation." },
+      { "Heading": "2. Automatic delivery and retries", "Text": "Review Automatically deliver finalized invoices to consented customers and Retry Limit. Save configuration. Automatic delivery occurs after successful persistence of a new eligible invoice; a draft, quotation, receipt or voided/deleted invoice is not sent through that workflow. Provider failures do not undo invoice saving." },
+      { "Heading": "3. Consent", "Text": "Select Customer Consent and the saved customer. Record Email, WhatsApp and Telegram opt-in according to actual permission. For Telegram, enter the correct Chat ID, Verify Telegram Destination and Save Customer Consent. Verification checks reachability, not identity or legal consent. Save Customer Consent is distinct from the shared integration Save." },
+      { "Heading": "4. Withdraw or change", "Text": "Clear the relevant consent switch and save it when a customer opts out. Update email/phone in Customer management; verify a changed Telegram destination. Pending customer deliveries recheck consent and invoice state before sending. For a fresh delivery after correcting a contact, use Resend Invoice and inspect History for the result." }
+    ]
+  },
+  {
+    "Title": "Admin notification configuration",
+    "Summary": "Configure independent destinations and event subscriptions for each communication channel.",
+    "Sections": [
+      { "Heading": "1. Destination and channel", "Text": "As an authorized administrator, open each Email, WhatsApp or Telegram section in Communication. Configure its provider and separate Admin Email Address, Admin WhatsApp Number or Admin Chat ID. Do not put a customer destination in an administrator field. The test destination is separate and receives only explicit test actions." },
+      { "Heading": "2. Events", "Text": "Review that channel's Administrator notifications switches for new/finalized invoice, void, payment, overdue, delivery success/failure, connection failure, Daily report and Weekly report. Enable only the required events and save. WhatsApp administrator messages require the configured approved admin template, separate from its invoice-document template." },
+      { "Heading": "3. Reports and schedule", "Text": "Daily reports cover the prior local calendar day; weekly reports cover the prior Monday–Sunday. Processing runs while the desktop is open and signed in, checking periodically. It does not backfill every period missed during a long closure. Metrics use actual data, separate currencies and current balances where historical end-of-day balances cannot be reconstructed." },
+      { "Heading": "4. Disable safely", "Text": "When disabling an integration with pending work, read the warning and use the confirmation checkbox in Templates if you intend to pause those jobs. Save configuration. Review pending History before re-enabling. Changed administrator destinations or event preferences cancel affected old queued admin messages rather than sending to the former destination." }
+    ]
+  },
+  {
+    "Title": "Backup history and recovery checks",
+    "Summary": "Use the existing backup formats and verify recovery without confusing exports with complete backups.",
+    "Sections": [
+      { "Heading": "1. Choose the backup action", "Text": "Open Settings → Backup. Use the displayed database-backup or application-backup export action appropriate to the intended recovery process. Preserve the extension and format produced by the application. Do not rename CSV or PDF exports and attempt to restore them as backups." },
+      { "Heading": "2. Manage history", "Text": "Review backup names, dates and sizes. Use Download Backup or Share Backup to save a copy through the supported file workflow. Confirm that the copied file is present and usable. Delete Backup removes the selected history/file through its confirmation; keep a known-good copy before deleting old material." },
+      { "Heading": "3. Restore carefully", "Text": "Make a current backup first. Select the correct tracked Restore action or supported import action, read the confirmation and verify the company and file. A raw database backup and an application JSON backup are different formats; use the matching supported action. If a format is rejected, do not edit its internal data to bypass validation." },
+      { "Heading": "4. Validate recovery", "Text": "After a supported restore, verify counts and representative customers, products, invoices, payment balances, settings, users and permissions. Check encrypted Communication configuration under the original Windows profile and test with your own destinations. Review pending notifications before normal operation. A backup restored under another Windows account may not decrypt protected communication data." }
+    ]
+  },
+  {
+    "Title": "License activation",
+    "Summary": "Review license state and activate the current device using material from your software provider.",
+    "Sections": [
+      { "Heading": "1. Review status", "Text": "Open Settings → License. Read License status, license owner/ID, expiry information and the message about whether business changes are enabled. Use Refresh License Status to recheck. Viewing the application and making business changes can have different license requirements." },
+      { "Heading": "2. Request and import", "Text": "Use Copy Device ID and provide that identifier to your software provider through a trusted channel. Use Import License File for the provider-supplied file, or paste the complete license document and choose Activate License. Do not change the signed document's contents or use another device's license." },
+      { "Heading": "3. Verify and resolve errors", "Text": "Review the resulting status and test an authorized business action. If rejected, confirm that the file is complete, intended for this device and within its validity period. Contact the provider with the safe error and device ID; do not attempt to bypass signature or expiry checks." }
+    ]
+  },
+  {
+    "Title": "Software updates and notifications",
+    "Summary": "Use the publisher's configured update channel and review application announcements.",
+    "Sections": [
+      { "Heading": "1. Check the installed version", "Text": "Open Settings → Software Info. Record App name, Version and Build where displayed when requesting support. Use the actual installed version rather than guessing from an installer filename." },
+      { "Heading": "2. Configure and check updates", "Text": "Use the publisher-provided HTTPS update manifest URL, save the update channel and choose Check for updates. Read Update status, available version and release notes. A manifest URL is a publisher's update metadata endpoint, not an arbitrary installer link. Do not substitute an untrusted source." },
+      { "Heading": "3. Download and install", "Text": "When offered, Download update opens the configured download route. Back up and save work before installing through the publisher's supported process. Downloading does not itself guarantee that the application was installed or restarted. Reopen Software Info afterward and confirm the version." },
+      { "Heading": "4. Notifications and related actions", "Text": "Review Notifications for update or application announcements and use Mark read as needed. Change Password and First-time Setup are available from the same screen. A software-update notification is separate from customer invoice-delivery History in Communication." }
+    ]
+  },
+  {
+    "Title": "Dashboard layouts and quick actions",
+    "Summary": "Refresh the business overview, change its layout and open the relevant detail workflow.",
+    "Sections": [
+      { "Heading": "1. Refresh and select a layout", "Text": "Open Dashboard and use Refresh to reload persisted business data. Open its layout menu and choose Default, Classic, Bento or Simple as offered. The layout choice changes presentation, not the underlying invoices or stock." },
+      { "Heading": "2. Use cards and quick actions", "Text": "Review the displayed metrics, recent invoices, top products/customers and quick actions. Recent invoice actions include Edit and Preview PDF where permitted. Before changing a transaction, verify the document identity in the editor or preview." },
+      { "Heading": "3. Resolve out-of-stock items", "Text": "Review Out of Stock and use an item's Stock action to open the relevant inventory workflow. Confirm the product and current base-unit stock, then post only a genuine received or corrected quantity. A dashboard refresh or a layout change does not itself replenish stock." }
+    ]
+  },
+  {
+    "Title": "Post and verify a stock adjustment",
+    "Summary": "Record received goods, stock-out, damage or corrections and review the audit history.",
+    "Sections": [
+      { "Heading": "1. Confirm product and direction", "Text": "Open Inventory, select Product and read Current stock and its base unit. Choose Stock In for an increase or Stock Out for a decrease. Choose the appropriate Reason/type rather than using an unrelated reason to bypass a validation message." },
+      { "Heading": "2. Enter and post", "Text": "Enter Quantity in the product's base unit, plus Reference and Notes where useful. For a box-based receipt, first convert boxes into the intended base units using the product's configured conversion. Choose Post Adjustment and wait for status or validation feedback. Do not press again while processing." },
+      { "Heading": "3. Verify history", "Text": "Check the refreshed stock and Movement history for date, type, signed change, reference, notes and user. The view displays the latest 250 entries, not necessarily the complete historical ledger. If posting had an uncertain outcome, check history before entering another adjustment. Correct errors through supported stock movements with an explanatory reference." }
+    ]
+  },
+  {
+    "Title": "Language, appearance and accessibility",
+    "Summary": "Use the existing display controls and keyboard support without changing business records.",
+    "Sections": [
+      { "Heading": "1. Language and theme", "Text": "Use the application's language and appearance controls where shown. Select Light, Dark or System as offered. Check legibility after switching. Display language does not automatically translate customer names, product descriptions, message templates or this English manual's article text." },
+      { "Heading": "2. Keyboard and focus", "Text": "Open Settings → Accessibility for the implemented invoice keyboard-shortcut reference. Use Tab and Shift+Tab to move through controls and the documented shortcuts for invoice actions. The current Accessibility page is a shortcut reference, not a full set of screen-reader or font-scaling preferences. The session warning respects reduced-motion settings where supported by the application." },
+      { "Heading": "3. Narrow windows and long fields", "Text": "Scroll the category list and content panel independently where needed. Select a field to show its label and use an expand action for long text when available. Do not interpret a clipped visible portion as a truncated stored value. Use the manual's search field to narrow the topic list, then clear it to restore all processes." }
     ]
   }
 ]
