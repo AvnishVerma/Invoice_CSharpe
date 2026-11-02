@@ -22,7 +22,7 @@ public partial class MainWindow
         [
             new("Company Info", "business"), new("Backup", "backup"), new("Users", "people"), new("Permissions", "admin_panel_settings"),
             new("PDF Settings", "settings"), new("Invoice Settings", "receipt_long"), new("Product Details", "view_column"),
-            new("Accessibility", "accessibility_new"), new("Communication", "email"), new("License", "lock"), new("Software Info", "info_outline")
+            new("Accessibility", "accessibility_new"), new("Communication", "email"), new("License", "lock"), new("Software Info", "info_outline"), new("User Manual", "description")
         ];
         tabs = tabs.Where(tab => tab.Label switch
         {
@@ -54,6 +54,7 @@ public partial class MainWindow
         "Backup" => BackupView(),
         "Accessibility" => new AccessibilitySettingsView(() => Model.SaveSettings("Accessibility")),
         "Software Info" => SoftwareInfo(),
+        "User Manual" => new UserManualView { DataContext = new UserManualViewModel() },
         "License" => LicenseSettingsView(),
         _ => SettingsForm(name)
     };

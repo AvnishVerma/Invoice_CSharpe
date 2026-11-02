@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:LedgerNest.Desktop" xmlns:views="using:LedgerNest.Desktop.Views"
+ x:Class="LedgerNest.Desktop.Views.UserManualView" x:DataType="vm:UserManualViewModel" x:Name="Root">
+ <views:ScreenScaffoldView>
+  <views:ScreenScaffoldView.PageHeader><views:PageHeaderView Title="User Manual" DataContext="{Binding DataContext, ElementName=Root}"/></views:ScreenScaffoldView.PageHeader>
+  <views:ScreenScaffoldView.PageBody>
+   <views:SettingsNavigationShellView>
+    <views:SettingsNavigationShellView.Navigation>
+     <StackPanel Spacing="12" Margin="12,0">
+      <TextBlock Text="No matching topics. Try another search." IsVisible="{Binding HasNoResults}" TextWrapping="Wrap"/>
+      <ListBox ItemsSource="{Binding FilteredTopics}" SelectedItem="{Binding SelectedTopic, Mode=TwoWay}" AutomationProperties.Name="User manual topics" Background="Transparent">
+       <ListBox.ItemTemplate><DataTemplate x:DataType="vm:ManualTopic">
+        <TextBlock Text="{Binding Title}" TextWrapping="Wrap" MinHeight="36" VerticalAlignment="Center"/>
+       </DataTemplate></ListBox.ItemTemplate>
+      </ListBox>
+     </StackPanel>
+    </views:SettingsNavigationShellView.Navigation>
+    <views:SettingsNavigationShellView.Body>
+     <Grid RowDefinitions="Auto,*">
+      <TextBox Text="{Binding Search, Mode=TwoWay}" PlaceholderText="Search manual" Margin="16,12" AutomationProperties.Name="Search user manual" ToolTip.Tip="Search topic titles and instructions. Clear the search to show all topics."/>
+     <ScrollViewer Grid.Row="1" x:Name="ArticleScroll" HorizontalScrollBarVisibility="Disabled" AllowAutoHide="False" AutomationProperties.Name="Manual article">
+      <StackPanel Margin="{DynamicResource PageContentPadding}" Spacing="16">
+       <TextBlock Text="LedgerNest · Offline user guide" Foreground="{DynamicResource AppMutedBrush}" TextWrapping="Wrap"/>
+       <ContentControl Content="{Binding SelectedTopic}" HorizontalContentAlignment="Stretch">
+        <ContentControl.ContentTemplate><DataTemplate x:DataType="vm:ManualTopic">
+         <StackPanel Spacing="16">
+          <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" TextWrapping="Wrap"/>
+          <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Foreground="{DynamicResource AppMutedBrush}"/>
+          <ItemsControl ItemsSource="{Binding Sections}">
+           <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:ManualSection">
+            <views:SettingsSectionView Title="{Binding Heading}" Margin="0,0,0,16">
+             <views:SettingsSectionView.Body><SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap"/></views:SettingsSectionView.Body>
+            </views:SettingsSectionView>
+           </DataTemplate></ItemsControl.ItemTemplate>
+          </ItemsControl>
+         </StackPanel>
+        </DataTemplate></ContentControl.ContentTemplate>
+       </ContentControl>
+      </StackPanel>
+     </ScrollViewer>
+     </Grid>
+    </views:SettingsNavigationShellView.Body>
+   </views:SettingsNavigationShellView>
+  </views:ScreenScaffoldView.PageBody>
+ </views:ScreenScaffoldView>
+</UserControl>

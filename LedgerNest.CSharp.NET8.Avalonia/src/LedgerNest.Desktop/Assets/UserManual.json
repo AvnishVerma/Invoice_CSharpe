@@ -1,0 +1,139 @@
+[
+  {
+    "Title": "Getting started",
+    "Summary": "Set up your business before creating your first invoice. This guide works offline and describes the LedgerNest desktop application.",
+    "Sections": [
+      { "Heading": "1. Sign in and choose your workspace", "Text": "Sign in with the account provided by your administrator. Work in the correct company workspace before entering customers, products or invoices. Available screens and actions depend on your assigned role and permissions. If an action is unavailable, ask your administrator to review access rather than creating another account." },
+      { "Heading": "2. Configure company information", "Text": "Open Settings → Company Info. Enter your company name, country, address, contact information and applicable registration numbers. Configure your logo and the visibility switches for the information you want on PDFs. Review bank and UPI details where required, then use Save. Choose Product, Service or Both to match your business." },
+      { "Heading": "3. Review invoice and PDF settings", "Text": "Open Invoice Settings to review numbering, tax, items, customer details, columns and custom fields. Open PDF Settings to review document appearance. Create a sample invoice and inspect its preview before issuing documents to customers. Changes to a form need to be saved; changing a preference is not the same as saving an invoice." },
+      { "Heading": "4. Prepare master data", "Text": "Create your units, products or services, and customers. Verify prices, tax rates and contact information. Create a backup before importing a large list or changing existing records. You can search this manual by a screen name or a task such as backup, payment or WhatsApp." }
+    ]
+  },
+  {
+    "Title": "Create an invoice",
+    "Summary": "Use the item list and right-side information tabs to prepare, review and save an invoice.",
+    "Sections": [
+      { "Heading": "1. Start and select the customer", "Text": "Choose New Invoice, or press Ctrl+Q. In the Customer tab, use Search Customer to choose a saved customer or Create Customer to add one. Review the displayed name, phone, tax registration and address. Check these details before saving, especially for customers with similar names." },
+      { "Heading": "2. Add products or services", "Text": "Search the item list and select the required product or service. Ctrl+F focuses product search; Ctrl+M opens a custom item. Review each line's quantity, unit, rate, discount and tax. Use the line controls to adjust or remove an item. Verify the selling unit because a box and a single piece may have different prices and quantities." },
+      { "Heading": "3. Complete the information tabs", "Text": "Use Invoice Details for document type, date, time, due date and available numbering or bank options. Use Charges for extra charges or deductions; a minus sign represents a deduction where indicated. Use Adjustments for the supported adjustments and Tax Details to review tax information. Scroll within the active tab to reach its remaining fields." },
+      { "Heading": "4. Review and create", "Text": "Check the customer, item lines, totals, tax and payment information. Use Create Invoice or Ctrl+S. Resolve validation messages and try again. A preview or an unfinished form does not mean an invoice has been saved. After successful creation, use the completion actions to view, preview, download or print the saved document." },
+      { "Heading": "5. Deliver the saved invoice", "Text": "Where enabled, the completion screen offers Email, WhatsApp, Both and Resend Invoice. Delivery requires saved customer information, consent, permissions and configured integrations. Queued means waiting for processing; Sent means accepted by a provider, not confirmed receipt. Check Settings → Communication → History for the actual result." }
+    ]
+  },
+  {
+    "Title": "Invoices, payments and refunds",
+    "Summary": "Find saved documents and record business changes through their available actions.",
+    "Sections": [
+      { "Heading": "Find and review an invoice", "Text": "Open Invoices and use the available search and filters. Open the correct record and verify its number, customer, date and amount. Use the document's preview, download or print actions. In the invoice editor, Ctrl+O previews and Ctrl+P prints the last saved document when those actions are available." },
+      { "Heading": "Record a payment", "Text": "Use the invoice's payment action. Enter the amount actually received, payment date, method and any reference, then confirm. Review the updated paid and outstanding balances. A partial payment should contain only the received amount, not the full invoice total. Correct mistakes through the supported payment workflow rather than changing PDF text." },
+      { "Heading": "Refunds and voiding", "Text": "Use Create Refund where available. Review sold and remaining quantities, enter the refundable quantity and reason, and check the calculated total before confirming. Voiding an invoice is a separate action: review its confirmation and provide the requested reason. Permissions and document state may restrict editing or voiding. A voided invoice is excluded from automatic customer delivery." },
+      { "Heading": "Avoid duplicate documents", "Text": "If a save reports an error, check the invoice list before creating a replacement. Use the saved invoice's delivery or print action when you only need another copy. Resending a message does not require creating another invoice." }
+    ]
+  },
+  {
+    "Title": "Quotations and receipts",
+    "Summary": "Use the dedicated lists and document types for quotations and receipts.",
+    "Sections": [
+      { "Heading": "Quotations", "Text": "Open Quotations to find and review quotations. Check the document type when preparing a new document so that a quotation is not accidentally issued as an invoice. Use the actions available for the selected quotation. Cancellation preserves the quotation and its audit history; the cancellation dialog explains that the quotation cannot be edited afterward." },
+      { "Heading": "Receipts", "Text": "Open Receipts to manage the receipt documents supported by your workspace. Verify the customer, amounts and document details before saving. Do not treat a quotation, receipt and invoice as interchangeable: check the document title and number before printing or sharing." },
+      { "Heading": "Communication rules", "Text": "Automatic customer invoice delivery applies to saved invoices, not incomplete forms, drafts, quotations, receipts, deleted or voided invoices. Do not assume that printing a quotation or receipt also sent it to a customer." }
+    ]
+  },
+  {
+    "Title": "Customers and imports",
+    "Summary": "Maintain accurate customer identities, contact details and communication consent.",
+    "Sections": [
+      { "Heading": "Create or edit a customer", "Text": "Open Customers, choose the create action and enter the required name. Fill in business name, email, phone, tax number and address as applicable. Use Save once, wait for the result, then reopen the record to verify important details. Existing invoices may retain their saved document details; editing a customer is not a substitute for reviewing a saved invoice." },
+      { "Heading": "Customer codes", "Text": "Review the Customer Code options under Invoice Settings → Customer Details. Prefix, Next Number, Leading Zeros and Auto-generate determine generated codes. Blank codes are generated when enabled; explicitly entered codes are preserved. Existing codes are not changed merely by adjusting the numbering settings." },
+      { "Heading": "Import carefully", "Text": "Use the import action available in the customer list and follow its file-format and column requirements. Back up first, review validation results and check imported records before using them on invoices. Leave a code blank when you want the enabled automatic numbering to supply it. Do not import the same list repeatedly without checking for duplicates." },
+      { "Heading": "Customer consent", "Text": "An administrator records delivery consent in Settings → Communication → Customer Consent. Email and WhatsApp need the customer's explicit opt-in. Telegram also needs the correct Chat ID and destination verification. A reachable address or phone number is not proof of consent. Update or withdraw consent when requested." }
+    ]
+  },
+  {
+    "Title": "Products, units and prices",
+    "Summary": "Prepare reusable product or service records and configure selling units and effective prices.",
+    "Sections": [
+      { "Heading": "Products and services", "Text": "Open Products and create or edit a record. Review name, description, HSN/SAC, selling price, purchase price, discount, tax rate and price-includes-tax where applicable. Select Product or Service as appropriate. Settings → Product Details controls which optional fields appear and contains product-code numbering options." },
+      { "Heading": "Import and product codes", "Text": "Back up before importing products. Follow the import dialog's supported columns and validation. Blank product codes can be generated when Auto-generate is enabled; explicit codes are preserved. Review prefix, next number and leading zeros in Product Details before importing. Verify the imported names, prices, units and tax rates." },
+      { "Heading": "Units and conversions", "Text": "Maintain unit definitions in Units. In Prices, choose a product and configure a selling unit from Unit Master. Enter the base units contained, such as the number of pieces in a box, the default selling price and the relevant switches. Use Save Selling Unit. An incorrect conversion changes the meaning of quantities and prices." },
+      { "Heading": "Schedule a price", "Text": "In Prices → Schedule a price, select the configured selling unit, price list, new selling price and Effective from date. Review Active price, then use Save Effective Price. Price history is intended to preserve earlier invoices; always verify the rate applied to the next invoice." }
+    ]
+  },
+  {
+    "Title": "Inventory and barcodes",
+    "Summary": "Post stock movements with clear reasons and print labels from actual product data.",
+    "Sections": [
+      { "Heading": "Adjust stock", "Text": "Open Inventory, choose the product and review current stock and base unit. Select Stock In for received goods or Stock Out for outgoing stock, choose the reason/type and enter the quantity in the product's base unit. Add a reference and notes when useful, then post using the available action." },
+      { "Heading": "Check movement history", "Text": "Review Movement history after posting. Confirm the date, direction, quantity and reason before entering another adjustment. Use the out-of-stock dashboard list as a prompt to investigate the product and stock history; do not create repeated adjustments simply to refresh a display." },
+      { "Heading": "Barcode labels", "Text": "Open Reports → Barcodes. Select the products to print and set the number of labels for each. Review product IDs and barcode values, then use the available preview or print action. Print a sample to check label dimensions and readability before printing a large batch." }
+    ]
+  },
+  {
+    "Title": "Reports and dashboard",
+    "Summary": "Use the dashboard for an overview and report categories for detailed review.",
+    "Sections": [
+      { "Heading": "Dashboard", "Text": "Open Dashboard to review the available business summaries and stock indicators. Check the relevant detailed list or report before acting on a summary, especially when dates, payment status or stock movements matter." },
+      { "Heading": "Report categories", "Text": "Open Reports and use the left-side categories: Revenue, Receivables, Tax, Customers, Products, Quotations, Invoice Status, Daily Report, Inventory and Barcodes. Apply the filters available for the selected report. Review the date range and included document states before comparing totals." },
+      { "Heading": "Exports and interpretation", "Text": "Use a report's CSV or PDF export where offered. Review the exported file before sharing it. Do not add amounts from different currencies as though they were one currency. Paid and outstanding balances can change when payments are recorded; compare reports using consistent dates, filters and status rules." }
+    ]
+  },
+  {
+    "Title": "Company, invoice and PDF settings",
+    "Summary": "Use the shared Settings navigation and Save action to configure the business and document presentation.",
+    "Sections": [
+      { "Heading": "Company Info", "Text": "Maintain company details, country, logo, registration numbers and contact information. Visibility switches determine the information shown on PDFs. Keep bank accounts, Show Bank Details and UPI configuration accurate. Follow the displayed logo file-type and size requirements. Preview a document after changing the logo or layout." },
+      { "Heading": "Invoice Settings", "Text": "Use General, Branding, Tax & GST, Invoice Items, Customer Details, Invoice Columns and Custom Fields in the section list. Review numbering carefully. The starting invoice number cannot be changed while invoices exist, as explained by the screen. Do not delete business records just to bypass a numbering restriction." },
+      { "Heading": "Save and appearance", "Text": "Use the shared Save button to persist the current settings. A successful save message confirms the action; if validation fails, correct the indicated fields and save again. Language and appearance controls use the application's existing theme system. Accessibility settings are available in their own category. Fields show their labels when focused, and longer forms scroll vertically." }
+    ]
+  },
+  {
+    "Title": "Email, WhatsApp and Telegram",
+    "Summary": "Optional integrations deliver invoice PDFs and administrator notifications. Configuration is restricted to authorized administrators.",
+    "Sections": [
+      { "Heading": "1. Open Communication", "Text": "Go to Settings → Communication. Use the left-hand Email, WhatsApp, Telegram, Templates, Customer Consent and History sections. Each channel has its own enable switch, credentials, administrator destination and test destination. All integrations start disabled. Saving configuration does not prove that a provider accepted a message." },
+      { "Heading": "2. Email setup", "Text": "Obtain your SMTP settings from your mail provider. Enter server, port, STARTTLS or supported None security, authentication, username, password/app password, sender and optional reply-to. The current adapter supports STARTTLS, not implicit SMTPS on port 465. Authentication must not be used over an unencrypted connection. Test Connection checks the greeting; Send Test Message exercises actual sending. Use only a test address you control." },
+      { "Heading": "3. WhatsApp setup", "Text": "Use the official Meta WhatsApp Business Cloud API with the required business account, Phone Number ID, access token and API version. Configure approved template names and language. Invoice templates require the supported document header and parameter order; administrator messages use a separate approved template. Your provider account and template approvals must be ready. This application does not use WhatsApp Web automation." },
+      { "Heading": "4. Telegram setup", "Text": "Create a Telegram bot with the official BotFather workflow and enter its token. The destination user must start or otherwise grant the bot access, or the bot must be added to the intended group with suitable permissions. Enter the administrator and test Chat IDs. Validate the token and test a message. Customer delivery additionally requires opt-in and Verify Telegram Destination followed by Save Customer Consent." },
+      { "Heading": "5. Templates, consent and Save", "Text": "In Templates, configure email subject/body, Telegram message, footer, retry limit and automatic delivery. Use Preview Message. Supported placeholders are InvoiceNumber, CompanyName, CustomerName, InvoiceDate, Currency, TotalAmount, PaymentStatus and Footer, each enclosed in braces. WhatsApp content must match approved templates. Select a saved customer under Customer Consent and record opt-in. Save Customer Consent separately from integration configuration. Use the shared Save button to persist channel and template settings. Blank saved credential fields retain existing secrets; use Reset Configuration and Save to clear a channel." },
+      { "Heading": "6. Administrator events and reports", "Text": "Each channel has administrator event switches and a separate destination. Enable only required events and reports. Daily reports cover the previous local day; weekly reports cover the previous Monday–Sunday. The desktop must be open and signed in for processing. It does not send while closed or backfill every missed historical report. Report amounts remain separated by currency." }
+    ]
+  },
+  {
+    "Title": "Delivery history and retries",
+    "Summary": "Understand delivery states and avoid duplicate messages.",
+    "Sections": [
+      { "Heading": "Read notification history", "Text": "Open Settings → Communication → History. Search by invoice, customer ID, recipient or status, choose a channel and date range, then refresh as needed. Review the notification ID, timestamps, attempts, provider message ID and safe error details. The latest 500 matching records are shown." },
+      { "Heading": "Understand states", "Text": "Pending waits for processing. Processing is an active attempt. Sent means the provider accepted submission; it is not proof of delivery or reading. Failed needs attention. Retry Scheduled waits for a safe retry time. Cancelled indicates that the notification should no longer be sent, for example after consent or document status changes. Disabled channels remain paused." },
+      { "Heading": "Retry safely", "Text": "Known-safe temporary failures can retry with backoff and provider rate limits. An interrupted or uncertain send is not automatically repeated because the provider may already have accepted it. Check the provider's history first, select the authorization checkbox and use Retry Failed or Resend Submitted as appropriate. These actions can send real messages. Use the invoice screen's Resend Invoice when you need a fresh PDF from the current saved document; history resend repeats its queued payload." },
+      { "Heading": "Fix contact or configuration errors", "Text": "Correct customer email/phone details in Customer management and review consent. Correct integration settings and test with your own destination before retrying. One invalid customer channel does not prevent another valid requested channel from being queued. Do not repeatedly click Resend to work around an error." }
+    ]
+  },
+  {
+    "Title": "Backups and restore",
+    "Summary": "Protect business data before imports, upgrades and major changes.",
+    "Sections": [
+      { "Heading": "Create and keep backups", "Text": "Open Settings → Backup. Choose the available database or backup export action, select a safe destination and wait for completion. Verify that the file exists and keep another copy outside the working device. Use the history actions to download/share copies or manage old backups. Avoid deleting the only known-good backup." },
+      { "Heading": "Restore or import a backup", "Text": "Make a fresh backup of the current workspace first. Select the intended restore/import action and read its confirmation. Verify the company and backup date before proceeding; restoring can replace current working data. After restoration, review customers, products, invoices and settings before continuing business entry." },
+      { "Heading": "Communication credentials in backups", "Text": "Communication secrets and queued message data are encrypted for the current Windows user profile. Copying a backup to another Windows account or device does not guarantee that these protected values can be decrypted. Keep access to the original Windows profile and consult your administrator when moving workspaces. Re-test integrations after any supported migration. Backup files may contain sensitive business information and should be shared only with authorized people." }
+    ]
+  },
+  {
+    "Title": "Users, security and session warnings",
+    "Summary": "Use appropriate permissions and understand the local session-expiry dialog.",
+    "Sections": [
+      { "Heading": "Users and permissions", "Text": "Authorized administrators manage Users and Permissions in Settings. Assign only the access needed for each role. A missing settings category or disabled business action may reflect permissions or license state. Do not share passwords, provider tokens or account credentials in screenshots or support messages." },
+      { "Heading": "Continue or exit a session", "Text": "LedgerNest uses local account authentication. A warning appears five minutes before the timed session expires. Continue Session revalidates the existing account and renews the local session when allowed. Exit Session signs out. At zero, the application signs out automatically. This is local account revalidation, not renewal of an external access token. Save work promptly rather than relying on the warning as a draft backup." },
+      { "Heading": "License and updates", "Text": "Open Settings → License to review license status, copy the device ID, import a license file or paste a license document supplied by your software provider. Do not edit license contents. Open Software Info for version information, update-channel configuration and Check for updates. Use only the publisher's trusted update source and back up before upgrading." }
+    ]
+  },
+  {
+    "Title": "Keyboard shortcuts and troubleshooting",
+    "Summary": "Common shortcuts and practical checks when a workflow does not behave as expected.",
+    "Sections": [
+      { "Heading": "Keyboard shortcuts", "Text": "Ctrl+Q: start a new invoice. In New Invoice, Ctrl+S: create/save the invoice; Ctrl+F: focus product search; Ctrl+M: custom item; Ctrl+O: preview the last saved document; Ctrl+P: print the last saved document. Escape closes an open overlay where supported. Shortcuts depend on the current screen, permissions and session state. Use Tab and Shift+Tab to move between controls." },
+      { "Heading": "A Save action fails", "Text": "Read the validation or error message, keep the entered values and correct the indicated field. Confirm that required fields are complete, the session is valid and your role/license allows changes. If the outcome is unclear, check the relevant saved-record list before trying again. Record the action, time and safe error text for support; exclude credentials." },
+      { "Heading": "An invoice is not delivered", "Text": "Confirm that the invoice saved successfully, the integration is enabled, customer contact information is valid and consent is recorded. Verify that the desktop is open and signed in. Check Communication → History. Test provider configuration using your own destination. Sent indicates acceptance only; investigate delivery at the provider before resending." },
+      { "Heading": "A screen looks different", "Text": "Window size, theme, language, permissions and enabled product fields can change the layout. Scroll the content panel or its navigation list on narrow windows. Select the correct Settings or Reports category. This manual describes current desktop workflows; use the labels and validation displayed by your installed build when optional features differ." }
+    ]
+  }
+]
